@@ -1,0 +1,22 @@
+{
+  "name": "mec-claude-agent-skills",
+  "owner": {
+    "name": "Michael Connelly",
+    "email": "michaelconne@gmail.com"
+  },
+  "metadata": {
+    "description": "Michael Connelly novel recommendation skill for Claude plugins",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "skill creator",
+      "description": "Helps create new Claude plugins by generating boilerplate code based on user input",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skill-creator"
+      ]
+    }
+  ]
+}
