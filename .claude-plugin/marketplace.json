@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "skill creator",
+      "name": "skill-creator",
       "description": "Helps create new Claude plugins by generating boilerplate code based on user input",
       "source": "./",
       "strict": false,
