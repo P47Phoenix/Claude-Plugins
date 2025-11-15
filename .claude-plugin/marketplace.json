@@ -5,17 +5,26 @@
     "email": "michaelconne@gmail.com"
   },
   "metadata": {
-    "description": "Michael Connelly novel recommendation skill for Claude plugins",
-    "version": "1.0.0"
+    "description": "Collection of plugins for creating Claude Code extensions including skills and full plugins",
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "skill-creator",
-      "description": "Helps create new Claude plugins by generating boilerplate code based on user input",
+      "description": "Helps create new Claude skills with specialized knowledge, workflows, and tools",
       "source": "./",
       "strict": false,
       "skills": [
         "./skill-creator"
+      ]
+    },
+    {
+      "name": "plugin-creator",
+      "description": "Helps create complete Claude Code plugins with commands, agents, hooks, skills, and MCP integrations",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./plugin-creator"
       ]
     }
   ]
