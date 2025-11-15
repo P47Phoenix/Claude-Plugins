@@ -42,6 +42,33 @@ A comprehensive plugin that helps you create complete Claude Code plugins with c
 
 **When to use:** Creating custom slash commands, specialized agents, event hooks, or combining multiple components into a single distributable plugin.
 
+### Agentic Flow Builder
+
+A production-grade plugin for building dynamic multi-agent workflows using ReAcTree hierarchical decomposition and Anthropic's proven workflow patterns.
+
+**Features:**
+- ReAcTree hierarchical agent tree for long-horizon task planning
+- Business Rules Engine (BRE) for deterministic gate decisions
+- Dynamic agent assignment with hot-reload support
+- Dual memory system (episodic + working memory)
+- Five workflow patterns (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer)
+- SQLite persistence with comprehensive audit trails
+- Supports Claude models, Task agents, and external services
+
+**Core Components:**
+- `database.py` - SQLite schema and data access layer
+- `business_rules_engine.py` - Production BRE for deterministic gates
+- `flow_orchestrator.py` - Execution engine with all workflow patterns
+- `agent_registry.py` - Dynamic agent discovery and assignment
+
+**When to use:** Building complex multi-step workflows requiring deterministic decision gates, compliance auditing, or orchestrating multiple specialized agents.
+
+**Why use BRE for gates?**
+- **Deterministic** - Same input always produces same output (no AI variance)
+- **Auditable** - Full transparency for compliance
+- **Reliable** - No hallucinations or temperature inconsistency
+- **Fast** - Sub-millisecond gate evaluation (no LLM calls)
+
 ## Installation
 
 ### Adding the Marketplace
@@ -64,6 +91,11 @@ Once the marketplace is added, you can install either or both plugins:
 **Install Plugin Creator:**
 ```
 /plugin install plugin-creator
+```
+
+**Install Agentic Flow Builder:**
+```
+/plugin install agentic-flow-builder
 ```
 
 **Or use the interactive menu:**
@@ -107,6 +139,42 @@ The plugin creator will guide you through:
 5. Documentation and testing
 6. Packaging for distribution
 
+## Using the Agentic Flow Builder
+
+After installation, Claude will automatically use the agentic flow builder when you want to create multi-agent workflows.
+
+**Example usage:**
+- "Help me build an agentic workflow for [use case]"
+- "Create a flow with business rule gates for [compliance requirement]"
+- "Build a multi-agent workflow using the orchestrator-workers pattern"
+
+The flow builder will guide you through:
+1. Defining goals and determining if agentic flow is appropriate
+2. Designing the hierarchical tree structure
+3. Defining business rules for gates
+4. Configuring agent nodes with dynamic assignment
+5. Setting up dual memory system
+6. Testing and audit trail review
+
+**Quick start example:**
+```python
+# Create flow with age verification gate
+flow_id = db.create_flow("User Onboarding")
+root_id = db.create_node(flow_id, NodeType.ROOT, "root")
+gate_id = db.create_node(flow_id, NodeType.GATE, "age_gate", parent_id=root_id)
+
+# Add business rule (deterministic!)
+db.create_rule(
+    flow_id=flow_id,
+    name="Minimum Age",
+    rule_type="gate",
+    condition={"field": "user.age", "operator": ">=", "value": 18}
+)
+
+# Execute with dynamic agent selection
+execution_id = await orchestrator.execute_flow(flow_id, {"user": {"age": 25}})
+```
+
 ## Plugin Structure
 
 This repository follows the Claude Code plugin structure:
@@ -129,6 +197,19 @@ This repository follows the Claude Code plugin structure:
 │   │   ├── init_plugin.py      # Initialize new plugins
 │   │   └── package_plugin.py   # Validate and package plugins
 │   └── references/             # Reference documentation (future)
+├── agentic-flow-builder/        # The agentic flow builder plugin
+│   ├── README.md               # Plugin documentation
+│   ├── LICENSE.txt             # License information
+│   ├── skills/                 # Skills
+│   │   └── flow-builder/       # Flow builder skill
+│   │       └── SKILL.md        # Comprehensive flow building guide
+│   ├── scripts/                # Core implementation
+│   │   ├── database.py         # SQLite schema and DAL
+│   │   ├── business_rules_engine.py  # Production BRE
+│   │   ├── flow_orchestrator.py      # Execution engine
+│   │   └── agent_registry.py   # Dynamic agent assignment
+│   └── references/             # Examples and documentation
+│       └── complete_example.py # Full customer onboarding example
 └── README.md                   # This file
 ```
 
@@ -167,6 +248,7 @@ The `.claude-plugin/marketplace.json` file defines:
 ```
 /plugin uninstall skill-creator
 /plugin uninstall plugin-creator
+/plugin uninstall agentic-flow-builder
 ```
 
 ## Resources

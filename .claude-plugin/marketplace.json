@@ -5,8 +5,8 @@
     "email": "michaelconne@gmail.com"
   },
   "metadata": {
-    "description": "Collection of plugins for creating Claude Code extensions including skills and full plugins",
-    "version": "1.1.0"
+    "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
+    "version": "2.0.0"
   },
   "plugins": [
     {
@@ -25,6 +25,15 @@
       "strict": false,
       "skills": [
         "./plugin-creator"
+      ]
+    },
+    {
+      "name": "agentic-flow-builder",
+      "description": "Build dynamic agentic workflows using ReAcTree hierarchical decomposition, business rules engine for deterministic gates, and Anthropic's workflow patterns with full audit trails",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./agentic-flow-builder/skills/flow-builder"
       ]
     }
   ]
