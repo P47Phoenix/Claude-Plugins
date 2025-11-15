@@ -69,6 +69,22 @@ A production-grade plugin for building dynamic multi-agent workflows using ReAcT
 - **Reliable** - No hallucinations or temperature inconsistency
 - **Fast** - Sub-millisecond gate evaluation (no LLM calls)
 
+### Prompt Engineer
+
+An expert prompt optimization skill that proactively helps improve prompts for LLMs and AI systems. Uses Opus for advanced reasoning about prompt design.
+
+**Features:**
+- Comprehensive prompt engineering techniques (CoT, few-shot, role-playing, etc.)
+- Model-specific optimization (Claude, GPT, open source)
+- Advanced patterns (Constitutional AI, Tree of Thoughts, prompt chaining)
+- Always shows complete prompt text (never just describes)
+- Evaluation framework with clear criteria
+- Proactive assistance when AI/LLM usage is detected
+
+**When to use:** Building AI features, optimizing agent performance, crafting system prompts, troubleshooting AI output quality, or establishing prompt standards.
+
+**Key principle:** Always displays the complete prompt text in a clearly marked section - never just describes what a prompt should be.
+
 ## Installation
 
 ### Adding the Marketplace
@@ -96,6 +112,11 @@ Once the marketplace is added, you can install either or both plugins:
 **Install Agentic Flow Builder:**
 ```
 /plugin install agentic-flow-builder
+```
+
+**Install Prompt Engineer:**
+```
+/plugin install prompt-engineer
 ```
 
 **Or use the interactive menu:**
@@ -249,6 +270,7 @@ The `.claude-plugin/marketplace.json` file defines:
 /plugin uninstall skill-creator
 /plugin uninstall plugin-creator
 /plugin uninstall agentic-flow-builder
+/plugin uninstall prompt-engineer
 ```
 
 ## Resources

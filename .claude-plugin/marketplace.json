@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "plugins": [
     {
@@ -34,6 +34,15 @@
       "strict": false,
       "skills": [
         "./agentic-flow-builder/skills/flow-builder"
+      ]
+    },
+    {
+      "name": "prompt-engineer",
+      "description": "Expert prompt optimization for LLMs and AI systems. Proactively improves prompts using proven techniques, patterns, and model-specific optimization. Uses Opus for advanced reasoning.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./prompt-engineer"
       ]
     }
   ]
