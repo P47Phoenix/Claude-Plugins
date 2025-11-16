@@ -1,0 +1,55 @@
+PRD Quality Gate Flow
+============================================================
+
+[ROOT] prd_root
+    PRD workflow entry point
+
+  [AGENT] stage1_prd_creator
+      Create comprehensive PRD from product idea
+
+    [GATE] gate1_completeness
+        Automated completeness validation
+        Rules: 4
+
+      [AGENT] stage2_technical_reviewer
+          Assess technical feasibility and risks
+
+        [GATE] gate2_technical_feasibility
+            Technical feasibility validation with optional human review
+            Rules: 4
+
+          [CONTROL_FLOW] stage3_stakeholder_orchestrator
+              Coordinate multi-stakeholder review process
+
+            [GATE] gate3_business_value
+                Business value and strategic alignment validation
+                Rules: 3
+
+              [GATE] gate4_executive_approval
+                  Executive/leadership approval gate
+                  Rules: 1
+
+                [AGENT] stage4_implementation_planner
+                    Convert PRD into actionable implementation plan
+
+                  [GATE] gate5_resource_feasibility
+                      Validate resource availability and feasibility
+                      Rules: 4
+
+                    [AGENT] stage5_task_flow_generator
+                        Generate and execute custom implementation flow
+
+                      [AGENT] stage6_prd_evaluator
+                          Measure outcomes against success criteria
+
+                        [GATE] gate6_success_criteria
+                            Validate success criteria achievement
+                            Rules: 3
+
+                          [GATE] gate7_uat
+                              User acceptance testing and final approval
+                              Rules: 1
+
+                            [AGENT] stage7_retrospective
+                                Capture learnings and complete PRD
+

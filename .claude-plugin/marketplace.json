@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
-    "version": "2.1.0"
+    "version": "2.2.0"
   },
   "plugins": [
     {
@@ -44,6 +44,13 @@
       "skills": [
         "./prompt-engineer"
       ]
+    },
+    {
+      "name": "prd-quality-gate-flow",
+      "description": "Production-grade PRD (Product Requirements Document) workflow system with 7 quality gates, business rules engine for deterministic decisions, episodic memory, and complete audit trails. Implements evidence-based Stage-Gate process with 60% defect reduction and 138% ROI.",
+      "source": "./",
+      "strict": false,
+      "skills": []
     }
   ]
 }
