@@ -1,10 +1,10 @@
 ---
-name: product-owner-agent
-description: Product Owner sub-agent specializing in agile product management artifacts. This skill should be used when users need to write user stories, define acceptance criteria, groom or prioritize backlogs, create PRDs, decompose epics, plan sprints, produce stakeholder communications, or act as a PO agent within a multi-agent workflow. Triggers on phrases like "write user stories", "prioritize backlog", "define acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "as a product owner".
+name: delivery-team
+description: Delivery Team agent specializing in agile product management artifacts. This skill should be used when users need to write user stories, define acceptance criteria, groom or prioritize backlogs, create PRDs, decompose epics, plan sprints, produce stakeholder communications, or act as a PO agent within a multi-agent workflow. Triggers on phrases like "write user stories", "prioritize backlog", "define acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "as a product owner", "delivery team".
 license: Apache License 2.0 - See repository LICENSE file
 ---
 
-# Product Owner Agent
+# Delivery Team Agent
 
 ## Role
 
