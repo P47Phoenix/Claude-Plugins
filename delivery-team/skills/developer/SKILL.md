@@ -1,6 +1,6 @@
 ---
 name: developer
-description: Developer agent for writing, reviewing, and refactoring code in any language. This skill should be used when users want to write code, fix bugs, refactor existing code, add tests, or review code quality. Auto-detects the programming language and spawns a language-scoped sub-agent so only the relevant best-practices are loaded into context — never all languages at once. Triggers on phrases like "write code", "implement", "fix this bug", "refactor", "add tests", "code review", "write a function", "build a script", and on file extensions (.py, .ts, .js, .go, .rs, .cs, .java, .sql, .sh).
+description: Developer agent for writing, reviewing, and refactoring code in any language. This skill should be used when users want to write code, fix bugs, refactor existing code, add tests, or review code quality. Auto-detects the programming language and spawns a language-scoped sub-agent so only the relevant best-practices are loaded into context — never all languages at once. Triggers on phrases like "write code", "implement", "fix this bug", "refactor", "add tests", "code review", "write a function", "build a script", and on file extensions (.py, .ts, .js, .go, .rs, .cs, .java, .sql, .sh, .r, .R, .Rmd).
 license: Apache License 2.0 - See repository LICENSE file
 ---
 
@@ -21,7 +21,7 @@ The main context receives only the finished code artifact. All language-specific
 ## Phase 1: Language Detection
 
 Detect the target language from (in priority order):
-1. File extension in context: `.py` → Python, `.ts` → TypeScript, `.js` → JavaScript, `.cs` → C#, `.go` → Go, `.rs` → Rust, `.java` → Java, `.sql` → SQL, `.sh`/`.bash` → Bash
+1. File extension in context: `.py` → Python, `.ts` → TypeScript, `.js` → JavaScript, `.cs` → C#, `.go` → Go, `.rs` → Rust, `.java` → Java, `.sql` → SQL, `.sh`/`.bash` → Bash, `.r`/`.R`/`.Rmd`/`.qmd` → R
 2. Imports or syntax in pasted code
 3. User's explicit statement
 4. File being edited in the current session
@@ -117,8 +117,15 @@ The main context never accumulates multiple language reference files — each su
 | Java | `.java` | `references/languages/java.md` |
 | SQL | `.sql` | `references/languages/sql.md` |
 | Bash/Shell | `.sh`, `.bash`, no extension | `references/languages/bash.md` |
+| R | `.r`, `.R`, `.Rmd`, `.qmd` | `references/languages/r.md` |
 
 For languages not in this table: ask the user to confirm the language, then proceed without a language reference file — apply general clean code principles.
+
+### OOP Cross-Language Reference
+
+For tasks involving object-oriented design (class design, design patterns, SOLID principles, inheritance vs. composition, value objects, dependency injection) in **C#, TypeScript, C++, Java, Python, or Kotlin**: include `references/oop-patterns.md` in the sub-agent prompt alongside the language reference file.
+
+Triggers: mentions of "design pattern", "SOLID", "factory", "singleton", "decorator", "strategy", "observer", "repository", "inheritance", "composition", "dependency injection", "refactor to OOP", "class design".
 
 To add a new language: create `references/languages/<lang>.md` using the template in `references/languages/README.md`, then add it to the table above.
 
@@ -179,3 +186,5 @@ The sub-agent should return output in this structure (markdown):
 - `references/languages/java.md` — Java 17 LTS best practices
 - `references/languages/sql.md` — SQL / PostgreSQL best practices
 - `references/languages/bash.md` — Bash 5+ best practices
+- `references/languages/r.md` — R 4.x best practices (tidyverse, testthat, renv)
+- `references/oop-patterns.md` — OOP patterns: SOLID, GoF patterns, composition, DI (C#, TypeScript, Java, C++)
