@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "plugins": [
     {
@@ -51,6 +51,15 @@
       "source": "./",
       "strict": false,
       "skills": []
+    },
+    {
+      "name": "research-agent",
+      "description": "Production-grade research agent with auto-detection of 5 research types (Exploratory, Descriptive, Explanatory, Evaluative, Comparative), academic frameworks (PICO, SPICE, PECO, GRADE, ReAct), systematic review protocol, root cause analysis patterns (5 Whys + Fishbone), and prompt-engineered research patterns for source-backed, bias-aware investigations.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./research-agent"
+      ]
     }
   ]
 }
