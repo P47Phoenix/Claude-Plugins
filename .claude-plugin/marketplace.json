@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
-    "version": "2.4.3"
+    "version": "2.5.0"
   },
   "plugins": [
     {
@@ -67,7 +67,8 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./delivery-team/skills/Product-Owner"
+        "./delivery-team/skills/Product-Owner",
+        "./delivery-team/skills/developer"
       ]
     }
   ]
