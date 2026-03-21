@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
-    "version": "2.3.0"
+    "version": "2.4.0"
   },
   "plugins": [
     {
@@ -59,6 +59,15 @@
       "strict": false,
       "skills": [
         "./research-agent"
+      ]
+    },
+    {
+      "name": "product-owner-agent",
+      "description": "Product Owner sub-agent specializing in agile product management artifacts. Produces user stories with INVEST validation, epic decompositions, prioritized backlogs (MoSCoW, RICE, WSJF, Kano), PRDs, sprint plans, roadmap items, and stakeholder communications. Designed for both standalone use and multi-agent orchestration flows.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./product-owner-agent"
       ]
     }
   ]
