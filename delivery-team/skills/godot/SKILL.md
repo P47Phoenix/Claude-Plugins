@@ -28,7 +28,7 @@ Classify the request into one or more categories before proceeding:
 
 **Declare before every task:**
 
-> `Language: [GDScript | C#] | Task: [write / fix / refactor / review / explain] | References: [list of reference files used]`
+> `Language: [GDScript | C#] | Task: [write / fix / refactor / review / explain / design / validate] | References: [list of reference files used]`
 
 ---
 
@@ -104,6 +104,7 @@ Follow the official GDScript style guide and all conventions in the reference ma
 | `references/csharp-godot.md` | C# 12 / .NET 8 in Godot 4.x: partial classes, [Export], [Signal], QueueFree, nullable safety |
 | `references/scenes-nodes.md` | Scene self-containment, node type selection, hierarchy conventions, scene inheritance, Resource-based data |
 | `references/signals-architecture.md` | Signal patterns, Event Bus autoload, state machines (enum and node-based), component pattern, deferred calls |
+| `references/validation.md` | Headless validation, common agent-missed bugs, AC classification (structural vs empirical), pre-write checklist |
 
 ---
 
@@ -158,7 +159,7 @@ The sub-agent must enforce these in every output:
 - **Self-contained scenes** — scenes must work regardless of where they are placed in the tree
 - **Type everything** — all variables, parameters, and return types must be typed in GDScript
 - **No @onready access before tree entry** — never call methods that use @onready variables on a node that hasn't been added to the scene tree yet. Use `call_deferred()` or add the node first, then configure.
-- **Validate after implementation** — after every `write` or `fix` task on `.gd` or `.tscn` files, run `godot --headless --path <project> --quit` and report any new errors
+- **Validate after implementation** — if `godot` is available on PATH, run `godot --headless --path <project> --quit` after every `write` or `fix` task on `.gd` or `.tscn` files and report any new errors. If `godot` is not available, note that headless validation was skipped and recommend manual validation
 
 ---
 

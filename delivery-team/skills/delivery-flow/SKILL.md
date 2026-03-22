@@ -604,8 +604,8 @@ stage ran).
 Developer for engine-specific work. Game-specific testing:
 - **Headless validation**: After each story, run `godot --headless --path <project> --quit` as part of the evaluator-optimizer loop. Any new ERROR lines trigger a correction cycle.
 - **Empirical AC classification**: Classify each acceptance criterion as "structural" (verifiable by code inspection) or "empirical" (requires runtime). If empirical ACs exist and no validation tool was used, mark story as "code-complete, pending validation" rather than "done".
-- Performance profiling against frame budgets.
-- Playtest scenarios (game feel, difficulty curve, progression balance).
+- **Performance profiling**: Profile against frame budgets, memory limits, and draw call targets.
+- **Playtest scenarios**: Game feel, difficulty curve, progression balance, and player experience.
 
 ---
 

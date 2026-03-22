@@ -22,7 +22,7 @@ Loads the project, initializes all autoloads, instantiates the main scene, runs 
 ```
 godot --headless --check-only --script <script_path> 2>&1
 ```
-Parse-validates a single .gd file without loading the full project. Fast (~1s).
+Parse-validates a single .gd file without loading the full project. Fast (~1s). Requires Godot 4.2+. For earlier 4.x versions, use full project validation instead.
 
 **What it catches:**
 - Syntax errors
