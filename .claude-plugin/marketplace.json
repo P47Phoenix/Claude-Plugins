@@ -63,13 +63,17 @@
     },
     {
       "name": "delivery-team",
-      "description": "Delivery Team agent specializing in agile product management artifacts. Produces user stories with INVEST validation, epic decompositions, prioritized backlogs (MoSCoW, RICE, WSJF, Kano), PRDs, sprint plans, roadmap items, and stakeholder communications. Designed for both standalone use and multi-agent orchestration flows.",
+      "description": "Full delivery team with 7 specialized skills covering the complete software delivery lifecycle. Product Delivery (Product Owner, Scrum Master, Data Analyst), Developer (10 languages + OOP + frontend patterns), Godot (game dev), Architect (solution/enterprise/data/security/compliance + game architecture), Quality (QA engineering), Operations (DevOps, Release Manager, Technical Writer), and UI (UX Designer, UI Designer, Game UI Designer). Each skill uses role-scoped sub-agents with context-isolated reference loading.",
       "source": "./",
       "strict": false,
       "skills": [
-        "./delivery-team/skills/Product-Owner",
+        "./delivery-team/skills/product-delivery",
         "./delivery-team/skills/developer",
-        "./delivery-team/skills/godot"
+        "./delivery-team/skills/godot",
+        "./delivery-team/skills/architect",
+        "./delivery-team/skills/quality",
+        "./delivery-team/skills/operations",
+        "./delivery-team/skills/ui"
       ]
     }
   ]

@@ -127,6 +127,20 @@ For tasks involving object-oriented design (class design, design patterns, SOLID
 
 Triggers: mentions of "design pattern", "SOLID", "factory", "singleton", "decorator", "strategy", "observer", "repository", "inheritance", "composition", "dependency injection", "refactor to OOP", "class design".
 
+### Frontend Cross-Language Reference
+
+For tasks involving frontend development (component architecture, CSS/styling, state management, responsive design, performance optimization, UI implementation) in **TypeScript** or **JavaScript**: include the relevant `references/frontend/*.md` file(s) in the sub-agent prompt alongside the language reference file.
+
+Triggers: mentions of "component", "CSS", "styling", "state management", "responsive", "bundle", "web vitals", "frontend performance", "React", "Vue", "Svelte", "Angular", "Next.js", "Nuxt", "SvelteKit", "form handling", "lazy loading", "code splitting", "dark mode", "design tokens", "accessibility implementation".
+
+Reference selection by concern:
+- Component architecture or UI patterns → `references/frontend/component-patterns.md`
+- CSS, styling, theming, responsive → `references/frontend/styling-systems.md`
+- State management, data fetching, caching → `references/frontend/state-management.md`
+- Performance, bundle size, web vitals → `references/frontend/performance.md`
+
+Multiple frontend references may be loaded simultaneously (e.g., a "build a responsive form component" task loads component-patterns.md + styling-systems.md).
+
 To add a new language: create `references/languages/<lang>.md` using the template in `references/languages/README.md`, then add it to the table above.
 
 ---
@@ -188,3 +202,7 @@ The sub-agent should return output in this structure (markdown):
 - `references/languages/bash.md` — Bash 5+ best practices
 - `references/languages/r.md` — R 4.x best practices (tidyverse, testthat, renv)
 - `references/oop-patterns.md` — OOP patterns: SOLID, GoF patterns, composition, DI (C#, TypeScript, Java, C++)
+- `references/frontend/component-patterns.md` — Component composition, forms, routing, error boundaries, accessibility
+- `references/frontend/styling-systems.md` — CSS architecture, theming, responsive design, dark mode, performance
+- `references/frontend/state-management.md` — State patterns, server state, URL state, optimistic updates, persistence
+- `references/frontend/performance.md` — Bundle optimization, Core Web Vitals, lazy loading, service workers, CDN
