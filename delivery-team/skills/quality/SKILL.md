@@ -267,6 +267,50 @@ These rules apply to all sub-agent output. Violations must be corrected before r
 
 ---
 
+## Empirical Validation and CODE_COMPLETE Status
+
+When acting as a DoD validator for the delivery-flow pipeline, the QA Engineer must detect acceptance criteria that require runtime verification.
+
+### Three DoD Statuses
+
+| Status | Meaning | When to Use |
+|--------|---------|-------------|
+| **DONE** | All criteria verified — by tests, inspection, or runtime validation tools | No empirical criteria exist, OR all empirical criteria were validated with runtime tools |
+| **CODE_COMPLETE** | Code passes all inspectable criteria, but runtime validation is still needed | Developer's "Verification Status" includes "Requires runtime validation" items |
+| **NOT_DONE** | Code has issues that need fixing | Structural or logic problems exist regardless of empirical criteria |
+
+### How to Detect Empirical Criteria
+
+1. Check the developer/godot skill's "Verification Status" output section
+2. If "Requires runtime validation" is non-empty → this story needs CODE_COMPLETE status
+3. Cross-reference against `references/empirical-validation.md` for the full keyword registry and severity classification
+4. Classify each empirical criterion as Blocking, Warning, or Suggestion per the registry
+
+### CODE_COMPLETE Output Format
+
+When returning CODE_COMPLETE, include:
+
+```
+**Status**: CODE_COMPLETE
+
+**Structural verification**: PASSED — all inspectable criteria met
+**Empirical validation pending**:
+- [Blocking] "Map renders with correct terrain tiles" — requires running the application
+- [Blocking] "Clicking a unit selects it" — requires input handling verification
+- [Warning] "Animation is smooth at 60fps" — requires performance profiling
+
+**Recommended validation**: [per-technology recommendation from empirical-validation.md]
+```
+
+### Pipeline Behavior with CODE_COMPLETE
+
+- CODE_COMPLETE does NOT block Stage 6 (Development) — the story advances
+- The pending empirical validations are carried forward to Stage 7 (UAT) as mandatory test cases
+- At Human Checkpoint 4 (UAT), the user sees both automated results AND pending runtime validations
+- The story is only marked fully DONE after the user accepts at UAT
+
+---
+
 ## Sub-Agent Interface
 
 ### Input (from Product-Owner or user)
@@ -317,3 +361,4 @@ The sub-agent returns structured markdown matching the Output Contract for the t
 - `references/test-case-patterns.md` -- Equivalence partitioning, boundary analysis, decision tables, state transitions, Given-When-Then format
 - `references/test-automation.md` -- Automation pyramid, framework selection, CI/CD integration, flaky test management, mocking strategies
 - `references/quality-metrics.md` -- Defect density, coverage metrics, escape rate, MTTR/MTTF, quality gates, cost of quality
+- `references/empirical-validation.md` -- Empirical validation registry: technology-specific patterns requiring runtime verification, keyword detection, severity classification, recommended validation tools

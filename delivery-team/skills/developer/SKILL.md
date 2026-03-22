@@ -167,11 +167,20 @@ The sub-agent should return output in this structure (markdown):
 - [Edge cases to verify]
 - [How to confirm correctness]
 
+### Verification Status
+
+- **Verified by tests**: [list acceptance criteria covered by written tests]
+- **Verified by inspection**: [list acceptance criteria verified by code structure review]
+- **Requires runtime validation**: [list acceptance criteria that need the application running — visual output, user interaction, API responses, runtime behavior]
+- **Verification gaps**: [any criteria the agent could not verify at all]
+
 ### Follow-Up
 
 - [Anything left incomplete with reason]
 - [Suggested next steps]
 ```
+
+**Empirical validation rule**: If any acceptance criteria mention visual output, user interaction, API responses, database queries, or runtime behavior (see `quality/references/empirical-validation.md` for the full keyword registry), list them under "Requires runtime validation" — do NOT mark them as verified by inspection.
 
 ---
 

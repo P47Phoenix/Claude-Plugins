@@ -584,17 +584,25 @@ stage ran).
 
 **DoD validators** (per story):
 - Developer (developer skill): code is clean, follows language and framework best
-  practices, no hardcoded secrets.
+  practices, no hardcoded secrets. Must include "Verification Status" in output.
 - QA Engineer (quality skill): tests pass, coverage is adequate, no critical issues.
+  If developer's Verification Status includes "Requires runtime validation" items,
+  return **CODE_COMPLETE** instead of DONE (see `quality/references/empirical-validation.md`).
 - Architect (architect skill): implementation conforms to architecture decisions, no
   architectural drift.
 - Technical Writer (operations skill): inline documentation present for non-obvious
   logic, API docs if applicable.
 
+**DoD status options**: DONE, CODE_COMPLETE, or NOT_DONE.
+- **CODE_COMPLETE** means: code passes all structural/inspectable criteria, but empirical
+  validation is pending. The story advances, and pending validations carry forward to
+  Stage 7 (UAT) as mandatory test cases.
+
 **Output**:
 - Code files in the project codebase.
 - `.delivery/artifacts/06-dev-notes.md` (summary of implementation decisions, known
-  issues, deviations from plan).
+  issues, deviations from plan, and any CODE_COMPLETE stories with their pending
+  empirical validations).
 
 **Human checkpoint**: none.
 
@@ -620,10 +628,13 @@ final approval for delivery.
 
 **Primary agents**:
 1. QA Engineer (quality skill, task_type: test-plan).
-   - Input: PRD acceptance criteria + developed features.
-   - Output: UAT test plan with test cases.
+   - Input: PRD acceptance criteria + developed features + **pending empirical
+     validations from Stage 6** (CODE_COMPLETE stories with their runtime
+     verification requirements).
+   - Output: UAT test plan with test cases. Pending empirical validations from
+     Stage 6 MUST be included as mandatory UAT test cases.
 2. QA Engineer (quality skill, task_type: test-cases).
-   - Input: test plan.
+   - Input: test plan (including empirical validation test cases).
    - Output: detailed test cases with expected results.
 3. DevOps (operations skill, task_type: release-plan + rollback-procedure).
    - Input: architecture + deployment strategy.
@@ -658,7 +669,11 @@ design, dev notes).
 - `.delivery/artifacts/07b-documentation.md`
 
 **Human checkpoint**: CHECKPOINT 4 -- present UAT results, release plan, and
-documentation for accept or reject.
+documentation for accept or reject. If any stories were CODE_COMPLETE from Stage 6,
+explicitly show the **pending empirical validations** that need runtime verification,
+with recommended validation approaches per technology (from
+`quality/references/empirical-validation.md`). The user must confirm these have been
+validated (or accept the risk) before the pipeline marks them DONE.
 
 **Max self-correction**: 2 iterations.
 

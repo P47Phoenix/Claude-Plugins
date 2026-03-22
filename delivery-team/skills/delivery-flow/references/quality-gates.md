@@ -191,12 +191,16 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] No hardcoded secrets, credentials, or environment-specific values [blocking]
 - [ ] Error handling covers expected failure modes [warning]
 - [ ] GAME_DEV: frame budget validated, no physics or rendering regressions [warning, if applicable]
-- **DoD validators**: Developer (code quality, best practices), QA Engineer (tests pass, coverage adequate), Architect (design conformance, no architectural drift), Technical Writer (inline docs, API docs if applicable)
+- [ ] Empirical validation requirements identified: if any acceptance criteria require runtime verification (visual output, user interaction, API responses, runtime behavior), they are flagged in the Verification Status and story status is CODE_COMPLETE rather than DONE [blocking]
+- **DoD validators**: Developer (code quality, best practices), QA Engineer (tests pass, coverage adequate, empirical criteria flagged), Architect (design conformance, no architectural drift), Technical Writer (inline docs, API docs if applicable)
+- **DoD status options**: DONE (all criteria verified), CODE_COMPLETE (code passes but empirical validation pending), NOT_DONE (structural issues remain)
+- **CODE_COMPLETE behavior**: story advances to Stage 7 (UAT) with pending empirical validations carried forward as mandatory test cases
 - **Max self-correction**: 3
 
 ### Gate 7: UAT Acceptance
 
 - [ ] All test cases executed (no skipped tests without documented justification) [blocking]
+- [ ] All pending empirical validations from Stage 6 included as mandatory UAT test cases [blocking]
 - [ ] Pass rate meets threshold: 100% of critical tests, 90% overall [blocking]
 - [ ] Documentation complete: release notes, user guides if applicable, API docs if applicable [blocking]
 - [ ] Rollback plan documented with specific steps and validation criteria [blocking]

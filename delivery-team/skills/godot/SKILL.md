@@ -78,6 +78,13 @@ Produce:
 4. Inline comments on non-obvious logic only
 5. A brief explanation of key architecture decisions (3–5 sentences)
 6. How to test / verify the behavior in the Godot editor
+7. Verification Status:
+   - **Verified by tests**: GdUnit tests written and described
+   - **Verified by inspection**: Code structure, signal wiring, node hierarchy, file paths
+   - **Requires runtime validation**: Scene rendering, input handling, physics, animation, TileMap display, camera behavior, audio playback
+   - **Verification gaps**: Any criteria not verifiable without running the Godot editor
+
+Scene rendering, input handling, TileMap display, physics interactions, animation playback, camera behavior, and audio playback ALWAYS require runtime validation. Never mark these as verified by inspection.
 
 Follow the official GDScript style guide and all conventions in the reference material.
 ```

@@ -1,0 +1,14 @@
+{
+  "hooks": [
+    {
+      "event": "SubagentStop",
+      "matcher": "developer|godot",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/flag-empirical-validation.sh"
+        }
+      ]
+    }
+  ]
+}
