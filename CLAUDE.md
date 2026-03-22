@@ -14,6 +14,8 @@ Each plugin lives in its own top-level directory and follows this pattern:
 <plugin-name>/         # kebab-case naming required
 ├── SKILL.md           # Primary skill instructions (loaded when skill triggers)
 ├── LICENSE.txt
+├── hooks/             # Event-driven automation (optional)
+│   └── hooks.json     # Hook definitions (PreToolUse, PostToolUse, SubagentStop, etc.)
 ├── scripts/           # Python implementation scripts
 ├── skills/            # Sub-skills (optional)
 └── references/        # Supporting documentation and examples
@@ -30,6 +32,30 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 | `agentic-flow-builder/` | Builds multi-agent workflows using ReAcTree hierarchical decomposition |
 | `prompt-engineer/` | Expert LLM prompt optimization |
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
+| `research-agent/` | Research agent with 5 research types and academic frameworks |
+| `delivery-team/` | Full delivery team with 9 skills (see below) |
+
+### delivery-team Plugin (9 skills)
+
+| Skill | Roles / Purpose |
+|-------|----------------|
+| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard |
+| `product-delivery/` | Product Owner, Scrum Master, Data Analyst |
+| `developer/` | 10 languages + OOP + frontend patterns |
+| `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) |
+| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture |
+| `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
+| `operations/` | DevOps, Release Manager, Technical Writer |
+| `ui/` | UX Designer, UI Designer, Game UI Designer |
+| `user-feedback/` | Simulated persona-based testing (20+ built-in personas across gamers, web users, enterprise, demographics) |
+
+### delivery-team Hooks
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| PreToolUse (Skill) | Before implementation skill invocation | Pipeline bypass detection — warns when developer/godot invoked outside delivery-flow |
+| PostToolUse (Write/Edit) | After .gd file write | GDScript parse validation via `godot --headless --check-only` |
+| SubagentStop (developer/godot) | After dev agent completes | Empirical validation keyword detection |
 
 ## Running Scripts
 
@@ -65,6 +91,16 @@ No build step, linting config, or test runner is configured.
 2. SKILL.md (loaded when skill triggers) — main instructions
 3. Resources (loaded on demand) — scripts, references, assets
 
+**Delivery-flow pipeline architecture**:
+- 7 stages: Idea → Refine → Design → Architect → Plan → Development → UAT
+- Auto-detect project type (GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY) with stage routing
+- Team DoD validation (ALL validators must say DONE)
+- 6 collaboration patterns: evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus
+- Self-learning memory in `.delivery/memory/` (tiered chunked retrieval)
+- Config-driven via `.delivery/config.md` with versioned schema
+- Setup wizard with 10 questions (auto-detect + smart options)
+- Defect tracking with plugin self-improvement PR triggers
+
 **Agentic flow core components** (shared pattern between `agentic-flow-builder/` and `prd-quality-gate-flow/`):
 - `database.py` — SQLite schema, DAL, execution tracking, audit logs
 - `business_rules_engine.py` — Deterministic gate evaluation (AND/OR/NOT logic, no AI variance)
@@ -72,6 +108,17 @@ No build step, linting config, or test runner is configured.
 - `agent_registry.py` — Dynamic agent discovery, assignment, and performance tracking
 
 **Business Rules Engine** is intentionally deterministic — gate decisions must be rule-based, not AI-inferred, to ensure consistent and auditable workflow outcomes.
+
+## Key Conventions
+
+**When modifying this repo, always use the relevant plugin-dev skills:**
+- Creating/modifying hooks → load `plugin-dev:hook-development` first
+- Creating/modifying skills → load `plugin-dev:skill-development` first
+- Creating/modifying plugin structure → load `plugin-dev:plugin-structure` first
+- After creating a skill → use `plugin-dev:skill-reviewer` to review it
+- After creating a plugin → use `plugin-dev:plugin-validator` to validate it
+
+**Config schema**: The single source of truth for `.delivery/config.md` format is `delivery-flow/references/config-schema.md`. When adding new config keys, follow the extension protocol documented there.
 
 ## Permissions
 

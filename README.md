@@ -1,300 +1,166 @@
 # Claude Plugins
 
-A collection of plugins for [Claude Code](https://code.claude.com) that extend Claude's capabilities with specialized skills and tools.
+A collection of plugins for [Claude Code](https://code.claude.com) that extend Claude's capabilities with specialized skills, delivery workflows, and development tools.
 
-## What are Claude Code Plugins?
+## Plugins
 
-Plugins extend Claude Code's functionality through custom commands, agents, hooks, Skills, and MCP servers. They're discoverable through marketplaces and shareable across teams and projects.
+### Delivery Team
 
-## Plugins in this Repository
+A full software delivery team with 9 specialized skills covering the complete delivery lifecycle — from idea to release. Designed for both standalone use and multi-agent orchestration.
+
+**9 Skills:**
+
+| Skill | Roles | What It Does |
+|-------|-------|-------------|
+| **Delivery Flow** | Pipeline orchestrator | 7-stage pipeline (Idea → Refine → Design → Architect → Plan → Dev → UAT) with auto-detect project type, team DoD, self-correction, adversarial review, debate, consensus, and self-learning memory |
+| **Product Delivery** | Product Owner, Scrum Master, Data Analyst | User stories, PRDs, backlogs, sprint plans, retrospectives, metrics, A/B testing |
+| **Developer** | 10 languages + OOP + Frontend | Code implementation with language context isolation (Python, TypeScript, Go, Rust, C#, Java, SQL, Bash, R, JavaScript) |
+| **Godot** | GDScript, C#, Scenes, Signals | Godot 4.x game dev with headless validation and defect prevention |
+| **Architect** | 11 roles | Solution, Enterprise, Data, Security, Compliance, Privacy, Incident Response + Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering |
+| **Quality** | QA Engineer | Test strategy, test cases, automation, quality metrics, empirical validation registry |
+| **Operations** | DevOps, Release Manager, Technical Writer | CI/CD, deployment, infrastructure, release planning, versioning, API docs, runbooks |
+| **UI** | UX Designer, UI Designer, Game UI Designer | User flows, wireframes, design systems, accessibility, HUD, game menus, inventory UI |
+| **User Feedback** | 20+ simulated personas | Persona-based testing across gamers, web users, enterprise, and demographics with consensus detection |
+
+**Key Features:**
+- **Setup wizard**: 10-question config wizard with auto-detection from codebase
+- **Team DoD**: Every artifact validated by multiple roles before advancing
+- **6 collaboration patterns**: Evaluator-optimizer, adversarial review, review board, decision ownership routing, debate, consensus
+- **Self-learning memory**: Tiered chunked retrieval in `.delivery/memory/`
+- **Defect tracking**: Self-improvement feedback loop that opens PRs to the plugin repo
+- **Pipeline enforcement**: 3-layer system prevents bypassing quality gates
+- **Empirical validation**: Detects runtime-only acceptance criteria (CODE_COMPLETE status)
 
 ### Skill Creator
 
-A plugin that helps you create new Claude skills with specialized knowledge, workflows, and tools.
+Create new Claude skills with specialized knowledge, workflows, and tools.
 
-**Features:**
 - Comprehensive skill creation guidance
-- Automated skill initialization with templates
-- Validation and packaging tools
+- Automated initialization, validation, and packaging
 - Best practices for skill design
-
-**Included Tools:**
-- `init_skill.py` - Generate new skill templates with proper structure
-- `package_skill.py` - Validate and package skills for distribution
-- `quick_validate.py` - Quick validation of skill structure and format
-
-**When to use:** Creating skills for specialized domains, workflows, or bundled resources (scripts, references, assets).
 
 ### Plugin Creator
 
-A comprehensive plugin that helps you create complete Claude Code plugins with commands, agents, hooks, skills, and MCP integrations.
+Create complete Claude Code plugins with commands, agents, hooks, skills, and MCP integrations.
 
-**Features:**
-- Complete plugin creation guidance
-- Support for all plugin components (commands, agents, hooks, skills, MCP)
-- Automated plugin scaffolding
-- Validation and packaging tools
+- Support for all plugin components
+- Automated scaffolding and packaging
 - Best practices for plugin architecture
-
-**Included Tools:**
-- `init_plugin.py` - Generate new plugin templates with selected components
-- `package_plugin.py` - Validate and package plugins for distribution
-
-**When to use:** Creating custom slash commands, specialized agents, event hooks, or combining multiple components into a single distributable plugin.
 
 ### Agentic Flow Builder
 
-A production-grade plugin for building dynamic multi-agent workflows using ReAcTree hierarchical decomposition and Anthropic's proven workflow patterns.
+Build dynamic multi-agent workflows using ReAcTree hierarchical decomposition.
 
-**Features:**
-- ReAcTree hierarchical agent tree for long-horizon task planning
 - Business Rules Engine (BRE) for deterministic gate decisions
-- Dynamic agent assignment with hot-reload support
-- Dual memory system (episodic + working memory)
-- Five workflow patterns (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer)
-- SQLite persistence with comprehensive audit trails
-- Supports Claude models, Task agents, and external services
-
-**Core Components:**
-- `database.py` - SQLite schema and data access layer
-- `business_rules_engine.py` - Production BRE for deterministic gates
-- `flow_orchestrator.py` - Execution engine with all workflow patterns
-- `agent_registry.py` - Dynamic agent discovery and assignment
-
-**When to use:** Building complex multi-step workflows requiring deterministic decision gates, compliance auditing, or orchestrating multiple specialized agents.
-
-**Why use BRE for gates?**
-- **Deterministic** - Same input always produces same output (no AI variance)
-- **Auditable** - Full transparency for compliance
-- **Reliable** - No hallucinations or temperature inconsistency
-- **Fast** - Sub-millisecond gate evaluation (no LLM calls)
+- Dynamic agent assignment with hot-reload
+- Dual memory system (episodic + working)
+- 5 workflow patterns with SQLite audit trails
 
 ### Prompt Engineer
 
-An expert prompt optimization skill that proactively helps improve prompts for LLMs and AI systems. Uses Opus for advanced reasoning about prompt design.
+Expert prompt optimization for LLMs and AI systems.
 
-**Features:**
-- Comprehensive prompt engineering techniques (CoT, few-shot, role-playing, etc.)
-- Model-specific optimization (Claude, GPT, open source)
-- Advanced patterns (Constitutional AI, Tree of Thoughts, prompt chaining)
-- Always shows complete prompt text (never just describes)
-- Evaluation framework with clear criteria
-- Proactive assistance when AI/LLM usage is detected
+- Comprehensive prompt engineering techniques
+- Model-specific optimization
+- Always shows complete prompt text
 
-**When to use:** Building AI features, optimizing agent performance, crafting system prompts, troubleshooting AI output quality, or establishing prompt standards.
+### PRD Quality Gate Flow
 
-**Key principle:** Always displays the complete prompt text in a clearly marked section - never just describes what a prompt should be.
+Production-grade PRD workflow with 7 quality gates.
+
+- Business rules engine for deterministic decisions
+- Episodic memory and complete audit trails
+- Evidence-based Stage-Gate process
+
+### Research Agent
+
+Production-grade research agent with 5 research types.
+
+- Academic frameworks (PICO, SPICE, PECO, GRADE, ReAct)
+- Systematic review protocol
+- Root cause analysis (5 Whys + Fishbone)
 
 ## Installation
 
-### Adding the Marketplace
-
-1. Open Claude Code
-2. Run the following command to add this marketplace:
-   ```
-   /plugin marketplace add https://github.com/P47Phoenix/Claude-Plugins
-   ```
-
-### Installing Plugins
-
-Once the marketplace is added, you can install either or both plugins:
-
-**Install Skill Creator:**
 ```
+claude mcp add-skill https://github.com/P47Phoenix/Claude-Plugins
+```
+
+Or add to your project's `.claude/settings.json`:
+
+```json
+{
+  "plugins": [
+    "https://github.com/P47Phoenix/Claude-Plugins"
+  ]
+}
+```
+
+Then install individual plugins:
+
+```
+/plugin install delivery-team
 /plugin install skill-creator
-```
-
-**Install Plugin Creator:**
-```
 /plugin install plugin-creator
-```
-
-**Install Agentic Flow Builder:**
-```
 /plugin install agentic-flow-builder
-```
-
-**Install Prompt Engineer:**
-```
 /plugin install prompt-engineer
+/plugin install research-agent
 ```
 
-**Or use the interactive menu:**
+Or browse interactively:
 ```
 /plugin
 ```
 
-Then browse and select the plugins you want from the list.
-
-## Using the Skill Creator
-
-After installation, Claude will automatically use the skill creator when you want to create or modify skills.
-
-**Example usage:**
-- "Help me create a new skill for [your use case]"
-- "I want to build a skill that [describes functionality]"
-- "Update the [skill-name] skill to include [new features]"
-
-The skill creator will guide you through:
-1. Understanding your skill requirements with concrete examples
-2. Planning the reusable skill contents (scripts, references, assets)
-3. Initializing the skill structure
-4. Editing and implementing the skill
-5. Packaging for distribution
-6. Iterating based on testing
-
-## Using the Plugin Creator
-
-After installation, Claude will automatically use the plugin creator when you want to create or modify complete plugins.
-
-**Example usage:**
-- "I want to create a plugin that helps me [describes functionality]"
-- "Help me build a plugin with custom commands for [use case]"
-- "Create a plugin that includes [commands/agents/hooks/skills]"
-
-The plugin creator will guide you through:
-1. Defining plugin scope and components
-2. Initializing plugin structure with selected components
-3. Implementing commands, agents, hooks, skills, or MCP integrations
-4. Configuring plugin metadata
-5. Documentation and testing
-6. Packaging for distribution
-
-## Using the Agentic Flow Builder
-
-After installation, Claude will automatically use the agentic flow builder when you want to create multi-agent workflows.
-
-**Example usage:**
-- "Help me build an agentic workflow for [use case]"
-- "Create a flow with business rule gates for [compliance requirement]"
-- "Build a multi-agent workflow using the orchestrator-workers pattern"
-
-The flow builder will guide you through:
-1. Defining goals and determining if agentic flow is appropriate
-2. Designing the hierarchical tree structure
-3. Defining business rules for gates
-4. Configuring agent nodes with dynamic assignment
-5. Setting up dual memory system
-6. Testing and audit trail review
-
-**Quick start example:**
-```python
-# Create flow with age verification gate
-flow_id = db.create_flow("User Onboarding")
-root_id = db.create_node(flow_id, NodeType.ROOT, "root")
-gate_id = db.create_node(flow_id, NodeType.GATE, "age_gate", parent_id=root_id)
-
-# Add business rule (deterministic!)
-db.create_rule(
-    flow_id=flow_id,
-    name="Minimum Age",
-    rule_type="gate",
-    condition={"field": "user.age", "operator": ">=", "value": 18}
-)
-
-# Execute with dynamic agent selection
-execution_id = await orchestrator.execute_flow(flow_id, {"user": {"age": 25}})
-```
-
-## Plugin Structure
-
-This repository follows the Claude Code plugin structure:
+## Repository Structure
 
 ```
 .
 ├── .claude-plugin/
-│   └── marketplace.json         # Marketplace and plugin metadata
-├── skill-creator/               # The skill creator plugin
-│   ├── SKILL.md                # Skill definition and instructions
-│   ├── LICENSE.txt             # License information
-│   └── scripts/                # Helper scripts
-│       ├── init_skill.py       # Initialize new skills
-│       ├── package_skill.py    # Package skills for distribution
-│       └── quick_validate.py   # Validate skill structure
-├── plugin-creator/              # The plugin creator plugin
-│   ├── SKILL.md                # Skill definition and instructions
-│   ├── LICENSE.txt             # License information
-│   ├── scripts/                # Helper scripts
-│   │   ├── init_plugin.py      # Initialize new plugins
-│   │   └── package_plugin.py   # Validate and package plugins
-│   └── references/             # Reference documentation (future)
-├── agentic-flow-builder/        # The agentic flow builder plugin
-│   ├── README.md               # Plugin documentation
-│   ├── LICENSE.txt             # License information
-│   ├── skills/                 # Skills
-│   │   └── flow-builder/       # Flow builder skill
-│   │       └── SKILL.md        # Comprehensive flow building guide
-│   ├── scripts/                # Core implementation
-│   │   ├── database.py         # SQLite schema and DAL
-│   │   ├── business_rules_engine.py  # Production BRE
-│   │   ├── flow_orchestrator.py      # Execution engine
-│   │   └── agent_registry.py   # Dynamic agent assignment
-│   └── references/             # Examples and documentation
-│       └── complete_example.py # Full customer onboarding example
-└── README.md                   # This file
+│   └── marketplace.json              # Plugin registry
+├── .github/
+│   ├── ISSUE_TEMPLATE/               # Bug, feature, defect pattern templates
+│   ├── PULL_REQUEST_TEMPLATE/        # Enhancement, bug fix templates
+│   └── pull_request_template.md      # Default PR template
+├── delivery-team/                    # Full delivery team plugin
+│   ├── hooks/                        # Pipeline enforcement + validation hooks
+│   │   ├── hooks.json
+│   │   ├── flag-empirical-validation.sh
+│   │   └── validate-gdscript.sh
+│   ├── skills/
+│   │   ├── delivery-flow/            # Pipeline orchestrator (9 reference files)
+│   │   ├── product-delivery/         # PO + SM + Data Analyst (12 references)
+│   │   ├── developer/                # 10 languages + OOP + frontend (16 references)
+│   │   ├── godot/                    # Godot 4.x (6 references)
+│   │   ├── architect/                # 11 roles (16 references)
+│   │   ├── quality/                  # QA (5 references)
+│   │   ├── operations/               # DevOps + Release + TechWriter (12 references)
+│   │   ├── ui/                       # UX + UI + Game UI (12 references)
+│   │   └── user-feedback/            # Persona testing (4 references)
+│   └── LICENSE.txt
+├── skill-creator/                    # Skill creation plugin
+├── plugin-creator/                   # Plugin creation plugin
+├── agentic-flow-builder/             # Multi-agent workflow plugin
+├── prompt-engineer/                  # Prompt optimization plugin
+├── prd-quality-gate-flow/            # PRD quality gate plugin
+├── research-agent/                   # Research agent plugin
+├── CLAUDE.md                         # Claude Code project instructions
+└── README.md                         # This file
 ```
 
-## Creating Your Own Plugins
+## Contributing
 
-To create your own plugin in this marketplace:
+Contributions welcome! To add a new plugin:
 
-1. Use the skill creator to generate a new skill
-2. Add the skill directory to this repository
-3. Update `.claude-plugin/marketplace.json` to include the new plugin
-4. Commit and push your changes
+1. Create your plugin following the Claude Code plugin structure
+2. Test using the skill creator validation tools
+3. Add proper documentation
+4. Submit a pull request using the appropriate template
 
-### Marketplace Configuration
+**Issue templates** are available for bug reports, feature requests, and defect patterns.
 
-The `.claude-plugin/marketplace.json` file defines:
-- Marketplace name and owner information
-- Available plugins and their metadata
-- Skill locations and configurations
-
-## Managing Plugins
-
-**View installed plugins:**
-```
-/plugin
-```
-
-**Enable/disable plugins:**
-```
-/plugin disable skill-creator
-/plugin enable skill-creator
-/plugin disable plugin-creator
-/plugin enable plugin-creator
-```
-
-**Uninstall plugins:**
-```
-/plugin uninstall skill-creator
-/plugin uninstall plugin-creator
-/plugin uninstall agentic-flow-builder
-/plugin uninstall prompt-engineer
-```
-
-## Resources
-
-- [Claude Code Documentation](https://code.claude.com/docs)
-- [Plugin Documentation](https://code.claude.com/docs/en/plugins)
-- [Skills Guide](https://code.claude.com/docs/en/skills)
+**PR templates** include enhancement and bug fix formats, with a defect data section for `[DEFECT-FIX]` PRs from the delivery team's self-improvement loop.
 
 ## License
 
 See individual plugin directories for license information.
-
-## Contributing
-
-Contributions are welcome! To add a new plugin:
-
-1. Create your plugin following the Claude Code plugin structure
-2. Test thoroughly using the skill creator validation tools
-3. Add proper documentation
-4. Submit a pull request
-
-## Support
-
-For issues or questions:
-- Check the [Claude Code documentation](https://code.claude.com/docs)
-- Review the skill creator guidance
-- Open an issue in this repository
