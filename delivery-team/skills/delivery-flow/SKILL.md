@@ -849,6 +849,15 @@ After pipeline completion (or abort), the orchestrator captures lessons learned.
 6. **Archive maintenance.** Max 20 run files in archive. Delete oldest first, ensuring
    all lessons are captured in chunks before deletion.
 
+7. **Defect review.** If defects were found during this pipeline run:
+   - Count defects and calculate defects/story rate
+   - Categorize by root cause
+   - Compare to history (is the rate improving?)
+   - For systemic patterns (2+ occurrences or new categories): check if covered by existing skill references
+   - If not covered → draft plugin improvement PR with `[DEFECT-FIX]` prefix and `defect-prevention` label
+   - Update `.delivery/defects/index.md` with current data
+   - See `references/defect-tracking.md` for the full protocol
+
 See `references/memory-protocol.md` for the full tiered memory architecture, chunk
 formats, size limits, pruning rules, and decay protocol.
 
@@ -894,6 +903,7 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 | `type <TYPE>` | Override detected project type (e.g., `type FEATURE`) |
 | `memory` | Show lessons from past runs relevant to current project |
 | `escalate` | Manually trigger escalation for current stage |
+| `defect-review` | Run defect analysis and check for plugin improvement PR candidates |
 
 ---
 
@@ -910,3 +920,4 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/team-patterns.md` | All 6 collaboration patterns with protocols and prompt templates: Evaluator-Optimizer, Adversarial Review, Multi-Perspective Review Board, Decision Ownership Routing, Debate, Consensus |
 | `references/memory-protocol.md` | Tiered chunked memory system: routing index (Tier 1), stage + topic chunks (Tier 2), run archive (Tier 3), retrieval protocol (2-3 reads per stage), chunk size limits, pruning rules, decay protocol |
 | `references/setup-wizard.md` | Setup wizard protocol: scan detection matrix, 9 wizard questions with smart options, config file format, directory initialization, pipeline integration |
+| `references/defect-tracking.md` | Defect tracking protocol: registry format, classification rules, plugin improvement PR triggers, PO defect rate tracking |

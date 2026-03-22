@@ -48,6 +48,7 @@ This means: **1 file read to route + 1-2 file reads to get context = 2-3 reads m
     │   ├── human-preferences.md  # What the user changed at checkpoints
     │   ├── team-decisions.md     # Decisions log with context
     │   ├── gate-patterns.md      # Which gates fail and why
+    │   ├── defect-patterns.md     # Defect rates, categories, plugin PRs
     │   └── project-types.md      # Lessons per project type
     └── archive/                  # Raw run logs (not read during normal execution)
         ├── run-2026-03-21-a1b2.md
@@ -201,6 +202,32 @@ Decisions with lasting impact that future runs should respect.
 |----------|-----------|-----------|-------------|-----|
 ```
 
+### `topics/defect-patterns.md` (~100 lines max)
+
+Defect rate trends, persistent categories, and plugin improvement PR history.
+
+```markdown
+# Defect Patterns
+
+**Entries**: N | **Last updated**: YYYY-MM-DD
+
+## Rate Trend
+- Sprint 1-4: 0.86 defects/story (baseline)
+- Sprint 5: 0.50 (checklist adoption, validated: 1)
+
+## Persistent Categories
+- Control input blocking: 3 occurrences, covered by validation.md #6 (validated: 3)
+- Integration wiring: 2 occurrences, covered by defect-prevention.md (validated: 2)
+
+## Plugin PRs
+- PR #3: mouse_filter + QA heuristics (merged, validated: 1)
+- PR #4: defect prevention checklist (merged, validated: 1)
+
+## Lessons
+- Defect prevention checklist reduced rate by 42% in first sprint (validated: 1)
+- CRITICAL defects are 90% empirical — require runtime validation (validated: 2)
+```
+
 ### `topics/gate-patterns.md` (~100 lines max)
 
 Cross-stage patterns about what makes gates pass or fail.
@@ -277,6 +304,7 @@ date: YYYY-MM-DD
 2. If this stage has a human checkpoint, also read `topics/human-preferences.md`
 3. If this stage involves decisions (Architect, Plan), also read `topics/team-decisions.md`
 4. If this stage's pass rate is <80% (from index), also read `topics/gate-patterns.md`
+5. If this run has defects logged, also read `topics/defect-patterns.md`
 
 **Total reads per stage: 1-3 files, never more.**
 

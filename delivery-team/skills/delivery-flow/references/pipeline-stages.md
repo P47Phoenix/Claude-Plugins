@@ -295,5 +295,12 @@ After human accepts:
 2. **Write run archive** to `memory/archive/run-YYYY-MM-DD-<id>.md`
 3. **Extract and route lessons** to stage chunks (`memory/stages/*.md`) and topic chunks (`memory/topics/*.md`)
 4. **Rebuild routing index** (`memory/index.md`) with updated stats and hot lessons
+5. **Defect review** — analyze defects found during this run:
+   - Log all defects to `.delivery/defects/sprint-N.md`
+   - Calculate defects/story rate
+   - Classify as one-off vs systemic (see `references/defect-tracking.md`)
+   - For systemic patterns: draft plugin improvement PRs
+   - Update `.delivery/defects/index.md`
+   - Update `memory/topics/defect-patterns.md`
 See `references/memory-protocol.md` for the full tiered memory protocol.
-4. Pipeline complete
+6. Pipeline complete

@@ -210,6 +210,7 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] Known issues documented with severity and workaround if applicable [warning]
 - [ ] Performance test results within budget (p99 latency, throughput, error rate) [warning]
 - [ ] GAME_DEV: playtest feedback addressed, performance budgets met on target hardware [warning, if applicable]
+- [ ] All defects found during UAT logged to `.delivery/defects/` with severity, category, and root cause [blocking]
 - **DoD validators**: QA Engineer (all tests pass, coverage complete), DevOps (rollback ready, deployment verified), Product Owner (business acceptance), Technical Writer (documentation complete)
 - **Max self-correction**: 2
 

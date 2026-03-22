@@ -553,6 +553,13 @@ Apply these checks to every artifact before output:
 - Capacity accounts for ceremonies (planning, review, retro, refinement)
 - Commitment does not exceed 80% of capacity (buffer for interruptions)
 
+**For defect tracking:**
+- Track defects/story rate per sprint as a product quality metric (target: <0.3)
+- Review defect categories in retrospectives -- which are persistent?
+- Prioritize plugin improvement PRs based on defect frequency and severity
+- Monitor rate trend -- is the defect rate decreasing over time?
+- Defect rate should be included in sprint retrospective data and reported to stakeholders
+
 ### Scrum Master Guardrails
 
 - Every retrospective must produce action items with assigned owners and due dates
