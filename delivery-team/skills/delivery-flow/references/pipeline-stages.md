@@ -65,7 +65,7 @@ Transform the idea brief into a complete PRD with acceptance criteria, success m
 
 ### Sub-Flow
 1. **Invoke Product Owner** (product-delivery skill, task_type: prd)
-   - Input: idea brief + any relevant memory lessons
+   - Input: idea brief + lessons from `memory/stages/<stage>.md` + hot lessons from `memory/index.md`
    - Output: draft PRD
 2. **Invoke Data Analyst** (product-delivery skill, task_type: metrics_definition)
    - Input: PRD goals section
@@ -292,6 +292,8 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
 ### Post-Acceptance
 After human accepts:
 1. **Invoke Scrum Master** (product-delivery skill, task_type: retrospective) -- capture lessons
-2. **Write memory file** to `.delivery/memory/` (see memory-protocol.md)
-3. **Update lessons index** with new insights
+2. **Write run archive** to `memory/archive/run-YYYY-MM-DD-<id>.md`
+3. **Extract and route lessons** to stage chunks (`memory/stages/*.md`) and topic chunks (`memory/topics/*.md`)
+4. **Rebuild routing index** (`memory/index.md`) with updated stats and hot lessons
+See `references/memory-protocol.md` for the full tiered memory protocol.
 4. Pipeline complete

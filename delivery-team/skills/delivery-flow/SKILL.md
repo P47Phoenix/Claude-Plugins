@@ -137,25 +137,34 @@ Before proceeding to pipeline execution, declare the detected type:
 
 ## Phase 2: Memory Retrieval
 
-Before starting pipeline execution, retrieve lessons from past runs:
+Memory uses a **tiered chunked system** — read only what's needed, never everything.
+See `references/memory-protocol.md` for the full architecture.
 
-1. Check if `.delivery/memory/` exists in the current working directory.
-2. If yes, read `.delivery/memory/lessons-index.md` for aggregated lessons.
-3. Filter lessons relevant to:
-   - The detected project type
-   - The stages that will execute in this run
-4. Pass relevant lessons to agents as context throughout the pipeline. Include them
-   in agent prompts as:
-   ```
-   Lessons from past runs on this project:
-   - [Lesson 1]
-   - [Lesson 2]
-   Consider these as you work. They reflect patterns observed in previous deliveries.
-   ```
+### At Pipeline Start (this phase)
+
+1. Check if `.delivery/memory/index.md` exists in the current working directory.
+2. If yes, read **only** `memory/index.md` (the routing index, ~50 lines max).
+   This tells you:
+   - **Stage health**: which stages have low first-try pass rates (flag for extra attention)
+   - **Hot lessons**: top 5 most impactful lessons (inject into ALL agent prompts)
+   - **Topic pointers**: which chunk files to read and when
+3. If `index.md` references `topics/project-types.md`, read it and filter to the
+   detected project type for type-specific lessons.
+4. Do NOT read stage chunks yet — those are loaded per-stage in Phase 4 (Step 2).
 5. If no memory directory exists, proceed without lessons. The first run establishes
    the baseline.
 
-See `references/memory-protocol.md` for the full retrieval and update protocol.
+### What Gets Injected Into Every Agent Prompt
+
+```
+Lessons from past runs on this project (apply these):
+- [Hot Lesson 1 — from index.md]
+- [Hot Lesson 2 — from index.md]
+- [Project type lesson — from topics/project-types.md if relevant]
+
+Active decisions to respect:
+- [Decision — from topics/team-decisions.md if loaded]
+```
 
 ---
 
@@ -207,10 +216,20 @@ Output a stage header with the stage number, name, and a brief statement of purp
 Purpose: [one-line description of what this stage produces]
 ```
 
-### Step 2: Load Memory
+### Step 2: Load Stage Memory
 
-Retrieve stage-specific lessons from past runs. Filter the lessons loaded in Phase 2
-to only those relevant to this stage. Pass them to the agents invoked in this stage.
+Read the **stage-specific chunk** from `memory/stages/<stage>.md` (e.g., `memory/stages/refine.md`
+for the Refine stage). This file contains lessons specific to this stage (~100 lines max).
+
+Additionally, load relevant **topic chunks** based on context:
+- If this stage has a **human checkpoint** → also read `memory/topics/human-preferences.md`
+- If this stage involves **decisions** (Architect, Plan) → also read `memory/topics/team-decisions.md`
+- If this stage's **first-try pass rate is <80%** (from index.md) → also read `memory/topics/gate-patterns.md`
+
+**Total reads per stage: 1-3 chunk files, never more.**
+
+Combine the stage lessons + hot lessons (from Phase 2) + any topic lessons into the
+agent prompt context for this stage.
 
 ### Step 3: Load Stage Definition
 
@@ -783,27 +802,32 @@ After pipeline completion (or abort), the orchestrator captures lessons learned.
 1. **Run retrospective.** Invoke Scrum Master (product-delivery skill, task_type:
    retrospective) to capture what went well, what did not, and improvement actions.
 
-2. **Construct memory file.** Build the memory file from pipeline execution data:
-   - Gate results (pass/fail per stage, iteration counts)
-   - Human checkpoint deltas (what changed at each approval)
-   - Adversarial review insights (valid findings accepted, confidence ratings)
-   - DoD validation patterns (which validators found issues, which criteria failed)
-   - Decisions made and their context
-   - Debate outcomes and ADRs produced
+2. **Write run archive.** Save full run log to `memory/archive/run-YYYY-MM-DD-<id>.md`
+   with gate results, checkpoint deltas, adversarial insights, DoD patterns, decisions,
+   and debate outcomes.
 
-3. **Write memory file.** Save to `.delivery/memory/run-YYYY-MM-DD-<4char-id>.md`.
+3. **Extract and route lessons to chunks.** For each lesson learned:
+   - Stage-specific lesson → `memory/stages/<stage>.md`
+   - Human preference learned → `memory/topics/human-preferences.md`
+   - Decision made → `memory/topics/team-decisions.md`
+   - Gate pattern observed → `memory/topics/gate-patterns.md`
+   - Project type insight → `memory/topics/project-types.md`
 
-4. **Update lessons index.** Update `.delivery/memory/lessons-index.md`:
-   - Add new lessons from this run.
-   - Consolidate repeated lessons (increment run count).
-   - Remove lessons contradicted by this run's evidence.
+4. **Deduplicate and validate.** When adding to a chunk:
+   - If similar lesson exists: increment `validated` count, update `last` run.
+   - If contradicts existing: note contradiction, remove after 3 consecutive contradictions.
+   - If chunk exceeds 100 lines: prune least-validated, oldest entries.
 
-5. **Apply memory decay.** Lessons from the last 5 runs are weighted most heavily.
-   Lessons older than 10 runs are candidates for removal unless still validated.
-   Lessons contradicted by 3 consecutive runs are removed.
+5. **Rebuild routing index.** Rebuild `memory/index.md`:
+   - Recalculate stage health stats from last 5 runs.
+   - Update hot lessons (top 5 by validation count).
+   - Update topic file pointers.
 
-See `references/memory-protocol.md` for the full memory file format, lessons index
-structure, and decay rules.
+6. **Archive maintenance.** Max 20 run files in archive. Delete oldest first, ensuring
+   all lessons are captured in chunks before deletion.
+
+See `references/memory-protocol.md` for the full tiered memory architecture, chunk
+formats, size limits, pruning rules, and decay protocol.
 
 ---
 
@@ -861,5 +885,5 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/project-types.md` | Full detection matrix for all 6 project types: signals, confidence boosters/reducers, disambiguation rules, stage routing matrix, depth definitions |
 | `references/quality-gates.md` | Gate criteria for all 7 stages with severity levels (blocking, warning, suggestion), DoD validator assignments, self-correction protocol, escalation rules |
 | `references/team-patterns.md` | All 6 collaboration patterns with protocols and prompt templates: Evaluator-Optimizer, Adversarial Review, Multi-Perspective Review Board, Decision Ownership Routing, Debate, Consensus |
-| `references/memory-protocol.md` | Memory file format, lessons index structure, retrieval protocol, update protocol, memory decay rules, .delivery directory structure |
+| `references/memory-protocol.md` | Tiered chunked memory system: routing index (Tier 1), stage + topic chunks (Tier 2), run archive (Tier 3), retrieval protocol (2-3 reads per stage), chunk size limits, pruning rules, decay protocol |
 | `references/setup-wizard.md` | Setup wizard protocol: scan detection matrix, 9 wizard questions with smart options, config file format, directory initialization, pipeline integration |
