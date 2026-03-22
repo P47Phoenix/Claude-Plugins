@@ -156,3 +156,54 @@ Configure in `.mcp.json`:
   }
 }
 ```
+
+### 6. Control nodes blocking Area2D input
+
+**Pattern:** ColorRect, Label, Panel, and other Control-derived nodes default to `mouse_filter = MOUSE_FILTER_STOP` (value 0). When placed as siblings or children above an Area2D used for click detection, they consume mouse events before the Area2D's `input_event` signal fires.
+
+```
+# BAD — ColorRect consumes clicks, Area2D never fires
+[node name="Sprite" type="ColorRect" parent="Visual"]
+# mouse_filter defaults to 0 (STOP)
+
+# GOOD — ColorRect passes clicks through to Area2D
+[node name="Sprite" type="ColorRect" parent="Visual"]
+mouse_filter = 2
+```
+
+**Detection:** In any .tscn with an Area2D used for click detection (`input_event` signal connected), check ALL sibling and child Control-derived nodes (ColorRect, Label, Panel, Button, etc.) for `mouse_filter` property. If not explicitly set to `2` (MOUSE_FILTER_IGNORE), flag as a potential input-blocking bug.
+
+**Common locations:** Unit sprites, health bars, selection indicators, status icons — any visual overlay near a clickable area.
+
+## QA Test Heuristics for Godot Projects
+
+When testing Godot game code, apply these heuristics in addition to standard test case design:
+
+### Input/Interaction Tests
+- Verify Area2D click detection works through Control node layers (check mouse_filter on all overlapping Controls)
+- Test click detection at tile boundaries (edge of collision shapes)
+- Verify input is blocked during animations (is_moving flags, process_mode)
+- Test that _unhandled_input handlers don't conflict with Area2D input_event
+
+### Visual Render Tests
+- Verify TileMap/TileMapLayer tiles are visible (not just data-correct) — programmatic TileSets need create_tile() called
+- Verify sprites/ColorRects have non-zero size and are positioned correctly
+- Check z_index ordering for overlapping visual elements
+- Verify Camera2D is set as current (make_current() or current=true)
+
+### Scene Composition Tests
+- Verify instanced scenes maintain node paths (parent= uses relative paths)
+- Test that @onready variables resolve after tree entry (not called from factory before add_child)
+- Verify CanvasLayer scenes render on the correct layer
+- Check that process_mode is set correctly for paused-game UI panels
+
+### Signal Chain Tests
+- Verify emit → connect → handler chain fires end-to-end for all EventBus signals
+- Check that signal arguments match between emit and handler signatures
+- Test signal timing: ensure signals fire after state changes, not before
+- Verify deferred signal connections work (call_deferred scenarios)
+
+### Node Lifecycle Tests
+- Verify @onready access happens only after _ready() runs (not in initialize/setup called pre-tree)
+- Test queue_free() cleanup (no orphaned references in tracking dictionaries like MapManager._unit_positions)
+- Verify _process/_physics_process guard clauses (null checks, is_moving flags)
