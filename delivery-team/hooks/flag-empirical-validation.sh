@@ -75,7 +75,7 @@ jq -n \
   '{
     "continue": true,
     "suppressOutput": false,
-    "systemMessage": ("EMPIRICAL VALIDATION REQUIRED: This sub-agent task includes " + $count + " acceptance criteria keyword(s) requiring runtime verification:\n" + $matches + "\n\nACTION: Mark these as \"Requires runtime validation\" in Verification Status. Story status should be CODE_COMPLETE (not DONE). Carry forward to UAT. See quality/references/empirical-validation.md for recommended validation approaches.")
+    "systemMessage": ("EMPIRICAL VALIDATION REQUIRED: This sub-agent task includes " + $count + " acceptance criteria keyword(s) requiring runtime verification:\n" + $matches + "\n\nACTION: Mark these as \"Requires runtime validation\" in Verification Status. Story status should be CODE_COMPLETE (not DONE). Carry forward to UAT. See the quality skill's references/empirical-validation.md for recommended validation approaches.")
   }'
 
 exit 0

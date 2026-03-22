@@ -587,7 +587,7 @@ stage ran).
   practices, no hardcoded secrets. Must include "Verification Status" in output.
 - QA Engineer (quality skill): tests pass, coverage is adequate, no critical issues.
   If developer's Verification Status includes "Requires runtime validation" items,
-  return **CODE_COMPLETE** instead of DONE (see `quality/references/empirical-validation.md`).
+  return **CODE_COMPLETE** instead of DONE (see the quality skill's `references/empirical-validation.md`).
 - Architect (architect skill): implementation conforms to architecture decisions, no
   architectural drift.
 - Technical Writer (operations skill): inline documentation present for non-obvious
@@ -672,7 +672,7 @@ design, dev notes).
 documentation for accept or reject. If any stories were CODE_COMPLETE from Stage 6,
 explicitly show the **pending empirical validations** that need runtime verification,
 with recommended validation approaches per technology (from
-`quality/references/empirical-validation.md`). The user must confirm these have been
+the quality skill's `references/empirical-validation.md`). The user must confirm these have been
 validated (or accept the risk) before the pipeline marks them DONE.
 
 **Max self-correction**: 2 iterations.

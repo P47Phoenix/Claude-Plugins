@@ -33,7 +33,9 @@ Artifact:
 ---
 
 Respond with:
-- **DONE** or **NOT_DONE**
+- **DONE** — all criteria met from your perspective
+- **CODE_COMPLETE** — (Stage 6 Development only) code passes all structural criteria, but acceptance criteria requiring runtime validation exist (see the Verification Status section). List the empirical criteria pending validation.
+- **NOT_DONE** — structural or logic issues that need fixing before proceeding
 - If NOT_DONE, list each failing criterion with:
   - What specifically fails (quote the relevant section)
   - Why it matters (impact if shipped as-is)

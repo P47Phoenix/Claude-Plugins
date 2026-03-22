@@ -180,7 +180,7 @@ The sub-agent should return output in this structure (markdown):
 - [Suggested next steps]
 ```
 
-**Empirical validation rule**: If any acceptance criteria mention visual output, user interaction, API responses, database queries, or runtime behavior (see `quality/references/empirical-validation.md` for the full keyword registry), list them under "Requires runtime validation" — do NOT mark them as verified by inspection.
+**Empirical validation rule**: If any acceptance criteria mention visual output, user interaction, API responses, database queries, or runtime behavior (see the quality skill's `references/empirical-validation.md` for the full keyword registry), list them under "Requires runtime validation" — do NOT mark them as verified by inspection.
 
 ---
 
