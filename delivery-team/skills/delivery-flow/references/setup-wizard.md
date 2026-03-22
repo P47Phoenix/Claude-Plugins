@@ -257,6 +257,31 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 **Only shown if**: `.delivery/` directory exists. If no existing directory is found, this question is skipped entirely.
 
+### Q10: User Feedback Personas (multi-select)
+
+**Auto-detect**: Derive from project type (Q1) — GAME_DEV suggests gamer personas, web/app suggests web user personas, enterprise suggests B2B personas.
+
+**Present**: "Based on your project type ([TYPE]), I recommend these persona categories for simulated user feedback."
+
+**Options**:
+1. Gamers — Casual Casey, Hardcore Hank, Speedrunner Sam, Completionist Cora, Social Sophie, Accessible Alex, Mobile Morgan
+2. Web/App Users — Power User Pat, Average User Avery, First-Timer Fran, Non-Technical Nancy, Accessible User Ash
+3. Enterprise/B2B — Admin Alice, End User Eddie, Manager Maya, IT/Security Ivan
+4. Demographics — Gen Z Zara, Millennial Mike, Gen X Grace, Boomer Bob
+- **Custom**: Define project-specific personas
+- **Let's discuss**: Conversation about target audience
+- **Skip**: Use auto-detected defaults
+
+**Multi-select**: User picks which persona categories to include. Can also select individual personas by name.
+
+**Default if skipped**: Auto-select based on project type:
+- GAME_DEV → gamers + 1 accessibility
+- Web/App (GREENFIELD, FEATURE) → web-users + 1 accessibility
+- Enterprise → enterprise + 1 accessibility
+- Always includes at least 1 accessibility persona
+
+**Influences**: Which personas are loaded for simulated user feedback at Stages 2, 3, 6, 7. Which persona library categories are active. Custom personas defined here persist across pipeline runs.
+
 ---
 
 ## Config File Format
@@ -295,6 +320,11 @@ dod_validators:
   plan: [sm, po, qa, devops]
   development: [developer, qa, architect, tech-writer]
   uat: [qa, devops, po, tech-writer]
+personas:
+  categories: [gamers, web-users]
+  selected: [Casual Casey, Hardcore Hank, Accessible Alex, Average User Avery, First-Timer Fran]
+  feedback_stages: [refine, design, dev, uat]
+  custom: []
 wizard_completed: YYYY-MM-DD
 ---
 

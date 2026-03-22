@@ -92,6 +92,10 @@ When a config is loaded, these settings override defaults:
 | `deployment.environment` | Influences DevOps and operations planning |
 | `timeline.risk_tolerance` | Influences pattern depth and ceremony level |
 | `tech_stack.*` | Passed to Developer and Architect for language/framework context |
+| `personas.categories` | Which persona categories to load (gamers, web-users, enterprise, demographics) |
+| `personas.selected` | Specific persona names to include in every feedback round |
+| `personas.feedback_stages` | Which pipeline stages run persona feedback (default: refine, design, dev, uat) |
+| `personas.custom` | Custom persona definitions (see user-feedback skill's `references/custom-personas.md`) |
 
 ---
 
