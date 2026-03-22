@@ -2,21 +2,28 @@
 
 Pre-completion checklist derived from real defect data (12 defects across 14 stories = 0.86 defects/story). Apply before marking any Godot story as "done."
 
+For @onready lifecycle, scene instancing, and engine API patterns, see `validation.md` (bug patterns #1-#5 and pre-write checklist). This file covers the additional defect categories not covered there.
+
 ## Control Node Input Blocking (17% of defects)
 
-Before completing any story that creates or modifies Control-derived nodes (ColorRect, Label, Panel, Button) near an Area2D:
+Before completing any story that creates or modifies Control-derived nodes (ColorRect, Label, Panel) near an Area2D:
 
 - [ ] Every visual-only Control node has `mouse_filter = 2` (MOUSE_FILTER_IGNORE)
 - [ ] In .tscn files, check all ColorRect/Label/Panel nodes for explicit `mouse_filter` property
 - [ ] Movement overlays, attack range overlays, health bars, selection indicators — ALL need MOUSE_FILTER_IGNORE
+- [ ] Interactive Controls (Button, TextEdit, LineEdit) should NOT have MOUSE_FILTER_IGNORE — they need input
 
 **Detection command:**
 ```bash
-grep -rn "type=\"ColorRect\"\|type=\"Label\"\|type=\"Panel\"" src/scenes/ | while read line; do
-  file=$(echo "$line" | cut -d: -f1)
-  if ! grep -A5 "$(echo "$line" | grep -o 'name="[^"]*"')" "$file" | grep -q "mouse_filter"; then
-    echo "MISSING mouse_filter: $line"
-  fi
+# Find .tscn files with Control-derived nodes missing mouse_filter
+# Excludes interactive controls (Button, TextEdit, LineEdit) that need input
+find . -name "*.tscn" -exec grep -ln "type=\"ColorRect\"\|type=\"Label\"\|type=\"Panel\"" {} \; | while read file; do
+  grep -n "type=\"ColorRect\"\|type=\"Label\"\|type=\"Panel\"" "$file" | while read line; do
+    node_name=$(echo "$line" | grep -o 'name="[^"]*"')
+    if ! grep -A10 "$node_name" "$file" | grep -q "mouse_filter"; then
+      echo "MISSING mouse_filter: $file: $line"
+    fi
+  done
 done
 ```
 
@@ -35,23 +42,6 @@ Before completing stories that reference other stories' functionality:
 ## combat_started: Emitted by CombatPanel on attack confirm. Listened by CombatManager.
 ## unit_selected: Emitted by Unit.select(). Listened by MovementController, AttackRange.
 ```
-
-## @onready Lifecycle (8% of defects)
-
-- [ ] No method that accesses @onready vars is called before add_child()
-- [ ] Factory/spawner pattern: instantiate -> add_child -> configure (not instantiate -> configure -> add_child)
-- [ ] If a method MUST be called pre-tree, it must not access any @onready var or $NodePath
-
-## Scene Instancing (8% of defects)
-
-- [ ] All .tscn parent= paths are relative (never include root node name)
-- [ ] Test: instance the scene into a different parent — do paths still resolve?
-
-## Engine API Calls (8% of defects)
-
-- [ ] Camera2D: make_current() or current=true in _ready()
-- [ ] CanvasLayer: layer property set to avoid z-order conflicts
-- [ ] TileMapLayer: TileSet assigned with create_tile() called for each atlas position
 
 ## Input Handler Priority (8% of defects)
 
@@ -74,9 +64,21 @@ Before completing stories that reference other stories' functionality:
 
 ## Defect Metrics
 
-Track defect rate per sprint to measure improvement:
+Track defect rate per sprint to measure improvement. Record defects in `.delivery/defects/` with sprint, story ID, category, and root cause.
 
-| Sprint | Stories | Defects | Rate |
-|--------|---------|---------|------|
-| 1-4 (baseline) | 14 | 12 | 0.86 |
-| Target | - | - | <0.3 |
+| Sprint | Stories | Defects | Rate | Notes |
+|--------|---------|---------|------|-------|
+| 1-4 (baseline) | 14 | 12 | 0.86 | Initial audit |
+| Target | - | - | <0.3 | After checklist adoption |
+
+To record a defect, add an entry to `.delivery/defects/sprint-N.md`:
+```markdown
+### DEF-NNN: [Short description]
+- **Severity**: CRITICAL / HIGH / MEDIUM / LOW
+- **Category**: [From checklist categories above]
+- **Story**: Sprint N, Story "[title]"
+- **Root cause**: [Why this happened]
+- **Detected by**: Code inspection / Headless validation / Manual playtest
+- **Prevention**: [How to prevent in future]
+- **Plugin PR**: none / PR #N to Claude-Plugins (if pattern is systemic)
+```

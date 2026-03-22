@@ -103,6 +103,7 @@ Follow the official GDScript style guide and all conventions in the reference ma
 | **explain** | Annotate and walk through the code; reference Godot patterns where applicable |
 | **design** | Propose scene hierarchy, node types, signal flow, and component breakdown before writing code |
 | **validate** | Run headless validation, parse output, report errors with file:line references and fix suggestions |
+| **quality-gate** | Run defect-prevention checklist against modified files; report pass/fail per item with file:line evidence for failures |
 
 ---
 

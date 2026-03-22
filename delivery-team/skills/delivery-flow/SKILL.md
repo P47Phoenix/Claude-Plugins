@@ -594,7 +594,9 @@ stage ran).
   logic, API docs if applicable.
 - Defect Prevention Gate (godot skill, references/defect-prevention.md): for GAME_DEV
   projects, run the defect prevention checklist against all modified .gd and .tscn files.
-  Any checklist failure is a NOT_DONE vote.
+  Structural checklist failures (mouse_filter missing, convention violations) are NOT_DONE.
+  Empirical checklist items that cannot be verified without the Godot editor (scene
+  instancing test, visual render check) produce CODE_COMPLETE with items carried to Stage 7.
 
 **DoD status options**: DONE, CODE_COMPLETE, or NOT_DONE.
 - **CODE_COMPLETE** means: code passes all structural/inspectable criteria, but empirical
