@@ -1,6 +1,30 @@
 {
-  "description": "Delivery team hooks for empirical validation detection",
+  "description": "Delivery team hooks: pipeline enforcement, empirical validation, GDScript parse checking",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this Skill invocation is for a delivery-team implementation skill (developer, godot, quality). Look at $TOOL_INPUT for the skill name. If the skill being invoked is delivery-team:developer, delivery-team:godot, or delivery-team:quality for implementation work (writing code, fixing bugs, refactoring), check: does .delivery/config.md exist in the current working directory? If implementation work is being requested outside an active delivery pipeline (no .delivery/config.md), return deny with reason: 'Implementation should go through the delivery-flow pipeline for QA review, DoD validation, and defect prevention. Run delivery-team:delivery-flow first, or say \"skip pipeline\" to proceed without quality gates.' If .delivery/config.md exists, or if this is not an implementation skill (e.g., delivery-team:delivery-flow, delivery-team:product-delivery, delivery-team:architect, delivery-team:ui, delivery-team:operations, delivery-team:user-feedback), return allow.",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-gdscript.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": "developer|godot",

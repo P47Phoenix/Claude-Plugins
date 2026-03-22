@@ -18,6 +18,20 @@ The main context receives only the finished code artifact. All language-specific
 
 ---
 
+## Pipeline Context Check
+
+Before executing any `write` or `fix` task, check for delivery pipeline context:
+
+1. Check if `.delivery/config.md` exists in the current working directory.
+2. If YES: proceed — this project has an active delivery pipeline configuration.
+3. If NO: announce a warning before proceeding:
+
+> WARNING: No delivery pipeline config found. This implementation is not going through the delivery-flow pipeline. QA evaluator-optimizer loop, DoD validation, and defect prevention will NOT run. Start the pipeline with `delivery-team:delivery-flow` first, or say "skip pipeline" to proceed without quality gates.
+
+This check does NOT block implementation — it warns. Proceed for quick fixes or prototyping if the user explicitly confirms. The warning makes bypass visible and intentional, not silent.
+
+---
+
 ## Phase 1: Language Detection
 
 Detect the target language from (in priority order):

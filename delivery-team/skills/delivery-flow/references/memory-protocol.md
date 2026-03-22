@@ -177,6 +177,12 @@ What the user changed at checkpoints — the most valuable memory for reducing f
 ## Plan Preferences
 
 - User reduces scope rather than extending timeline when estimates are high. (validated: 2)
+
+## Process Enforcement
+
+- ALL implementation must go through delivery-flow pipeline — never spawn developer/godot agents directly for story work. (validated: N)
+- Only bypass pipeline for: quick one-off fixes explicitly approved by user.
+- When user says "keep going" or "continue until done", route ALL work through delivery-flow stages, not direct agent calls.
 ```
 
 ### `topics/team-decisions.md` (~100 lines max)

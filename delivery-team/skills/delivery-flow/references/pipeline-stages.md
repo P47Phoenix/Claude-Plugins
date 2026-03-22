@@ -183,19 +183,24 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 1. **Invoke Product Owner** (product-delivery skill, task_type: user_story)
    - Input: PRD
    - Output: detailed user stories with acceptance criteria
-2. **Invoke Scrum Master** (product-delivery skill, task_type: sprint_planning)
-   - Input: user stories + architecture constraints
+2. **Invoke QA Engineer** (quality skill, task_type: test-cases) — REQUIRED per story
+   - Input: each user story's acceptance criteria
+   - Output: test cases per story (these are part of the story artifact, not separate)
+   - Test cases MUST be produced alongside stories, not as a separate optional step
+   - Each story's output includes: story + acceptance criteria + test cases
+3. **Invoke Scrum Master** (product-delivery skill, task_type: sprint_planning)
+   - Input: user stories (with test cases) + architecture constraints
    - Output: sprint plan draft
-3. **Invoke QA Engineer** (quality skill, task_type: test-strategy)
-   - Input: PRD + architecture + user stories
-   - Output: test strategy
-4. **Invoke DevOps** (operations skill, task_type: deployment-strategy)
+4. **Invoke QA Engineer** (quality skill, task_type: test-strategy)
+   - Input: PRD + architecture + user stories + test cases
+   - Output: overall test strategy (in addition to per-story test cases)
+5. **Invoke DevOps** (operations skill, task_type: deployment-strategy)
    - Input: architecture
    - Output: deployment plan
-5. **Consensus Protocol**: SM, PO, QA, DevOps independently estimate and identify risks, then share, respond, and converge. 2-3 rounds.
-6. **Adversarial Review**: Challenger questions estimates and risk assessments
-7. **Team DoD Validation**: SM (process), PO (scope), QA (coverage), DevOps (readiness)
-8. **Human Checkpoint 3**: Present sprint plan for approval
+6. **Consensus Protocol**: SM, PO, QA, DevOps independently estimate and identify risks, then share, respond, and converge. 2-3 rounds.
+7. **Adversarial Review**: Challenger questions estimates and risk assessments
+8. **Team DoD Validation**: SM (process), PO (scope), QA (coverage), DevOps (readiness)
+9. **Human Checkpoint 3**: Present sprint plan for approval
 
 ### DoD Validators
 - Scrum Master: process is sound, capacity realistic

@@ -892,6 +892,14 @@ These guardrails prevent runaway execution and ensure predictable behavior:
   outputs.
 - **No skipping DoD.** Every active stage must pass team DoD validation before
   advancing. There is no bypass except human override via escalation.
+- **No pipeline bypass.** ALL story implementation MUST go through the delivery-flow
+  pipeline. Never spawn developer/godot agents directly for story work. The PreToolUse
+  hook enforces this by detecting Skill invocations outside pipeline context. Developer
+  and godot skills also warn when no `.delivery/config.md` exists. The only exception
+  is quick one-off fixes explicitly approved by the user (not story implementations).
+- **Test cases per story are mandatory.** Stage 5 (Plan) produces test cases alongside
+  every user story — not as a separate QA step that can be skipped. Every story artifact
+  includes: story + acceptance criteria + test cases.
 - **Preserve on abort.** If the pipeline is aborted at any point, all artifacts
   produced so far are preserved in `.delivery/artifacts/`. The memory file is written
   even for aborted runs (with `completed: false` and `abort_stage` recorded).
