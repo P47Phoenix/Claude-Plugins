@@ -31,22 +31,6 @@ A full software delivery team with 9 specialized skills covering the complete de
 - **Pipeline enforcement**: 3-layer system prevents bypassing quality gates
 - **Empirical validation**: Detects runtime-only acceptance criteria (CODE_COMPLETE status)
 
-### Skill Creator
-
-Create new Claude skills with specialized knowledge, workflows, and tools.
-
-- Comprehensive skill creation guidance
-- Automated initialization, validation, and packaging
-- Best practices for skill design
-
-### Plugin Creator
-
-Create complete Claude Code plugins with commands, agents, hooks, skills, and MCP integrations.
-
-- Support for all plugin components
-- Automated scaffolding and packaging
-- Best practices for plugin architecture
-
 ### Agentic Flow Builder
 
 Build dynamic multi-agent workflows using ReAcTree hierarchical decomposition.
@@ -100,8 +84,6 @@ Then install individual plugins:
 
 ```
 /plugin install delivery-team
-/plugin install skill-creator
-/plugin install plugin-creator
 /plugin install agentic-flow-builder
 /plugin install prompt-engineer
 /plugin install research-agent
@@ -138,8 +120,6 @@ Or browse interactively:
 │   │   ├── ui/                       # UX + UI + Game UI (12 references)
 │   │   └── user-feedback/            # Persona testing (4 references)
 │   └── LICENSE.txt
-├── skill-creator/                    # Skill creation plugin
-├── plugin-creator/                   # Plugin creation plugin
 ├── agentic-flow-builder/             # Multi-agent workflow plugin
 ├── prompt-engineer/                  # Prompt optimization plugin
 ├── prd-quality-gate-flow/            # PRD quality gate plugin

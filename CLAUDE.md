@@ -27,13 +27,11 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 
 | Directory | Purpose |
 |-----------|---------|
-| `skill-creator/` | Guides creation of new skills (SKILL.md-based) |
-| `plugin-creator/` | Guides creation of complete plugins (commands, agents, hooks, skills, MCPs) |
+| `delivery-team/` | Full delivery team with 9 skills (see below) |
 | `agentic-flow-builder/` | Builds multi-agent workflows using ReAcTree hierarchical decomposition |
 | `prompt-engineer/` | Expert LLM prompt optimization |
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
 | `research-agent/` | Research agent with 5 research types and academic frameworks |
-| `delivery-team/` | Full delivery team with 9 skills (see below) |
 
 ### delivery-team Plugin (9 skills)
 
@@ -62,15 +60,6 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 All scripts are Python with no external dependency management. Run directly:
 
 ```bash
-# Skill creator utilities
-python skill-creator/scripts/init_skill.py
-python skill-creator/scripts/quick_validate.py
-python skill-creator/scripts/package_skill.py
-
-# Plugin creator utilities
-python plugin-creator/scripts/init_plugin.py
-python plugin-creator/scripts/package_plugin.py
-
 # PRD quality gate flow
 python prd-quality-gate-flow/prd_flow_builder.py
 python prd-quality-gate-flow/prd_execute.py
