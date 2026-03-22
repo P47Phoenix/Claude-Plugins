@@ -1,14 +1,17 @@
 {
-  "hooks": [
-    {
-      "event": "SubagentStop",
-      "matcher": "developer|godot",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/flag-empirical-validation.sh"
-        }
-      ]
-    }
-  ]
+  "description": "Delivery team hooks for empirical validation detection",
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "developer|godot",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/flag-empirical-validation.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
 }
