@@ -592,6 +592,9 @@ stage ran).
   architectural drift.
 - Technical Writer (operations skill): inline documentation present for non-obvious
   logic, API docs if applicable.
+- Defect Prevention Gate (godot skill, references/defect-prevention.md): for GAME_DEV
+  projects, run the defect prevention checklist against all modified .gd and .tscn files.
+  Any checklist failure is a NOT_DONE vote.
 
 **DoD status options**: DONE, CODE_COMPLETE, or NOT_DONE.
 - **CODE_COMPLETE** means: code passes all structural/inspectable criteria, but empirical

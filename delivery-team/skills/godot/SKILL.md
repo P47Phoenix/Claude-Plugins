@@ -23,6 +23,7 @@ Classify the request into one or more categories before proceeding:
 | **Scene / Node design** | `.tscn`, node hierarchy, scene inheritance, `CharacterBody2D`, `Area2D`, `StaticBody` | `references/scenes-nodes.md` |
 | **Signals / Events / State** | Signal declaration, Event Bus, autoloads, state machines, component pattern | `references/signals-architecture.md` |
 | **Validation** | verify, validate, check, test, headless, errors | `references/validation.md` |
+| **Quality Gate** | done, complete, finish, checklist, pre-commit | `references/defect-prevention.md` + `references/validation.md` |
 
 **Multiple categories are common** — a task about a player character likely touches GDScript + scene design + signals. Include all relevant reference files in the sub-agent prompt.
 
@@ -114,6 +115,7 @@ Follow the official GDScript style guide and all conventions in the reference ma
 | `references/scenes-nodes.md` | Scene self-containment, node type selection, hierarchy conventions, scene inheritance, Resource-based data |
 | `references/signals-architecture.md` | Signal patterns, Event Bus autoload, state machines (enum and node-based), component pattern, deferred calls |
 | `references/validation.md` | Headless validation, common agent-missed bugs, AC classification (structural vs empirical), pre-write checklist |
+| `references/defect-prevention.md` | Pre-completion checklist, defect patterns, detection commands, defect metrics |
 
 ---
 
@@ -169,6 +171,7 @@ The sub-agent must enforce these in every output:
 - **Type everything** — all variables, parameters, and return types must be typed in GDScript
 - **No @onready access before tree entry** — never call methods that use @onready variables on a node that hasn't been added to the scene tree yet. Use `call_deferred()` or add the node first, then configure.
 - **Validate after implementation** — if `godot` is available on PATH, run `godot --headless --path <project> --quit` after every `write` or `fix` task on `.gd` or `.tscn` files and report any new errors. If `godot` is not available, note that headless validation was skipped and recommend manual validation
+- **Run defect prevention checklist** — before marking any story as complete, run through `references/defect-prevention.md` checklist items relevant to the story's changes
 
 ---
 
