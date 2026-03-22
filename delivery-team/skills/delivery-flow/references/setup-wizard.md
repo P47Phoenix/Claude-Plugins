@@ -288,8 +288,11 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 The wizard generates `.delivery/config.md` with YAML frontmatter for machine-readable settings and a markdown body for human-readable context.
 
+**Schema reference**: See `references/config-schema.md` for the complete schema with all keys, types, defaults, valid values, and consuming skills. The wizard uses the schema as its source of truth for defaults and validation.
+
 ```markdown
 ---
+config_version: "1.0"
 project_type: GREENFIELD
 tech_stack:
   languages: [TypeScript, Python]
@@ -322,8 +325,10 @@ dod_validators:
   uat: [qa, devops, po, tech-writer]
 personas:
   categories: [gamers, web-users]
-  selected: [Casual Casey, Hardcore Hank, Accessible Alex, Average User Avery, First-Timer Fran]
+  selected: [Casual Casey, Hardcore Hank, Accessible Alex]
   feedback_stages: [refine, design, dev, uat]
+  count: 5
+  overlays: []
   custom: []
 wizard_completed: YYYY-MM-DD
 ---

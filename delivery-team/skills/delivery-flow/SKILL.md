@@ -53,8 +53,14 @@ Before the pipeline executes, check for project configuration:
 1. **Check for `.delivery/config.md`** in the current working directory.
 2. **If config exists and is fresh** (< 30 days old):
    - Read the YAML frontmatter to load all project settings.
-   - Announce: `> Config loaded from .delivery/config.md (created [date])`
-   - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements.
+   - **Version check**: Compare `config_version` to the current schema version in
+     `references/config-schema.md`. If the config is older (or has no `config_version`),
+     apply defaults for any missing keys from the schema and announce:
+     `> Config upgraded from v[old] to v[current]. New settings applied with defaults: [list]`
+     Offer the user `setup` to configure new settings interactively.
+   - Announce: `> Config loaded from .delivery/config.md (v[version], created [date])`
+   - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements, persona config.
+   - For any key missing from the config, use the default from `references/config-schema.md`.
    - Skip Phase 1 (type detection) — use `project_type` from config.
    - Proceed directly to Phase 2 (Memory Retrieval).
 
@@ -925,5 +931,6 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/quality-gates.md` | Gate criteria for all 7 stages with severity levels (blocking, warning, suggestion), DoD validator assignments, self-correction protocol, escalation rules |
 | `references/team-patterns.md` | All 6 collaboration patterns with protocols and prompt templates: Evaluator-Optimizer, Adversarial Review, Multi-Perspective Review Board, Decision Ownership Routing, Debate, Consensus |
 | `references/memory-protocol.md` | Tiered chunked memory system: routing index (Tier 1), stage + topic chunks (Tier 2), run archive (Tier 3), retrieval protocol (2-3 reads per stage), chunk size limits, pruning rules, decay protocol |
-| `references/setup-wizard.md` | Setup wizard protocol: scan detection matrix, 9 wizard questions with smart options, config file format, directory initialization, pipeline integration |
+| `references/setup-wizard.md` | Setup wizard protocol: scan detection matrix, 10 wizard questions with smart options, config file format, directory initialization, pipeline integration |
+| `references/config-schema.md` | Config schema: all keys with types, defaults, valid values, consuming skills, versioning, extension protocol, migration |
 | `references/defect-tracking.md` | Defect tracking protocol: registry format, classification rules, plugin improvement PR triggers, PO defect rate tracking |
