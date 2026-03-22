@@ -46,9 +46,58 @@ as sub-agents with isolated context.
 
 ---
 
+## Phase 0: Setup Wizard
+
+Before the pipeline executes, check for project configuration:
+
+1. **Check for `.delivery/config.md`** in the current working directory.
+2. **If config exists and is fresh** (< 30 days old):
+   - Read the YAML frontmatter to load all project settings.
+   - Announce: `> Config loaded from .delivery/config.md (created [date])`
+   - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements.
+   - Skip Phase 1 (type detection) — use `project_type` from config.
+   - Proceed directly to Phase 2 (Memory Retrieval).
+
+3. **If config exists but is stale** (> 30 days old):
+   - Announce: `> Existing config found from [date] — it may be outdated.`
+   - Offer options: Use as-is, Re-run wizard to update, Proceed with defaults.
+
+4. **If no config exists**:
+   - Run the setup wizard. Reference `references/setup-wizard.md` for the full protocol.
+   - The wizard has 4 phases:
+     - **Scan**: Auto-detect project state (languages, frameworks, CI/CD, git history, existing `.delivery/`)
+     - **Present & Ask**: For each configuration topic, show what was detected and present 3-5 smart options. Each question supports single-select or multi-select as appropriate, plus Custom, Let's discuss, and Skip.
+     - **Generate Config**: Write `.delivery/config.md` with all settings as YAML frontmatter + markdown context.
+     - **Initialize Directory**: Create `.delivery/artifacts/`, `.delivery/memory/`, `.delivery/README.md`.
+
+5. **User can re-run the wizard at any time** with the `setup` command.
+
+### Config Settings Applied to Pipeline
+
+When a config is loaded, these settings override defaults:
+
+| Config Key | Pipeline Behavior |
+|-----------|-------------------|
+| `project_type` | Skips Phase 1 detection, uses configured type |
+| `pipeline.checkpoints` | Enables/disables human checkpoints per stage |
+| `pipeline.collaboration_patterns` | Enables/disables patterns per stage |
+| `pipeline.max_self_correction` | Overrides default iteration limit (default: 3) |
+| `pipeline.max_dod_rounds` | Overrides default DoD rounds (default: 3) |
+| `dod_validators.*` | Sets per-stage validator roles |
+| `compliance.frameworks` | Triggers Compliance Officer and Privacy Engineer involvement |
+| `team.size` | Influences architecture decisions (microservices viability, etc.) |
+| `deployment.environment` | Influences DevOps and operations planning |
+| `timeline.risk_tolerance` | Influences pattern depth and ceremony level |
+| `tech_stack.*` | Passed to Developer and Architect for language/framework context |
+
+---
+
 ## Phase 1: Project Type Detection
 
-Before the pipeline can execute, the project type must be determined. The type drives
+**Note:** If `.delivery/config.md` exists and contains `project_type`, this phase is skipped.
+The config value is used directly.
+
+When no config exists, the project type must be determined. The type drives
 which stages run, at what depth, and which agents participate.
 
 Auto-detect from the user's input using the following signal table:
@@ -787,7 +836,8 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 
 | Command | Action |
 |---------|--------|
-| `start` | Begin delivery pipeline with project type detection |
+| `setup` | Run (or re-run) the setup wizard to configure the delivery pipeline |
+| `start` | Begin delivery pipeline (runs wizard first if no config exists) |
 | `status` | Show current pipeline state (stage, progress, issues) |
 | `skip` | Skip current stage (requires confirmation, records reason) |
 | `back` | Return to previous stage for rework |
@@ -812,3 +862,4 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/quality-gates.md` | Gate criteria for all 7 stages with severity levels (blocking, warning, suggestion), DoD validator assignments, self-correction protocol, escalation rules |
 | `references/team-patterns.md` | All 6 collaboration patterns with protocols and prompt templates: Evaluator-Optimizer, Adversarial Review, Multi-Perspective Review Board, Decision Ownership Routing, Debate, Consensus |
 | `references/memory-protocol.md` | Memory file format, lessons index structure, retrieval protocol, update protocol, memory decay rules, .delivery directory structure |
+| `references/setup-wizard.md` | Setup wizard protocol: scan detection matrix, 9 wizard questions with smart options, config file format, directory initialization, pipeline integration |
