@@ -22,6 +22,7 @@ Classify the request into one or more categories before proceeding:
 | **C# / Godot** | `.cs` files, `[Export]`, `[Signal]`, `partial class`, `.NET`, Rider | `references/csharp-godot.md` |
 | **Scene / Node design** | `.tscn`, node hierarchy, scene inheritance, `CharacterBody2D`, `Area2D`, `StaticBody` | `references/scenes-nodes.md` |
 | **Signals / Events / State** | Signal declaration, Event Bus, autoloads, state machines, component pattern | `references/signals-architecture.md` |
+| **Validation** | verify, validate, check, test, headless, errors | `references/validation.md` |
 
 **Multiple categories are common** — a task about a player character likely touches GDScript + scene design + signals. Include all relevant reference files in the sub-agent prompt.
 
@@ -91,6 +92,7 @@ Follow the official GDScript style guide and all conventions in the reference ma
 | **review** | Audit against the reference material; produce findings with severity (critical / warning / suggestion) |
 | **explain** | Annotate and walk through the code; reference Godot patterns where applicable |
 | **design** | Propose scene hierarchy, node types, signal flow, and component breakdown before writing code |
+| **validate** | Run headless validation, parse output, report errors with file:line references and fix suggestions |
 
 ---
 
@@ -155,6 +157,8 @@ The sub-agent must enforce these in every output:
 - **Deferred tree modifications** — use `call_deferred()` / `set_deferred()` inside `_physics_process` and signal handlers
 - **Self-contained scenes** — scenes must work regardless of where they are placed in the tree
 - **Type everything** — all variables, parameters, and return types must be typed in GDScript
+- **No @onready access before tree entry** — never call methods that use @onready variables on a node that hasn't been added to the scene tree yet. Use `call_deferred()` or add the node first, then configure.
+- **Validate after implementation** — after every `write` or `fix` task on `.gd` or `.tscn` files, run `godot --headless --path <project> --quit` and report any new errors
 
 ---
 
