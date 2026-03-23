@@ -625,6 +625,12 @@ stage ran).
 
 **Max self-correction**: 3 iterations per story.
 
+**Milestone testing** (all project types): After each sprint's stories pass DoD, run a
+milestone validation session using the quality skill's `references/milestone-testing.md`.
+Protocol is project-type-specific (Web: responsive/a11y, API: auth/CRUD/errors, Enterprise:
+multi-tenant/RBAC, Mobile: offline/permissions, CLI: pipes/exit codes). Uses role-specific
+checklists and cross-feature interaction questions. Findings classified and routed.
+
 **Game dev additions**: Godot skill (or relevant engine skill) invoked alongside
 Developer for engine-specific work. Game-specific testing:
 - **Headless validation**: After each story, run `godot --headless --path <project> --quit` as part of the evaluator-optimizer loop. Any new ERROR lines trigger a correction cycle.

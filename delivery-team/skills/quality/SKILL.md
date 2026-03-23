@@ -363,3 +363,4 @@ The sub-agent returns structured markdown matching the Output Contract for the t
 - `references/quality-metrics.md` -- Defect density, coverage metrics, escape rate, MTTR/MTTF, quality gates, cost of quality
 - `references/empirical-validation.md` -- Empirical validation registry: technology-specific patterns requiring runtime verification, keyword detection, severity classification, recommended validation tools
 - `references/exploratory-testing.md` -- Session-based exploratory testing: SBET charters, HICCUPPS heuristics, tour-based exploration, cross-story regression detection, game-specific patterns
+- `references/milestone-testing.md` -- Milestone validation protocols by project type: Web/React, API/Backend, Enterprise/B2B, Mobile, CLI with role-specific checklists and critical path testing

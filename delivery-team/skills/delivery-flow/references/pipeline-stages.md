@@ -250,6 +250,18 @@ For each story in the sprint plan:
 - Actual code files (in the project codebase)
 - `.delivery/artifacts/06-dev-notes.md` (summary of implementation decisions, known issues)
 
+### Milestone Testing (all project types)
+
+After each sprint's stories pass DoD, run a milestone validation session using the quality skill's `references/milestone-testing.md`. The protocol is project-type-specific:
+
+- **Web/React**: 20 min — responsive breakpoints, form flows, accessibility, Core Web Vitals
+- **API/Backend**: 15 min — auth flow, CRUD cycle, error handling, contract testing
+- **Enterprise/B2B**: 25 min — multi-tenant isolation, RBAC, audit logs, compliance
+- **Mobile**: 20 min — offline/resume, permissions, interruptions, touch targets
+- **CLI**: 15 min — pipe compatibility, exit codes, flag combinations, config precedence
+
+Each session uses role-specific checklists (PO, QA, Dev, Architect/UX) and cross-feature interaction questions. Findings classified as Bug, UX, Performance, Spec Gap, or Integration Issue. Bugs → `.delivery/defects/`, rest → backlog.
+
 ### Game Dev Additions
 - Godot skill invoked for Godot engine projects
 - Game-specific testing (playtest scenarios, performance profiling)
