@@ -202,7 +202,7 @@ At any point during pipeline execution when a decision must be made that falls o
 | Scope and value | "should we include", "MVP", "nice-to-have", "user value", "priority", "cut scope" | Product Owner | product-delivery |
 | Technical feasibility | "can we build", "performance", "scalability", "architecture", "tech debt" | Architect | architect |
 | Quality and risk | "test coverage", "regression risk", "quality trade-off", "defect severity" | QA Engineer | quality |
-| Process and timeline | "sprint capacity", "velocity", "deadline", "ceremony", "estimate", "burndown" | Scrum Master | product-delivery |
+| Process and timeline | "sprint capacity", "velocity", "deadline", "ceremony", "estimate", "burndown" | Scrum Bag | product-delivery |
 | Data and metrics | "how to measure", "analytics", "KPI", "baseline", "A/B test", "experiment design" | Data Analyst | product-delivery |
 | Security and compliance | "security concern", "compliance", "GDPR", "audit", "vulnerability", "threat model" | Compliance Officer | architect |
 | UX and usability | "user experience", "usability", "accessibility", "flow", "confusing", "friction" | UX Designer | ui |
@@ -339,7 +339,7 @@ Produce:
 
 ### When to Use
 
-- Stage 5 (Plan): Aligning Scrum Master, Product Owner, QA Engineer, and DevOps on sprint plan, scope, estimates, and deployment strategy
+- Stage 5 (Plan): Aligning Scrum Bag, Product Owner, QA Engineer, and DevOps on sprint plan, scope, estimates, and deployment strategy
 - Any cross-cutting decision that affects multiple domains simultaneously and requires buy-in from all parties (not just a single Decision Owner)
 - Release planning, capacity allocation, and cross-team coordination
 

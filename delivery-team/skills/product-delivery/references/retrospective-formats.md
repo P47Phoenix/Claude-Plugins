@@ -1,7 +1,7 @@
 # Retrospective Formats
 
 Comprehensive guide to sprint retrospective formats, facilitation techniques,
-and follow-through patterns for Scrum Masters.
+and follow-through patterns for Scrum Bags.
 
 ---
 

@@ -180,7 +180,7 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] Test approach referenced (which stories need what kind of testing) [warning]
 - [ ] Deployment approach referenced (how and when completed work ships) [warning]
 - [ ] Risk items flagged with contingency (what if a story takes longer than estimated) [suggestion]
-- **DoD validators**: Scrum Master (process compliance, realistic planning), Product Owner (scope and priority alignment), QA Engineer (test coverage plan), DevOps (deployment readiness)
+- **DoD validators**: Scrum Bag (process compliance, realistic planning), Product Owner (scope and priority alignment), QA Engineer (test coverage plan), DevOps (deployment readiness)
 - **Max self-correction**: 2
 
 ### Gate 6: Development Quality
@@ -210,6 +210,7 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] Known issues documented with severity and workaround if applicable [warning]
 - [ ] Performance test results within budget (p99 latency, throughput, error rate) [warning]
 - [ ] GAME_DEV: playtest feedback addressed, performance budgets met on target hardware [warning, if applicable]
+- [ ] Exploratory testing session completed with observations logged (cross-story interactions tested, GAME_DEV gets 2 sessions) [warning]
 - [ ] All defects found during UAT logged to `.delivery/defects/` with severity, category, and root cause [blocking]
 - **DoD validators**: QA Engineer (all tests pass, coverage complete), DevOps (rollback ready, deployment verified), Product Owner (business acceptance), Technical Writer (documentation complete)
 - **Max self-correction**: 2

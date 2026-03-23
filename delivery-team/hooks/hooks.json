@@ -1,6 +1,18 @@
 {
-  "description": "Delivery team hooks: pipeline enforcement, empirical validation, GDScript parse checking",
+  "description": "Delivery team hooks: pipeline enforcement, retrospective enforcement, empirical validation, GDScript parse checking",
   "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this session involved delivery-flow pipeline work. Look for: Stage references, .delivery/ artifacts written, pipeline execution context, story implementations. If delivery-flow pipeline work occurred, check if the post-pipeline protocol completed: (1) retrospective was run, (2) memory file written to .delivery/memory/, (3) defect review completed if defects were found. If pipeline work occurred but post-pipeline protocol was skipped or incomplete, return 'block' with reason: 'Post-pipeline protocol not completed. The retrospective, memory write, and defect review are mandatory after every pipeline run. Complete these before ending the session.' If no pipeline work occurred in this session, or if the post-pipeline protocol is complete, return 'approve'.",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Skill",

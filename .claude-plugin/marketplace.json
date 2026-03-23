@@ -45,7 +45,7 @@
     },
     {
       "name": "delivery-team",
-      "description": "Full delivery team with 9 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator), Product Delivery (PO, Scrum Master, Data Analyst), Developer (10 languages + OOP + frontend), Godot (game dev), Architect (11 roles + game architecture), Quality (QA), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), and User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics).",
+      "description": "Full delivery team with 9 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (10 languages + OOP + frontend), Godot (game dev), Architect (11 roles + game architecture), Quality (QA), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), and User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics).",
       "source": "./",
       "strict": false,
       "skills": [

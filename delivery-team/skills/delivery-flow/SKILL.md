@@ -518,7 +518,7 @@ deployment approach.
 1. Product Owner (product-delivery skill, task_type: user_story).
    - Input: PRD.
    - Output: detailed user stories with acceptance criteria.
-2. Scrum Master (product-delivery skill, task_type: sprint_planning).
+2. Scrum Bag (product-delivery skill, task_type: sprint_planning).
    - Input: user stories + architecture constraints.
    - Output: sprint plan draft with capacity and sequencing.
 3. QA Engineer (quality skill, task_type: test-strategy).
@@ -539,7 +539,7 @@ stage ran).
    assumptions. Rates confidence 1-5.
 
 **DoD validators**:
-- Scrum Master (product-delivery skill): process is sound, capacity is realistic,
+- Scrum Bag (product-delivery skill): process is sound, capacity is realistic,
   commitment does not exceed 80% of available capacity.
 - Product Owner (product-delivery skill): scope is correct, stories are valuable and
   properly prioritized.
@@ -834,7 +834,7 @@ After pipeline completion (or abort), the orchestrator captures lessons learned.
 
 ### Post-Pipeline Protocol
 
-1. **Run retrospective.** Invoke Scrum Master (product-delivery skill, task_type:
+1. **Run retrospective.** Invoke Scrum Bag (product-delivery skill, task_type:
    retrospective) to capture what went well, what did not, and improvement actions.
 
 2. **Write run archive.** Save full run log to `memory/archive/run-YYYY-MM-DD-<id>.md`
@@ -900,6 +900,10 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 - **Test cases per story are mandatory.** Stage 5 (Plan) produces test cases alongside
   every user story — not as a separate QA step that can be skipped. Every story artifact
   includes: story + acceptance criteria + test cases.
+- **Retrospective is mandatory.** The post-pipeline protocol (retrospective + memory write
+  + defect review) MUST run after every pipeline completion or abort. The Stop hook
+  enforces this — it blocks session end if pipeline work occurred but the retrospective
+  was not completed. Never skip the retrospective for velocity.
 - **Preserve on abort.** If the pipeline is aborted at any point, all artifacts
   produced so far are preserved in `.delivery/artifacts/`. The memory file is written
   even for aborted runs (with `completed: false` and `abort_stage` recorded).

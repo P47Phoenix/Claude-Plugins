@@ -86,7 +86,7 @@ A martial arts concept applied to team and practice maturity.
   They invent new practices that serve their unique context. Ceremonies may look
   nothing like textbook Scrum, but the underlying values are deeply embedded.
 
-**Scrum Master role at each stage:** In Shu, teach and enforce. In Ha, coach and
+**Scrum Bag role at each stage:** In Shu, teach and enforce. In Ha, coach and
 question. In Ri, mentor and get out of the way.
 
 ---
@@ -182,4 +182,4 @@ change over multiple sprints and qualitative confirmation from the team.
 
 **Leading indicators of improvement:** Team members volunteer for improvement work.
 Action items from retros are completed within one sprint. The team self-identifies
-problems before the Scrum Master does. Stakeholders report improved predictability.
+problems before the Scrum Bag does. Stakeholders report improved predictability.

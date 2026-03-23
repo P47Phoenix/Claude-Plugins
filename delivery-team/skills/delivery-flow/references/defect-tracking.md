@@ -154,7 +154,7 @@ Open a PR to the Claude-Plugins repo when:
 | Stage 6 (Dev) | QA reviews catch defects before they escape -- logged as self-correction, not defects |
 | Stage 7 (UAT) | Defects found during UAT are logged to `.delivery/defects/` |
 | Human Checkpoint 4 | User reports defects found during manual validation |
-| Post-pipeline retrospective | Scrum Master analyzes defect patterns, classifies as one-off vs systemic |
+| Post-pipeline retrospective | Scrum Bag analyzes defect patterns, classifies as one-off vs systemic |
 | Defect review step | If systemic patterns found, draft and open plugin improvement PR |
 
 ### Post-Pipeline Defect Review
@@ -186,7 +186,7 @@ The PO tracks defect re-entry rate as a product quality metric:
 |------|---------------|
 | **QA Engineer** | Detect and log defects, classify severity, identify root cause |
 | **Product Owner** | Track defect rate as metric, prioritize plugin improvement PRs |
-| **Scrum Master** | Facilitate defect review in retrospective, track action items |
+| **Scrum Bag** | Facilitate defect review in retrospective, track action items |
 | **Developer** | Provide root cause analysis, implement fixes |
 | **Architect** | Review architectural defect patterns, approve structural changes |
 

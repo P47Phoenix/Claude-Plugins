@@ -1,6 +1,6 @@
 ---
 name: product-delivery
-description: Product delivery agent with three specialized roles -- Product Owner, Scrum Master, and Data Analyst. Auto-detects the relevant role and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "write user stories", "prioritize backlog", "acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "product owner", "retrospective", "retro", "process improvement", "velocity", "burndown", "ceremony", "standup", "sprint review", "impediment", "team health", "agile maturity", "scrum master", "agile coach", "kanban", "WIP limit", "cycle time", "analytics", "metrics", "KPI", "dashboard", "A/B test", "experiment", "data quality", "reporting", "funnel", "cohort", "retention", "HEART framework", "AARRR", "OKR metrics".
+description: Product delivery agent with three specialized roles -- Product Owner, Scrum Bag, and Data Analyst. Auto-detects the relevant role and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "write user stories", "prioritize backlog", "acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "product owner", "retrospective", "retro", "process improvement", "velocity", "burndown", "ceremony", "standup", "sprint review", "impediment", "team health", "agile maturity", "scrum master", "agile coach", "kanban", "WIP limit", "cycle time", "analytics", "metrics", "KPI", "dashboard", "A/B test", "experiment", "data quality", "reporting", "funnel", "cohort", "retention", "HEART framework", "AARRR", "OKR metrics".
 license: Apache License 2.0 - See repository LICENSE file
 ---
 
@@ -10,7 +10,7 @@ license: Apache License 2.0 - See repository LICENSE file
 
 This skill keeps role-specific knowledge **out of the main context window**. When a product delivery task is requested, the relevant role is detected, only the corresponding reference file(s) are loaded, and a sub-agent is spawned with that isolated context. The main context receives only the finished artifact.
 
-Product delivery tasks can span roles -- sprint planning involves both Product Owner and Scrum Master concerns, and metrics definition may involve both Data Analyst and Product Owner. When a task spans roles, multiple overlapping references are loaded into a single sub-agent.
+Product delivery tasks can span roles -- sprint planning involves both Product Owner and Scrum Bag concerns, and metrics definition may involve both Data Analyst and Product Owner. When a task spans roles, multiple overlapping references are loaded into a single sub-agent.
 
 ---
 
@@ -20,7 +20,7 @@ Detect the relevant role from (in priority order):
 
 1. **Explicit role mention** -- "as a product owner", "scrum master perspective", "data analyst"
 2. **Task type signals** -- see routing tables below
-3. **Domain signals** -- story/backlog/PRD keywords route to Product Owner; ceremony/process/velocity keywords route to Scrum Master; metrics/analytics/experiment keywords route to Data Analyst
+3. **Domain signals** -- story/backlog/PRD keywords route to Product Owner; ceremony/process/velocity keywords route to Scrum Bag; metrics/analytics/experiment keywords route to Data Analyst
 
 **If ambiguous, ask before proceeding.** Do not assume.
 
@@ -83,7 +83,7 @@ If the task requires modifying existing files, use the Read, Edit, Write, Glob, 
 | Role | Reference Files |
 |------|----------------|
 | **Product Owner** | user-stories.md, prioritization-frameworks.md, backlog-management.md, stakeholder-templates.md |
-| **Scrum Master** | retrospective-formats.md, agile-metrics.md, facilitation-patterns.md, process-improvement.md |
+| **Scrum Bag** | retrospective-formats.md, agile-metrics.md, facilitation-patterns.md, process-improvement.md |
 | **Data Analyst** | analytics-patterns.md, metrics-frameworks.md, dashboard-design.md, experimentation.md |
 
 ---
@@ -104,7 +104,7 @@ If the task requires modifying existing files, use the Read, Edit, Write, Glob, 
 | "DoD", "definition of done", "definition of ready" | Standards Definition | DoD / DoR checklist | backlog-management.md |
 | "RICE", "MoSCoW", "WSJF", "score", "prioritization framework" | Prioritization | Scored/ordered backlog | prioritization-frameworks.md |
 
-### Scrum Master Tasks
+### Scrum Bag Tasks
 
 | Request Signal | Task Type | Primary Artifact | References Loaded |
 |---|---|---|---|
@@ -515,11 +515,11 @@ When a task spans multiple roles, load all relevant reference files into a singl
 
 | Scenario | Roles Involved | References Loaded |
 |----------|---------------|-------------------|
-| Sprint planning with ceremony facilitation | Product Owner + Scrum Master | backlog-management.md + facilitation-patterns.md |
+| Sprint planning with ceremony facilitation | Product Owner + Scrum Bag | backlog-management.md + facilitation-patterns.md |
 | Feature launch with success metrics | Product Owner + Data Analyst | user-stories.md + metrics-frameworks.md |
-| Retrospective with velocity analysis | Scrum Master + Data Analyst | retrospective-formats.md + agile-metrics.md + facilitation-patterns.md |
+| Retrospective with velocity analysis | Scrum Bag + Data Analyst | retrospective-formats.md + agile-metrics.md + facilitation-patterns.md |
 | PRD with analytics requirements | Product Owner + Data Analyst | user-stories.md + stakeholder-templates.md + analytics-patterns.md |
-| Process improvement with data backing | Scrum Master + Data Analyst | process-improvement.md + agile-metrics.md + analytics-patterns.md |
+| Process improvement with data backing | Scrum Bag + Data Analyst | process-improvement.md + agile-metrics.md + analytics-patterns.md |
 | Full sprint cycle (plan + facilitate + measure) | All three roles | backlog-management.md + facilitation-patterns.md + agile-metrics.md |
 | OKR setting with metric definitions | Product Owner + Data Analyst | stakeholder-templates.md + metrics-frameworks.md |
 
@@ -560,7 +560,7 @@ Apply these checks to every artifact before output:
 - Monitor rate trend -- is the defect rate decreasing over time?
 - Defect rate should be included in sprint retrospective data and reported to stakeholders
 
-### Scrum Master Guardrails
+### Scrum Bag Guardrails
 
 - Every retrospective must produce action items with assigned owners and due dates
 - Velocity analysis must include at least 3 sprints of data for trend identification
@@ -640,7 +640,7 @@ When invoked as a worker agent within an orchestrated flow, accept and produce s
 | `sprint` | Produce a sprint plan from the current prioritized backlog |
 | `accept` | Finalize and deliver the current artifact |
 
-### Scrum Master Commands
+### Scrum Bag Commands
 
 | Command | Action |
 |---------|--------|
@@ -667,7 +667,7 @@ When invoked as a worker agent within an orchestrated flow, accept and produce s
 - `references/backlog-management.md` -- Refinement process, grooming cadence, backlog health metrics
 - `references/stakeholder-templates.md` -- Communication templates by audience type
 
-### Scrum Master
+### Scrum Bag
 
 - `references/retrospective-formats.md` -- Retro formats: Start/Stop/Continue, 4Ls, Sailboat, Mad/Sad/Glad, timeline
 - `references/agile-metrics.md` -- Velocity, burndown, cycle time, lead time, cumulative flow, predictability

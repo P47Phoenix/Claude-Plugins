@@ -13,7 +13,7 @@ A full software delivery team with 9 specialized skills covering the complete de
 | Skill | Roles | What It Does |
 |-------|-------|-------------|
 | **Delivery Flow** | Pipeline orchestrator | 7-stage pipeline (Idea → Refine → Design → Architect → Plan → Dev → UAT) with auto-detect project type, team DoD, self-correction, adversarial review, debate, consensus, and self-learning memory |
-| **Product Delivery** | Product Owner, Scrum Master, Data Analyst | User stories, PRDs, backlogs, sprint plans, retrospectives, metrics, A/B testing |
+| **Product Delivery** | Product Owner, Scrum Bag, Data Analyst | User stories, PRDs, backlogs, sprint plans, retrospectives, metrics, A/B testing |
 | **Developer** | 10 languages + OOP + Frontend | Code implementation with language context isolation (Python, TypeScript, Go, Rust, C#, Java, SQL, Bash, R, JavaScript) |
 | **Godot** | GDScript, C#, Scenes, Signals | Godot 4.x game dev with headless validation and defect prevention |
 | **Architect** | 11 roles | Solution, Enterprise, Data, Security, Compliance, Privacy, Incident Response + Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering |

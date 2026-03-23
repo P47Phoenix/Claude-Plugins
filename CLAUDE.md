@@ -38,7 +38,7 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 | Skill | Roles / Purpose |
 |-------|----------------|
 | `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard |
-| `product-delivery/` | Product Owner, Scrum Master, Data Analyst |
+| `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
 | `developer/` | 10 languages + OOP + frontend patterns |
 | `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) |
 | `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture |

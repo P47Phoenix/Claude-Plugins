@@ -94,7 +94,7 @@ If the task requires working with existing test files, use the Read, Edit, Write
 | **test-plan** | "test plan", "test planning", "regression plan", "release testing" | `references/test-strategy.md` + `references/test-case-patterns.md` |
 | **test-data** | "test data", "test fixtures", "data setup", "synthetic data" | `references/test-case-patterns.md` |
 | **regression-plan** | "regression", "regression suite", "regression testing" | `references/test-strategy.md` + `references/test-case-patterns.md` |
-| **exploratory-testing** | "exploratory testing", "explore", "charter", "session-based" | `references/test-strategy.md` |
+| **exploratory-testing** | "exploratory testing", "explore", "charter", "session-based", "SBET", "tour", "HICCUPPS" | `references/exploratory-testing.md`, `references/test-strategy.md` |
 | **quality-metrics** | "quality metrics", "test metrics", "coverage", "defect density", "quality dashboard" | `references/quality-metrics.md` |
 | **automation-strategy** | "automation strategy", "automate tests", "test automation", "CI testing", "flaky tests" | `references/test-automation.md` |
 
@@ -362,3 +362,4 @@ The sub-agent returns structured markdown matching the Output Contract for the t
 - `references/test-automation.md` -- Automation pyramid, framework selection, CI/CD integration, flaky test management, mocking strategies
 - `references/quality-metrics.md` -- Defect density, coverage metrics, escape rate, MTTR/MTTF, quality gates, cost of quality
 - `references/empirical-validation.md` -- Empirical validation registry: technology-specific patterns requiring runtime verification, keyword detection, severity classification, recommended validation tools
+- `references/exploratory-testing.md` -- Session-based exploratory testing: SBET charters, HICCUPPS heuristics, tour-based exploration, cross-story regression detection, game-specific patterns

@@ -188,7 +188,7 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
    - Output: test cases per story (these are part of the story artifact, not separate)
    - Test cases MUST be produced alongside stories, not as a separate optional step
    - Each story's output includes: story + acceptance criteria + test cases
-3. **Invoke Scrum Master** (product-delivery skill, task_type: sprint_planning)
+3. **Invoke Scrum Bag** (product-delivery skill, task_type: sprint_planning)
    - Input: user stories (with test cases) + architecture constraints
    - Output: sprint plan draft
 4. **Invoke QA Engineer** (quality skill, task_type: test-strategy)
@@ -203,7 +203,7 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 9. **Human Checkpoint 3**: Present sprint plan for approval
 
 ### DoD Validators
-- Scrum Master: process is sound, capacity realistic
+- Scrum Bag: process is sound, capacity realistic
 - Product Owner: scope is correct, stories are valuable
 - QA Engineer: test strategy covers critical paths
 - DevOps: deployment approach is viable
@@ -273,15 +273,21 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
    - Input: test plan
    - Output: detailed test cases with expected results
 3. **Execute test descriptions** (describe how to test; actual execution depends on test framework availability)
-4. **Invoke DevOps** (operations skill, task_type: release-plan + rollback-procedure)
+4. **Exploratory testing sessions** (quality skill, task_type: exploratory-testing)
+   - For GAME_DEV: 2 sessions — Feature Tour (play all implemented features) + Cross-Story Regression (test interactions between stories modifying shared values)
+   - For all types: 1 session — Cross-Story Interaction (test that independently-completed stories work together)
+   - Each session has a charter, is time-boxed, and produces observation notes (not pass/fail)
+   - Any bugs found are logged to `.delivery/defects/` immediately
+   - See the quality skill's `references/exploratory-testing.md` for session format and heuristics
+5. **Invoke DevOps** (operations skill, task_type: release-plan + rollback-procedure)
    - Input: architecture + deployment strategy
    - Output: release plan with rollback procedure
-5. **Invoke Technical Writer** (operations skill, task_type: release-notes + user-guide)
+6. **Invoke Technical Writer** (operations skill, task_type: release-notes + user-guide)
    - Input: PRD + dev notes + features implemented
    - Output: release notes, user guide updates
-6. **Multi-Perspective Review Board**: QA (tests) + DevOps (release readiness) + Tech Writer (docs). Go/no-go recommendation.
-7. **Team DoD Validation**: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
-8. **Human Checkpoint 4**: Present UAT results for accept/reject
+7. **Multi-Perspective Review Board**: QA (tests) + DevOps (release readiness) + Tech Writer (docs). Go/no-go recommendation.
+8. **Team DoD Validation**: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
+9. **Human Checkpoint 4**: Present UAT results for accept/reject
 
 ### DoD Validators
 - QA Engineer: all tests pass, no critical defects
@@ -296,7 +302,7 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
 
 ### Post-Acceptance
 After human accepts:
-1. **Invoke Scrum Master** (product-delivery skill, task_type: retrospective) -- capture lessons
+1. **Invoke Scrum Bag** (product-delivery skill, task_type: retrospective) -- capture lessons. This step is MANDATORY — the Stop hook enforces it.
 2. **Write run archive** to `memory/archive/run-YYYY-MM-DD-<id>.md`
 3. **Extract and route lessons** to stage chunks (`memory/stages/*.md`) and topic chunks (`memory/topics/*.md`)
 4. **Rebuild routing index** (`memory/index.md`) with updated stats and hot lessons
