@@ -253,6 +253,7 @@ For each story in the sprint plan:
 ### Game Dev Additions
 - Godot skill invoked for Godot engine projects
 - Game-specific testing (playtest scenarios, performance profiling)
+- **Milestone playtest checkpoint**: After each sprint that delivers playable/empirical features, run a structured 15-minute playtest session using the quality skill's `references/exploratory-testing.md` milestone protocol. Use role-specific checklists (PO: gameplay feel, QA: cross-story interactions, Dev: performance). Classify findings as Bug, Balance, UX, Narrative, Spec Gap, or Performance. Bugs go to `.delivery/defects/`, everything else becomes backlog items for the next sprint.
 
 ---
 

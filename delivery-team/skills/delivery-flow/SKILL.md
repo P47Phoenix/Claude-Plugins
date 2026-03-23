@@ -631,6 +631,11 @@ Developer for engine-specific work. Game-specific testing:
 - **Empirical AC classification**: Classify each acceptance criterion as "structural" (verifiable by code inspection) or "empirical" (requires runtime). If empirical ACs exist and no validation tool was used, mark story as "code-complete, pending validation" rather than "done".
 - **Performance profiling**: Profile against frame budgets, memory limits, and draw call targets.
 - **Playtest scenarios**: Game feel, difficulty curve, progression balance, and player experience.
+- **Milestone playtest checkpoint**: After each sprint delivering playable features, run a
+  structured playtest (15 min) using the quality skill's `references/exploratory-testing.md`
+  milestone protocol. Role-specific checklists (PO: gameplay/design, QA: cross-story
+  interactions, Dev: performance, Architect: system interactions). Classify findings as
+  Bug/Balance/UX/Narrative/Performance/Spec Gap. Bugs → `.delivery/defects/`, rest → backlog.
 
 ---
 

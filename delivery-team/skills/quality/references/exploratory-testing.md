@@ -163,3 +163,109 @@ After structured test cases execute:
 ### Producing Output
 
 Exploratory testing produces observation notes (not pass/fail results). Any bugs found are logged to `.delivery/defects/` immediately. Observations feed into the retrospective.
+
+---
+
+## Milestone Playtest Protocol
+
+Structured playtesting at major milestones catches game design and balance issues that code review and exploratory testing miss — unit spacing, pacing, narrative quality, difficulty curves, "fun factor."
+
+### When to Trigger a Milestone Playtest
+
+| Milestone | Trigger | Session Length |
+|-----------|---------|---------------|
+| **Sprint demo** | Sprint delivers playable/empirical features (GAME_DEV) | 15 min |
+| **Phase completion** | All stories in a phase delivered | 30 min |
+| **New game mode/mission** | First time a mode or mission is playable end-to-end | 30 min |
+| **UAT (Stage 7)** | Already covered by exploratory testing sessions | 30-60 min |
+
+### Role-Specific Playtest Checklists
+
+**Product Owner — Gameplay & Design**
+- Does the gameplay feel fun? Would I keep playing?
+- Is the pacing right? (Too slow? Too fast? Boring stretches?)
+- Is the difficulty appropriate for the target audience?
+- Does the narrative land? Are story beats present and impactful?
+- Does this match what the spec intended? Any spec gaps?
+- Would a new player understand what to do without a tutorial?
+
+**QA Engineer — Edge Cases & Interactions**
+- Do features from different sprints/stories interact correctly?
+- Are there visual glitches when multiple systems are active?
+- Does the UI behave correctly under unusual conditions (rapid input, edge-of-map)?
+- Do cross-story value dependencies work (e.g., movement cost vs terrain cost)?
+- Any unexpected behaviors when systems combine?
+
+**Developer — Performance & Technical**
+- Are there frame rate drops during gameplay? When?
+- Any memory spikes during transitions or loading?
+- Any rendering artifacts (z-fighting, texture pop-in, lighting glitches)?
+- Does input feel responsive? Any lag?
+
+**Architect — System Interactions**
+- Do the systems communicate correctly through the defined architecture (EventBus, signals)?
+- Are there data flow bottlenecks visible during gameplay?
+- Do the architectural decisions hold up under real usage?
+- Any scalability concerns visible (too many entities, too much state)?
+
+**User Feedback Personas** — run 2-3 relevant personas through a playtest:
+- Casual player: Is this accessible and fun in a short session?
+- Hardcore player: Is there depth and challenge?
+- Accessibility player: Can this be played with accommodations?
+
+### Playtest Feedback Template
+
+```markdown
+## Playtest Report: [Milestone — Sprint N / Phase N / Mission Name]
+
+**Tester**: [role — PO / QA / Dev / Architect]
+**Duration**: [time spent]
+**Build**: [commit hash or version]
+**Date**: [date]
+
+### Findings
+
+| # | Category | Severity | Finding | Spec Alignment |
+|---|----------|----------|---------|---------------|
+| 1 | | | | |
+
+**Categories**: Balance, UX, Narrative, Bug, Performance, Spec Gap
+**Severity**: CRITICAL / HIGH / MEDIUM / LOW
+**Spec Alignment**: Matches spec / Contradicts spec / Not in spec (new finding)
+
+### Overall Impression
+[1-3 sentences: how did it feel to play? Would you keep playing?]
+
+### Top 3 Issues
+1. [Most impactful issue]
+2. [Second]
+3. [Third]
+
+### What Worked Well
+- [Positive observations — preserve these]
+```
+
+### Feedback Classification
+
+Playtest findings are NOT all defects. Classify each finding:
+
+| Classification | Action | Example |
+|---------------|--------|---------|
+| **Bug** | Log to `.delivery/defects/`, fix in current or next sprint | Crash, broken feature, null reference |
+| **Balance issue** | Create new story for adjustment | Units too far apart, difficulty too easy |
+| **UX issue** | Route to UX Designer for evaluation | Confusing fog of war, unclear objectives |
+| **Narrative gap** | Route to PO for spec update | Thin briefing text, missing story beats |
+| **Spec gap** | Update PRD with new requirement | Feature not in spec but clearly needed |
+| **Performance issue** | Route to Developer/Architect | Frame drops, long load times |
+
+Bugs go to `.delivery/defects/`. Everything else becomes backlog items for the PO to prioritize.
+
+### Cross-Story Interaction Playtest
+
+Every milestone playtest must include cross-story checks:
+
+- "Does Feature X still work after Feature Y was added?"
+- "Do the numbers feel right when ALL systems interact together?"
+- "Is the pacing/difficulty appropriate with all features active?"
+- "Are there emergent behaviors from system combinations that weren't designed?"
+- "Would a new player's first 5 minutes be a good experience with all features active?"
