@@ -58,3 +58,8 @@ Then register the language in the developer SKILL.md's detection table so it is 
 | `java.md` | Java | Java 17 LTS |
 | `sql.md` | SQL | ANSI SQL / PostgreSQL |
 | `bash.md` | Bash / Shell | Bash 5+ |
+| `r.md` | R | 4.x |
+| `fsharp.md` | F# | F# 8 / .NET 8 |
+| `elixir.md` | Elixir | 1.16+ / OTP 26+ |
+| `haskell.md` | Haskell | GHC 9.6+ |
+| `scala.md` | Scala | 3.3+ |

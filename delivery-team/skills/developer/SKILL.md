@@ -35,7 +35,7 @@ This check does NOT block implementation — it warns. Proceed for quick fixes o
 ## Phase 1: Language Detection
 
 Detect the target language from (in priority order):
-1. File extension in context: `.py` → Python, `.ts` → TypeScript, `.js` → JavaScript, `.cs` → C#, `.go` → Go, `.rs` → Rust, `.java` → Java, `.sql` → SQL, `.sh`/`.bash` → Bash, `.r`/`.R`/`.Rmd`/`.qmd` → R
+1. File extension in context: `.py` → Python, `.ts` → TypeScript, `.js` → JavaScript, `.cs` → C#, `.go` → Go, `.rs` → Rust, `.java` → Java, `.sql` → SQL, `.sh`/`.bash` → Bash, `.r`/`.R`/`.Rmd`/`.qmd` → R, `.fs`/`.fsx` → F#, `.ex`/`.exs` → Elixir, `.hs`/`.lhs` → Haskell, `.scala`/`.sc` → Scala
 2. Imports or syntax in pasted code
 3. User's explicit statement
 4. File being edited in the current session
@@ -132,6 +132,10 @@ The main context never accumulates multiple language reference files — each su
 | SQL | `.sql` | `references/languages/sql.md` |
 | Bash/Shell | `.sh`, `.bash`, no extension | `references/languages/bash.md` |
 | R | `.r`, `.R`, `.Rmd`, `.qmd` | `references/languages/r.md` |
+| F# | `.fs`, `.fsx` | `references/languages/fsharp.md` |
+| Elixir | `.ex`, `.exs` | `references/languages/elixir.md` |
+| Haskell | `.hs`, `.lhs` | `references/languages/haskell.md` |
+| Scala | `.scala`, `.sc` | `references/languages/scala.md` |
 
 For languages not in this table: ask the user to confirm the language, then proceed without a language reference file — apply general clean code principles.
 
@@ -154,6 +158,20 @@ Reference selection by concern:
 - Performance, bundle size, web vitals → `references/frontend/performance.md`
 
 Multiple frontend references may be loaded simultaneously (e.g., a "build a responsive form component" task loads component-patterns.md + styling-systems.md).
+
+### Functional Programming Cross-Language Reference
+
+For tasks involving functional programming patterns (pure functions, immutability, pattern matching, monads, function composition, algebraic data types) in **F#, Elixir, Haskell, Scala, TypeScript, JavaScript, Python, or R**: include `references/fp-patterns.md` in the sub-agent prompt alongside the language reference file.
+
+Triggers: mentions of "functional", "pure function", "immutable", "immutability", "pattern matching", "monad", "pipe operator", "curry", "partial application", "fold", "reduce", "map/filter", "algebraic data type", "sum type", "discriminated union", "Option", "Maybe", "Result", "Either", "railway", "composition", "point-free", "referential transparency", "effect system".
+
+### Nx Monorepo Cross-Language Reference
+
+For tasks in an **Nx workspace** (detected by presence of `nx.json` in the project or mentions of Nx): include `references/nx-monorepo.md` in the sub-agent prompt alongside the language reference file.
+
+**CRITICAL**: When working in an Nx workspace, ALWAYS use `nx generate` to create projects and libraries. NEVER create project directories manually (`mkdir`, `npm init`). The Nx reference enforces this.
+
+Triggers: "nx", "monorepo", "nx generate", "nx affected", "project.json", "nx.json", "@nx/", "@nrwl/", "workspace", "nx graph", "enforce-module-boundaries", "nx cloud".
 
 To add a new language: create `references/languages/<lang>.md` using the template in `references/languages/README.md`, then add it to the table above.
 
@@ -229,3 +247,9 @@ The sub-agent should return output in this structure (markdown):
 - `references/frontend/styling-systems.md` — CSS architecture, theming, responsive design, dark mode, performance
 - `references/frontend/state-management.md` — State patterns, server state, URL state, optimistic updates, persistence
 - `references/frontend/performance.md` — Bundle optimization, Core Web Vitals, lazy loading, service workers, CDN
+- `references/languages/fsharp.md` — F# 8 / .NET 8: discriminated unions, computation expressions, railway-oriented programming
+- `references/languages/elixir.md` — Elixir 1.16+ / OTP 26+: GenServer, Phoenix, Ecto, pipe operator, supervision trees
+- `references/languages/haskell.md` — GHC 9.6+: IO monad, type classes, algebraic data types, strictness, QuickCheck
+- `references/languages/scala.md` — Scala 3.3+: case classes, given/using, Cats Effect/ZIO, sbt, for-comprehensions
+- `references/fp-patterns.md` — Functional programming: pure functions, immutability, HOFs, pattern matching, monads, composition, type-driven development
+- `references/nx-monorepo.md` — Nx workspace: generators (NEVER manual mkdir), affected commands, caching, module boundaries, library categories
