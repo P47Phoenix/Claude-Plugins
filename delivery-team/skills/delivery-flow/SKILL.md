@@ -98,6 +98,9 @@ When a config is loaded, these settings override defaults:
 | `deployment.environment` | Influences DevOps and operations planning |
 | `timeline.risk_tolerance` | Influences pattern depth and ceremony level |
 | `tech_stack.*` | Passed to Developer and Architect for language/framework context |
+| `tech_stack.paradigm` | Default paradigm for multi-paradigm languages (auto/oop/fp/hybrid) |
+| `tech_stack.paradigm_by_language` | Per-language paradigm override (e.g., python: oop, typescript: fp) |
+| `tech_stack.nx_workspace` | Whether Nx monorepo reference is loaded (auto-detected from nx.json) |
 | `personas.categories` | Which persona categories to load (gamers, web-users, enterprise, demographics) |
 | `personas.selected` | Specific persona names to include in every feedback round |
 | `personas.feedback_stages` | Which pipeline stages run persona feedback (default: refine, design, dev, uat) |

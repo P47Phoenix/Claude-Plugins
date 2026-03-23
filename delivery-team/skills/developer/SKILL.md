@@ -165,6 +165,27 @@ For tasks involving functional programming patterns (pure functions, immutabilit
 
 Triggers: mentions of "functional", "pure function", "immutable", "immutability", "pattern matching", "monad", "pipe operator", "curry", "partial application", "fold", "reduce", "map/filter", "algebraic data type", "sum type", "discriminated union", "Option", "Maybe", "Result", "Either", "railway", "composition", "point-free", "referential transparency", "effect system".
 
+### Paradigm Selection from Config
+
+If `.delivery/config.md` exists, check `tech_stack.paradigm` and `tech_stack.paradigm_by_language`:
+
+- `paradigm: oop` → always load `references/oop-patterns.md` for multi-paradigm languages
+- `paradigm: fp` → always load `references/fp-patterns.md` for multi-paradigm languages
+- `paradigm: hybrid` → load both OOP and FP references for multi-paradigm languages
+- `paradigm: auto` (default) → detect from task context using trigger keywords above
+
+Per-language overrides in `paradigm_by_language` take precedence:
+```yaml
+tech_stack:
+  paradigm: auto
+  paradigm_by_language:
+    python: oop        # Python defaults to OOP patterns
+    typescript: fp     # TypeScript defaults to FP patterns
+    scala: hybrid      # Scala loads both
+```
+
+Pure-FP languages (F#, Elixir, Haskell) always load `fp-patterns.md` regardless of settings. Pure-OOP languages (Java, C#) always load `oop-patterns.md` regardless of settings.
+
 ### Nx Monorepo Cross-Language Reference
 
 For tasks in an **Nx workspace** (detected by presence of `nx.json` in the project or mentions of Nx): include `references/nx-monorepo.md` in the sub-agent prompt alongside the language reference file.
