@@ -76,27 +76,57 @@ Reference: Juval Lowy, "Righting Software" (Addison-Wesley, 2019) for the comple
 
 ## DDD Domain Discovery (for strategic DDD decomposition)
 
-Ask these questions to identify subdomains and bounded contexts:
+DDD discovery follows the knowledge crunching process from Evans and Fowler — iterative modeling sessions, not a flat questionnaire. The interview builds understanding in layers.
 
-### Core Domain
-1. "What is your competitive advantage -- what do you do that competitors can't easily copy?"
-2. "If you had to pick the ONE thing that makes this product valuable, what is it?"
-3. "Where do you invest the most development effort? Where should you?"
+### Step 1: Domain Storytelling (Knowledge Crunching)
 
-### Subdomain Boundaries
-4. "Walk me through the core business process end to end."
-5. "When you say [term], does it mean the same thing to everyone? Or do different teams define it differently?"
-6. "Where do different departments disagree about how things should work?"
+Start by having the PO explain the business in their own words:
 
-### Context Mapping
-7. "Which teams or systems need to communicate to complete a business process?"
-8. "Where do handoffs happen between teams? Are they smooth or painful?"
-9. "Which external systems do you depend on? Do you control their APIs?"
+1. "Tell me about your business. What do you do? Who are your customers?"
+2. "Walk me through a typical [core process] from start to finish. What happens at each step?"
+3. "What are the key concepts in your business? Define [term] for me — what does it mean, exactly?"
+4. "When you say [term], does it mean the same thing to everyone? Or do different teams define it differently?"
+5. "What's the most complex part of your business? Where do the real rules live?"
 
-### Strategic Classification
-10. "Which capabilities are commodity (everyone in your industry does it the same way)?"
-11. "Which capabilities are necessary but not what makes you special?"
-12. "Which capabilities would you outsource if you could? Which would you NEVER outsource?"
+### Step 2: Model Exploration
+
+After the initial storytelling, sketch a rough model and validate it:
+
+6. "Let me sketch what I've heard. [Present rough domain model]. Does this look right?"
+7. "What am I missing? What doesn't fit this model?"
+8. "Give me a scenario where this model would break — a weird case, an exception, a special customer."
+9. "What happens when things go wrong in [process]? How are errors and exceptions handled?"
+
+### Step 3: Language Refinement
+
+Probe the language for precision and boundary signals:
+
+10. "You used [word] — is that the same as [other word] I heard earlier?"
+11. "If I called this [class name] in the code, would that make sense to you?"
+12. "Is there a more precise word for [concept]? What would a domain expert call it?"
+13. "Do different parts of the business use different words for the same thing?"
+
+### Step 4: Boundary and Classification Discovery
+
+After multiple rounds of steps 1-3, identify boundaries and classify:
+
+14. "Where does your understanding of [concept] differ from how [other team/department] sees it?"
+15. "Which parts of the business could operate completely independently?"
+16. "What is your competitive advantage — the thing competitors can't easily copy?"
+17. "Which capabilities are commodity — everyone in your industry does it the same way?"
+18. "Which capabilities would you outsource if you could? Which would you NEVER outsource?"
+
+### Iteration
+
+Steps 1-4 are NOT one-pass. Expect to loop through them 2-3 times as understanding deepens. Early models are always wrong — the goal is to converge on a model that domain experts recognize as "exactly how it works."
+
+### Escalation Triggers
+Escalate to human if:
+- PO cannot explain the core business process (needs actual domain expert)
+- Language is deeply ambiguous and PO can't resolve it (needs cross-department session)
+- The model exploration reveals complexity PO doesn't have expertise to validate
+
+Reference: Eric Evans, "Domain-Driven Design" (Addison-Wesley, 2003); Martin Fowler, "BoundedContext" (martinfowler.com)
 
 ---
 
