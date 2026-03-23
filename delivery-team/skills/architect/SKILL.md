@@ -80,6 +80,55 @@ If the task requires modifying existing files, use the Read, Edit, Write, Glob, 
 
 ---
 
+## Architecture Style and Decomposition from Config
+
+If `.delivery/config.md` exists, check `architecture.style` and `architecture.decomposition`:
+
+### Architecture Style
+
+- `style: auto` (default) → detect from task context, use decision matrix in architecture-patterns.md
+- `style: layered` → emphasize layered/n-tier patterns
+- `style: hexagonal` / `style: clean` → emphasize ports-and-adapters, clean architecture
+- `style: modular-monolith` → emphasize module boundaries, no microservices overhead
+- `style: microservices` → emphasize service boundaries, data ownership, async communication
+- `style: event-driven` → emphasize event sourcing, CQRS, event-driven topology
+- `style: serverless` → emphasize function-as-a-service, managed services
+
+Per-component overrides in `architecture.style_overrides`:
+```yaml
+architecture:
+  style: hexagonal
+  style_overrides:
+    data-pipeline: event-driven
+    admin-panel: layered
+```
+
+### Decomposition Strategy
+
+Determines which decomposition reference to load for `decompose` and `design` tasks:
+
+| Config Value | Reference Loaded | Method |
+|-------------|-----------------|--------|
+| `auto` | architecture-patterns.md (decision matrix) | Detect from context |
+| `volatility` | volatility-decomposition.md | IDesign: decompose by axes of change |
+| `ddd` | strategic-ddd.md + architecture-patterns.md | Strategic DDD: subdomains, bounded contexts |
+| `team-topology` | team-topology.md | Inverse Conway: decompose by team cognitive load |
+| `event-storming` | event-storming.md | Event-driven: discover boundaries from domain events |
+| `business-capability` | architecture-patterns.md (microservices section) | Traditional: map capabilities to services |
+
+### Decision Matrix Inputs
+
+When `decomposition: auto`, use `architecture.decision_matrix_inputs` to guide the recommendation:
+
+| Input | Low | Medium | High | Influences |
+|-------|-----|--------|------|-----------|
+| `team_size` | 1-3 | 4-8 | 9+ | Microservices viability, team topology applicability |
+| `deploy_independence` | Monolith OK | Some independence | Full independence needed | Monolith vs microservices |
+| `domain_complexity` | Simple CRUD | Moderate rules | Rich domain logic | DDD applicability |
+| `change_rate` | Stable | Moderate change | Frequent change | Volatility decomposition applicability |
+
+---
+
 ## Software Architecture Roles
 
 ### Role → Reference Mapping
@@ -102,7 +151,7 @@ If the task requires modifying existing files, use the Read, Edit, Write, Glob, 
 | "review architecture", "evaluate design", "architecture assessment" | **review** | Solution | architecture-patterns.md, quality-attributes.md |
 | "ADR", "architecture decision", "document decision" | **document** | Solution | adr-template.md |
 | "technology evaluation", "compare technologies", "tech selection", "build vs buy" | **evaluate** | Solution/Enterprise | technology-evaluation.md |
-| "decompose", "service boundaries", "bounded context", "break apart", "modularize" | **decompose** | Solution | architecture-patterns.md, c4-model.md |
+| "decompose", "service boundaries", "bounded context", "break apart", "modularize", "volatility", "IDesign", "team topology", "event storming", "subdomain" | **decompose** | Solution | architecture-patterns.md, c4-model.md + configured decomposition reference (see config) |
 | "C4", "context diagram", "container diagram", "component diagram" | **model** | Solution | c4-model.md |
 | "quality attributes", "non-functional", "scalability", "performance architecture", "-ilities" | **analyze-quality** | Solution | quality-attributes.md, architecture-patterns.md |
 | "data model", "schema design", "data flow", "ERD", "data governance" | **data-design** | Data | data-modeling.md |
@@ -462,6 +511,13 @@ For orchestration with other delivery-team skills, the architect skill accepts a
 - `references/data-modeling.md` — Data architecture: relational, NoSQL, event sourcing, CQRS, governance, schema evolution
 - `references/security-patterns.md` — Security architecture: STRIDE, zero trust, auth patterns, OWASP, threat modeling
 - `references/technology-evaluation.md` — Technology selection: weighted criteria matrix, build vs buy, PoC design, migration cost
+
+### Decomposition Strategies
+
+- `references/volatility-decomposition.md` — IDesign/Lowy: decompose by axes of change, Manager/Engine/Accessor/Utility hierarchy, strict dependency rules
+- `references/strategic-ddd.md` — Strategic DDD: subdomain classification (core/supporting/generic), bounded context discovery, context mapping patterns, aggregate boundaries
+- `references/team-topology.md` — Team Topologies: stream-aligned/enabling/complicated-subsystem/platform teams, cognitive load, inverse Conway
+- `references/event-storming.md` — Event Storming: workshop protocol, sticky note notation, CQRS/ES topology, saga patterns, event-driven service boundaries
 
 ### Security & Compliance
 
