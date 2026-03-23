@@ -129,6 +129,31 @@ When `decomposition: auto`, use `architecture.decision_matrix_inputs` to guide t
 
 ---
 
+## Domain Discovery Before Design
+
+Before producing architecture designs or decompositions, run a domain discovery interview to gather business context. Reference `references/domain-discovery.md` for the full protocol.
+
+### Process
+
+1. **Select interview questions** based on configured decomposition strategy (volatility, DDD, team-topology, event-storming)
+2. **Invoke Product Owner** (product-delivery skill) with the questions and project context
+3. **Evaluate PO answers**: sufficient → proceed, partial → follow up, insufficient → escalate
+4. **Escalate to human** if PO cannot answer critical questions (present specific questions with why they matter and who should answer)
+5. **Record findings** in the architecture artifact as a "Domain Discovery" section
+
+### When to Run Discovery
+
+- Before every `design` or `decompose` task
+- When switching decomposition strategies
+- When ambiguity is encountered during design
+- NOT needed for: `review`, `document`, `model`, or `evaluate` tasks
+
+### Escalation
+
+If the PO lacks domain knowledge to answer, escalate using the dynamic escalation protocol with the domain discovery escalation format from `references/domain-discovery.md`. The architect can proceed with stated assumptions if the user approves, but assumptions and their risks must be documented.
+
+---
+
 ## Software Architecture Roles
 
 ### Role → Reference Mapping
@@ -147,7 +172,7 @@ When `decomposition: auto`, use `architecture.decision_matrix_inputs` to guide t
 
 | Request Signal | Task Type | Role(s) | References Loaded |
 |---|---|---|---|
-| "design", "architect a solution", "system design", "how should we build" | **design** | Solution | architecture-patterns.md, c4-model.md |
+| "design", "architect a solution", "system design", "how should we build" | **design** | Solution | architecture-patterns.md, c4-model.md + domain-discovery.md (interview first) |
 | "review architecture", "evaluate design", "architecture assessment" | **review** | Solution | architecture-patterns.md, quality-attributes.md |
 | "ADR", "architecture decision", "document decision" | **document** | Solution | adr-template.md |
 | "technology evaluation", "compare technologies", "tech selection", "build vs buy" | **evaluate** | Solution/Enterprise | technology-evaluation.md |
@@ -518,6 +543,7 @@ For orchestration with other delivery-team skills, the architect skill accepts a
 - `references/strategic-ddd.md` — Strategic DDD: subdomain classification (core/supporting/generic), bounded context discovery, context mapping patterns, aggregate boundaries
 - `references/team-topology.md` — Team Topologies: stream-aligned/enabling/complicated-subsystem/platform teams, cognitive load, inverse Conway
 - `references/event-storming.md` — Event Storming: workshop protocol, sticky note notation, CQRS/ES topology, saga patterns, event-driven service boundaries
+- `references/domain-discovery.md` — Domain discovery interviews: strategy-specific question sets, PO interview protocol, escalation format, answer recording template
 
 ### Security & Compliance
 

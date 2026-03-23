@@ -138,21 +138,26 @@ Create technical architecture: system design, C4 models, ADRs, technology decisi
 - `03-ux-design.md` exists if Design stage ran
 
 ### Sub-Flow
-1. **Invoke Architect** (architect skill, task_type: design, role: solution)
-   - Input: PRD + UX design (if available) + memory lessons
+1. **Domain Discovery Interview** (architect skill, references/domain-discovery.md)
+   - Invoke PO (product-delivery skill) with decomposition-specific questions
+   - Evaluate answers: sufficient → proceed, partial → follow up, insufficient → escalate to human
+   - Record findings as "Domain Discovery" section in architecture artifact
+   - If escalation needed: present unanswered questions with architectural impact and suggested respondents
+2. **Invoke Architect** (architect skill, task_type: design, role: solution)
+   - Input: PRD + UX design (if available) + domain discovery findings + memory lessons
    - Output: system architecture with C4 diagram descriptions
-2. **For contested decisions** -- run **Debate Pattern**:
+3. **For contested decisions** -- run **Debate Pattern**:
    - Frame the choice (e.g., "microservices vs monolith")
    - PRO agent argues Option A, CON agent argues Option B
    - JUDGE (Enterprise Architect) decides
    - Produce ADR for each debate
-3. **Invoke Security Architect** (architect skill, task_type: security-design)
+4. **Invoke Security Architect** (architect skill, task_type: security-design)
    - Input: system architecture
    - Output: security review findings
-4. **Evaluator-Optimizer Loop**: QA reviews for testability, DevOps reviews for deployability. Route findings back to Architect. Max 2 iterations.
-5. **Adversarial Review**: Challenger questions architecture assumptions, rates confidence
-6. **Team DoD Validation**: Architect (soundness), QA (testability), DevOps (deployability), Security (posture)
-7. **Human Checkpoint 2**: Present architecture summary for approval
+5. **Evaluator-Optimizer Loop**: QA reviews for testability, DevOps reviews for deployability. Route findings back to Architect. Max 2 iterations.
+6. **Adversarial Review**: Challenger questions architecture assumptions, rates confidence
+7. **Team DoD Validation**: Architect (soundness), QA (testability), DevOps (deployability), Security (posture)
+8. **Human Checkpoint 2**: Present architecture summary for approval
 
 ### DoD Validators
 - Architect: design is sound, trade-offs documented, patterns appropriate
