@@ -42,26 +42,99 @@ For each axis, ask: "If this changes, what else must change?" The answer defines
 - Accessors encapsulate data/integration volatility (if database changes, only the Accessor changes)
 - Utilities encapsulate infrastructure volatility (if logging framework changes, only Logger changes)
 
-## Decomposition Process
+## IDesign Decomposition Process
 
-1. **List business capabilities** (not features -- capabilities)
-2. **For each capability, identify volatility axes**: what changes, how often, why
-3. **Group by volatility**: things that change for the same reason go in the same service
-4. **Classify each service**: Manager, Engine, Accessor, or Utility
-5. **Verify dependency rules**: no violations of the hierarchy
-6. **Define interfaces**: stable contracts between services (change the implementation, not the interface)
+Based on Juval Lowy's "Righting Software" (Addison-Wesley, 2019) and the IDesign methodology. The process starts with understanding business processes, NOT with asking "what changes?" directly. Volatility is discovered through analysis, not interrogation.
+
+### Phase 1: Business Process Walkthrough
+
+Document every business process end-to-end before analyzing anything:
+
+1. Have the user/PO walk through each core business process from start to finish
+2. Document as a sequence: activity → decision → activity → outcome
+3. Capture for each step: who does it, what data flows in/out, what decisions are made
+4. Record variations and branches ("when X happens, the process goes to Y instead")
+5. Do NOT analyze or decompose yet — just document faithfully
+
+**Output**: Complete business process documentation for every major workflow.
+
+### Phase 2: Identify Commonalities and Volatilities
+
+Across ALL documented processes, analyze:
+
+**Commonalities** — activities or logic that appear in multiple processes:
+- Same calculation used in multiple workflows → candidate for a shared Engine
+- Same data accessed by multiple processes → candidate for a shared Accessor
+- Same infrastructure concern everywhere → candidate for a Utility
+
+**Volatilities** — activities or logic that change frequently or independently:
+- Mark each activity as: Stable (rarely changes) or Volatile (changes often/independently)
+- For volatile activities, identify the axis: WHY does it change? (business rules, regulation, technology, integration, data format)
+- Group activities that change for the SAME REASON together
+
+### Phase 3: Define Components by What They Handle
+
+Map the analyzed activities to IDesign service types:
+
+1. Group volatile workflow/sequencing activities → **Managers**
+2. Group volatile business logic/rules/calculations → **Engines**
+3. Group volatile data access/integration activities → **Accessors**
+4. Group common infrastructure activities → **Utilities**
+5. Name each component by the volatility it encapsulates (e.g., "PricingEngine" — encapsulates pricing rule volatility)
+6. Verify the dependency hierarchy: Managers → Engines → Accessors → Utilities
+7. If a component doesn't fit cleanly → re-examine the volatility analysis
+
+### Phase 4: Validate with Real Use Cases
+
+Test the decomposition against 3-5 real change scenarios:
+
+1. Pick upcoming or recent changes: "Last quarter, [X] changed. Under our decomposition, which components would change?"
+2. **Good result**: change affects 1-2 components only
+3. **Bad result**: change spreads across 3+ components → decomposition is wrong, re-group
+4. For each scenario, document: what changed, which components were affected, whether the change was contained
+5. If validation fails, go back to Phase 2 and re-analyze the volatility axes
+
+### Phase 5: Project Planning
+
+The IDesign method includes project planning based on the decomposition:
+
+**Implementation Sequencing** (bottom-up):
+1. Utilities first (no dependencies, foundation for everything)
+2. Accessors second (depend only on Utilities)
+3. Engines third (depend on Accessors + Utilities)
+4. Managers last (depend on Engines, orchestrate the whole workflow)
+
+**Interface Design Before Implementation**:
+- Design ALL interfaces before writing ANY implementation code
+- Interface design reviews are mandatory — the interface IS the architecture
+- Interfaces should be stable; if they change often, the decomposition is wrong
+
+**Effort Estimation**:
+- High-volatility components need more investment in interface design (more time upfront, less rework later)
+- High-volatility components should be assigned to senior developers
+- Stable/utility components can be assigned to junior developers or outsourced
+
+**Design Reviews**:
+- Every interface reviewed before implementation begins
+- Every component reviewed for dependency rule compliance
+- Validation scenarios reviewed with stakeholders
 
 ## Volatility Assessment Matrix
 
-For each component, rate on a 1-5 scale:
+After Phase 2, rate each identified component on a 1-5 scale:
 
-| Component | Requirements | Technology | Integration | Data | Policy | Total Score |
-|-----------|-------------|-----------|-------------|------|--------|-------------|
-| Checkout flow | 4 | 2 | 3 | 2 | 1 | 12 |
-| Tax calculation | 2 | 1 | 2 | 1 | 5 | 11 |
-| User auth | 1 | 3 | 4 | 1 | 2 | 11 |
+| Component | Requirements | Technology | Integration | Data | Policy | Total | Classification |
+|-----------|-------------|-----------|-------------|------|--------|-------|---------------|
+| Checkout flow | 4 | 2 | 3 | 2 | 1 | 12 | Manager |
+| Tax calculation | 2 | 1 | 2 | 1 | 5 | 11 | Engine |
+| User auth | 1 | 3 | 4 | 1 | 2 | 11 | Accessor |
+| Logging | 1 | 2 | 1 | 1 | 1 | 6 | Utility |
 
-High-scoring components need strong encapsulation. Low-scoring components can share boundaries.
+High-scoring components need strong encapsulation and senior developers. Low-scoring components can share boundaries or be commoditized.
+
+## Reference
+
+For the complete IDesign methodology including detailed project planning, estimation techniques, design review protocols, and case studies, see: Juval Lowy, "Righting Software" (Addison-Wesley Professional, 2019).
 
 ## Interface Design
 

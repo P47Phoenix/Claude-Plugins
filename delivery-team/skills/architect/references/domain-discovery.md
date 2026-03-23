@@ -24,26 +24,53 @@ Before designing architecture or decomposing a system, the architect must gather
 
 ## Volatility Discovery (for IDesign decomposition)
 
-Ask these questions to identify axes of change:
+The IDesign method discovers volatility through business process walkthroughs, NOT by asking "what changes?" directly. Follow Juval Lowy's approach: document first, analyze second.
 
-### Business Change
-1. "Which business rules change most frequently? Give examples from the last year."
-2. "What regulatory or compliance changes are expected in the next 12 months?"
-3. "Which parts of the pricing, billing, or revenue model are likely to evolve?"
+### Step 1: Business Process Walkthrough (the core interview)
 
-### Technology Change
-4. "Which technologies in the current stack are candidates for replacement? Why?"
-5. "Are there integrations with external systems that change their APIs frequently?"
-6. "Which infrastructure decisions (cloud provider, database, messaging) might shift?"
+Walk through every major business process end-to-end:
 
-### Organization Change
-7. "Are teams being reorganized? Are responsibilities shifting between departments?"
+1. "Walk me through how [core business process] works from start to finish."
+2. "What are the steps? Who is involved at each step? What decisions are made?"
+3. "What data moves between steps? In what format?"
+4. "Are there variations of this process? When does the process branch?"
+5. "What happens when things go wrong in this process? How are errors handled?"
 
-### Follow-Up Pattern
-For each identified axis of change:
-- "If [thing] changes, what else in the system must change?"
-- "How often has [thing] changed in the past year?"
-- "Who decides when [thing] changes? Is it planned or reactive?"
+Repeat for each major business process. Document as: activity → decision → activity → outcome.
+
+### Step 2: Change History Analysis
+
+After documenting the processes, explore what has changed:
+
+6. "In the last 12 months, which parts of this process changed? Why?"
+7. "Which changes were easy (stayed contained) and which were painful (spread everywhere)?"
+8. "What's on the roadmap that will change these processes in the next 6-12 months?"
+9. "Have any external integrations or regulations forced process changes?"
+
+### Step 3: Commonality and Volatility Identification
+
+Review the documented processes together with the PO:
+
+10. "Looking at these processes together, which activities appear in multiple processes?" (commonalities)
+11. "Which of these steps would you say change most often? Why?" (volatilities)
+12. "If [step] changed, what else in the process would need to change?" (encapsulation boundaries)
+13. "Which parts are commodity (everyone does it the same) vs unique to your business?" (build vs buy)
+
+### Step 4: Decomposition Validation
+
+Test the proposed decomposition with real scenarios:
+
+14. "Let me test our decomposition: if [real upcoming change] happens, here's what would change in the system. Does that seem contained?"
+15. "Does this component grouping make sense to you? Would changes stay isolated?"
+16. "Are there changes I haven't considered that would break this structure?"
+
+### Escalation Triggers
+Escalate to human if:
+- PO cannot walk through the business processes (needs domain expert)
+- Change history is unavailable (needs organizational knowledge)
+- Validation scenarios reveal the decomposition doesn't contain changes
+
+Reference: Juval Lowy, "Righting Software" (Addison-Wesley, 2019) for the complete IDesign methodology.
 
 ---
 
