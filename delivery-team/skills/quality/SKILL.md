@@ -364,3 +364,4 @@ The sub-agent returns structured markdown matching the Output Contract for the t
 - `references/empirical-validation.md` -- Empirical validation registry: technology-specific patterns requiring runtime verification, keyword detection, severity classification, recommended validation tools
 - `references/exploratory-testing.md` -- Session-based exploratory testing: SBET charters, HICCUPPS heuristics, tour-based exploration, cross-story regression detection, game-specific patterns
 - `references/milestone-testing.md` -- Milestone validation protocols by project type: Web/React, API/Backend, Enterprise/B2B, Mobile, CLI with role-specific checklists and critical path testing
+- `references/security-scanning.md` -- Inline security scanning: secrets detection, injection patterns, XSS, path traversal, language-specific patterns

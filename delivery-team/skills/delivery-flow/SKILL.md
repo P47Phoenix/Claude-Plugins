@@ -1024,6 +1024,7 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 | `escalate` | Manually trigger escalation for current stage |
 | `resume` | Resume a previously interrupted pipeline run |
 | `defect-review` | Run defect analysis and check for plugin improvement PR candidates |
+| `analytics` | Show pipeline analytics dashboard from memory data |
 
 ---
 
@@ -1045,3 +1046,6 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/git-integration.md` | Git integration: branching strategies, conventional commits, pipeline integration points |
 | `references/github-integration.md` | GitHub integration: issue creation, PR creation, commit linking, gh CLI usage |
 | `references/getting-started.md` | Getting started guide: quick-start wizard, skill map, first pipeline walkthrough, command cheat sheet |
+| `references/analytics.md` | Pipeline analytics: metrics, data sources, dashboard format, trend analysis |
+| `references/artifact-contracts.md` | Artifact contracts: required sections per stage transition, input validation, contract versioning |
+| `references/monorepo.md` | Monorepo orchestration: detection, per-package pipelines, affected-only runs, shared ADRs |

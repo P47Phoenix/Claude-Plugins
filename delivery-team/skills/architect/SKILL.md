@@ -521,6 +521,7 @@ For orchestration with other delivery-team skills, the architect skill accepts a
 | `quality` | Analyze quality attributes |
 | `budget` | Analyze performance budget (game roles) |
 | `accept` | Finalize current artifact |
+| `adr review` | Review all ADRs for staleness and relevance |
 
 ---
 
@@ -558,3 +559,4 @@ For orchestration with other delivery-team skills, the architect skill accepts a
 - `references/level-world.md` — Level/world: world structure, spatial partitioning, streaming, procedural generation, navmesh
 - `references/network-multiplayer.md` — Netcode: client-server, rollback, state sync, lag compensation, matchmaking, anti-cheat
 - `references/graphics-rendering.md` — Rendering: pipeline architecture, shaders, LOD, lighting, post-processing, GPU optimization
+- `references/adr-lifecycle.md` — ADR lifecycle management: status tracking, cross-referencing, staleness detection, review protocol

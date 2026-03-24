@@ -680,3 +680,5 @@ When invoked as a worker agent within an orchestrated flow, accept and produce s
 - `references/metrics-frameworks.md` -- HEART, AARRR, OKR metrics, North Star framework, metric trees
 - `references/dashboard-design.md` -- Dashboard design principles, visualization selection, audience targeting
 - `references/experimentation.md` -- A/B testing methodology, sample size calculation, statistical significance, guardrails
+- `references/dependency-tracking.md` -- Story dependency tracking, risk register, cross-story dependency validation
+- `references/estimation.md` -- Story point estimation, velocity tracking, capacity planning, calibration
