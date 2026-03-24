@@ -50,6 +50,27 @@ as sub-agents with isolated context.
 
 Before the pipeline executes, check for project configuration:
 
+### State Detection (Resume Check)
+
+Before checking config, check for an existing pipeline state:
+
+1. **Check for `.delivery/state.md`** in the current working directory.
+2. **If state exists with `status: in_progress`**:
+   - Read the YAML frontmatter to load pipeline state.
+   - Announce: `> Existing pipeline found: [pipeline_id], started [date], last completed Stage [N] ([name]). Currently at Stage [N+1].`
+   - **Validate**: verify all artifact files in the `artifacts` map exist on disk. If any are missing, announce which and offer: Restart from that stage / Abandon.
+   - **Semantic validation**: current_stage in range 1-7, not in stages_completed, no gaps in completed+skipped.
+   - **Config divergence check**: diff `config_snapshot` against current `.delivery/config.md`. If different, warn: "Config has changed since this pipeline started. Resume uses the original config. Choose Restart to apply new config."
+   - Offer the user: **Resume** / **Restart** / **Abandon**
+   - Resume: load config from snapshot, skip completed stages, start at current_stage.
+   - Restart: move state file to `.delivery/state-archive/state-<timestamp>.md` (cap at 5, delete oldest), start fresh.
+   - Abandon: delete state file, no pipeline runs.
+3. **If state exists with `status: aborted`**:
+   - Announce: `> Aborted pipeline found from [date], stopped at Stage [N]. Artifacts from stages [list] are preserved.`
+   - Offer: Resume / Restart / Abandon (same as above).
+4. **If state exists with `status: completed`**: ignore (previous run finished normally).
+5. **If no state file exists**: proceed to config check (normal flow).
+
 1. **Check for `.delivery/config.md`** in the current working directory.
 2. **If config exists and is fresh** (< 30 days old):
    - Read the YAML frontmatter to load all project settings.
@@ -303,10 +324,24 @@ See `references/quality-gates.md` for the full DoD protocol and gate criteria.
 Save the validated artifact to `.delivery/artifacts/[NN]-[name].md`. Write the file
 before proceeding to the next stage. This ensures artifacts survive aborts.
 
+### Step 8.5: Update Pipeline State
+
+Write the current pipeline state to `.delivery/state.md` using atomic write (write to `state.tmp.md`, rename to `state.md`):
+- Update `current_stage` to the NEXT stage number
+- Add the just-completed stage to `stages_completed`
+- Add the artifact file path to the `artifacts` map
+- Update `last_updated` timestamp
+
+This ensures state survives session loss. If the session dies after this point, the next session can resume from the next stage.
+
 ### Step 9: Check for Human Checkpoint
 
 If this stage has a scheduled human checkpoint, present a summary of the artifact and
 wait for the user to approve, request changes, or abort.
+
+After checkpoint approval, also update `.delivery/state.md`:
+- Add the checkpoint name to `human_checkpoints_passed`
+- Update `last_updated` timestamp
 
 ### Step 10: Advance
 
@@ -850,6 +885,26 @@ correct subset.
 
 After pipeline completion (or abort), the orchestrator captures lessons learned.
 
+### Pipeline State Management
+
+**At pipeline start** (after Phase 0 completes, before Stage 1):
+Write initial state file to `.delivery/state.md` with atomic write:
+- `pipeline_id`: `run-YYYY-MM-DD-<4char-random>`
+- `status`: `in_progress`
+- `current_stage`: 1
+- `stages_completed`: []
+- `config_snapshot`: entire config.md YAML frontmatter
+- `artifacts`: {}
+
+**At pipeline completion** (after UAT accepted):
+- Set `status: completed` in state file
+- Delete `.delivery/state.md` (artifacts and memory persist independently)
+
+**At pipeline abort**:
+- Set `status: aborted` in state file
+- Preserve `.delivery/state.md` for potential resume
+- Record `abort_stage` in the state file
+
 ### Post-Pipeline Protocol
 
 1. **Run retrospective.** Invoke Scrum Bag (product-delivery skill, task_type:
@@ -925,6 +980,9 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 - **Preserve on abort.** If the pipeline is aborted at any point, all artifacts
   produced so far are preserved in `.delivery/artifacts/`. The memory file is written
   even for aborted runs (with `completed: false` and `abort_stage` recorded).
+- **State persistence after every stage.** Pipeline state is written to `.delivery/state.md`
+  after every stage gate passes using atomic write (temp file → rename). If a session
+  dies, the next session can resume from the last completed stage.
 - **Orchestrator does not produce domain artifacts.** The orchestrator manages flow,
   routing, and validation. All domain work is delegated to worker skills.
 
@@ -945,6 +1003,7 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 | `type <TYPE>` | Override detected project type (e.g., `type FEATURE`) |
 | `memory` | Show lessons from past runs relevant to current project |
 | `escalate` | Manually trigger escalation for current stage |
+| `resume` | Resume a previously interrupted pipeline run |
 | `defect-review` | Run defect analysis and check for plugin improvement PR candidates |
 
 ---

@@ -16,6 +16,7 @@ Capture and structure the raw idea into a brief that downstream stages can work 
 - Project type has been detected
 
 ### Sub-Flow
+0. **Write initial pipeline state** -- Create `.delivery/state.md` with `status: in_progress`, `current_stage: 1`, empty stages_completed, and full config snapshot. Uses atomic write (state.tmp.md → state.md).
 1. **Format the idea** into a structured brief. The orchestrator does this directly (no sub-agent needed for simple structuring). If the idea is complex or vague, spawn a Product Owner sub-agent (product-delivery skill, task_type: user_story) to help structure it.
 2. **Identify key elements**: problem statement, target users, goals, constraints, initial scope
 3. **Quality gate**: evaluate against Gate 1 criteria
@@ -320,6 +321,7 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
 
 ### Post-Acceptance
 After human accepts:
+0. **Pipeline state cleanup** -- Set state.md status to `completed`, then delete the state file. Artifacts and memory persist independently.
 1. **Invoke Scrum Bag** (product-delivery skill, task_type: retrospective) -- capture lessons. This step is MANDATORY — the Stop hook enforces it.
 2. **Write run archive** to `memory/archive/run-YYYY-MM-DD-<id>.md`
 3. **Extract and route lessons** to stage chunks (`memory/stages/*.md`) and topic chunks (`memory/topics/*.md`)

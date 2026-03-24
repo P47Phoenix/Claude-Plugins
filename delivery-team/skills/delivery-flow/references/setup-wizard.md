@@ -443,7 +443,9 @@ After the config file is generated, initialize the `.delivery/` directory struct
 5. Create `.delivery/memory/topics/`
 6. Create `.delivery/memory/archive/`
 7. Write `.delivery/config.md` (the config generated above)
-8. Write `.delivery/README.md` with the following content:
+8. Create `.delivery/state-archive/`
+9. Add to `.gitignore` (if it exists): `state.md`, `state.tmp.md`, `state-archive/`
+10. Write `.delivery/README.md` with the following content:
 
 ```markdown
 # .delivery/

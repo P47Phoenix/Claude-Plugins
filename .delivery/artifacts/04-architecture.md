@@ -1,143 +1,115 @@
-## Architecture: Agent Alias Themes
+## Architecture: Pipeline Resume & Checkpoint Persistence
 
-**Role**: Solution Architect
+**Role**: Celebrimbor (Solution Architect)
 **Task**: design (light)
 
+*"A system's state is like a Ring of Power — it must be forged carefully, for if it is lost, all that was built with it fades."*
+
 ### Context & Drivers
-Add themed aliases to all delivery team roles. Themes are cosmetic — they change names, personality, and communication style but not skill behavior or reference loading. Must integrate with existing config system (v1.3) and work across all 9 skills.
+The delivery-flow pipeline loses all state when a session ends. We need to persist state to disk after each stage so sessions can resume. Must integrate with existing `.delivery/` structure, config system, and memory protocol.
 
 ### Architecture Decision
 
-**Approach**: Reference-based theme system (no code, no scripts)
+**Approach**: Single state file with atomic writes
 
-Each theme is a YAML file with role mappings. When a sub-agent is spawned, the orchestrator (delivery-flow) or the skill itself reads the active theme, finds the role mapping, and prepends the personality injection to the sub-agent prompt.
+The pipeline state is a single markdown file (`.delivery/state.md`) with YAML frontmatter. It is written atomically (temp file → rename) after each stage gate passes. On pipeline start (Phase 0), the orchestrator checks for this file and offers resume.
 
-### Component Design
+### State File Lifecycle
 
 ```
-.delivery/config.md          # aliases.theme setting (e.g., "lotr")
-    |
-    v
-delivery-team/skills/
-├── delivery-flow/
-│   ├── SKILL.md              # Reads theme on pipeline start, passes to stages
-│   └── references/
-│       ├── aliases/           # Built-in theme files
-│       │   ├── business.yml
-│       │   ├── funny.yml
-│       │   ├── lotr.yml
-│       │   ├── marvel.yml
-│       │   ├── mtg.yml
-│       │   ├── dilbert.yml
-│       │   ├── bulls-jordan.yml
-│       │   ├── nfl.yml
-│       │   ├── snl.yml
-│       │   ├── star-wars.yml
-│       │   ├── mandalorian.yml
-│       │   ├── breaking-bad.yml
-│       │   └── the-office.yml
-│       └── config-schema.md  # aliases.* config keys
-├── alias-creator/            # New skill for creating custom themes
-│   ├── SKILL.md
-│   └── references/
-│       └── theme-format.md   # Theme file format documentation
-└── [each skill]/
-    └── SKILL.md              # Each skill reads alias for its role(s)
+Session 1:
+  Phase 0 → write initial state (status: in_progress, stage: 1)
+  Stage 1 passes DoD → update state (stages_completed: [1], stage: 2)
+  Stage 2 passes DoD → update state (stages_completed: [1,2], stage: 3)
+  Checkpoint 1 approved → update state (checkpoints_passed: [refine])
+  [session dies]
 
-.delivery/aliases/            # Custom per-repo themes (user-created)
-└── my-custom-theme.yml
+Session 2:
+  Phase 0 → detect state.md → offer Resume/Restart/Abandon
+  User picks Resume →
+    validate artifact files exist
+    validate state semantics
+    diff config snapshot vs current config (warn if changed)
+    skip stages 1-2, start at stage 3
+  Stage 3 passes DoD → update state
+  ...continues...
+  Stage 7 passes → status: completed → delete state.md
+  Post-pipeline → memory write (state.md gone, memory persists)
 ```
 
-### Theme File Format (YAML)
+### Integration Points
+
+**Phase 0 (delivery-flow SKILL.md)** — add state detection AFTER config check, BEFORE type detection:
+1. Check for `.delivery/state.md`
+2. If found with `status: in_progress` → resume flow
+3. If found with `status: aborted` → offer resume or restart
+4. If not found → normal pipeline start
+5. Write initial state when pipeline begins
+
+**Phase 4 execution protocol** — add state write after Step 8 (Write Artifact):
+- Step 8.5: Update `.delivery/state.md` with completed stage
+
+**Post-pipeline protocol** — add state cleanup:
+- On completion: delete state.md
+- On abort: set status to `aborted`, preserve
+
+**Setup wizard** — add to Initialize Directory:
+- Add `state.md`, `state.tmp.md`, `state-archive/` to `.gitignore`
+- Create `.delivery/state-archive/` directory
+
+### File Changes Required
+
+| File | Change |
+|------|--------|
+| `delivery-flow/SKILL.md` | Phase 0: add state detection + resume flow between config check and type detection. Phase 4: add state write after artifact write. Post-pipeline: add state cleanup. |
+| `delivery-flow/references/pipeline-stages.md` | Each stage's sub-flow: add state write step after DoD validation |
+| `delivery-flow/references/setup-wizard.md` | Initialize Directory: add state-archive dir + .gitignore entries |
+| `delivery-flow/references/config-schema.md` | No schema changes needed (state is not config) |
+
+### State File Format
 
 ```yaml
+---
+pipeline_id: run-2026-03-24-a1b2
+project_type: FEATURE
 theme: lotr
-display_name: "Lord of the Rings"
-personality_strength: moderate  # light | moderate | full
-min_roles_version: 13
-
-roles:
-  product-owner:
-    character: "Gandalf"
-    personality: "Wise guide who sees the big picture. Speaks with gravitas and occasional humor."
-    catchphrase: "A product owner is never late, nor early. They prioritize precisely when they mean to."
-    style: "wise, measured, occasionally cryptic"
-    examples:
-      - "This story carries great weight. Let us ensure its acceptance criteria are forged true."
-      - "I see the path through this backlog, though it winds through dark places."
-
-  scrum-master:
-    character: "Aragorn"
-    personality: "Servant leader who rallies the team. Leads from the front but empowers others."
-    catchphrase: "For the sprint."
-    style: "noble, direct, encouraging"
-    examples:
-      - "Our velocity tells a tale of growing strength. Let us ride on."
-      - "The impediment before us can be overcome. Together."
-
-  # ... all 13 roles
-```
-
-### Theme Loading Flow
-
-1. **Pipeline start (Phase 0)**: Read `aliases.theme` from `.delivery/config.md`
-2. **Theme resolution**: Check `.delivery/aliases/<theme>.yml` first (custom), then `delivery-flow/references/aliases/<theme>.yml` (built-in). Custom overrides built-in.
-3. **Cache**: Load theme once, store in working context for the pipeline run
-4. **Per-stage injection**: When spawning a sub-agent, look up the role in the cached theme. Prepend personality block to the sub-agent prompt.
-5. **Fallback**: If role not in theme, use `business.yml` mapping for that role
-
-### Personality Injection Point
-
-Each skill's sub-agent prompt template currently starts with:
-```
-You are an expert [ROLE]. Apply these [patterns/practices] to everything you produce:
-```
-
-With aliases active, it becomes:
-```
-You are [CHARACTER NAME] ([ROLE]).
-[PERSONALITY NOTE]
-[CATCHPHRASE — use occasionally, not every response]
-Communicate in a [STYLE] style while performing your [ROLE] duties.
-Your expertise and output quality must not change — only your personality and communication style.
-Do not break character. If the user says "drop character" or "be professional", revert to standard professional tone.
-
-[Few-shot examples if personality_strength is moderate or full:]
-Example of your voice:
-- "[EXAMPLE 1]"
-- "[EXAMPLE 2]"
-
-Now apply these [patterns/practices]:
-```
-
-### Config Schema Update (v1.4)
-
-```yaml
-aliases:
-  theme: business       # active theme name
-  custom_path: .delivery/aliases/  # where custom themes live
+started: 2026-03-24T10:30:00
+last_updated: 2026-03-24T11:45:00
+current_stage: 4
+current_stage_name: architect
+status: in_progress
+stages_completed: [1, 2, 3]
+stages_skipped: []
+human_checkpoints_passed: [refine]
+artifacts:
+  idea_brief: .delivery/artifacts/01-idea-brief.md
+  prd: .delivery/artifacts/02-prd.md
+  ux_design: .delivery/artifacts/03-ux-design.md
+config_snapshot:
+  # entire config.md YAML frontmatter
+---
 ```
 
 ### Trade-Off Analysis
 
 | Option | Pros | Cons | Decision |
 |--------|------|------|----------|
-| YAML theme files | Machine-parseable, simple to create | Less readable than markdown | CHOSEN — simpler parsing, config.md is already YAML |
-| Markdown theme files | Human-readable | Hard to parse structured data | Rejected |
-| Theme in config.md | One file | Config would be massive with 13 role mappings | Rejected |
-| Inline in SKILL.md | No extra files | Bloats every skill, can't customize | Rejected |
+| Single state file | Simple, atomic, human-readable | One file to corrupt | CHOSEN |
+| Per-stage state files | Granular, no corruption cascade | 7+ files to manage, complex resume | Rejected |
+| SQLite state DB | Robust, queryable | External dep, not human-readable | Rejected |
+| State in config.md | One less file | Mixes config (stable) with state (volatile) | Rejected |
 
 ### Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Personality degrades skill output quality | High | DoD validators check same criteria regardless of theme |
-| Theme loading slows pipeline | Low | Load once, cache for run |
-| Custom themes with missing roles | Medium | Fallback to Business for unmapped roles |
+| Risk | Mitigation |
+|------|-----------|
+| State file corruption from mid-write crash | Atomic write: temp → rename |
+| Missing artifacts on resume | Validate all artifact files exist before resuming |
+| Config changed between sessions | Diff snapshot vs current, warn user |
+| Stale state (session abandoned, never resumed) | 7-day threshold, prompt on detection |
 
 ### Follow-Up
-- Create the 13 built-in theme YAML files
-- Create alias-creator skill
-- Update config-schema.md to v1.4
-- Update each skill's sub-agent prompt template to support personality injection
-- Add `aliases.theme` to setup wizard
+- Update delivery-flow SKILL.md with state detection in Phase 0
+- Update pipeline-stages.md with state write steps
+- Update setup-wizard.md with .gitignore entries
+- Test: start pipeline → kill session → resume → verify continuity

@@ -2,36 +2,36 @@
 
 **Project Type**: FEATURE
 **Date**: 2026-03-24
+**GitHub Issue**: #11
 
 ### Problem Statement
-The delivery team roles (Product Owner, Scrum Bag, QA Engineer, Architect, etc.) are functional but impersonal. Users want themed aliases that give each role a personality — making the team feel like characters from LOTR, Marvel, Dilbert, the Jordan-era Bulls, etc. This makes long delivery sessions more engaging and memorable.
+The delivery-flow pipeline runs end-to-end within a single Claude Code session. When a session ends (timeout, crash, user closes terminal, context limit), all pipeline state is lost. The user must restart from Stage 1 even if Stages 1-5 were complete. For long pipeline runs (GREENFIELD with full depth), this makes the pipeline unreliable for real-world use.
 
 ### Target Users
-- **Plugin user**: developer using the delivery-team plugin daily who wants a more fun, personalized experience
-- **Team lead**: someone configuring the plugin for their team, picking a theme that fits team culture
-- **Community contributor**: someone creating and sharing new alias themes
+- **Long-session user**: running a GREENFIELD or GAME_DEV pipeline that spans 7 stages with full collaboration patterns — easily 30+ minutes of work that can be lost
+- **Interrupted user**: gets a phone call, closes laptop, session times out — needs to resume where they left off
+- **Multi-session user**: intentionally splits pipeline across sessions (do Idea→Architect today, Dev→UAT tomorrow)
 
 ### Goals
-1. Every delivery team role can have a themed alias with character-appropriate personality
-2. Alias themes are selectable via config (per-project, in `.delivery/config.md`)
-3. Built-in themes ship with the plugin (Business, Funny, LOTR, Marvel, MTG, Dilbert, Bulls Jordan Years, NFL, SNL, + more)
-4. Users can create custom alias themes via a dedicated skill
-5. Custom themes are stored per-repo so different projects can have different themes
-6. The alias affects how the agent presents itself (name, personality flavor) but NOT the underlying skill behavior
+1. Pipeline state persisted to `.delivery/state.md` after each stage completes
+2. New session detects existing state and offers: Resume / Restart / Abandon
+3. Resume loads all prior artifacts and continues from next incomplete stage
+4. State file cleaned up after successful pipeline completion
+5. Aborted runs preserve state for potential resume
 
 ### Constraints
-- Aliases are cosmetic — they change names and personality flavor, not architecture or skill references
-- Must be backward compatible — "Business" theme is the default, matches current role names
-- Custom themes must be simple to create (a mapping file, not code)
-- The system must support partial themes (only some roles aliased, rest fall back to Business)
+- State file must be human-readable (markdown with YAML frontmatter, matching existing .delivery/ patterns)
+- Must not conflict with existing memory system (state is current-run, memory is cross-run)
+- Resume must re-read upstream artifacts from `.delivery/artifacts/` (they already persist)
+- Must handle partial stage completion (stage started but not finished)
 
 ### Initial Scope
-- Alias system with theme selection in config
-- 10+ built-in themes with full role mappings
-- Custom alias skill for creating/editing themes
-- Per-repo theme storage in `.delivery/aliases/`
+- State persistence after each stage gate passes
+- Resume detection on pipeline start (Phase 0)
+- Resume/Restart/Abandon prompt
+- State cleanup on completion
 
 ### Out of Scope (initial)
-- AI-generated character art/avatars
-- Voice/tone changes to the actual skill output (just the name/intro changes)
-- Multi-theme per session (one theme active at a time)
+- Mid-stage checkpointing (saving state between sub-agent calls within a stage)
+- Automatic crash recovery (detecting unclean shutdown)
+- Multi-pipeline state (only one active pipeline per project)
