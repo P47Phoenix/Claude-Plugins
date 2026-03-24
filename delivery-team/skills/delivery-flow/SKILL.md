@@ -149,6 +149,8 @@ When a config is loaded, these settings override defaults:
 | `github.create_issues` | Whether to create GitHub issues from user stories at Refine |
 | `github.create_pr` | Whether to create a PR at UAT stage |
 | `github.link_commits` | Whether commit messages reference issue numbers |
+| `notifications.channels` | Which notification channels to use (console, file, slack, github-discussion) |
+| `notifications.events` | Which events trigger notifications (complete, abort, escalation, checkpoint, defect-threshold) |
 
 ---
 
@@ -1025,6 +1027,8 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 | `resume` | Resume a previously interrupted pipeline run |
 | `defect-review` | Run defect analysis and check for plugin improvement PR candidates |
 | `analytics` | Show pipeline analytics dashboard from memory data |
+| `notify` | Send a notification about current pipeline status |
+| `health` | Show team health score and retrospective trend analysis |
 
 ---
 
@@ -1049,3 +1053,5 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/analytics.md` | Pipeline analytics: metrics, data sources, dashboard format, trend analysis |
 | `references/artifact-contracts.md` | Artifact contracts: required sections per stage transition, input validation, contract versioning |
 | `references/monorepo.md` | Monorepo orchestration: detection, per-package pipelines, affected-only runs, shared ADRs |
+| `references/notifications.md` | Configurable notifications: event types, channels (console/file/slack/github-discussion), report format, integration protocol |
+| `references/project-templates.md` | Project templates: pre-built starting artifacts for common stacks (nextjs-api, python-cli, godot-game, dotnet-microservice, react-spa, express-api, fullstack-nx) |

@@ -682,3 +682,4 @@ When invoked as a worker agent within an orchestrated flow, accept and produce s
 - `references/experimentation.md` -- A/B testing methodology, sample size calculation, statistical significance, guardrails
 - `references/dependency-tracking.md` -- Story dependency tracking, risk register, cross-story dependency validation
 - `references/estimation.md` -- Story point estimation, velocity tracking, capacity planning, calibration
+- `references/retro-trends.md` -- Retrospective trend analysis: theme extraction, team health score, retro-of-retros summary
