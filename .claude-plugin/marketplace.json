@@ -57,7 +57,8 @@
         "./delivery-team/skills/quality",
         "./delivery-team/skills/operations",
         "./delivery-team/skills/ui",
-        "./delivery-team/skills/user-feedback"
+        "./delivery-team/skills/user-feedback",
+        "./delivery-team/skills/alias-creator"
       ]
     }
   ]

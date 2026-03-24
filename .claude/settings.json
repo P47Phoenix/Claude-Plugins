@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this Edit/Write/NotebookEdit is modifying source code files. If the file path matches source code patterns (.py, .ts, .js, .go, .rs, .cs, .java, .gd, .scala, .hs, .ex, .fs, .tsx, .jsx, .vue, .svelte, .sh) AND there is no active delivery-team pipeline context in this conversation (no Stage references, no delivery-flow invocation), return a warning: 'Source code change detected outside delivery-team pipeline. Route through delivery-team:delivery-flow for QA review and defect prevention.' If the file is NOT source code (docs .md, config .json .yml .yaml .toml, .delivery/ files, .gitignore, .lock files, README, CLAUDE.md, LICENSE) OR a delivery-team pipeline IS active in this conversation, return 'allow'.",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
