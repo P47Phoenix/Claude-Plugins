@@ -103,6 +103,18 @@ Before checking config, check for an existing pipeline state:
 
 5. **User can re-run the wizard at any time** with the `setup` command.
 
+### Quick-Start Mode
+
+If the user says "quick start", "quick setup", or "just get started", run a 3-question wizard instead of the full 9+ question version:
+
+1. **What are you building?** -- auto-detect project type from the answer
+2. **What language/framework?** -- auto-detect from codebase, user confirms
+3. **How strict?** -- Prototype (minimal) / Standard (balanced) / Strict (full)
+
+All other settings use smart defaults from `references/config-schema.md` based on the project type and strictness level. Generate `.delivery/config.md` and proceed.
+
+See `references/getting-started.md` for the complete quick-start walkthrough, skill map, and command cheat sheet.
+
 ### Config Settings Applied to Pipeline
 
 When a config is loaded, these settings override defaults:
@@ -1032,3 +1044,4 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/defect-tracking.md` | Defect tracking protocol: registry format, classification rules, plugin improvement PR triggers, PO defect rate tracking |
 | `references/git-integration.md` | Git integration: branching strategies, conventional commits, pipeline integration points |
 | `references/github-integration.md` | GitHub integration: issue creation, PR creation, commit linking, gh CLI usage |
+| `references/getting-started.md` | Getting started guide: quick-start wizard, skill map, first pipeline walkthrough, command cheat sheet |

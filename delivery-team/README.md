@@ -6,6 +6,18 @@ A full software delivery team with 9 specialized skills covering the complete de
 
 The delivery team orchestrates Product Owners, Developers, Architects, QA Engineers, DevOps, UX/UI Designers, and simulated end users through a structured pipeline with self-correction, adversarial review, and self-learning memory.
 
+## Quick Start
+
+New to the delivery team? Say:
+
+```
+delivery-team:delivery-flow
+```
+
+The setup wizard will guide you. For a faster setup, say "quick start" -- it asks just 3 questions.
+
+See `skills/delivery-flow/references/getting-started.md` for a complete walkthrough.
+
 ## Skills
 
 | Skill | Roles | Purpose |
