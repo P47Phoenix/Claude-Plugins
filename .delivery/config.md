@@ -52,6 +52,9 @@ personas:
   count: 5
   overlays: []
   custom: []
+aliases:
+  theme: lotr
+  custom_path: .delivery/aliases/
 enforcement:
   source_code_hook: true
   retro_frequency: every-run

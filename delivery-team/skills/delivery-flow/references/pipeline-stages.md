@@ -17,10 +17,11 @@ Capture and structure the raw idea into a brief that downstream stages can work 
 
 ### Sub-Flow
 0. **Write initial pipeline state** -- Create `.delivery/state.md` with `status: in_progress`, `current_stage: 1`, empty stages_completed, and full config snapshot. Uses atomic write (state.tmp.md → state.md).
-1. **Format the idea** into a structured brief. The orchestrator does this directly (no sub-agent needed for simple structuring). If the idea is complex or vague, spawn a Product Owner sub-agent (product-delivery skill, task_type: user_story) to help structure it.
-2. **Identify key elements**: problem statement, target users, goals, constraints, initial scope
-3. **Quality gate**: evaluate against Gate 1 criteria
-4. **Self-correction**: if gate fails, prompt the user for clarification on missing elements (this is the one stage where asking the user is preferred over self-correction, since the input is the user's idea)
+1. **GitHub issue input** (if GitHub integration prerequisites pass): Offer to run `gh issue list --state open` and select an existing issue as the idea input, rather than writing a new idea brief from scratch. If the user selects an issue, read it with `gh issue view <number>` and use its title, body, and labels as the raw input. Record the source issue number in the idea brief. See `references/github-integration.md`.
+2. **Format the idea** into a structured brief. The orchestrator does this directly (no sub-agent needed for simple structuring). If the idea is complex or vague, spawn a Product Owner sub-agent (product-delivery skill, task_type: user_story) to help structure it.
+3. **Identify key elements**: problem statement, target users, goals, constraints, initial scope
+4. **Quality gate**: evaluate against Gate 1 criteria
+5. **Self-correction**: if gate fails, prompt the user for clarification on missing elements (this is the one stage where asking the user is preferred over self-correction, since the input is the user's idea)
 
 ### DoD Validators
 - Product Owner: completeness (problem, users, goals present)
@@ -77,6 +78,7 @@ Transform the idea brief into a complete PRD with acceptance criteria, success m
 6. **Primary agent addresses** valid challenger findings
 7. **Team DoD Validation**: PO (business value), Architect (technical feasibility), QA (testability)
 8. **Human Checkpoint 1**: Present PRD summary for approval
+9. **GitHub issue creation** (if `github.create_issues` is true): For each user story in the PRD, create a GitHub issue using `gh issue create`. Label by priority (P1=critical, P2=high, P3=medium, P4=low). Include acceptance criteria as a checklist in the issue body. Link back to the PRD artifact path. Record issue numbers in the PRD artifact under a "GitHub Issues" section. See `references/github-integration.md`.
 
 ### DoD Validators
 - Product Owner: business value clear, stories are valuable
@@ -206,7 +208,8 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 6. **Consensus Protocol**: SM, PO, QA, DevOps independently estimate and identify risks, then share, respond, and converge. 2-3 rounds.
 7. **Adversarial Review**: Challenger questions estimates and risk assessments
 8. **Team DoD Validation**: SM (process), PO (scope), QA (coverage), DevOps (readiness)
-9. **Human Checkpoint 3**: Present sprint plan for approval
+9. **Git branch creation** (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
+10. **Human Checkpoint 3**: Present sprint plan for approval
 
 ### DoD Validators
 - Scrum Bag: process is sound, capacity realistic
@@ -244,7 +247,8 @@ For each story in the sprint plan:
    - Technical questions -> Architect
    - Quality questions -> QA Engineer
 4. **Invoke Technical Writer** (operations skill, task_type: api-docs or runbook) if applicable
-5. **Team DoD Validation per story**: Developer (quality), QA (tests), Architect (conformance), Tech Writer (docs)
+5. **Commit suggestion** (if `git.commit_convention` is "conventional"): Suggest a conventional commit message based on the story type. Format: `<type>(<scope>): <description>`. Do NOT auto-commit -- present the suggestion for the user to review and execute. See `references/git-integration.md`.
+6. **Team DoD Validation per story**: Developer (quality), QA (tests), Architect (conformance), Tech Writer (docs)
 
 ### DoD Validators (per story)
 - Developer: code is clean, follows language best practices
@@ -304,9 +308,11 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
 6. **Invoke Technical Writer** (operations skill, task_type: release-notes + user-guide)
    - Input: PRD + dev notes + features implemented
    - Output: release notes, user guide updates
-7. **Multi-Perspective Review Board**: QA (tests) + DevOps (release readiness) + Tech Writer (docs). Go/no-go recommendation.
-8. **Team DoD Validation**: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
-9. **Human Checkpoint 4**: Present UAT results for accept/reject
+7. **Working tree validation** (if `git.clean_tree_check` is true): Run `git status --porcelain`. If not clean, list uncommitted changes and warn: "Working tree has uncommitted changes. Commit or stash before UAT acceptance." Do not block -- present the warning and let the user decide. See `references/git-integration.md`.
+8. **PR creation** (if `github.create_pr` is true): Create a pull request using `gh pr create` with: title from sprint goal, body with change summary + stories implemented (with "Closes #N" for each linked issue) + test results from UAT report + release notes. Label by project type. Record the PR URL in the UAT report artifact. See `references/github-integration.md`.
+9. **Multi-Perspective Review Board**: QA (tests) + DevOps (release readiness) + Tech Writer (docs). Go/no-go recommendation.
+10. **Team DoD Validation**: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
+11. **Human Checkpoint 4**: Present UAT results for accept/reject
 
 ### DoD Validators
 - QA Engineer: all tests pass, no critical defects

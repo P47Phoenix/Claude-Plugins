@@ -130,6 +130,13 @@ When a config is loaded, these settings override defaults:
 | `enforcement.source_code_hook` | Whether project-level PreToolUse hook warns on Edit/Write outside pipeline |
 | `enforcement.retro_frequency` | How often retrospectives are required (every-run / every-n-runs / manual) |
 | `enforcement.retro_skip_allowed` | Whether "skip retro" is allowed (false for mission-critical) |
+| `git.branch_strategy` | Branching strategy for feature branches |
+| `git.auto_branch` | Whether to auto-create branches at Plan stage |
+| `git.commit_convention` | Commit message convention (conventional commits) |
+| `git.clean_tree_check` | Whether UAT validates clean working tree |
+| `github.create_issues` | Whether to create GitHub issues from user stories at Refine |
+| `github.create_pr` | Whether to create a PR at UAT stage |
+| `github.link_commits` | Whether commit messages reference issue numbers |
 
 ---
 
@@ -1023,3 +1030,5 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/setup-wizard.md` | Setup wizard protocol: scan detection matrix, 10 wizard questions with smart options, config file format, directory initialization, pipeline integration |
 | `references/config-schema.md` | Config schema: all keys with types, defaults, valid values, consuming skills, versioning, extension protocol, migration |
 | `references/defect-tracking.md` | Defect tracking protocol: registry format, classification rules, plugin improvement PR triggers, PO defect rate tracking |
+| `references/git-integration.md` | Git integration: branching strategies, conventional commits, pipeline integration points |
+| `references/github-integration.md` | GitHub integration: issue creation, PR creation, commit linking, gh CLI usage |
