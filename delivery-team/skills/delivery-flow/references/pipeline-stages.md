@@ -141,6 +141,10 @@ Create technical architecture: system design, C4 models, ADRs, technology decisi
 - `03-ux-design.md` exists if Design stage ran
 
 ### Sub-Flow
+0. **Impact Analysis Gate** -- scan the new feature's PRD for entity references, query
+   existing Feature Knowledge Cards in `.delivery/features/`, detect assumption conflicts,
+   score risk, and present findings. CRITICAL conflicts block, HIGH/MEDIUM require
+   acknowledgment. See `references/feature-knowledge.md`.
 1. **Domain Discovery Interview** (architect skill, references/domain-discovery.md)
    - Invoke PO (product-delivery skill) with decomposition-specific questions
    - Evaluate answers: sufficient → proceed, partial → follow up, insufficient → escalate to human
@@ -255,6 +259,8 @@ For each story in the sprint plan:
 - QA Engineer: tests pass, coverage adequate
 - Architect: implementation conforms to architecture decisions
 - Technical Writer: inline docs and any required external docs present
+- Feature Knowledge: if new feature -- draft FKC auto-generated, developer confirms.
+  If existing feature modified -- FKC reviewed and `last_updated` refreshed.
 
 ### Output Artifacts
 - Actual code files (in the project codebase)
@@ -340,4 +346,7 @@ After human accepts:
    - Update `.delivery/defects/index.md`
    - Update `memory/topics/defect-patterns.md`
 See `references/memory-protocol.md` for the full tiered memory protocol.
-6. Pipeline complete
+6. **Update Feature Knowledge** -- if new feature: finalize FKC and write to `.delivery/features/`.
+   If existing feature modified: update FKC. Regenerate interaction map from all FKCs.
+   Check for new decisions to add to Decision Trail.
+7. Pipeline complete

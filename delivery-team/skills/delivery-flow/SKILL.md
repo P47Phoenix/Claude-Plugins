@@ -1006,6 +1006,9 @@ These guardrails prevent runaway execution and ensure predictable behavior:
   dies, the next session can resume from the last completed stage.
 - **Orchestrator does not produce domain artifacts.** The orchestrator manages flow,
   routing, and validation. All domain work is delegated to worker skills.
+- **Feature knowledge cards are required.** Every new feature must have an FKC created
+  during Stage 6. Existing features modified during a pipeline run must have their FKC
+  reviewed and updated. The Impact Analysis Gate queries FKCs at the Architect stage.
 
 ---
 
@@ -1029,6 +1032,10 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 | `analytics` | Show pipeline analytics dashboard from memory data |
 | `notify` | Send a notification about current pipeline status |
 | `health` | Show team health score and retrospective trend analysis |
+| `impact [feature]` | Run impact analysis for a feature against existing FKCs |
+| `features` | List all feature knowledge cards |
+| `stale-features` | List FKCs that need updating |
+| `decisions` | List all decisions in the Decision Trail |
 
 ---
 
@@ -1055,3 +1062,4 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/monorepo.md` | Monorepo orchestration: detection, per-package pipelines, affected-only runs, shared ADRs |
 | `references/notifications.md` | Configurable notifications: event types, channels (console/file/slack/github-discussion), report format, integration protocol |
 | `references/project-templates.md` | Project templates: pre-built starting artifacts for common stacks (nextjs-api, python-cli, godot-game, dotnet-microservice, react-spa, express-api, fullstack-nx) |
+| `references/feature-knowledge.md` | Feature Knowledge System: FKCs, Impact Analysis Gate, interaction map, decision trail, staleness detection |
