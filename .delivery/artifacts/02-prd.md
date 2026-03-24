@@ -1,23 +1,25 @@
 ## Product Requirements Document
 
-**Product / Feature:** Pipeline Resume & Checkpoint Persistence
+**Product / Feature:** Agent Delegation, Isolation, and Parallelism
 **Version:** 1.0
 **Author:** Gandalf (Product Owner)
 **Status:** Draft
-**Last Updated:** 2026-03-23
-**GitHub Issue:** #11
+**Last Updated:** 2026-03-24
+**GitHub Issues:** #25, #26, #27, #28
 
 ---
 
 ### 1. Problem Statement
 
-The delivery-flow pipeline carries its state in memory alone -- a chain only as strong as the session that holds it. When that session ends, whether by timeout, crash, closed terminal, or the simple exhaustion of a context window, all is lost. The pipeline forgets where it stood. The artifacts remain on disk, yes, but the orchestrator knows nothing of them. The user must begin again at Stage 1, even if five stages of careful work lie behind them.
+The delivery-flow orchestrator suffers from a threefold failure in how it manages its agents -- and these three failures share a single root cause: the absence of a proper agent lifecycle discipline.
 
-This is not a minor inconvenience. A GREENFIELD pipeline with full collaboration patterns -- evaluator-optimizer loops, adversarial review, debate, consensus -- can span thirty minutes or more of intensive work. Losing that progress to a session boundary is the kind of silent failure that erodes trust. The pipeline claims to orchestrate end-to-end delivery, yet it cannot survive the most ordinary of interruptions: a laptop closing, a phone ringing, a context limit reached.
+**The first failure is delegation (#25).** The orchestrator sometimes neglects to delegate work to sub-agents at all. Instead of spawning a dedicated agent instance with the correct skill loaded, it runs the task inline within its own context window. When this happens, the worker role's SKILL.md and reference documents are never loaded. The Product Owner writes a PRD without the product-delivery skill's guidance. The Architect designs without the architect skill's references. The orchestrator plays every part itself, poorly, like a single actor performing all roles in the play without ever reading the scripts.
 
-**Who is affected:** Every user who runs a pipeline longer than a single uninterrupted session. This includes GREENFIELD projects, GAME_DEV pipelines, and any run where the user intentionally splits work across sessions.
+**The second failure is isolation (#26).** Even when sub-agents are spawned, they inherit context from the orchestrator's conversation. The QA engineer can see the developer's reasoning. The adversarial reviewer -- whose entire purpose is to provide an independent challenge -- can see how the primary agent produced the artifact. You cannot get an honest second opinion from someone who watched you write the first one. This defeats every collaboration pattern the pipeline defines: evaluator-optimizer, adversarial review, review board, debate, and consensus all assume that each agent brings an independent perspective. Shared context makes that independence a fiction.
 
-**Why now:** The pipeline orchestration is mature -- 7 stages, 6 collaboration patterns, Team DoD, self-learning memory, config-driven setup. But none of that matters if the pipeline cannot remember itself. As the Fellowship learned, the road is long, and those who travel it must be able to make camp and resume their journey.
+**The third failure is sequencing (#27).** The pipeline executes everything sequentially, even when tasks have no dependencies on each other. DoD validators run one after another when they could run simultaneously. Review board members wait in line. Independent stories are implemented one at a time. Supporting agents queue behind the primary worker. A real team does not work this way. A real team assigns independent tasks to independent people and lets them work in parallel.
+
+These three issues share a root cause: the orchestrator lacks a disciplined agent lifecycle protocol that governs how agents are created, what context they receive, and whether independent agents can run concurrently.
 
 ---
 
@@ -25,268 +27,310 @@ This is not a minor inconvenience. A GREENFIELD pipeline with full collaboration
 
 **Goals:**
 
-1. Pipeline state persisted to `.delivery/state.md` after each stage completes its DoD validation
-2. New sessions detect existing state and offer Resume / Restart / Abandon
-3. Resume loads the config snapshot and all prior artifacts, then continues from the next incomplete stage
-4. Completed pipelines clean up their state file; aborted runs preserve theirs
-5. The state file is human-readable, following the existing `.delivery/` convention of markdown with YAML frontmatter
+1. Sub-agent delegation is reliable -- the orchestrator never falls back to inline execution when a sub-agent is specified by the pipeline stage definition
+2. Each sub-agent runs in a fully isolated context, receiving only artifact file paths and its own skill references -- no orchestrator reasoning, no other agent output, no shared conversation history
+3. Independent tasks within a stage run concurrently where the platform supports it
+4. Agent communication happens exclusively through artifact files in `.delivery/artifacts/` -- no context passing, no inline handoffs
+5. All six existing collaboration patterns continue to function correctly under the new execution model
 
 **Success Metrics:**
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Resume accuracy | 100% of resumed runs continue from the correct stage | Manual verification: resumed pipeline skips completed stages and enters the correct current stage |
-| Artifact integrity | All upstream artifacts loaded correctly on resume | Diff upstream artifacts before session end and after resume -- no data loss |
-| State file correctness | State file reflects actual pipeline position after every write point | Inspect `.delivery/state.md` after each stage gate -- YAML matches pipeline reality |
-| Cleanup reliability | State file deleted on completion, preserved on abort | Verify file presence/absence after completed and aborted runs |
-| Stale state handling | Stale state (> 7 days) prompts user action, never silently resumes | Trigger resume with an old state file and confirm the prompt appears |
-| User decision latency | Resume/Restart/Abandon prompt within 2 seconds of pipeline start | Observed during Phase 0 |
+| Delegation reliability | 100% of stage-defined sub-agent invocations use the Agent tool | Audit pipeline execution: every task listed in pipeline-stages.md is dispatched via Agent tool, never produced inline |
+| Context isolation | 100% of orchestrator-to-agent prompts pass metadata-only audit | Orchestrator passes only: file paths, status enums, role IDs, summaries (<200 chars). No code fences, no artifact content, no other agent output. PreToolUse audit hook validates. |
+| Parallel speedup | DoD validation wall-clock time reduced vs sequential baseline | Time DoD validation with parallel vs sequential execution; parallel should complete faster |
+| Artifact-only communication | 100% of inter-agent data passes through `.delivery/artifacts/` files | Audit agent prompts: no artifact content pasted inline, no summarized output forwarded, only file paths provided |
+| Collaboration pattern correctness | All 6 patterns produce valid results under new model | Run each pattern and verify output quality matches pre-change baseline |
+| Backward compatibility | Existing config.md files work without modification | Run pipeline with a config.md that has no parallel keys; defaults apply, pipeline completes normally |
 
 ---
 
 ### 3. User Personas
 
-**The Long-Session User**
-Runs a GREENFIELD or GAME_DEV pipeline spanning all 7 stages with full collaboration depth. Their sessions routinely exceed 30 minutes. When a session drops, they lose substantial work. They need the pipeline to remember where it was so they can pick up without repeating completed stages.
+**The Pipeline User (any project type)**
 
-**The Interrupted User**
-Mid-pipeline when life intervenes -- a phone call, a closed laptop, a session timeout. They did not choose to stop; the world chose for them. They need to return and find their pipeline waiting, patient as Treebeard, ready to continue from where it stood.
+Every user running delivery-flow is affected. Inline execution can happen on any run. Context bleed undermines every collaboration pattern. Sequential execution slows every multi-agent stage. This user needs the orchestrator to delegate reliably, isolate properly, and parallelize where possible -- without requiring any change to their workflow.
 
-**The Multi-Session User**
-Intentionally splits pipeline execution across sessions. Idea through Architect today; Plan through UAT tomorrow. They treat the pipeline as a persistent workflow, not a single-session script. They need clean session boundaries with reliable resume.
+**The Quality-Sensitive User**
+
+This user relies on adversarial review and Team DoD validation to catch real problems. They trust the pipeline to provide genuine independent assessment. If the reviewer already saw the work being produced, the review is theater, not verification. This user needs context isolation to be absolute, not aspirational.
+
+**The Large-Pipeline User**
+
+This user runs GREENFIELD or GAME_DEV projects with full depth settings. These pipelines invoke the most sub-agents and suffer the most from sequential bottlenecks. A full pipeline with evaluator-optimizer loops, adversarial review, debate, consensus, and Team DoD at every stage -- run sequentially -- takes far longer than it should. This user needs parallel execution for independent tasks to bring pipeline duration closer to the critical path.
 
 ---
 
 ### 4. User Stories
 
-**US-1: Detect existing pipeline state on start**
-As a user starting a new pipeline session, I want the orchestrator to check for an existing `.delivery/state.md` so that I am informed of any in-progress pipeline before a new one begins.
+**US-01: Orchestrator delegates ALL domain work via Agent tool**
+
+As the orchestrator, I delegate ALL domain work to sub-agents via the Agent tool, never producing artifacts inline, so that each worker role executes with its proper skill loaded and its full reference set available.
 
 **Acceptance Criteria:**
-- Phase 0 checks for `.delivery/state.md` after config validation, before memory retrieval
-- If state exists with status `in_progress`, the user is shown: pipeline ID, started date, last stage completed, current stage name
-- If state exists with status `completed`, it is ignored (previous run finished cleanly)
-- If no state file exists, the pipeline starts normally
+- Every task defined in pipeline-stages.md is dispatched via the Agent tool
+- The orchestrator never uses Write/Edit to produce domain content (PRDs, designs, architecture docs, code, test plans) directly
+- Each Agent invocation specifies the correct skill name and task_type
+- If the Agent tool is unavailable or fails, the orchestrator reports the failure rather than falling back to inline execution
 
-**US-2: Choose to resume, restart, or abandon**
-As a user with an in-progress pipeline detected, I want to choose Resume, Restart, or Abandon so that I control how to proceed.
+**US-02: Sub-agents receive only artifact file paths and skill references**
 
-**Acceptance Criteria:**
-- Resume: loads the config snapshot from the state file, skips all completed stages, begins execution at `current_stage`
-- Restart: moves the existing state file to `.delivery/state-archive/state-<timestamp>.md`, then starts a fresh pipeline
-- Abandon: deletes the state file, no pipeline executes
-- The prompt is clear, shows all three options, and waits for the user's explicit choice
-
-**US-3: Persist state after each stage gate**
-As a pipeline user, I want the orchestrator to write the state file after each stage's DoD validation passes so that my progress survives session loss.
+As a sub-agent, I receive only artifact file paths and my skill references -- no orchestrator conversation history -- so that my work is based solely on the defined inputs and my specialized knowledge.
 
 **Acceptance Criteria:**
-- After a stage's Team DoD validators all return DONE, the state file is written/updated
-- The state file includes: pipeline ID, project type, timestamps, current stage, completed stages, skipped stages, artifacts produced, DoD results with iteration counts
-- The `last_updated` timestamp reflects the actual write time
-- The `current_stage` advances to the next stage number
+- The sub-agent prompt contains: skill name, task description, file paths to upstream artifacts, memory lessons for this stage, alias personality (if theme active)
+- The sub-agent prompt does NOT contain: orchestrator reasoning, other agents' output, conversation history, artifact content pasted inline
+- The sub-agent reads artifact files itself using the file paths provided
+- The sub-agent loads its own SKILL.md and references (not pre-loaded by the orchestrator)
 
-**US-4: Persist state after human checkpoint approval**
-As a pipeline user, I want checkpoint approvals recorded in the state file so that I am not asked to re-approve checkpoints after a resume.
+**US-03: DoD validators run in parallel**
 
-**Acceptance Criteria:**
-- When a human checkpoint is approved (e.g., `refine`, `uat`), the state file's `human_checkpoints_passed` list is updated
-- On resume, the orchestrator skips checkpoint prompts for stages already in `human_checkpoints_passed`
-
-**US-5: Clean up state on pipeline completion**
-As a pipeline user, I want the state file removed after a successful pipeline completion so that the next session starts clean.
+As a DoD validator, I run in parallel with other validators, seeing only the artifact and gate criteria, so that validation completes faster and each validator's judgment is independent.
 
 **Acceptance Criteria:**
-- After the final stage completes and all DoD validators pass, the state file status is set to `completed`
-- The state file is then deleted
-- Artifacts in `.delivery/artifacts/` and memory in `.delivery/memory/` are NOT deleted
-- If deletion fails (permissions, etc.), log a warning but do not fail the pipeline
+- All DoD validators for a stage are spawned in a single message (parallel Agent calls)
+- Each validator receives: the artifact file path, its role-specific gate criteria, and the instruction to vote DONE or NOT_DONE
+- No validator sees another validator's output or vote
+- Results are collected after all validators complete; the orchestrator synthesizes the outcome
 
-**US-6: Preserve state on pipeline abort**
-As a user who aborts a pipeline, I want the state file preserved with `aborted` status so that I can inspect what was completed and potentially resume later.
+**US-04: Adversarial reviewers receive only the artifact**
 
-**Acceptance Criteria:**
-- When the user explicitly aborts (or the pipeline hits an unrecoverable error), the state file status is set to `aborted`
-- The state file remains on disk with all accumulated state
-- On next session start, an `aborted` state is treated like `in_progress` for the Resume/Restart/Abandon prompt
-
-**US-7: Handle stale state files**
-As a user returning after a long absence, I want the orchestrator to warn me about stale state files so that I do not accidentally resume an outdated pipeline.
+As an adversarial reviewer, I receive only the artifact to review -- not the production conversation or the primary agent's reasoning -- so that my challenge is genuinely independent.
 
 **Acceptance Criteria:**
-- If `last_updated` is more than 7 days ago, the prompt changes to indicate staleness: "This pipeline has been inactive for [N] days"
-- Only Restart and Abandon are offered for stale state (Resume is not offered -- the context is too old to trust)
-- The 7-day threshold is hardcoded in v1; it is not user-configurable
+- The challenger agent receives: the artifact file path, the adversarial review prompt template, and gate criteria
+- The challenger does NOT receive: the primary agent's prompt, the primary agent's reasoning, the evaluator-optimizer loop history, or the orchestrator's internal notes
+- The challenger reads the artifact from the file path and produces its challenge based solely on the artifact content
 
-**US-8: State file is human-readable and inspectable**
-As a developer or contributor, I want the state file to follow the `.delivery/` convention of markdown with YAML frontmatter so that I can read and understand pipeline state without tooling.
+**US-05: Independent stories run in parallel**
+
+As a developer implementing independent stories, I run in parallel with other story agents (max configurable), so that stories without dependency edges are completed concurrently.
 
 **Acceptance Criteria:**
-- State file uses YAML frontmatter for structured data and markdown body for human-readable context
-- The markdown body includes a "Current Position" summary and a "Context for Resume" section
-- The file can be opened in any text editor or rendered by GitHub
+- Stories with no dependency edges are dispatched as parallel Agent calls (up to `pipeline.max_parallel_agents`)
+- Each story agent receives: the story file path, the architecture artifact file path, and relevant references
+- Stories with dependency edges are dispatched sequentially in dependency order
+- The max parallel agent count is configurable via `pipeline.max_parallel_agents` (default: 3)
+
+**US-06: Orchestrator communicates through artifact files exclusively**
+
+As the orchestrator, I communicate with sub-agents exclusively through artifact files in `.delivery/artifacts/`, so that no information passes through my context as a bridge between agents.
+
+**Acceptance Criteria:**
+- The orchestrator passes file paths to sub-agents, not file content
+- When a sub-agent produces output, the orchestrator writes it to an artifact file before the next agent references it
+- The orchestrator does not summarize, paraphrase, or filter a sub-agent's output when passing it downstream
+- The next sub-agent reads the artifact file directly
+
+**US-07: Review board members produce independent reviews**
+
+As a review board member, I produce my review independently -- I do not see other reviewers' output until synthesis -- so that my perspective is uncontaminated by groupthink.
+
+**Acceptance Criteria:**
+- All review board members are spawned in a single message (parallel Agent calls)
+- Each reviewer receives: the artifact file path, their role-specific evaluation criteria, and the instruction to vote RECOMMEND or BLOCK
+- No reviewer sees another reviewer's findings or vote during their review
+- The orchestrator collects all reviews after completion and performs synthesis
+
+**US-08: Consensus participants produce independent Round 1 analysis**
+
+As a consensus participant, my Round 1 analysis is independent -- I see other agents' positions only in Round 2 -- so that the consensus process begins with genuinely diverse perspectives.
+
+**Acceptance Criteria:**
+- All consensus participants are spawned in parallel for Round 1
+- Each participant receives: the topic, artifact file paths, and their role-specific perspective prompt
+- No participant sees another's Round 1 output
+- In Round 2, all Round 1 outputs are written to artifact files and all participants receive file paths to all Round 1 outputs
+- Round 2 participants are spawned in parallel with the full set of Round 1 artifact file paths
+
+**US-09: Orchestrator delegates to delivery-flow after plan approval (Must Have)**
+
+As the orchestrator exiting plan mode, when the approved plan involves delivery-team work (code, architecture, testing, docs), I invoke delivery-team:delivery-flow rather than implementing directly.
+
+**Acceptance Criteria:**
+- When exiting plan mode with an approved plan that involves code, architecture, testing, or documentation changes, the orchestrator invokes `delivery-team:delivery-flow`
+- The orchestrator does NOT implement the plan directly
+- The delivery-flow pipeline receives the approved plan as input and executes it through the standard stage progression
 
 ---
 
 ### 5. Functional Requirements
 
-#### FR-1: State File Format
+#### FR-01: Agent Invocation Protocol
 
-The state file SHALL be located at `.delivery/state.md` and use the following structure:
+Every domain task specified in pipeline-stages.md MUST be executed via the Agent tool. Each invocation SHALL include:
+
+- The specific skill name and task_type
+- Input: file paths to upstream artifacts (NOT content pasted inline)
+- Skill references loaded by the sub-agent itself (NOT pre-loaded by the orchestrator)
+- Alias personality injection (from active theme, if any)
+- Memory lessons (from relevant stage/topic chunks)
+- Explicit instruction: "Read artifacts from the file paths provided. Do not reference any prior conversation context."
+
+The orchestrator constructs the agent prompt. The sub-agent instructs and verifies skill loading, reads the artifacts, and executes the task. The orchestrator collects the result.
+
+**Skill Loading Verification (Verify-After-Invoke):**
+- The orchestrator's delegation prompt includes: "Begin your response with 'SKILL_LOADED: [skill-name]' to confirm you have loaded the skill."
+- The orchestrator checks the sub-agent's output for this marker.
+- If marker is absent or mismatched: flag as unreliable delegation, retry once, then escalate.
+- A PostToolUse hook on Agent invocations provides a second verification layer.
+
+#### FR-02: Context Isolation Protocol
+
+Each sub-agent receives a fresh context containing ONLY:
+
+- Its skill's SKILL.md and relevant references (loaded by the skill itself when the Agent tool invokes it)
+- File paths to upstream artifacts (the agent reads them)
+- Memory lessons for this stage (from `.delivery/memory/`)
+- Alias personality (if theme is active)
+- Gate criteria (for validators)
+
+Each sub-agent does NOT receive:
+
+- Orchestrator reasoning or internal notes
+- Other agents' output, findings, or votes
+- Conversation history from the orchestrator's context
+- Artifact content pasted inline (only file paths)
+
+This isolation is enforced by the Agent tool's natural context boundary. The orchestrator's responsibility is to never include prohibited context in the agent prompt.
+
+#### FR-03: Two-Channel Communication Model
+
+The orchestrator uses two strictly separated communication channels:
+
+**Signal Channel** (flows through orchestrator):
+- DoD votes: DONE / NOT_DONE / CODE_COMPLETE
+- Routing decisions: RECOMMEND / BLOCK
+- Stage status: completed / failed / skipped
+- File paths to artifacts
+- Summary strings (max 200 characters)
+
+**Artifact Channel** (never flows through orchestrator):
+- File contents -- sub-agents read artifact files directly by path
+- The orchestrator passes file PATHS, never file CONTENTS
+- Sub-agents return: STATUS + FILE_PATHS + SUMMARY (signal only)
+- Downstream agents receive file paths and read files themselves
+
+**Exception**: Collaboration patterns requiring multi-round interaction (Consensus Round 2, Debate Judge) intentionally share prior-round artifacts in later rounds. This is defined in each pattern's protocol.
+
+The orchestrator NEVER reads artifact file contents. It reads only signal-channel data from sub-agent responses.
+
+#### FR-04: Parallel Execution for Independent Tasks
+
+When tasks have no dependencies, the orchestrator SHALL spawn multiple Agent calls in a single message. The following task groups are eligible for parallel execution:
+
+- **DoD validators:** ALL validators for a stage run in parallel
+- **Review Board:** ALL reviewers run in parallel
+- **Consensus Round 1:** ALL participants run in parallel
+- **Supporting agents:** Independent supporting agents within a stage (e.g., Data Analyst + UX Researcher at Refine) run in parallel
+- **Independent stories:** Stories with no dependency edges run in parallel (max `pipeline.max_parallel_agents`)
+- **Debate PRO/CON:** Both sides of a debate run in parallel (the Judge runs after, sequentially)
+
+#### FR-05: Parallel Execution Map
+
+The following table defines explicitly which tasks are sequential (order required) versus parallel (independent) at each pipeline stage:
+
+| Stage | Sequential (order required) | Parallel (independent) |
+|-------|---------------------------|----------------------|
+| 2 Refine | PRD creation first | Metrics + UX research after PRD |
+| 3 Design | UX flows first | UI specs + accessibility review after flows |
+| 5 Plan | Story writing first | Test strategy + deploy plan + estimates after stories |
+| 6 Dev | Dependent stories in order | Independent stories (max 3 parallel) |
+| 7 UAT | Test plan first | Release plan + docs + test execution after plan |
+| All DoD | -- | All validators in parallel |
+| Review Board | -- | All reviewers in parallel |
+| Consensus R1 | -- | All participants in parallel |
+| Consensus R2 | -- | All participants in parallel (with R1 outputs) |
+| Adversarial | Primary artifact first | Challenger runs independently after |
+| Debate | -- | PRO + CON in parallel; Judge sequential after |
+
+#### FR-06: Delegation Guardrail
+
+The orchestrator MUST NOT:
+
+1. Use Write/Edit to create domain content in `.delivery/artifacts/` directly (permitted only for writing sub-agent output to file)
+2. Paste artifact content into a sub-agent prompt (pass file path instead)
+3. Summarize or paraphrase a sub-agent's output for the next agent (let the next agent read the file)
+4. Skip a sub-agent invocation that is defined in pipeline-stages.md
+5. Fall back to inline execution when the Agent tool is available
+
+If the orchestrator detects that it is about to produce domain content inline (a self-check), it SHALL stop and delegate to the appropriate sub-agent instead.
+- When exiting plan mode with an approved plan that involves code, architecture, testing, or documentation changes, the orchestrator MUST invoke `delivery-team:delivery-flow` to execute the plan. It MUST NOT implement the plan directly.
+
+#### FR-07: Parallel Configuration
+
+New config keys added to `.delivery/config.md` under the `pipeline` section:
 
 ```yaml
----
-pipeline_id: run-YYYY-MM-DD-<id>
-project_type: FEATURE
-theme: lotr
-started: 2026-03-24T10:30:00
-last_updated: 2026-03-24T11:45:00
-current_stage: 4
-current_stage_name: architect
-status: in_progress  # in_progress | completed | aborted
-stages_completed: [1, 2, 3]
-stages_skipped: []
-human_checkpoints_passed: [refine]
-artifacts:
-  idea_brief: .delivery/artifacts/01-idea-brief.md
-  prd: .delivery/artifacts/02-prd.md
-  ux_design: .delivery/artifacts/03-ux-design.md
-dod_results:
-  idea: {status: done, iterations: 1}
-  refine: {status: done, iterations: 2}
-  design: {status: done, iterations: 1}
-config_snapshot:
-  checkpoints: [refine, uat]
-  collaboration_patterns: [evaluator-optimizer, adversarial, review-board, debate, consensus, decision-routing]
----
-
-# Pipeline State: [Project Name]
-
-## Current Position
-Stage 4 (Architect) -- in progress, not yet completed.
-
-## Context for Resume
-[Brief description of what was happening when the session ended]
+pipeline:
+  max_parallel_agents: 3     # max concurrent sub-agents per parallel group
+  parallel_stories: true      # enable parallel story implementation in Stage 6
+  parallel_validators: true   # enable parallel DoD validation at all stages
 ```
 
-**Field definitions:**
+**Defaults:** If these keys are absent from config.md, the following defaults apply:
+- `max_parallel_agents`: 3
+- `parallel_stories`: true
+- `parallel_validators`: true
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `pipeline_id` | string | Unique identifier: `run-YYYY-MM-DD-<short-id>` |
-| `project_type` | enum | GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY |
-| `theme` | string | Active alias theme name (if any) |
-| `started` | ISO 8601 | Pipeline start timestamp |
-| `last_updated` | ISO 8601 | Last state write timestamp |
-| `current_stage` | integer | Stage number (1-7) the pipeline is currently in or about to enter |
-| `current_stage_name` | string | Human-readable stage name |
-| `status` | enum | `in_progress`, `completed`, `aborted` |
-| `stages_completed` | list[int] | Stage numbers that have passed DoD |
-| `stages_skipped` | list[int] | Stage numbers skipped by project type routing |
-| `human_checkpoints_passed` | list[string] | Checkpoint names approved by the user |
-| `artifacts` | map | Artifact key to file path for all produced artifacts |
-| `dod_results` | map | Per-stage DoD outcome: status and iteration count |
-| `config_snapshot` | map | Complete copy of `.delivery/config.md` YAML frontmatter active for this run |
+These defaults ensure backward compatibility -- existing config files work without modification.
 
-#### FR-2: Resume Detection (Phase 0)
+#### FR-08: Graceful Degradation
 
-The resume check SHALL occur in Phase 0, after config validation but before memory retrieval. The flow:
+If parallel execution is not supported by the platform (e.g., the Agent tool does not support multiple concurrent calls), the orchestrator SHALL fall back to sequential execution transparently. The pipeline produces identical results whether run in parallel or sequential -- only wall-clock time differs. The orchestrator SHALL NOT error or abort due to a platform limitation on parallelism.
 
-1. Check for `.delivery/state.md`
-2. If file exists and `status` is `in_progress` or `aborted`:
-   - Display: pipeline ID, started date, last stage completed, current stage name, time since last update
-   - If `last_updated` is more than 7 days ago: flag as stale, offer only Restart or Abandon
-   - Otherwise: offer Resume, Restart, or Abandon
-3. If file exists and `status` is `completed`: ignore the file (it should have been deleted; delete it now as cleanup)
-4. If file does not exist: proceed with normal pipeline start
+#### FR-09: Parallel Failure Handling (Scatter-Gather Model)
 
-**Resume action:** Load the `config_snapshot` from the state file (do NOT re-read `.delivery/config.md` -- the snapshot ensures consistency). Read all artifacts listed in the `artifacts` map. Set the pipeline to begin at `current_stage`, marking all `stages_completed` as done. Skip checkpoint prompts for stages in `human_checkpoints_passed`. Proceed to memory retrieval (Phase 2), then enter the current stage.
+Each agent in a parallel group is tagged `required` or `optional` in the stage definition:
+- **Required agent fails/times out**: Stage halts. Error report names the failed agent, the error, and the stage context. Orchestrator retries the failed agent only (not the full group), up to 2 attempts. After 2 retries, escalate to user.
+- **Optional agent fails/times out**: Orchestrator logs the gap, proceeds with partial results. The gap is noted in the stage artifact.
+- **All agents timeout**: Clean stage-level failure with error report.
+- **Per-agent timeout**: Configurable, default 120 seconds.
+- **Retry targets only the failed agent**, never re-runs successful agents in the group.
 
-**Artifact Validation on Resume**: Before resuming, verify every file in the `artifacts` map exists on disk. If any are missing:
-- Announce which artifacts are missing
-- Offer: (a) Restart from the stage that produces the missing artifact, or (b) Abandon
-- Do NOT silently proceed with missing upstream artifacts
+#### FR-10: Sub-Agent Write Ownership
 
-**Config Divergence Check**: On resume, diff the `config_snapshot` against current `.delivery/config.md`. If they differ, display the changes and warn: "Resumed pipeline uses the original config from [date]. To apply your updated config, choose Restart instead."
+Sub-agents always write their own artifacts. The orchestrator never writes artifact content.
 
-**Restart action:** Move the state file to `.delivery/state-archive/state-<ISO-timestamp>.md`. Cap archives at 5; auto-delete the oldest when exceeded. Proceed with normal pipeline start from Phase 0 (config load, type detection, etc.).
+**Namespace isolation**: Each sub-agent writes to `.delivery/artifacts/{stage-number}-{stage-name}/{role}/`. Examples:
+- Architect writes to `.delivery/artifacts/04-architect/solution/`
+- Developer writes to `.delivery/artifacts/06-development/developer/`
+- QA validator writes to `.delivery/artifacts/06-development/qa-review/`
 
-**Abandon action:** Delete the state file. Do not start a pipeline. Return control to the user.
+No two agents share a write directory. Collisions are impossible by structure.
 
-**Semantic Validation Rules**: On state file load, validate beyond YAML syntax:
-- `current_stage` must be in range 1-7
-- `current_stage` must not appear in `stages_completed`
-- `stages_completed` + `stages_skipped` must form a contiguous prefix (no gaps)
-- All `artifacts` map entries must reference existing files
-- `status` must be one of: in_progress, completed, aborted
-- `human_checkpoints_passed` entries must be valid checkpoint names
-- If any rule fails, warn the user and offer: Fix (correct the state), Restart, or Abandon
-
-#### FR-3: State Write Points
-
-The state file SHALL be written at these moments:
-
-0. **Pipeline start**: After Phase 0 completes and pipeline execution begins, write an initial state file with `status: in_progress`, `current_stage: 1`, empty `stages_completed`, and the full config snapshot. This ensures state exists from the moment the pipeline starts.
-
-1. **After each stage's DoD validation passes.** Update `stages_completed`, advance `current_stage` and `current_stage_name`, record `dod_results` for the completed stage, update `artifacts` with any new artifact paths, set `last_updated`.
-
-2. **After each human checkpoint approval.** Append the checkpoint name to `human_checkpoints_passed`, set `last_updated`.
-
-3. **On pipeline completion.** Set `status` to `completed`, then delete the state file.
-
-4. **On pipeline abort.** Set `status` to `aborted`, write the file, preserve it on disk.
-
-Each write is a full rewrite of the state file (not a patch). The file is small; atomic rewrites are simpler and safer than incremental updates.
-
-**Atomic Write**: Write to `.delivery/state.tmp.md` first, then rename to `.delivery/state.md`. If `state.tmp.md` exists at resume detection, treat as a crash indicator -- prefer `state.md` if it exists, or warn if neither is valid.
-
-#### FR-4: State Cleanup
-
-- **Completed runs:** State file is deleted after final DoD passes. Artifacts and memory are untouched.
-- **Aborted runs:** State file is preserved with `aborted` status.
-- **Stale completed state files:** If a `completed` state file is found (deletion failed previously), delete it silently during Phase 0.
-- **Archived state files:** Archived files from Restart actions are stored in `.delivery/state-archive/`. Cap at 5 archives; auto-delete the oldest when exceeded.
-
-#### FR-5: Pipeline ID Generation
-
-The pipeline ID SHALL follow the format `run-YYYY-MM-DD-<id>` where `<id>` is a 4-character random alphanumeric string, matching the memory archive format. The ID is generated once at pipeline start and persists for the life of the run.
-
-#### FR-6: Config Snapshot
-
-The state file SHALL include a `config_snapshot` containing the ENTIRE `.delivery/config.md` YAML frontmatter at the time the pipeline started. On resume, the snapshot is used instead of re-reading the config file, ensuring that config changes between sessions do not silently alter a resumed pipeline's behavior.
-
-The `config_snapshot` SHALL contain the ENTIRE `.delivery/config.md` YAML frontmatter -- not a subset. This ensures no pipeline-altering setting can diverge silently on resume. Do not snapshot a partial selection; snapshot everything.
+The orchestrator's only file-write responsibilities:
+- `.delivery/state.md` (pipeline state)
+- `.delivery/artifacts/` stage summary/routing metadata
+- Never artifact content
 
 ---
 
 ### 6. Non-Functional Requirements
 
-**NFR-1: Human Readability.** The state file must be readable and understandable by a human opening it in a text editor. No binary formats, no encoded blobs. YAML frontmatter + markdown body, consistent with every other file in `.delivery/`.
+**NFR-01: Artifact Quality Preservation.** No change to artifact quality as a result of context isolation. The same DoD pass rate must be achievable with isolated agents as with the current (non-isolated) model. If isolation causes a quality regression, the isolation protocol must be revised -- not the quality bar.
 
-**NFR-2: Write Performance.** State writes must not add perceptible latency to the pipeline. Since the file is small (< 5 KB) and writes occur only at stage boundaries (not mid-stage), this is expected to be trivial.
+**NFR-02: Parallel Performance.** Parallel DoD validation should complete in less wall-clock time than sequential validation for the same set of validators. The improvement scales with the number of validators (2-4 per stage).
 
-**NFR-3: Single Active Pipeline.** Only one pipeline may be active per project directory at a time. The presence of a state file with `in_progress` status means a pipeline is active. Starting a new pipeline requires resolving the existing state first (Resume, Restart, or Abandon).
+**NFR-03: Backward Compatibility.** Existing `.delivery/config.md` files that do not contain the new parallel configuration keys SHALL work without modification. Default values are applied for absent keys. No existing pipeline behavior changes unless the user opts in via config.
 
-Concurrent access prevention relies on user discipline in v1. No file locking is implemented. If two sessions resume the same pipeline, behavior is undefined. This is a known limitation documented for users.
+**NFR-04: Collaboration Pattern Correctness.** All six collaboration patterns (evaluator-optimizer, adversarial review, multi-perspective review board, decision ownership routing, debate, consensus) SHALL produce correct results under the new agent lifecycle model. Correctness means: each pattern's protocol (as defined in `references/team-patterns.md`) is followed exactly, with the additional guarantee that context isolation is enforced at every agent boundary.
 
-**NFR-4: No External Dependencies.** The state persistence mechanism must use only file I/O. No databases, no network calls, no external tools. The orchestrator reads and writes markdown files -- nothing more.
-
-**NFR-5: Graceful Degradation.** If the state file is corrupted or unparseable, the orchestrator should warn the user and offer to start fresh. A corrupted state file must never crash the pipeline or produce undefined behavior.
-
-**NFR-6: Backward Compatibility.** Projects without a state file must behave exactly as they do today. The state file is additive -- its absence changes nothing.
+**NFR-05: Hook Contract Preservation.** Hook contracts (PreToolUse, PostToolUse, SubagentStop) SHALL fire correctly for agents spawned in parallel. Each agent's lifecycle events trigger hooks independently. Parallel execution does not suppress, duplicate, or reorder hook events.
 
 ---
 
 ### 7. Out of Scope
 
-These items are explicitly excluded from this feature and may be addressed in future work:
+These items are explicitly excluded from this feature:
 
-- **Mid-stage checkpointing.** Saving state between sub-agent calls within a single stage. Stages are the atomic unit of persistence in v1.
-- **Automatic crash recovery.** Detecting unclean shutdowns and auto-resuming. The user must explicitly choose to resume.
-- **Multi-pipeline state.** Running multiple pipelines concurrently in the same project directory. One active pipeline at a time.
-- **State file encryption or access control.** The state file is plain text in the project directory, like all other `.delivery/` files.
-- **Remote state storage.** No syncing state to cloud, databases, or external services.
-- **Configurable stale threshold.** The 7-day staleness window is fixed in v1.
+- **Agent-to-agent direct communication.** Agents communicate through artifact files, not to each other. No message-passing, no shared memory, no direct invocation between sub-agents.
+- **Dynamic parallelism tuning based on system load or token budgets.** Parallelism is configured statically via `max_parallel_agents`. Adaptive throttling is a future consideration.
+- **Partial result streaming from sub-agents back to the orchestrator mid-execution.** Sub-agents complete their full task before the orchestrator processes results.
+- **Changes to pipeline stage definitions.** This feature fixes how agents are managed, not what stages do. The stages, their agents, and their artifacts remain as defined in `references/pipeline-stages.md`.
+- **Multi-orchestrator or distributed pipeline execution.** The orchestrator remains a single coordinating agent. We are fixing delegation, not creating a distributed system.
+- **New collaboration patterns beyond the existing six.** The six patterns are unchanged in definition; only their execution model (isolation and parallelism) is improved.
 
 ---
 
@@ -296,39 +340,41 @@ These items are explicitly excluded from this feature and may be addressed in fu
 
 | Dependency | Nature | Impact |
 |-----------|--------|--------|
-| Existing `.delivery/` directory structure | The state file lives alongside config, artifacts, and memory | Low risk -- directory is created by setup wizard |
-| YAML frontmatter parsing | The orchestrator must read/write YAML frontmatter in markdown | Already used by `config.md` -- no new capability needed |
-| Phase 0 execution order | Resume check must occur between config validation and memory retrieval | Requires modification to Phase 0 sequencing in SKILL.md |
-| DoD validation hooks | State writes trigger after DoD passes | Requires insertion points in the existing DoD flow |
-| Agent Alias Themes (Issue #10) | The `theme` field in state captures the active theme | Optional -- field is empty string if no theme is active |
+| Agent tool support for parallel calls | Multiple Agent tool invocations in a single message must be supported by the platform | High -- if not supported, FR-04 degrades to sequential (FR-08 mitigates) |
+| Agent tool context isolation | The Agent tool must create a fresh context for each sub-agent, not inheriting the caller's conversation | High -- if the Agent tool shares context, FR-02 cannot be fully enforced |
+| Existing pipeline-stages.md definitions | Stage definitions specify which agents to invoke and in what order | Low -- no changes to stage definitions required |
+| Artifact file contracts (artifact-contracts.md) | Artifacts must have well-defined schemas so sub-agents can read them without additional context | Medium -- poorly defined artifact contracts may require sub-agents to need more context than file paths alone |
+| Config schema (config-schema.md) | New parallel config keys must follow the extension protocol | Low -- additive keys with defaults |
+| State persistence (Issue #11) | State file write points must account for parallel agent completion | Low -- state writes occur after all agents for a step complete, not during |
 
 **Risks:**
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|-----------|
-| State file written but stage partially complete (session dies mid-write) | Low | Medium -- state says stage N is current but artifacts may be incomplete | State records completed stages only; partial stages re-execute from the beginning |
-| Config changes between sessions cause divergence on resume | Medium | High -- pipeline behavior changes silently | Config snapshot in state file eliminates this; snapshot is authoritative on resume |
-| User edits state file manually and introduces invalid state | Low | Medium -- pipeline may skip stages or misroute | Validate state file structure on load; warn on parse errors |
-| Archived state files accumulate over many restarts | Low | Low -- disk usage is negligible for small text files | Archives capped at 5 with auto-deletion of the oldest |
-| State file conflicts with git (merge conflicts if committed) | Medium | Low -- inconvenience only | Add `state.md`, `state.tmp.md`, and `state-archive/` to `.gitignore` during setup wizard's Initialize Directory step |
+| Agent tool does not support parallel invocation | Medium | High -- no parallel speedup | FR-08 graceful degradation: fall back to sequential execution transparently |
+| Context isolation incomplete -- Agent tool leaks caller context | Medium | High -- collaboration patterns compromised | Validate sub-agent prompts explicitly; include instruction to ignore prior context; test isolation empirically |
+| Artifact files insufficient as sole communication channel | Low | Medium -- sub-agents may lack context needed for quality output | Strengthen artifact-contracts.md to ensure artifacts are self-contained; include all necessary context in artifact files |
+| Parallel agents produce conflicting writes to the same artifact file | Low | High -- data corruption | Each parallel agent writes to a distinct output file; the orchestrator merges if needed |
+| Hook events fire in unexpected order under parallel execution | Medium | Medium -- hook side effects may conflict | Document hook behavior under parallelism; ensure hooks are idempotent where possible |
+| Quality regression from strict isolation (agents lack helpful context they previously received) | Medium | High -- DoD pass rate drops | Monitor DoD pass rates; if isolation causes regression, enrich artifact files rather than loosening isolation |
 
 ---
 
 ### 9. Timeline
 
-This feature is scoped for a single delivery pipeline run (FEATURE type) with the following stage estimates:
+This feature is scoped for a single sprint (FEATURE type pipeline) with the following stage estimates:
 
 | Stage | Effort | Notes |
 |-------|--------|-------|
-| Idea | Done | Idea brief completed |
-| Refine (PRD) | Done | This document |
-| Design (UX) | Minimal | No user-facing UI; state file format is the "design" |
-| Architect | Light | Integration points with Phase 0 and DoD flow; no new systems |
-| Plan | Light | Implementation plan for SKILL.md modifications |
-| Development | Medium | Modify SKILL.md Phase 0, add state write logic after DoD, add resume flow |
-| UAT | Light | Manual verification of resume, restart, abandon, stale detection, cleanup |
+| 1 Idea | Done | Idea brief completed (01-idea-brief.md) |
+| 2 Refine (PRD) | Done | This document |
+| 3 Design | Minimal | No user-facing UI. The "design" is the agent invocation protocol and parallel execution map defined in FR-01 through FR-05 |
+| 4 Architect | Light | Integration points: SKILL.md Phase 4 execution protocol, team-patterns.md collaboration protocols, config-schema.md extension |
+| 5 Plan | Light | Implementation stories derived from FR-01 through FR-10 |
+| 6 Development | Medium | Modify SKILL.md Phase 4 (Steps 4-7) to enforce delegation, isolation, and parallelism. Update team-patterns.md templates. Add parallel config keys to config-schema.md |
+| 7 UAT | Medium | Verify all 6 collaboration patterns under new model. Verify parallel execution. Verify graceful degradation. Verify backward compatibility |
 
-The primary implementation work is in the Development stage: modifying the delivery-flow SKILL.md to include state persistence logic at the defined write points and resume detection in Phase 0.
+The primary implementation work is in the Development stage: rewriting the Pipeline Execution Protocol (SKILL.md Phase 4, Steps 4 through 7) and the collaboration pattern templates (team-patterns.md) to enforce the agent invocation protocol, context isolation, and parallel dispatch.
 
 ---
 
@@ -336,15 +382,15 @@ The primary implementation work is in the Development stage: modifying the deliv
 
 | # | Question | Owner | Status |
 |---|----------|-------|--------|
-| 1 | Should `.delivery/state.md` be added to `.gitignore` by default during setup wizard? | Gandalf (PO) | RESOLVED -- Yes. Add `state.md`, `state.tmp.md`, and `state-archive/` to `.gitignore` during the setup wizard's Initialize Directory step. |
-| 2 | Should the `Context for Resume` markdown section be auto-generated from the last stage's DoD results, or should the orchestrator write a brief summary? | Gandalf (PO) | RESOLVED -- Auto-generated from the last stage's DoD results. Simpler and less error-prone. |
-| 3 | Should archived state files have their own subdirectory? | Gandalf (PO) | RESOLVED -- Yes. Use `.delivery/state-archive/`, cap at 5 archives, auto-delete oldest when exceeded. |
-| 4 | What format should `pipeline_id` use? | Gandalf (PO) | RESOLVED -- `run-YYYY-MM-DD-<4char-random>`, matching the memory archive format. |
-| 5 | Should the `paused` status be supported in v1? | Gandalf (PO) | RESOLVED -- Removed from v1. Only `in_progress`, `completed`, `aborted`. Add `paused` in v2 if an explicit pause action is introduced. |
-| 6 | If the user modifies `.delivery/config.md` between sessions, should the resume prompt warn them? | Gandalf (PO) | RESOLVED -- Yes. On resume, diff `config_snapshot` against current config, display changes, and warn that the original config is used. Choose Restart to apply updated config. |
+| 1 | Does the Agent tool support multiple concurrent invocations in a single message? | Gandalf (PO) | RESOLVED -- Yes. Claude Code supports multiple tool calls in a single response. FR-08 provides graceful degradation if this changes. |
+| 2 | Does the Agent tool create a truly fresh context, or does it inherit the caller's conversation history? | Gandalf (PO) | RESOLVED -- The Agent tool creates a fresh context. The sub-agent receives only what is explicitly passed in the prompt. The orchestrator's responsibility is to pass only permitted content. |
+| 3 | Should the orchestrator be allowed to read artifact content for routing decisions (e.g., checking a DoD vote)? | Gandalf (PO) | RESOLVED -- Yes. The orchestrator may read artifacts for routing and control flow. The prohibition is on pasting artifact content into another agent's prompt as a substitute for passing the file path. |
+| 4 | Should `max_parallel_agents` apply globally or per-stage? | Gandalf (PO) | RESOLVED -- Globally, in v1. A per-stage override is unnecessary complexity for the initial implementation. The global default of 3 is sufficient for all current parallel groups (max 4 DoD validators, but 3 concurrent is acceptable). |
+| 5 | How should the orchestrator handle a sub-agent that fails or times out during parallel execution? | Gandalf (PO) | RESOLVED -- Scatter-Gather model with required/optional tags. Required failure halts + retry (max 2). Optional failure logs + continues. See FR-09. |
+| 6 | Should Debate PRO and CON agents run in parallel or sequentially? | Gandalf (PO) | RESOLVED -- In parallel. The PRO and CON agents argue independently by definition. Neither needs to see the other's arguments. The Judge runs sequentially after both complete. |
 
 ---
 
-*"The pipeline that cannot remember its road will walk it twice. Let us give it memory enough to find its way home."*
+*"A wizard is never late, nor is he early -- but an orchestra that plays every instrument one at a time will empty the hall before the overture is done. Let the instruments that can play together, play together. Let each musician read only their own sheet. And let no one conduct by playing every part themselves."*
 
 -- Gandalf, Product Owner

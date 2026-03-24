@@ -2,36 +2,51 @@
 
 **Project Type**: FEATURE
 **Date**: 2026-03-24
-**GitHub Issue**: #11
+**GitHub Issues**: #25 (Bug), #26 (Enhancement), #27 (Enhancement)
+**Applies To**: All project types
 
 ### Problem Statement
-The delivery-flow pipeline runs end-to-end within a single Claude Code session. When a session ends (timeout, crash, user closes terminal, context limit), all pipeline state is lost. The user must restart from Stage 1 even if Stages 1-5 were complete. For long pipeline runs (GREENFIELD with full depth), this makes the pipeline unreliable for real-world use.
+
+The delivery-flow orchestrator has a fundamental execution model problem that manifests in three related ways. First, the orchestrator sometimes fails to delegate work to sub-agents entirely -- it runs tasks inline within its own context window instead of spawning dedicated agent instances (#25). This breaks context isolation and means reference documents never get loaded for the worker role. Second, even when sub-agents are spawned, they share context from the main orchestrator window (#26). The QA engineer can see the developer's reasoning. The adversarial reviewer can see the primary agent's work. This defeats the purpose of independent review -- you cannot get an honest second opinion from someone who watched you write the first one. Third, the pipeline executes everything sequentially even when tasks have no dependencies on each other (#27). DoD validators run one after another. Review board members wait in line. Independent stories are implemented one at a time. Supporting agents (Data Analyst, Challenger) queue behind the primary worker. This wastes time and does not reflect how a real team operates.
+
+These three issues share a root cause: the orchestrator lacks a proper agent lifecycle manager that controls how agents are created, what context they receive, and whether independent agents can run concurrently.
 
 ### Target Users
-- **Long-session user**: running a GREENFIELD or GAME_DEV pipeline that spans 7 stages with full collaboration patterns — easily 30+ minutes of work that can be lost
-- **Interrupted user**: gets a phone call, closes laptop, session times out — needs to resume where they left off
-- **Multi-session user**: intentionally splits pipeline across sessions (do Idea→Architect today, Dev→UAT tomorrow)
+
+- **Pipeline user (any project type)**: Every user running delivery-flow is affected. Inline execution (#25) can happen on any run. Context bleed (#26) undermines every collaboration pattern -- evaluator-optimizer, adversarial review, review board, debate, and consensus all assume isolated perspectives. Sequential execution (#27) slows every multi-agent stage.
+- **Quality-sensitive user**: Users relying on adversarial review and team DoD validation to catch real problems. If the reviewer already saw the work being produced, the review is theater, not verification.
+- **Large-pipeline user**: Users running GREENFIELD or GAME_DEV projects with full depth settings. These pipelines hit the most sub-agent invocations and suffer the most from sequential bottlenecks.
 
 ### Goals
-1. Pipeline state persisted to `.delivery/state.md` after each stage completes
-2. New session detects existing state and offers: Resume / Restart / Abandon
-3. Resume loads all prior artifacts and continues from next incomplete stage
-4. State file cleaned up after successful pipeline completion
-5. Aborted runs preserve state for potential resume
+
+1. Sub-agent delegation is reliable -- the orchestrator never falls back to inline execution when a sub-agent is specified by the pipeline stage definition
+2. Each sub-agent runs in a fully isolated context, receiving only the artifact files and reference documents defined by its stage contract -- no orchestrator reasoning, no other agent output, no shared conversation history
+3. Independent tasks within a stage run concurrently where the platform supports it (parallel sub-agent spawning for DoD validators, review board members, independent stories, and supporting agents)
+4. Agent communication happens exclusively through artifact files in `.delivery/artifacts/` -- no context passing, no shared memory, no inline handoffs
+5. All existing collaboration patterns (evaluator-optimizer, adversarial review, review board, debate, consensus) continue to function correctly under the new execution model
 
 ### Constraints
-- State file must be human-readable (markdown with YAML frontmatter, matching existing .delivery/ patterns)
-- Must not conflict with existing memory system (state is current-run, memory is cross-run)
-- Resume must re-read upstream artifacts from `.delivery/artifacts/` (they already persist)
-- Must handle partial stage completion (stage started but not finished)
+
+- Must work within Claude Code's sub-agent capabilities -- we cannot invent agent primitives that the platform does not support
+- Artifact file contracts (defined in `references/artifact-contracts.md`) are the only sanctioned communication channel between agents
+- Cannot break existing pipeline stage definitions or config schema -- changes must be backward compatible with current `.delivery/config.md` files
+- Parallel execution must degrade gracefully to sequential if the platform does not support concurrent sub-agents
+- The orchestrator must remain a single coordinating agent -- we are fixing delegation, not creating a multi-orchestrator architecture
+- Hook contracts (PreToolUse, PostToolUse, SubagentStop) must continue to fire correctly under the new execution model
 
 ### Initial Scope
-- State persistence after each stage gate passes
-- Resume detection on pipeline start (Phase 0)
-- Resume/Restart/Abandon prompt
-- State cleanup on completion
+
+- Agent lifecycle manager within the orchestrator that handles spawn, context loading, artifact passing, and result collection
+- Strict context isolation: each sub-agent receives only its designated input artifacts and skill references, constructed fresh without orchestrator conversation history
+- Parallel dispatch for independent agent groups: DoD validators (all run simultaneously, results collected and merged), review board members, independent story implementations, and supporting agents within a stage
+- Artifact-only communication protocol enforced at the orchestrator level -- no context forwarding between agents
+- Regression validation that all six collaboration patterns produce correct results under the new model
 
 ### Out of Scope (initial)
-- Mid-stage checkpointing (saving state between sub-agent calls within a stage)
-- Automatic crash recovery (detecting unclean shutdown)
-- Multi-pipeline state (only one active pipeline per project)
+
+- Agent-to-agent direct communication (agents talk through artifacts, not to each other)
+- Dynamic parallelism tuning based on system load or token budgets
+- Partial result streaming from sub-agents back to the orchestrator mid-execution
+- Changes to the pipeline stage definitions themselves -- this batch fixes how agents are managed, not what stages do
+- Multi-orchestrator or distributed pipeline execution
+- New collaboration patterns beyond the existing six

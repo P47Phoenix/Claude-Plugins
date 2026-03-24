@@ -18,7 +18,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 ### Stage 1 to Stage 2 (Idea to Refine)
 
-**Artifact**: `.delivery/artifacts/01-idea/idea-brief.md`
+**Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
 
 **Output sections**:
 
@@ -36,7 +36,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 ### Stage 2 to Stage 3 (Refine to Design)
 
-**Artifact**: `.delivery/artifacts/02-refine/prd.md`
+**Artifact**: `.delivery/artifacts/02-refine/po/prd.md`
 
 **Output sections**:
 
@@ -55,7 +55,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 ### Stage 2 to Stage 4 (Refine to Architect)
 
-**Artifact**: `.delivery/artifacts/02-refine/prd.md` (same artifact as above)
+**Artifact**: `.delivery/artifacts/02-refine/po/prd.md` (same artifact as above)
 
 **Required sections for Architect stage**:
 
@@ -73,7 +73,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 ### Stage 3 to Stage 4 (Design to Architect)
 
-**Artifact**: `.delivery/artifacts/03-design/ux-design.md`
+**Artifact**: `.delivery/artifacts/03-design/ux/user-flows.md`
 
 **Output sections**:
 
@@ -89,7 +89,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 ### Stage 4 to Stage 5 (Architect to Plan)
 
-**Artifact**: `.delivery/artifacts/04-architect/architecture.md`
+**Artifact**: `.delivery/artifacts/04-architect/solution/architecture.md`
 
 **Output sections**:
 
@@ -108,7 +108,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 ### Stage 5 to Stage 6 (Plan to Development)
 
-**Artifact**: `.delivery/artifacts/05-plan/sprint-plan.md`
+**Artifact**: `.delivery/artifacts/05-plan/sm/sprint-plan.md`
 
 **Output sections**:
 
@@ -127,7 +127,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 ### Stage 6 to Stage 7 (Development to UAT)
 
 **Artifacts**:
-- `.delivery/artifacts/06-dev/dev-notes.md`
+- `.delivery/artifacts/06-dev/developer/dev-notes.md`
 - Code files (location varies by project)
 
 **Output sections in dev-notes.md**:
@@ -140,7 +140,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 | Test Results | No | Summary of tests run and their outcomes |
 | Environment Setup | No | Any setup needed for UAT (environment variables, data, etc.) |
 
-**Validation at Stage 7 entry**: dev-notes.md must exist. CODE_COMPLETE Items section must list at least one item.
+**Validation at Stage 7 entry**: `06-dev/developer/dev-notes.md` must exist. CODE_COMPLETE Items section must list at least one item.
 
 ---
 
@@ -148,7 +148,7 @@ Current contract version: matches `config_version` in `.delivery/config.md`.
 
 At each stage start, before invoking the worker skill:
 
-1. **Check upstream artifacts exist** on disk at the expected paths.
+1. **Check upstream artifacts exist** on disk at the expected namespaced paths (e.g., `.delivery/artifacts/{NN}-{stage}/{role}/{artifact}.md`). For backward compatibility, also check the legacy flat path (e.g., `.delivery/artifacts/{NN}-{artifact}.md`) if the namespaced path is not found.
 2. **Parse required sections**: scan the artifact for the section headings listed as "Required for Next Stage".
 3. **Validate non-empty**: required sections must contain substantive content (not just a heading with no body).
 4. **Report result**:
@@ -177,12 +177,12 @@ The user chooses how to proceed. If they choose option 2, log the bypass in the 
 
 ## Contract Summary Matrix
 
-| Transition | Artifact | Required Sections |
-|------------|----------|-------------------|
-| 1 to 2 | idea-brief.md | Problem Statement, Target Users (1+), Goals (1+) |
-| 2 to 3 | prd.md | Personas (1+), Stories with ACs (1+) |
-| 2 to 4 | prd.md | NFRs (1+), Stories, Constraints |
-| 3 to 4 | ux-design.md | User Flows (1+) |
-| 4 to 5 | architecture.md | System Design (1+ component), ADRs (1+) |
-| 5 to 6 | sprint-plan.md | Stories with ACs + test cases (1+) |
-| 6 to 7 | dev-notes.md + code | CODE_COMPLETE Items (1+) |
+| Transition | Artifact Path | Required Sections |
+|------------|---------------|-------------------|
+| 1 to 2 | `01-idea/po/idea-brief.md` | Problem Statement, Target Users (1+), Goals (1+) |
+| 2 to 3 | `02-refine/po/prd.md` | Personas (1+), Stories with ACs (1+) |
+| 2 to 4 | `02-refine/po/prd.md` | NFRs (1+), Stories, Constraints |
+| 3 to 4 | `03-design/ux/user-flows.md` | User Flows (1+) |
+| 4 to 5 | `04-architect/solution/architecture.md` | System Design (1+ component), ADRs (1+) |
+| 5 to 6 | `05-plan/sm/sprint-plan.md` | Stories with ACs + test cases (1+) |
+| 6 to 7 | `06-dev/developer/dev-notes.md` + code | CODE_COMPLETE Items (1+) |

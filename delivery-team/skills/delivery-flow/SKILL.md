@@ -266,6 +266,19 @@ new data models, no security implications, and no new external dependencies.
 
 ## Phase 4: Pipeline Execution Protocol
 
+### Two-Channel Communication
+
+The orchestrator uses two communication channels:
+
+- **Signal channel**: STATUS, file paths, summaries (<200 chars) -- flows through orchestrator for routing decisions.
+- **Artifact channel**: file contents -- NEVER flows through orchestrator. Sub-agents write files to disk. Downstream agents read files by path. The orchestrator passes paths, not content.
+
+**The rule**: If information is longer than 200 characters, it belongs in a file. The orchestrator passes the file path. The downstream agent reads the file. The orchestrator NEVER reads an artifact and pastes its content into another agent's prompt.
+
+### Plan-Mode Delegation
+
+When exiting plan mode with an approved plan that involves delivery-team work, invoke `delivery-team:delivery-flow`. Do NOT implement the plan directly.
+
 For each active stage (not skipped), execute this protocol in order:
 
 ### Step 1: Announce
@@ -299,17 +312,53 @@ specific agents to invoke, their task types, and the sub-flow sequence.
 
 ### Step 4: Invoke Primary Agent
 
-Spawn the worker skill sub-agent using the Agent tool. Provide:
-- The task description and task type
-- Upstream artifacts from prior stages (context isolation -- only what this agent needs)
-- Relevant memory lessons from past runs
-- Any human feedback from prior checkpoints
+Construct the prompt using the Agent Invocation Template (see architecture Section 3
+and `references/pipeline-stages.md` for the exact fields per stage). The template requires:
+
+- **SKILL**, **TASK_TYPE**, **ROLE**: from the stage definition
+- **INPUT ARTIFACTS**: file paths to upstream artifacts -- NOT content. The sub-agent reads artifacts from disk.
+- **MEMORY LESSONS**: hot lessons from index.md + stage lessons loaded in Step 2
+- **ALIAS**: personality block if an alias is active
+- **OUTPUT**: the namespaced output path (e.g., `.delivery/artifacts/02-refine/po/prd.md`)
+
+The sub-agent writes its artifact to the output path and responds with a signal block:
+```
+STATUS: {DONE | NOT_DONE | CODE_COMPLETE}
+ARTIFACT: {output_file_path}
+SUMMARY: {one sentence, max 200 characters}
+```
+
+After the agent responds, verify the signal:
+1. Check for `SKILL_LOADED: {expected_skill_name}` in the first line.
+2. If present: extract STATUS, ARTIFACT, SUMMARY from the signal block.
+3. If absent: retry once with the same prompt. If second attempt fails, escalate to user.
+
+### Step 4.5: Delegation Self-Check
+
+Before using Write or Edit on any file in `.delivery/artifacts/`: STOP.
+Ask: "Am I writing domain content (a PRD, design, architecture, code, test plan,
+review, or analysis)?"
+
+- If YES: do NOT write. Construct an Agent Invocation Template and delegate to the
+  appropriate skill. The sub-agent writes the artifact.
+- If NO (writing stage-summary.md, state.md, or routing metadata): proceed.
+
+The orchestrator MAY use mkdir to create namespace directories. It MUST NOT write
+content into artifact files.
 
 ### Step 5: Invoke Supporting Agents
 
 If the stage runs at full depth, invoke additional worker sub-agents for supplementary
-work (metrics, security review, test strategy, etc.). Merge their output into the
-primary artifact or produce companion artifacts.
+work (metrics, security review, test strategy, etc.). Each supporting agent receives
+its own Agent Invocation Template with file paths to upstream artifacts.
+
+When supporting agents are independent (check the parallel/sequential annotations in
+`references/pipeline-stages.md`), dispatch them in PARALLEL using multiple Agent tool
+calls in a single message. Tag each as required or optional per the stage definition.
+
+When a required supporting agent fails, retry up to 2 times. When an optional supporting
+agent fails, log the gap and proceed. Downstream agents are informed via a note in their
+task description: "Note: {role} output unavailable due to agent failure."
 
 ### Step 6: Run Collaboration Patterns
 
@@ -329,21 +378,39 @@ See `references/team-patterns.md` for the full protocol of each pattern.
 
 ### Step 7: Team DoD Validation
 
-Run the Team Definition of Done protocol for this stage:
-- Spawn DoD validator sub-agents (2-4 per stage, as defined in the stage definition)
-- Each validator reviews the artifact from their role's perspective
-- Each votes DONE or NOT_DONE with specific findings
-- ALL validators must say DONE for the stage to complete
-- If any vote NOT_DONE, trigger self-correction (see Section 7 below)
+Run the Team Definition of Done protocol for this stage.
+
+When `pipeline.parallel_validators` is true (default), spawn ALL validators in parallel
+using multiple Agent tool calls in a single message. Each validator receives ONLY:
+- The artifact file path (validator reads it from disk)
+- Its role-specific gate criteria (from `references/quality-gates.md`)
+- An Agent Invocation Template with the GATE CRITERIA section populated
+
+No validator sees another validator's output. Each writes to its own namespaced path
+(e.g., `.delivery/artifacts/{NN}-{stage}/dod/{role}-review.md`).
+
+Collect signals (STATUS, FINDINGS) from all validators before evaluating:
+- ALL validators must return STATUS: DONE for the stage to complete
+- If any vote NOT_DONE, trigger self-correction: pass the artifact file path + all
+  NOT_DONE findings file paths to the primary agent for revision
 - Max 3 DoD validation rounds per stage
 - If still NOT_DONE after 3 rounds, trigger dynamic escalation
 
+When `pipeline.parallel_validators` is false, dispatch validators sequentially. Same
+prompts, same isolation, same signal collection -- only wall-clock time differs.
+
 See `references/quality-gates.md` for the full DoD protocol and gate criteria.
 
-### Step 8: Write Artifact
+### Step 8: Verify Artifact
 
-Save the validated artifact to `.delivery/artifacts/[NN]-[name].md`. Write the file
-before proceeding to the next stage. This ensures artifacts survive aborts.
+The sub-agent has already written the artifact to its namespaced path (e.g.,
+`.delivery/artifacts/02-refine/po/prd.md`). The orchestrator verifies the file exists
+on disk by checking the ARTIFACT path from the signal block. If the file is missing,
+retry the primary agent once.
+
+The orchestrator writes only `stage-summary.md` (which agents ran, their signals) to
+`.delivery/artifacts/{NN}-{stage}/stage-summary.md`. This is routing metadata, not
+domain content.
 
 ### Step 8.5: Update Pipeline State
 
@@ -1005,7 +1072,12 @@ These guardrails prevent runaway execution and ensure predictable behavior:
   after every stage gate passes using atomic write (temp file → rename). If a session
   dies, the next session can resume from the last completed stage.
 - **Orchestrator does not produce domain artifacts.** The orchestrator manages flow,
-  routing, and validation. All domain work is delegated to worker skills.
+  routing, and validation. All domain work is delegated to worker skills. Before using
+  Write or Edit on any file in `.delivery/artifacts/`, apply the delegation self-check
+  (Phase 4 Step 4.5).
+- **Plan-mode delegation.** When exiting plan mode with an approved plan that involves
+  delivery-team work, invoke `delivery-team:delivery-flow`. Do NOT implement the plan
+  directly.
 - **Feature knowledge cards are required.** Every new feature must have an FKC created
   during Stage 6. Existing features modified during a pipeline run must have their FKC
   reviewed and updated. The Impact Analysis Gate queries FKCs at the Architect stage.

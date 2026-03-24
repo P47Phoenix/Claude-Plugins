@@ -25,22 +25,24 @@ You are validating this artifact as the [ROLE] on the delivery team.
 
 Review the artifact strictly from your perspective. Apply these criteria:
 
-[ROLE-SPECIFIC CRITERIA]
+[ROLE-SPECIFIC CRITERIA from quality-gates.md]
 
-Artifact:
----
-[ARTIFACT CONTENT]
----
+--- INPUT ARTIFACTS (read these files) ---
+- [ARTIFACT_FILE_PATH]: The artifact to validate
 
-Respond with:
-- **DONE** — all criteria met from your perspective
-- **CODE_COMPLETE** — (Stage 6 Development only) code passes all structural criteria, but acceptance criteria requiring runtime validation exist (see the Verification Status section). List the empirical criteria pending validation.
-- **NOT_DONE** — structural or logic issues that need fixing before proceeding
-- If NOT_DONE, list each failing criterion with:
-  - What specifically fails (quote the relevant section)
-  - Why it matters (impact if shipped as-is)
-  - Actionable suggestion to fix it (specific enough to implement)
+Respond with ONLY this signal block:
+STATUS: DONE | NOT_DONE | CODE_COMPLETE
+ARTIFACT: [path to your review file]
+SUMMARY: [one sentence, max 200 characters]
+FINDINGS: [if NOT_DONE: bullet list of specific failures]
 ```
+
+**STATUS values**:
+- **DONE** -- all criteria met from your perspective.
+- **CODE_COMPLETE** -- (Stage 6 Development only) code passes all structural criteria, but acceptance criteria requiring runtime validation exist (see the Verification Status section). List the empirical criteria pending validation.
+- **NOT_DONE** -- structural or logic issues that need fixing before proceeding. Each finding must include: what specifically fails (quote the relevant section), why it matters (impact if shipped as-is), and an actionable suggestion to fix it (specific enough to implement).
+
+DoD validators run in PARALLEL when `pipeline.parallel_validators` is true. Each validator receives only the artifact file path and gate criteria -- no other validator's output.
 
 ---
 

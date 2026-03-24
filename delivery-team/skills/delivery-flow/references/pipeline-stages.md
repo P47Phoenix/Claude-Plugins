@@ -2,7 +2,19 @@
 
 ## Artifact Output Location
 
-All stage artifacts are written to `.delivery/artifacts/` in the current working directory. Each file is numbered by stage for clear ordering.
+All stage artifacts are written to `.delivery/artifacts/` using the namespaced convention:
+
+```
+.delivery/artifacts/{NN}-{stage-name}/{role}/{artifact-name}.md
+```
+
+Each sub-agent writes to its own dedicated directory. No two agents share a write path. The orchestrator's only write paths are `stage-summary.md` (routing metadata) and `.delivery/state.md` (pipeline state). See the architecture document Section 6 for the full namespace map.
+
+### Dispatch Annotations
+
+Each sub-flow step below is annotated with:
+- **[PARALLEL]** or **[SEQUENTIAL]**: whether the step can run concurrently with other steps
+- **[required]** or **[optional]**: whether the agent's output is mandatory for stage completion
 
 ---
 
@@ -16,18 +28,20 @@ Capture and structure the raw idea into a brief that downstream stages can work 
 - Project type has been detected
 
 ### Sub-Flow
-0. **Write initial pipeline state** -- Create `.delivery/state.md` with `status: in_progress`, `current_stage: 1`, empty stages_completed, and full config snapshot. Uses atomic write (state.tmp.md → state.md).
-1. **GitHub issue input** (if GitHub integration prerequisites pass): Offer to run `gh issue list --state open` and select an existing issue as the idea input, rather than writing a new idea brief from scratch. If the user selects an issue, read it with `gh issue view <number>` and use its title, body, and labels as the raw input. Record the source issue number in the idea brief. See `references/github-integration.md`.
-2. **Format the idea** into a structured brief. The orchestrator does this directly (no sub-agent needed for simple structuring). If the idea is complex or vague, spawn a Product Owner sub-agent (product-delivery skill, task_type: user_story) to help structure it.
-3. **Identify key elements**: problem statement, target users, goals, constraints, initial scope
-4. **Quality gate**: evaluate against Gate 1 criteria
-5. **Self-correction**: if gate fails, prompt the user for clarification on missing elements (this is the one stage where asking the user is preferred over self-correction, since the input is the user's idea)
+0. **Write initial pipeline state** [SEQUENTIAL] -- Create `.delivery/state.md` with `status: in_progress`, `current_stage: 1`, empty stages_completed, and full config snapshot. Uses atomic write (state.tmp.md -> state.md).
+1. **GitHub issue input** [SEQUENTIAL] (if GitHub integration prerequisites pass): Offer to run `gh issue list --state open` and select an existing issue as the idea input, rather than writing a new idea brief from scratch. If the user selects an issue, read it with `gh issue view <number>` and use its title, body, and labels as the raw input. Record the source issue number in the idea brief. See `references/github-integration.md`.
+2. **Format the idea** [SEQUENTIAL] into a structured brief. The orchestrator does this directly (no sub-agent needed for simple structuring). If the idea is complex or vague, spawn a Product Owner sub-agent (product-delivery skill, task_type: user_story) to help structure it.
+3. **Identify key elements** [SEQUENTIAL]: problem statement, target users, goals, constraints, initial scope
+4. **Quality gate** [SEQUENTIAL]: evaluate against Gate 1 criteria
+5. **Self-correction** [SEQUENTIAL]: if gate fails, prompt the user for clarification on missing elements (this is the one stage where asking the user is preferred over self-correction, since the input is the user's idea)
 
-### DoD Validators
-- Product Owner: completeness (problem, users, goals present)
-- Architect: feasibility signal (is this buildable? any obvious blockers?)
+### DoD Validators [PARALLEL] -- dispatch all in a single message
+- Product Owner [required]: completeness (problem, users, goals present)
+  - Writes to: `.delivery/artifacts/01-idea/dod/po-review.md`
+- Architect [required]: feasibility signal (is this buildable? any obvious blockers?)
+  - Writes to: `.delivery/artifacts/01-idea/dod/architect-review.md`
 
-### Output Artifact: `.delivery/artifacts/01-idea-brief.md`
+### Output Artifact: `.delivery/artifacts/01-idea/po/idea-brief.md`
 ```markdown
 ## Idea Brief
 
@@ -66,26 +80,33 @@ Transform the idea brief into a complete PRD with acceptance criteria, success m
 - `01-idea-brief.md` exists and passed Gate 1
 
 ### Sub-Flow
-1. **Invoke Product Owner** (product-delivery skill, task_type: prd)
-   - Input: idea brief + lessons from `memory/stages/<stage>.md` + hot lessons from `memory/index.md`
-   - Output: draft PRD
-2. **Invoke Data Analyst** (product-delivery skill, task_type: metrics_definition)
-   - Input: PRD goals section
-   - Output: success metrics with targets and measurement approach
-3. **Merge** Data Analyst metrics into PRD
-4. **Evaluator-Optimizer Loop**: QA Engineer (quality skill) evaluates PRD against Gate 2 criteria. If failures, route back to PO with specific feedback. Max 3 iterations.
-5. **Adversarial Review**: Challenger questions requirements assumptions, identifies missing edge cases, rates confidence 1-5. If confidence <= 2, escalate to human immediately.
-6. **Primary agent addresses** valid challenger findings
-7. **Team DoD Validation**: PO (business value), Architect (technical feasibility), QA (testability)
-8. **Human Checkpoint 1**: Present PRD summary for approval
-9. **GitHub issue creation** (if `github.create_issues` is true): For each user story in the PRD, create a GitHub issue using `gh issue create`. Label by priority (P1=critical, P2=high, P3=medium, P4=low). Include acceptance criteria as a checklist in the issue body. Link back to the PRD artifact path. Record issue numbers in the PRD artifact under a "GitHub Issues" section. See `references/github-integration.md`.
+1. **Invoke Product Owner** [SEQUENTIAL] [required] (product-delivery skill, task_type: prd)
+   - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `prd`, ROLE: `po`
+   - Input artifacts: `.delivery/artifacts/01-idea/po/idea-brief.md`
+   - Output: `.delivery/artifacts/02-refine/po/prd.md`
+2. **Invoke Data Analyst** [SEQUENTIAL after step 1] [optional] (product-delivery skill, task_type: metrics_definition)
+   - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `metrics_definition`, ROLE: `data-analyst`
+   - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md` (goals section)
+   - Output: `.delivery/artifacts/02-refine/data-analyst/metrics.md`
+3. **Merge** [SEQUENTIAL] Data Analyst metrics into PRD (PO revises with metrics file path)
+4. **Evaluator-Optimizer Loop** [SEQUENTIAL] [required]: QA Engineer (quality skill) evaluates PRD against Gate 2 criteria. If failures, route back to PO with specific feedback. Max 3 iterations.
+   - Evaluator writes to: `.delivery/artifacts/02-refine/qa-evaluator/evaluation-round-{N}.md`
+5. **Adversarial Review** [SEQUENTIAL after eval-opt] [required]: Challenger questions requirements assumptions, identifies missing edge cases, rates confidence 1-5. If confidence <= 2, escalate to human immediately.
+   - Challenger writes to: `.delivery/artifacts/02-refine/challenger/challenge.md`
+6. **Primary agent addresses** [SEQUENTIAL] valid challenger findings (receives artifact path + challenge path)
+7. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: PO (business value), Architect (technical feasibility), QA (testability)
+8. **Human Checkpoint 1** [SEQUENTIAL]: Present PRD summary for approval
+9. **GitHub issue creation** [SEQUENTIAL] (if `github.create_issues` is true): For each user story in the PRD, create a GitHub issue using `gh issue create`. Label by priority (P1=critical, P2=high, P3=medium, P4=low). Include acceptance criteria as a checklist in the issue body. Link back to the PRD artifact path. Record issue numbers in the PRD artifact under a "GitHub Issues" section. See `references/github-integration.md`.
 
-### DoD Validators
-- Product Owner: business value clear, stories are valuable
-- Architect: technically feasible, no obvious blockers
-- QA Engineer: requirements are testable, acceptance criteria are specific
+### DoD Validators [PARALLEL] -- dispatch all in a single message
+- Product Owner [required]: business value clear, stories are valuable
+  - Writes to: `.delivery/artifacts/02-refine/dod/po-review.md`
+- Architect [required]: technically feasible, no obvious blockers
+  - Writes to: `.delivery/artifacts/02-refine/dod/architect-review.md`
+- QA Engineer [required]: requirements are testable, acceptance criteria are specific
+  - Writes to: `.delivery/artifacts/02-refine/dod/qa-review.md`
 
-### Output Artifact: `.delivery/artifacts/02-prd.md`
+### Output Artifact: `.delivery/artifacts/02-refine/po/prd.md`
 
 ### Game Dev Additions
 - UX Designer also reviews for game UX patterns
@@ -102,28 +123,41 @@ Create user experience design: flows, wireframes, interaction patterns, and acce
 - `02-prd.md` exists and passed Gate 2 + human approval
 
 ### Sub-Flow
-1. **Invoke UX Designer** (ui skill, task_type: user-flow)
-   - Input: PRD user stories and personas
-   - Output: user flows for all key journeys
-2. **Invoke UX Designer** (ui skill, task_type: wireframe)
-   - Input: user flows
-   - Output: wireframes for key screens
-3. **Invoke UI Designer** (ui skill, task_type: component-spec or design-system)
-   - Input: wireframes
-   - Output: component specifications, design tokens
-4. **Invoke UI Designer** (ui skill, task_type: accessibility-review)
-   - Input: wireframes + component specs
-   - Output: accessibility findings
-5. **Multi-Perspective Review Board**: Architect (implementability) + PO (requirement coverage) + QA (testability). Any BLOCK must be resolved.
-6. **Team DoD Validation**: UX (design quality), PO (coverage), QA (testability), Architect (implementability)
+1. **Invoke UX Designer** [SEQUENTIAL] [required] (ui skill, task_type: user-flow)
+   - SKILL: `delivery-team:ui`, TASK_TYPE: `user-flow`, ROLE: `ux`
+   - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`
+   - Output: `.delivery/artifacts/03-design/ux/user-flows.md`
+2. **Invoke UX Designer** [SEQUENTIAL after step 1] [required] (ui skill, task_type: wireframe)
+   - SKILL: `delivery-team:ui`, TASK_TYPE: `wireframe`, ROLE: `ux`
+   - Input artifacts: `.delivery/artifacts/03-design/ux/user-flows.md`
+   - Output: `.delivery/artifacts/03-design/ux/wireframes.md`
+3. **Invoke UI Designer** [SEQUENTIAL after step 2] [required] (ui skill, task_type: component-spec or design-system)
+   - SKILL: `delivery-team:ui`, TASK_TYPE: `component-spec`, ROLE: `ui`
+   - Input artifacts: `.delivery/artifacts/03-design/ux/wireframes.md`
+   - Output: `.delivery/artifacts/03-design/ui/component-specs.md`
+4. **Invoke UI Designer** [SEQUENTIAL after step 3] [required] (ui skill, task_type: accessibility-review)
+   - SKILL: `delivery-team:ui`, TASK_TYPE: `accessibility-review`, ROLE: `ui`
+   - Input artifacts: `.delivery/artifacts/03-design/ux/wireframes.md`, `.delivery/artifacts/03-design/ui/component-specs.md`
+   - Output: `.delivery/artifacts/03-design/ui/accessibility.md`
+5. **Multi-Perspective Review Board** [PARALLEL] [required]: Architect (implementability) + PO (requirement coverage) + QA (testability). ALL reviewers dispatched in parallel. Any BLOCK must be resolved.
+   - Each reviewer writes to: `.delivery/artifacts/03-design/review-board/{role}-review.md`
+6. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: UX (design quality), PO (coverage), QA (testability), Architect (implementability)
 
-### DoD Validators
-- UX Designer: flows are complete and follow UX best practices
-- Product Owner: all PRD requirements are covered in the design
-- QA Engineer: designs are testable (clear states, measurable outcomes)
-- Architect: designs are implementable (no impossible interactions)
+### DoD Validators [PARALLEL] -- dispatch all in a single message
+- UX Designer [required]: flows are complete and follow UX best practices
+  - Writes to: `.delivery/artifacts/03-design/dod/ux-review.md`
+- Product Owner [required]: all PRD requirements are covered in the design
+  - Writes to: `.delivery/artifacts/03-design/dod/po-review.md`
+- QA Engineer [required]: designs are testable (clear states, measurable outcomes)
+  - Writes to: `.delivery/artifacts/03-design/dod/qa-review.md`
+- Architect [required]: designs are implementable (no impossible interactions)
+  - Writes to: `.delivery/artifacts/03-design/dod/architect-review.md`
 
-### Output Artifact: `.delivery/artifacts/03-ux-design.md`
+### Output Artifacts
+- `.delivery/artifacts/03-design/ux/user-flows.md`
+- `.delivery/artifacts/03-design/ux/wireframes.md`
+- `.delivery/artifacts/03-design/ui/component-specs.md`
+- `.delivery/artifacts/03-design/ui/accessibility.md`
 
 ### Game Dev Additions
 - Game UI Designer (ui skill) invoked for HUD, menu, inventory UI patterns
@@ -141,40 +175,50 @@ Create technical architecture: system design, C4 models, ADRs, technology decisi
 - `03-ux-design.md` exists if Design stage ran
 
 ### Sub-Flow
-0. **Impact Analysis Gate** -- scan the new feature's PRD for entity references, query
+0. **Impact Analysis Gate** [SEQUENTIAL] -- scan the new feature's PRD for entity references, query
    existing Feature Knowledge Cards in `.delivery/features/`, detect assumption conflicts,
    score risk, and present findings. CRITICAL conflicts block, HIGH/MEDIUM require
    acknowledgment. See `references/feature-knowledge.md`.
-1. **Domain Discovery Interview** (architect skill, references/domain-discovery.md)
+1. **Domain Discovery Interview** [SEQUENTIAL] [required] (architect skill, references/domain-discovery.md)
    - Invoke PO (product-delivery skill) with decomposition-specific questions
-   - Evaluate answers: sufficient → proceed, partial → follow up, insufficient → escalate to human
+   - Evaluate answers: sufficient -> proceed, partial -> follow up, insufficient -> escalate to human
    - Record findings as "Domain Discovery" section in architecture artifact
    - If escalation needed: present unanswered questions with architectural impact and suggested respondents
-2. **Invoke Architect** (architect skill, task_type: design, role: solution)
-   - Input: PRD + UX design (if available) + domain discovery findings + memory lessons
-   - Output: system architecture with C4 diagram descriptions
-3. **For contested decisions** -- run **Debate Pattern**:
+2. **Invoke Architect** [SEQUENTIAL after step 1] [required] (architect skill, task_type: design, role: solution)
+   - SKILL: `delivery-team:architect`, TASK_TYPE: `design`, ROLE: `solution`
+   - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/03-design/ux/user-flows.md` (if available), domain discovery findings
+   - Output: `.delivery/artifacts/04-architect/solution/architecture.md`
+3. **Debate Pattern** [PARALLEL PRO+CON, then SEQUENTIAL JUDGE] [required for contested decisions]:
    - Frame the choice (e.g., "microservices vs monolith")
-   - PRO agent argues Option A, CON agent argues Option B
-   - JUDGE (Enterprise Architect) decides
+   - PRO writes to: `.delivery/artifacts/04-architect/debate-pro/argument.md`
+   - CON writes to: `.delivery/artifacts/04-architect/debate-con/argument.md`
+   - PRO + CON dispatched in parallel (single message with 2 Agent calls)
+   - JUDGE receives both file paths, writes to: `.delivery/artifacts/04-architect/debate-judge/decision.md`
    - Produce ADR for each debate
-4. **Invoke Security Architect** (architect skill, task_type: security-design)
-   - Input: system architecture
-   - Output: security review findings
-5. **Evaluator-Optimizer Loop**: QA reviews for testability, DevOps reviews for deployability. Route findings back to Architect. Max 2 iterations.
-6. **Adversarial Review**: Challenger questions architecture assumptions, rates confidence
-7. **Team DoD Validation**: Architect (soundness), QA (testability), DevOps (deployability), Security (posture)
-8. **Human Checkpoint 2**: Present architecture summary for approval
+4. **Invoke Security Architect** [SEQUENTIAL after step 2] [required] (architect skill, task_type: security-design)
+   - SKILL: `delivery-team:architect`, TASK_TYPE: `security-design`, ROLE: `security`
+   - Input artifacts: `.delivery/artifacts/04-architect/solution/architecture.md`
+   - Output: `.delivery/artifacts/04-architect/security/security-review.md`
+5. **Evaluator-Optimizer Loop** [SEQUENTIAL] [required]: QA reviews for testability, DevOps reviews for deployability. Route findings back to Architect. Max 2 iterations.
+   - Evaluator writes to: `.delivery/artifacts/04-architect/qa-evaluator/evaluation-round-{N}.md`
+6. **Adversarial Review** [SEQUENTIAL after eval-opt] [required]: Challenger questions architecture assumptions, rates confidence
+   - Challenger writes to: `.delivery/artifacts/04-architect/challenger/challenge.md`
+7. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: Architect (soundness), QA (testability), DevOps (deployability), Security (posture)
+8. **Human Checkpoint 2** [SEQUENTIAL]: Present architecture summary for approval
 
-### DoD Validators
-- Architect: design is sound, trade-offs documented, patterns appropriate
-- QA Engineer: architecture supports testing (observability, isolation)
-- DevOps: architecture is deployable (CI/CD compatible, environment strategy)
-- Security: security concerns addressed
+### DoD Validators [PARALLEL] -- dispatch all in a single message
+- Architect [required]: design is sound, trade-offs documented, patterns appropriate
+  - Writes to: `.delivery/artifacts/04-architect/dod/architect-review.md`
+- QA Engineer [required]: architecture supports testing (observability, isolation)
+  - Writes to: `.delivery/artifacts/04-architect/dod/qa-review.md`
+- DevOps [required]: architecture is deployable (CI/CD compatible, environment strategy)
+  - Writes to: `.delivery/artifacts/04-architect/dod/devops-review.md`
+- Security [required]: security concerns addressed
+  - Writes to: `.delivery/artifacts/04-architect/dod/security-review.md`
 
 ### Output Artifacts
-- `.delivery/artifacts/04-architecture.md`
-- `.delivery/artifacts/04a-adrs/ADR-001.md` (one per major decision)
+- `.delivery/artifacts/04-architect/solution/architecture.md`
+- `.delivery/artifacts/04-architect/debate-judge/decision.md` (one per major decision, used to generate ADRs)
 
 ### Game Dev Additions
 - Game architecture roles invoked: Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering as relevant
@@ -192,36 +236,54 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 - `04-architecture.md` exists if Architect stage ran
 
 ### Sub-Flow
-1. **Invoke Product Owner** (product-delivery skill, task_type: user_story)
-   - Input: PRD
-   - Output: detailed user stories with acceptance criteria
-2. **Invoke QA Engineer** (quality skill, task_type: test-cases) — REQUIRED per story
-   - Input: each user story's acceptance criteria
-   - Output: test cases per story (these are part of the story artifact, not separate)
+1. **Invoke Product Owner** [SEQUENTIAL] [required] (product-delivery skill, task_type: user_story)
+   - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `user_story`, ROLE: `po`
+   - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`
+   - Output: `.delivery/artifacts/05-plan/po/stories.md`
+2. **Invoke QA Engineer** [SEQUENTIAL per story, after step 1] [required] (quality skill, task_type: test-cases)
+   - SKILL: `delivery-team:quality`, TASK_TYPE: `test-cases`, ROLE: `qa`
+   - Input artifacts: `.delivery/artifacts/05-plan/po/stories.md` (each story's acceptance criteria)
+   - Output: test cases appended per story within `.delivery/artifacts/05-plan/po/stories.md`
    - Test cases MUST be produced alongside stories, not as a separate optional step
    - Each story's output includes: story + acceptance criteria + test cases
-3. **Invoke Scrum Bag** (product-delivery skill, task_type: sprint_planning)
-   - Input: user stories (with test cases) + architecture constraints
-   - Output: sprint plan draft
-4. **Invoke QA Engineer** (quality skill, task_type: test-strategy)
-   - Input: PRD + architecture + user stories + test cases
-   - Output: overall test strategy (in addition to per-story test cases)
-5. **Invoke DevOps** (operations skill, task_type: deployment-strategy)
-   - Input: architecture
-   - Output: deployment plan
-6. **Consensus Protocol**: SM, PO, QA, DevOps independently estimate and identify risks, then share, respond, and converge. 2-3 rounds.
-7. **Adversarial Review**: Challenger questions estimates and risk assessments
-8. **Team DoD Validation**: SM (process), PO (scope), QA (coverage), DevOps (readiness)
-9. **Git branch creation** (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
-10. **Human Checkpoint 3**: Present sprint plan for approval
+3. **Invoke Supporting Agents** [PARALLEL after step 2] -- dispatch SM, QA (test-strategy), DevOps in a single message:
+   - **Scrum Bag** [required] (product-delivery skill, task_type: sprint_planning)
+     - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `sprint_planning`, ROLE: `sm`
+     - Input artifacts: `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/04-architect/solution/architecture.md`
+     - Output: `.delivery/artifacts/05-plan/sm/sprint-plan.md`
+   - **QA Engineer** [required] (quality skill, task_type: test-strategy)
+     - SKILL: `delivery-team:quality`, TASK_TYPE: `test-strategy`, ROLE: `qa`
+     - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/05-plan/po/stories.md`
+     - Output: `.delivery/artifacts/05-plan/qa/test-strategy.md`
+   - **DevOps** [optional] (operations skill, task_type: deployment-strategy)
+     - SKILL: `delivery-team:operations`, TASK_TYPE: `deployment-strategy`, ROLE: `devops`
+     - Input artifacts: `.delivery/artifacts/04-architect/solution/architecture.md`
+     - Output: `.delivery/artifacts/05-plan/devops/deploy-plan.md`
+4. **Consensus Protocol** [PARALLEL per round, SEQUENTIAL between rounds] [required]: SM, PO, QA, DevOps independently estimate and identify risks (R1 parallel), then share and respond (R2 parallel), and converge (R3 parallel if needed). 2-3 rounds.
+   - R1 writes to: `.delivery/artifacts/05-plan/consensus/r1/{role}-position.md`
+   - R2 writes to: `.delivery/artifacts/05-plan/consensus/r2/{role}-response.md`
+   - R3 writes to: `.delivery/artifacts/05-plan/consensus/r3/{role}-final.md` (if needed)
+5. **Adversarial Review** [SEQUENTIAL after consensus] [required]: Challenger questions estimates and risk assessments
+   - Challenger writes to: `.delivery/artifacts/05-plan/challenger/challenge.md`
+6. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: SM (process), PO (scope), QA (coverage), DevOps (readiness)
+7. **Git branch creation** [SEQUENTIAL] (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
+8. **Human Checkpoint 3** [SEQUENTIAL]: Present sprint plan for approval
 
-### DoD Validators
-- Scrum Bag: process is sound, capacity realistic
-- Product Owner: scope is correct, stories are valuable
-- QA Engineer: test strategy covers critical paths
-- DevOps: deployment approach is viable
+### DoD Validators [PARALLEL] -- dispatch all in a single message
+- Scrum Bag [required]: process is sound, capacity realistic
+  - Writes to: `.delivery/artifacts/05-plan/dod/sm-review.md`
+- Product Owner [required]: scope is correct, stories are valuable
+  - Writes to: `.delivery/artifacts/05-plan/dod/po-review.md`
+- QA Engineer [required]: test strategy covers critical paths
+  - Writes to: `.delivery/artifacts/05-plan/dod/qa-review.md`
+- DevOps [optional]: deployment approach is viable
+  - Writes to: `.delivery/artifacts/05-plan/dod/devops-review.md`
 
-### Output Artifact: `.delivery/artifacts/05-sprint-plan.md`
+### Output Artifacts
+- `.delivery/artifacts/05-plan/po/stories.md`
+- `.delivery/artifacts/05-plan/sm/sprint-plan.md`
+- `.delivery/artifacts/05-plan/qa/test-strategy.md`
+- `.delivery/artifacts/05-plan/devops/deploy-plan.md`
 
 ### Light Mode (BUG_FIX, DOCS_ONLY)
 - PO writes a single story for the fix/doc task
@@ -242,29 +304,42 @@ Implement the code, write tests, and produce development documentation.
 
 ### Sub-Flow
 For each story in the sprint plan:
-1. **Invoke Developer** (developer skill, task_type: write)
-   - Input: user story + acceptance criteria + architecture constraints
-   - Output: implementation code
-2. **Evaluator-Optimizer Loop**: QA Engineer reviews code against acceptance criteria + coding standards. Route back with feedback. Max 3 iterations per story.
-3. **Decision Ownership Routing**: If issues arise:
+
+**Independent stories run in PARALLEL** (when `pipeline.parallel_stories` is true). Dependent stories run SEQUENTIALLY. The orchestrator checks story dependencies from the sprint plan. Max concurrent stories: `pipeline.max_parallel_agents` (default 3).
+
+1. **Invoke Developer** [PARALLEL for independent stories, SEQUENTIAL for dependent] [required] (developer skill, task_type: write)
+   - SKILL: `delivery-team:developer`, TASK_TYPE: `write`, ROLE: `developer`
+   - Input artifacts: `.delivery/artifacts/05-plan/po/stories.md` (specific story), `.delivery/artifacts/04-architect/solution/architecture.md`
+   - Output: `.delivery/artifacts/06-dev/developer/{story-id}.md` + code files
+2. **Evaluator-Optimizer Loop** [SEQUENTIAL per story] [required]: QA Engineer reviews code against acceptance criteria + coding standards. Route back with feedback. Max 3 iterations per story.
+   - Evaluator writes to: `.delivery/artifacts/06-dev/qa-evaluator/{story-id}-round-{N}.md`
+3. **Decision Ownership Routing** [on-demand]: If issues arise:
    - Scope questions -> Product Owner
    - Technical questions -> Architect
    - Quality questions -> QA Engineer
-4. **Invoke Technical Writer** (operations skill, task_type: api-docs or runbook) if applicable
-5. **Commit suggestion** (if `git.commit_convention` is "conventional"): Suggest a conventional commit message based on the story type. Format: `<type>(<scope>): <description>`. Do NOT auto-commit -- present the suggestion for the user to review and execute. See `references/git-integration.md`.
-6. **Team DoD Validation per story**: Developer (quality), QA (tests), Architect (conformance), Tech Writer (docs)
+4. **Invoke Technical Writer** [SEQUENTIAL] [optional] (operations skill, task_type: api-docs or runbook) if applicable
+   - SKILL: `delivery-team:operations`, TASK_TYPE: `api-docs`, ROLE: `tech-writer`
+   - Input artifacts: `.delivery/artifacts/06-dev/developer/{story-id}.md`
+   - Output: `.delivery/artifacts/06-dev/tech-writer/docs.md`
+5. **Commit suggestion** [SEQUENTIAL] (if `git.commit_convention` is "conventional"): Suggest a conventional commit message based on the story type. Format: `<type>(<scope>): <description>`. Do NOT auto-commit -- present the suggestion for the user to review and execute. See `references/git-integration.md`.
+6. **Team DoD Validation per story** [PARALLEL] -- dispatch all validators in a single message: Developer (quality), QA (tests), Architect (conformance), Tech Writer (docs)
 
-### DoD Validators (per story)
-- Developer: code is clean, follows language best practices
-- QA Engineer: tests pass, coverage adequate
-- Architect: implementation conforms to architecture decisions
-- Technical Writer: inline docs and any required external docs present
+### DoD Validators (per story) [PARALLEL] -- dispatch all in a single message
+- Developer [required]: code is clean, follows language best practices
+  - Writes to: `.delivery/artifacts/06-dev/dod/{story-id}-developer-review.md`
+- QA Engineer [required]: tests pass, coverage adequate
+  - Writes to: `.delivery/artifacts/06-dev/dod/{story-id}-qa-review.md`
+- Architect [required]: implementation conforms to architecture decisions
+  - Writes to: `.delivery/artifacts/06-dev/dod/{story-id}-architect-review.md`
+- Technical Writer [optional]: inline docs and any required external docs present
+  - Writes to: `.delivery/artifacts/06-dev/dod/{story-id}-techwriter-review.md`
 - Feature Knowledge: if new feature -- draft FKC auto-generated, developer confirms.
   If existing feature modified -- FKC reviewed and `last_updated` refreshed.
 
 ### Output Artifacts
 - Actual code files (in the project codebase)
-- `.delivery/artifacts/06-dev-notes.md` (summary of implementation decisions, known issues)
+- `.delivery/artifacts/06-dev/developer/{story-id}.md` (per-story implementation notes)
+- `.delivery/artifacts/06-dev/tech-writer/docs.md` (if applicable)
 
 ### Milestone Testing (all project types)
 
@@ -295,41 +370,53 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
 - `06-dev-notes.md` exists
 
 ### Sub-Flow
-1. **Invoke QA Engineer** (quality skill, task_type: test-plan)
-   - Input: PRD acceptance criteria + developed features
-   - Output: UAT test plan with test cases
-2. **Invoke QA Engineer** (quality skill, task_type: test-cases)
-   - Input: test plan
-   - Output: detailed test cases with expected results
-3. **Execute test descriptions** (describe how to test; actual execution depends on test framework availability)
-4. **Exploratory testing sessions** (quality skill, task_type: exploratory-testing)
-   - For GAME_DEV: 2 sessions — Feature Tour (play all implemented features) + Cross-Story Regression (test interactions between stories modifying shared values)
-   - For all types: 1 session — Cross-Story Interaction (test that independently-completed stories work together)
+1. **Invoke QA Engineer** [SEQUENTIAL] [required] (quality skill, task_type: test-plan)
+   - SKILL: `delivery-team:quality`, TASK_TYPE: `test-plan`, ROLE: `qa`
+   - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/06-dev/developer/` (all story files)
+   - Output: `.delivery/artifacts/07-uat/qa/test-plan.md`
+2. **Invoke QA Engineer** [SEQUENTIAL after step 1] [required] (quality skill, task_type: test-cases)
+   - SKILL: `delivery-team:quality`, TASK_TYPE: `test-cases`, ROLE: `qa`
+   - Input artifacts: `.delivery/artifacts/07-uat/qa/test-plan.md`
+   - Output: `.delivery/artifacts/07-uat/qa/test-cases.md`
+3. **Execute test descriptions** [SEQUENTIAL] (describe how to test; actual execution depends on test framework availability)
+4. **Exploratory testing sessions** [SEQUENTIAL] [required] (quality skill, task_type: exploratory-testing)
+   - For GAME_DEV: 2 sessions -- Feature Tour (play all implemented features) + Cross-Story Regression (test interactions between stories modifying shared values)
+   - For all types: 1 session -- Cross-Story Interaction (test that independently-completed stories work together)
    - Each session has a charter, is time-boxed, and produces observation notes (not pass/fail)
    - Any bugs found are logged to `.delivery/defects/` immediately
    - See the quality skill's `references/exploratory-testing.md` for session format and heuristics
-5. **Invoke DevOps** (operations skill, task_type: release-plan + rollback-procedure)
-   - Input: architecture + deployment strategy
-   - Output: release plan with rollback procedure
-6. **Invoke Technical Writer** (operations skill, task_type: release-notes + user-guide)
-   - Input: PRD + dev notes + features implemented
-   - Output: release notes, user guide updates
-7. **Working tree validation** (if `git.clean_tree_check` is true): Run `git status --porcelain`. If not clean, list uncommitted changes and warn: "Working tree has uncommitted changes. Commit or stash before UAT acceptance." Do not block -- present the warning and let the user decide. See `references/git-integration.md`.
-8. **PR creation** (if `github.create_pr` is true): Create a pull request using `gh pr create` with: title from sprint goal, body with change summary + stories implemented (with "Closes #N" for each linked issue) + test results from UAT report + release notes. Label by project type. Record the PR URL in the UAT report artifact. See `references/github-integration.md`.
-9. **Multi-Perspective Review Board**: QA (tests) + DevOps (release readiness) + Tech Writer (docs). Go/no-go recommendation.
-10. **Team DoD Validation**: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
-11. **Human Checkpoint 4**: Present UAT results for accept/reject
+5. **Invoke Supporting Agents** [PARALLEL] -- dispatch DevOps + Tech Writer in a single message:
+   - **DevOps** [required] (operations skill, task_type: release-plan + rollback-procedure)
+     - SKILL: `delivery-team:operations`, TASK_TYPE: `release-plan`, ROLE: `devops`
+     - Input artifacts: `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/05-plan/devops/deploy-plan.md`
+     - Output: `.delivery/artifacts/07-uat/devops/release-plan.md`
+   - **Technical Writer** [optional] (operations skill, task_type: release-notes + user-guide)
+     - SKILL: `delivery-team:operations`, TASK_TYPE: `release-notes`, ROLE: `tech-writer`
+     - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/06-dev/developer/` (all story files)
+     - Output: `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `.delivery/artifacts/07-uat/tech-writer/user-guide.md`
+6. **Working tree validation** [SEQUENTIAL] (if `git.clean_tree_check` is true): Run `git status --porcelain`. If not clean, list uncommitted changes and warn: "Working tree has uncommitted changes. Commit or stash before UAT acceptance." Do not block -- present the warning and let the user decide. See `references/git-integration.md`.
+7. **PR creation** [SEQUENTIAL] (if `github.create_pr` is true): Create a pull request using `gh pr create` with: title from sprint goal, body with change summary + stories implemented (with "Closes #N" for each linked issue) + test results from UAT report + release notes. Label by project type. Record the PR URL in the UAT report artifact. See `references/github-integration.md`.
+8. **Multi-Perspective Review Board** [PARALLEL] [required]: QA (tests) + DevOps (release readiness) + Tech Writer (docs). ALL reviewers dispatched in parallel. Go/no-go recommendation.
+   - Each reviewer writes to: `.delivery/artifacts/07-uat/review-board/{role}-review.md`
+9. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
+10. **Human Checkpoint 4** [SEQUENTIAL]: Present UAT results for accept/reject
 
-### DoD Validators
-- QA Engineer: all tests pass, no critical defects
-- DevOps: deployment plan complete, rollback tested/documented
-- Product Owner: delivered features match expectations
-- Technical Writer: all documentation complete and accurate
+### DoD Validators [PARALLEL] -- dispatch all in a single message
+- QA Engineer [required]: all tests pass, no critical defects
+  - Writes to: `.delivery/artifacts/07-uat/dod/qa-review.md`
+- DevOps [required]: deployment plan complete, rollback tested/documented
+  - Writes to: `.delivery/artifacts/07-uat/dod/devops-review.md`
+- Product Owner [required]: delivered features match expectations
+  - Writes to: `.delivery/artifacts/07-uat/dod/po-review.md`
+- Technical Writer [optional]: all documentation complete and accurate
+  - Writes to: `.delivery/artifacts/07-uat/dod/techwriter-review.md`
 
 ### Output Artifacts
-- `.delivery/artifacts/07-uat-report.md`
-- `.delivery/artifacts/07a-release-plan.md`
-- `.delivery/artifacts/07b-documentation.md`
+- `.delivery/artifacts/07-uat/qa/test-plan.md`
+- `.delivery/artifacts/07-uat/qa/test-cases.md`
+- `.delivery/artifacts/07-uat/devops/release-plan.md`
+- `.delivery/artifacts/07-uat/tech-writer/release-notes.md`
+- `.delivery/artifacts/07-uat/tech-writer/user-guide.md`
 
 ### Post-Acceptance
 After human accepts:

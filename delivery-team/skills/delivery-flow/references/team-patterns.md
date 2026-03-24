@@ -21,21 +21,27 @@ Select the collaboration pattern based on the situation. Multiple patterns may a
 
 After any stage produces its primary artifact, before Team DoD validation. This is the first quality pass -- it catches obvious issues cheaply before invoking the full validator panel.
 
+### Dispatch: Sequential
+
+This pattern is inherently sequential (produce, evaluate, revise, re-evaluate). No parallelism within this pattern.
+
 ### Protocol
 
-1. Primary agent produces the artifact.
+1. Primary agent produces the artifact and writes it to its namespaced output path.
 2. Evaluator agent receives:
-   - The artifact
+   - The artifact FILE PATH (not content) -- evaluator reads it from disk
    - The quality gate criteria for this stage (from quality-gates.md)
    - Instruction to evaluate each criterion strictly as PASS or FAIL with explanation
-3. If all criteria PASS: proceed to Team DoD validation.
-4. If any criteria FAIL: construct feedback and route back to primary agent:
-   - Include the artifact, the failing criteria, and specific actionable feedback
-   - Each piece of feedback must reference the exact section that fails and state what change is needed
-5. Primary agent revises the artifact, addressing each failing criterion explicitly.
-6. Re-evaluate (repeat from step 2).
-7. Maximum iterations: 3 (or stage-specific override from quality-gates.md).
-8. If still failing after max iterations: escalate to human with all attempts shown.
+3. Evaluator writes findings to: `{stage}/qa-evaluator/evaluation-round-{N}.md`
+4. If all criteria PASS: proceed to Team DoD validation.
+5. If any criteria FAIL: route back to primary agent with:
+   - The artifact file path (agent re-reads its own work)
+   - The findings file path (agent reads evaluator feedback)
+   - Task description: "Revise your artifact to address the findings. Read both files."
+6. Primary agent revises the artifact, addressing each failing criterion explicitly.
+7. Re-evaluate (repeat from step 2).
+8. Maximum iterations: 3 (or stage-specific override from quality-gates.md).
+9. If still failing after max iterations: escalate to human with all finding file paths shown.
 
 ### Key Principle
 
@@ -44,24 +50,46 @@ The evaluator is not the same agent as the producer. Even when both are driven b
 ### Evaluator Agent Prompt Template
 
 ```
-You are a quality evaluator for the [STAGE NAME] stage.
-Evaluate this artifact against the following criteria:
+AGENT INVOCATION TEMPLATE
+=========================
 
-[CRITERIA LIST from quality-gates.md for this stage]
+SKILL: {evaluator_skill}
+TASK_TYPE: evaluation
+ROLE: qa-evaluator
 
-For each criterion:
-- State PASS or FAIL
-- If FAIL: quote the specific section that fails, explain WHY it fails
-  (not just that it does), and provide an actionable fix that the author
-  can implement without further clarification
+Begin your response with "SKILL_LOADED: {evaluator_skill}" to confirm skill activation.
 
-Do not be lenient. Apply the criteria as written. A vague or partially
-addressed criterion is a FAIL.
+--- TASK ---
+Evaluate the artifact against the following criteria. For each criterion,
+state PASS or FAIL. If FAIL: quote the specific section that fails, explain
+WHY it fails (not just that it does), and provide an actionable fix that the
+author can implement without further clarification. Do not be lenient. Apply
+the criteria as written. A vague or partially addressed criterion is a FAIL.
 
-Artifact to evaluate:
----
-[ARTIFACT CONTENT]
----
+--- INPUT ARTIFACTS (read these files) ---
+- {artifact_file_path}: The artifact to evaluate
+- {quality_gates_path}: Gate criteria for this stage
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+{stage_lessons_if_loaded}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your findings to: {stage}/qa-evaluator/evaluation-round-{N}.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | NOT_DONE}
+ARTIFACT: {stage}/qa-evaluator/evaluation-round-{N}.md
+SUMMARY: {one sentence, max 200 characters}
+{if NOT_DONE: FINDINGS: {bullet list of specific failures}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ---
@@ -74,23 +102,35 @@ Artifact to evaluate:
 - Stage 4 (Architect): Challenge design decisions, trade-offs, failure mode coverage, and security posture
 - Stage 5 (Plan): Challenge estimates, risk assessments, and capacity assumptions
 
+### Dispatch: Sequential
+
+Adversarial review runs sequentially after the evaluator-optimizer loop. The challenger is a single agent.
+
+### Isolation Note
+
+Challenger receives ONLY the artifact file path. No production conversation, no evaluator-optimizer history, no orchestrator reasoning. This strict isolation ensures the challenger forms an independent judgment unconditioned by how the artifact was produced or evaluated.
+
 ### Protocol
 
 1. Primary artifact is complete and has passed the evaluator-optimizer loop.
-2. Spawn challenger agent with explicit adversarial instruction.
-3. Challenger produces:
+2. Spawn challenger agent with explicit adversarial instruction. Challenger receives ONLY:
+   - The artifact file path (challenger reads it from disk)
+   - The adversarial template
+   - Gate criteria for this stage
+3. Challenger writes findings to: `{stage}/challenger/challenge.md`
+4. Challenger produces:
    - **Challenged assumptions**: Each assumption identified, with the consequence if it is wrong
    - **Missing edge cases**: Scenarios not considered that could cause failures
    - **Alternative approaches**: Other ways to solve the problem, with trade-offs
    - **Unaddressed risks**: What could go wrong that is not mitigated
    - **Confidence rating (1-5)**: Overall assessment of production-readiness
-4. If confidence is 2 or below: **dynamic escalation to human immediately**, regardless of pipeline position.
-5. If confidence is 3-5: primary agent receives the challenger output and must:
+5. If confidence is 2 or below: **dynamic escalation to human immediately**, regardless of pipeline position.
+6. If confidence is 3-5: primary agent receives the artifact file path + challenge file path and must:
    - Address each challenged assumption: accept the challenge and revise, or rebut with specific reasoning
    - Add missing edge cases to the artifact, or explain why they are explicitly out of scope
    - Acknowledge alternative approaches and document why the chosen approach is preferred for this context
    - Address unaddressed risks with mitigation or acceptance rationale
-6. Revised artifact incorporates all valid challenges. Invalid challenges are rebutted with reasoning preserved in the artifact (as ADR-style rationale or inline notes).
+7. Revised artifact incorporates all valid challenges. Invalid challenges are rebutted with reasoning preserved in the artifact (as ADR-style rationale or inline notes).
 
 ### Confidence Rating Scale
 
@@ -103,30 +143,58 @@ Artifact to evaluate:
 ### Challenger Agent Prompt Template
 
 ```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {challenger_skill}
+TASK_TYPE: adversarial-review
+ROLE: challenger
+
+Begin your response with "SKILL_LOADED: {challenger_skill}" to confirm skill activation.
+
+--- TASK ---
 You are a devil's advocate. Your job is to stress-test this artifact by
 finding weaknesses, blind spots, and risks. You are NOT being helpful --
 you are trying to break this.
 
 Be SPECIFIC for every issue you raise. Generic criticism is useless.
 
-1. **Challenged assumptions**: What assumptions does this artifact make?
+1. Challenged assumptions: What assumptions does this artifact make?
    For each: what happens if the assumption is wrong?
-2. **Missing edge cases**: What scenarios are not addressed? What inputs,
+2. Missing edge cases: What scenarios are not addressed? What inputs,
    states, or conditions could cause failure?
-3. **Risks**: What could go wrong that is not mitigated? Consider
+3. Risks: What could go wrong that is not mitigated? Consider
    technical, business, operational, and security risks.
-4. **Alternatives**: What other approaches exist? For each, state why it
+4. Alternatives: What other approaches exist? For each, state why it
    might be better and what trade-off the current approach is making.
-5. **Confidence rating (1-5)**: How production-ready is this artifact?
+5. Confidence rating (1-5): How production-ready is this artifact?
    State your rating and justify it in 2-3 sentences.
 
 Cite exact sections of the artifact. Do not provide generic criticism.
 If you cannot find issues, state that explicitly -- do not invent problems.
 
-Artifact to challenge:
----
-[ARTIFACT CONTENT]
----
+--- INPUT ARTIFACTS (read these files) ---
+- {artifact_file_path}: The artifact to challenge
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your findings to: {stage}/challenger/challenge.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {RECOMMEND | BLOCK}
+ARTIFACT: {stage}/challenger/challenge.md
+SUMMARY: {one sentence, max 200 characters}
+FINDINGS: {bullet list of key challenges}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ---
@@ -138,48 +206,79 @@ Artifact to challenge:
 - Stage 3 (Design): Before advancing to Architect, to ensure the design is feasible, valuable, and testable
 - Stage 7 (UAT): Go/no-go decision before release
 
+### Dispatch: PARALLEL
+
+ALL reviewers run in parallel using multiple Agent calls in a single message. No reviewer sees another's output. Each reviewer writes to its own file in `{stage}/review-board/`. The orchestrator gathers signals only -- it does not read or relay artifact content between reviewers.
+
 ### Protocol
 
 1. Identify 3 specialist reviewers based on the artifact type:
    - **Technical Reviewer** (Architect skill): Evaluates feasibility, scalability, maintainability, and technical debt risk
    - **Business Reviewer** (Product Owner via product-delivery): Evaluates value alignment, user need coverage, scope adherence, and market fit
    - **Risk Reviewer** (QA Engineer + Security): Evaluates quality risks, test coverage gaps, security vulnerabilities, and compliance concerns
-2. Spawn each reviewer sequentially. Each receives:
-   - The artifact
+2. Dispatch ALL reviewers in parallel (single message with N Agent calls). Each receives:
+   - The artifact FILE PATH (not content) -- reviewer reads it from disk
    - Role-specific evaluation criteria
    - Instruction to vote RECOMMEND or BLOCK
-3. Each reviewer produces:
+   - No reviewer's prompt references any other reviewer
+3. Each reviewer writes to: `{stage}/review-board/{role}-review.md`
+4. Each reviewer produces:
    - Findings with severity: **Critical** (must fix), **Warning** (should fix), **Suggestion** (nice to have)
    - Vote: **RECOMMEND** (artifact is acceptable from this perspective) or **BLOCK** (artifact has issues that must be resolved)
    - If BLOCK: the specific concern that must be resolved, stated as a clear requirement
-4. Synthesis:
-   - **Any BLOCK**: Route the blocking concern to the Decision Owner for that domain (see Pattern 4). Decision Owner attempts resolution.
+5. Orchestrator gathers signals (STATUS, FINDINGS) from all reviewers. Does not read review content.
+6. Synthesis:
+   - **Any BLOCK**: Route the blocking concern to the Decision Owner for that domain (see Pattern 4). Decision Owner receives the blocking review file path + artifact file path.
    - Decision Owner resolves the concern: re-run only the blocking reviewer to verify resolution.
    - **All RECOMMEND**: Proceed to the next stage.
-5. If a BLOCK cannot be resolved after Decision Owner attempt: escalate to human with the blocking concern, the Decision Owner's analysis, and suggested options.
+7. If a BLOCK cannot be resolved after Decision Owner attempt: escalate to human with the blocking review file path, the Decision Owner's analysis file path, and suggested options.
 
 ### Reviewer Prompt Template
 
 ```
-You are reviewing this [ARTIFACT TYPE] from a [PERSPECTIVE] perspective.
+AGENT INVOCATION TEMPLATE
+=========================
 
-Evaluate against these criteria:
-[ROLE-SPECIFIC CRITERIA]
+SKILL: {reviewer_skill}
+TASK_TYPE: review
+ROLE: {reviewer_role}
 
-Produce:
-1. Findings with severity (Critical / Warning / Suggestion) -- be specific,
-   cite sections, explain impact
-2. Vote: RECOMMEND or BLOCK
-3. If BLOCK: state the SPECIFIC concern that must be resolved before
-   proceeding. Frame it as a requirement, not a question.
+Begin your response with "SKILL_LOADED: {reviewer_skill}" to confirm skill activation.
 
+--- TASK ---
+You are reviewing this artifact from a {perspective} perspective.
+Evaluate against the criteria below. Produce findings with severity
+(Critical / Warning / Suggestion) -- be specific, cite sections, explain
+impact. Vote RECOMMEND or BLOCK. If BLOCK: state the SPECIFIC concern that
+must be resolved before proceeding. Frame it as a requirement, not a question.
 Do not BLOCK for Suggestions or minor Warnings. BLOCK only for Critical
 findings or Warning clusters that collectively indicate a systemic issue.
 
-Artifact:
----
-[ARTIFACT CONTENT]
----
+--- INPUT ARTIFACTS (read these files) ---
+- {artifact_file_path}: The artifact to review
+
+--- GATE CRITERIA ---
+{role_specific_criteria}
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your review to: {stage}/review-board/{role}-review.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {RECOMMEND | BLOCK}
+ARTIFACT: {stage}/review-board/{role}-review.md
+SUMMARY: {one sentence, max 200 characters}
+{if BLOCK: FINDINGS: {bullet list of blocking concerns}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ---
@@ -194,6 +293,14 @@ At any point during pipeline execution when a decision must be made that falls o
 - DoD validator raises a concern in another domain
 - Mid-stage question arises that requires specialized judgment
 - Two agents disagree and a domain expert must arbitrate
+
+### Dispatch: On-demand (single agent)
+
+Decision Ownership is not a sequenced pattern but a routing mechanism. The Decision Owner is always a single agent invoked on demand, already isolated by nature.
+
+### Isolation Note
+
+Decision Owner receives the issue description + relevant artifact file paths. Not artifact content, not discussion history. The Decision Owner reads artifacts from disk to form an independent judgment.
 
 ### Routing Matrix
 
@@ -212,17 +319,23 @@ At any point during pipeline execution when a decision must be made that falls o
 
 1. Issue arises during stage execution. Source can be: self-correction loop, DoD validation, adversarial review, or explicit agent output.
 2. Classify issue type using signal keywords from the routing matrix.
-3. Spawn Decision Owner sub-agent with:
+3. Spawn Decision Owner sub-agent using the Agent Invocation Template with:
    - The issue description (what decision is needed)
-   - Relevant context: current artifact, upstream artifacts, pipeline state, constraints
+   - Relevant artifact file paths (Decision Owner reads them from disk)
    - Request for a decision with rationale
 4. Decision Owner produces:
    - **Decision**: Clear statement of the chosen path
    - **Rationale**: Why this decision, citing specific context and trade-offs
    - **Conditions**: Under what circumstances this decision should be revisited
    - **Caveats**: Risks accepted or deferred by this decision
-5. Record the decision in pipeline state for downstream visibility and future reference.
-6. If the Decision Owner cannot make a confident decision (insufficient information, equal trade-offs, or out of their domain): escalate to human with the decision context, options analyzed, and the Decision Owner's analysis.
+5. Decision Owner responds with signal block:
+   ```
+   STATUS: DONE
+   ARTIFACT: {decision_file_path}
+   SUMMARY: {one sentence, max 200 characters}
+   ```
+6. Record the decision in pipeline state for downstream visibility and future reference.
+7. If the Decision Owner cannot make a confident decision (insufficient information, equal trade-offs, or out of their domain): escalate to human with the decision context, options analyzed, and the Decision Owner's analysis file path.
 
 ### Multi-Signal Conflicts
 
@@ -242,28 +355,45 @@ When an issue matches multiple signal categories:
 - Any point where two or more valid approaches exist and the choice has significant downstream consequences
 - When the team needs a documented record of why a particular path was chosen (ADR generation)
 
+### Dispatch: PRO and CON in PARALLEL, then JUDGE sequential
+
+PRO and CON run in parallel using multiple Agent calls in a single message. Neither sees the other's argument -- this is enforced by parallel dispatch with no cross-references in prompts. JUDGE runs sequentially after both complete, receiving both file paths.
+
 ### Protocol
 
 1. **Frame the debate**: "[Option A] vs [Option B] for [specific context and constraints]"
    - The framing must include project constraints, NFRs, team capabilities, and timeline -- generic debates are not useful
-2. Spawn **PRO agent** (argues for Option A):
-   - Must provide 3 or more specific arguments grounded in this project's context (not generic advantages)
-   - Must address how the risks of Option A are mitigated in this context
-   - Must explain why Option B is worse for this specific situation
-3. Spawn **CON agent** (argues for Option B):
-   - Same requirements as PRO but reversed -- argues for Option B, against Option A
-   - Must not simply mirror the PRO arguments -- must present independent reasoning
-4. Spawn **JUDGE agent** (Enterprise Architect or senior technical role):
-   - Receives both arguments plus the full project constraints
+2. **Step 1 -- Dispatch PRO + CON in parallel** (single message with 2 Agent calls):
+   - **PRO agent** (argues for Option A) writes to: `{stage}/debate-pro/argument.md`
+     - Must provide 3 or more specific arguments grounded in this project's context (not generic advantages)
+     - Must address how the risks of Option A are mitigated in this context
+     - Must explain why Option B is worse for this specific situation
+   - **CON agent** (argues for Option B) writes to: `{stage}/debate-con/argument.md`
+     - Same requirements as PRO but reversed -- argues for Option B, against Option A
+     - Must not simply mirror the PRO arguments -- must present independent reasoning
+3. **Step 2 -- Dispatch JUDGE sequentially** after both PRO and CON complete:
+   - JUDGE receives: PRO argument file path + CON argument file path + project constraints
+   - JUDGE reads both argument files from disk
+   - JUDGE writes to: `{stage}/debate-judge/decision.md`
    - Decides with documented rationale, citing the specific arguments that were most compelling
    - States conditions under which the decision should be revisited (e.g., "if traffic exceeds 10K RPS, reconsider")
    - If arguments are equally compelling and no clear winner exists: returns DEADLOCK and escalates to human
-5. Produce an Architecture Decision Record (ADR) from the debate outcome:
+4. Produce an Architecture Decision Record (ADR) from the debate outcome:
    - Title, context, decision, consequences (positive and negative), revisit conditions
 
 ### PRO Agent Template
 
 ```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {architect_skill}
+TASK_TYPE: debate
+ROLE: debate-pro
+
+Begin your response with "SKILL_LOADED: {architect_skill}" to confirm skill activation.
+
+--- TASK ---
 Argue in favor of [OPTION A] for this project.
 
 Context:
@@ -281,11 +411,44 @@ Provide:
 3. How the known risks of [OPTION A] are mitigated in this context
 4. Why [OPTION B] is worse for THIS specific situation (cite specific
    constraints or requirements that make it less suitable)
+
+--- INPUT ARTIFACTS (read these files) ---
+- {prd_path}: Product requirements
+- {architecture_path}: Current architecture (if available)
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your argument to: {stage}/debate-pro/argument.md
+
+When complete, respond with ONLY this signal block:
+STATUS: DONE
+ARTIFACT: {stage}/debate-pro/argument.md
+SUMMARY: {one sentence, max 200 characters}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ### CON Agent Template
 
 ```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {architect_skill}
+TASK_TYPE: debate
+ROLE: debate-con
+
+Begin your response with "SKILL_LOADED: {architect_skill}" to confirm skill activation.
+
+--- TASK ---
 Argue in favor of [OPTION B] for this project.
 
 Context:
@@ -300,37 +463,83 @@ Provide:
 2. Evidence or precedent for each advantage
 3. How the known risks of [OPTION B] are mitigated in this context
 4. Why [OPTION A] is worse for THIS specific situation
+
+--- INPUT ARTIFACTS (read these files) ---
+- {prd_path}: Product requirements
+- {architecture_path}: Current architecture (if available)
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your argument to: {stage}/debate-con/argument.md
+
+When complete, respond with ONLY this signal block:
+STATUS: DONE
+ARTIFACT: {stage}/debate-con/argument.md
+SUMMARY: {one sentence, max 200 characters}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ### JUDGE Agent Template
 
 ```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {architect_skill}
+TASK_TYPE: debate-judge
+ROLE: debate-judge
+
+Begin your response with "SKILL_LOADED: {architect_skill}" to confirm skill activation.
+
+--- TASK ---
 Decide between two options based on the arguments presented.
-
-Option A arguments:
----
-[PRO OUTPUT]
----
-
-Option B arguments:
----
-[CON OUTPUT]
----
-
-Project constraints:
-[CONSTRAINTS, NFRS, TEAM, TIMELINE]
+Read both argument files from disk. Do not rely on summaries.
 
 Produce:
-1. **Decision**: A or B
-2. **Rationale**: Cite the specific arguments that were most compelling
+1. Decision: A or B
+2. Rationale: Cite the specific arguments that were most compelling
    and explain why they outweigh the counterarguments
-3. **Revisit conditions**: Under what circumstances should this decision
+3. Revisit conditions: Under what circumstances should this decision
    be reconsidered? Be specific (thresholds, events, timelines)
-4. **Risks to monitor**: What risks come with the chosen approach that
+4. Risks to monitor: What risks come with the chosen approach that
    need active monitoring?
 5. If you truly cannot decide: state "DEADLOCK" and explain precisely
    why the arguments are equally compelling -- what additional information
    would break the tie?
+
+--- INPUT ARTIFACTS (read these files) ---
+- {stage}/debate-pro/argument.md: PRO argument (Option A)
+- {stage}/debate-con/argument.md: CON argument (Option B)
+- {constraints_path}: Project constraints, NFRs, team, timeline
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your decision to: {stage}/debate-judge/decision.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | DEADLOCK}
+ARTIFACT: {stage}/debate-judge/decision.md
+SUMMARY: {one sentence, max 200 characters}
+{if DEADLOCK: FINDINGS: {why arguments are equally compelling}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ---
@@ -347,28 +556,40 @@ Produce:
 
 Decision Ownership routes to one expert. Consensus is used when no single expert can make the decision alone because it genuinely spans multiple domains and all parties must commit to the outcome. Sprint planning is the canonical example: the PO sets priority, the SM guards capacity, the QA validates test feasibility, and DevOps confirms deployment readiness. All four must agree for the plan to be realistic.
 
+### Dispatch: PARALLEL per round, sequential between rounds
+
+Round 1: ALL participants in PARALLEL with strict isolation. Round 2: ALL participants in PARALLEL with all R1 file paths provided. Round 3 (if needed): ALL participants in PARALLEL with contested points + all R2 file paths. Each participant writes to its own file per round.
+
 ### Protocol
 
-**Round 1 -- Independent Analysis:**
+**Round 1 -- Independent Analysis (PARALLEL, strict isolation):**
 
-- Each participating agent independently analyzes the topic
+- Dispatch all participating agents in parallel (single message with N Agent calls)
+- Each independently analyzes the topic
 - Each produces: position, reasoning, concerns, and estimate (if applicable)
-- No agent sees another agent's output during Round 1
+- Each writes to: `{stage}/consensus/r1/{role}-position.md`
+- No participant sees another's R1 output -- enforced by parallel dispatch with no cross-references
 - This independence prevents anchoring bias
 
-**Round 2 -- Review and Respond:**
+**Round 2 -- Review and Respond (PARALLEL, with all R1 paths):**
 
-- Each agent receives ALL other agents' Round 1 outputs
+- Dispatch all participants in parallel (single message with N Agent calls)
+- Each receives: their own R1 file path + ALL other participants' R1 file paths
+- Each reads all R1 positions from disk
+- Each writes to: `{stage}/consensus/r2/{role}-response.md`
 - Each responds with:
   - Areas of agreement (cite specific points from other agents)
   - Areas of disagreement (with reasoning -- not just "I disagree" but why)
   - Revised position if their view has changed after seeing other perspectives
   - What remains unresolved from their perspective
 
-**Round 3 -- Convergence (only if disagreements remain after Round 2):**
+**Round 3 -- Convergence (PARALLEL, only if disagreements remain after Round 2):**
 
-- Orchestrator identifies the specific points of contention from Round 2
-- Each agent provides a final position on ONLY the contested points
+- Orchestrator identifies the specific points of contention from R2 signals
+- Dispatch all participants in parallel (single message with N Agent calls)
+- Each receives: contested points + all R2 file paths
+- Each writes to: `{stage}/consensus/r3/{role}-final.md`
+- Each provides a final position on ONLY the contested points
 - Responses must be short and focused -- no restating of agreed positions
 - Each agent must explicitly state whether they can ACCEPT the emerging consensus even if it differs from their initial position
 
@@ -376,7 +597,7 @@ Decision Ownership routes to one expert. Consensus is used when no single expert
 
 - If consensus reached (all agents agree or all agents explicitly accept a compromise): record the agreed position as the decision, noting any conditions or caveats
 - If not (any agent cannot accept): present the unresolved disagreement to the human with:
-  - Each agent's final position and reasoning
+  - Each agent's final position file path
   - What was agreed upon (partial consensus)
   - What specifically remains contested
   - The orchestrator's assessment of why consensus failed
@@ -384,10 +605,20 @@ Decision Ownership routes to one expert. Consensus is used when no single expert
 ### Consensus Agent Template (Round 1)
 
 ```
-You are the [ROLE] on the delivery team. Independently analyze this topic:
+AGENT INVOCATION TEMPLATE
+=========================
 
-[TOPIC DESCRIPTION]
-[RELEVANT CONTEXT: upstream artifacts, constraints, timeline]
+SKILL: {participant_skill}
+TASK_TYPE: consensus
+ROLE: {participant_role}
+
+Begin your response with "SKILL_LOADED: {participant_skill}" to confirm skill activation.
+
+--- TASK ---
+Independently analyze this topic. Do not reference any other participant's
+work -- you are forming your own position first.
+
+{topic_description}
 
 Provide:
 1. Your position on the topic (clear statement)
@@ -398,44 +629,125 @@ Provide:
 
 Be honest about uncertainty. If you lack information to form a confident
 position, say so and state what information you would need.
+
+--- INPUT ARTIFACTS (read these files) ---
+{for each upstream artifact:}
+- {artifact_file_path}: {description}
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your position to: {stage}/consensus/r1/{role}-position.md
+
+When complete, respond with ONLY this signal block:
+STATUS: DONE
+ARTIFACT: {stage}/consensus/r1/{role}-position.md
+SUMMARY: {one sentence, max 200 characters}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ### Consensus Agent Template (Round 2)
 
 ```
-Review your teammates' positions and respond.
+AGENT INVOCATION TEMPLATE
+=========================
 
-Your Round 1 position:
----
-[YOUR ROUND 1 OUTPUT]
----
+SKILL: {participant_skill}
+TASK_TYPE: consensus
+ROLE: {participant_role}
 
-Teammate positions:
----
-[ALL OTHER AGENTS' ROUND 1 OUTPUTS, labeled by role]
----
+Begin your response with "SKILL_LOADED: {participant_skill}" to confirm skill activation.
 
-Respond:
+--- TASK ---
+Review your teammates' Round 1 positions and respond.
+
 1. Where do you agree? (cite specific points from specific teammates)
 2. Where do you disagree? (explain WHY -- what does your domain expertise
    tell you that conflicts with their position?)
 3. Has your position changed after seeing other perspectives? If so,
    state your revised position and what changed your mind.
 4. What remains unresolved? (specific points, not vague concerns)
+
+--- INPUT ARTIFACTS (read these files) ---
+- {stage}/consensus/r1/{own_role}-position.md: Your Round 1 position
+{for each other participant:}
+- {stage}/consensus/r1/{other_role}-position.md: {other_role}'s Round 1 position
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your response to: {stage}/consensus/r2/{role}-response.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | NOT_DONE}
+ARTIFACT: {stage}/consensus/r2/{role}-response.md
+SUMMARY: {one sentence, max 200 characters}
+{if NOT_DONE: FINDINGS: {bullet list of unresolved points}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ### Consensus Agent Template (Round 3 -- Convergence)
 
 ```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {participant_skill}
+TASK_TYPE: consensus
+ROLE: {participant_role}
+
+Begin your response with "SKILL_LOADED: {participant_skill}" to confirm skill activation.
+
+--- TASK ---
 Final round. Address ONLY the contested points below.
 
 Contested points:
-[LIST OF SPECIFIC UNRESOLVED ITEMS FROM ROUND 2]
+{list_of_specific_unresolved_items}
 
 For each contested point:
 1. Your final position (brief)
 2. Can you ACCEPT the emerging group position even if it differs from yours?
    (Yes/No -- if No, state what would need to change for you to accept)
+
+--- INPUT ARTIFACTS (read these files) ---
+{for each participant:}
+- {stage}/consensus/r2/{role}-response.md: {role}'s Round 2 response
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your final position to: {stage}/consensus/r3/{role}-final.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | NOT_DONE}
+ARTIFACT: {stage}/consensus/r3/{role}-final.md
+SUMMARY: {one sentence, max 200 characters}
+{if NOT_DONE: FINDINGS: {what would need to change for acceptance}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
 ```
 
 ---
