@@ -1,6 +1,18 @@
 {
-  "description": "Delivery team hooks: pipeline enforcement, retrospective enforcement, empirical validation, GDScript parse checking",
+  "description": "Delivery team hooks: session config check, pipeline enforcement, source code enforcement, retrospective enforcement, empirical validation, GDScript parse checking",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-config.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "*",

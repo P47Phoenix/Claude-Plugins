@@ -282,6 +282,61 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 **Influences**: Which personas are loaded for simulated user feedback at Stages 2, 3, 6, 7. Which persona library categories are active. Custom personas defined here persist across pipeline runs.
 
+### Q12: Enforcement Settings (single-select for each sub-question)
+
+**Auto-detect**: Derive defaults from Q5 risk tolerance — mission-critical/regulated gets strict enforcement, prototype gets relaxed.
+
+**Present**: "How strictly should the delivery pipeline be enforced?"
+
+**Sub-questions**:
+
+1. **Source code hook**: "Install a project-level hook that warns when source code is edited outside the delivery pipeline?"
+   - Options: Yes (recommended), No, Skip
+   - Default: Yes for standard/mission-critical/regulated, No for prototype
+
+2. **Retrospective frequency**: "How often should retrospectives be required?"
+   - Options: After every pipeline run, After every N runs, Manual only, Skip
+   - Default: every-run for mission-critical/regulated, manual for prototype
+
+3. **Retro skip allowed**: "Can the user skip a required retrospective?"
+   - Options: No (strict), Yes (flexible), Skip
+   - Default: No for mission-critical/regulated, Yes for prototype/standard
+
+**Default if skipped**: source_code_hook=true, retro_frequency=every-run, retro_skip_allowed=false
+
+**Influences**: Whether a project-level PreToolUse hook is installed in `.claude/settings.json` to catch Edit/Write on source code outside the pipeline. How strictly retrospectives are enforced by the Stop hook.
+
+### Project-Level Hook Installation
+
+If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse hook in the **project's** `.claude/settings.json` (not the plugin hooks.json):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if this Edit/Write/NotebookEdit is modifying source code files. If the file path matches source code patterns (.py, .ts, .js, .go, .rs, .cs, .java, .gd, .scala, .hs, .ex, .fs, .tsx, .jsx, .vue, .svelte) AND there is no active delivery-team pipeline context in this conversation (no Stage references, no delivery-flow invocation), return a warning: 'Source code change detected outside delivery-team pipeline. Route through delivery-team:delivery-flow for QA review and defect prevention.' If the file is NOT source code (docs, config, .delivery/, .md, .json, .yml, .yaml, .toml, .lock, .gitignore) OR a delivery-team pipeline IS active, return 'allow'.",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Installation process**:
+1. Check if `.claude/settings.json` exists in the project root
+2. If yes: read the existing content, merge the hook into the `hooks` section (preserve existing hooks)
+3. If no: create `.claude/settings.json` with just the hook
+4. Announce: "Source code enforcement hook installed in .claude/settings.json. Edit/Write on source code files will warn when outside the delivery pipeline."
+
+**Important**: This is the project's settings file (not `.claude/settings.local.json`) so it can be committed and shared with the team.
+
 ---
 
 ## Config File Format
@@ -330,6 +385,10 @@ personas:
   count: 5
   overlays: []
   custom: []
+enforcement:
+  source_code_hook: true
+  retro_frequency: every-run
+  retro_skip_allowed: false
 wizard_completed: YYYY-MM-DD
 ---
 

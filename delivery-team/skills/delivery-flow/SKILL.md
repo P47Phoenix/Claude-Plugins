@@ -76,6 +76,7 @@ Before the pipeline executes, check for project configuration:
      - **Present & Ask**: For each configuration topic, show what was detected and present 3-5 smart options. Each question supports single-select or multi-select as appropriate, plus Custom, Let's discuss, and Skip.
      - **Generate Config**: Write `.delivery/config.md` with all settings as YAML frontmatter + markdown context.
      - **Initialize Directory**: Create `.delivery/artifacts/`, `.delivery/memory/`, `.delivery/README.md`.
+     - **Install Enforcement Hook**: If `enforcement.source_code_hook` is true (default), install a PreToolUse hook in the project's `.claude/settings.json` that warns when source code is edited outside an active delivery pipeline. See `references/setup-wizard.md` for the hook definition and installation process.
    - After the wizard completes, `.delivery/config.md` MUST exist before proceeding.
    - If the user wants to skip the wizard entirely, they must explicitly say "skip setup" or "use defaults" — in which case, generate a minimal `.delivery/config.md` with auto-detected defaults and proceed. The pipeline NEVER runs without a config file.
 
@@ -105,6 +106,9 @@ When a config is loaded, these settings override defaults:
 | `personas.selected` | Specific persona names to include in every feedback round |
 | `personas.feedback_stages` | Which pipeline stages run persona feedback (default: refine, design, dev, uat) |
 | `personas.custom` | Custom persona definitions (see user-feedback skill's `references/custom-personas.md`) |
+| `enforcement.source_code_hook` | Whether project-level PreToolUse hook warns on Edit/Write outside pipeline |
+| `enforcement.retro_frequency` | How often retrospectives are required (every-run / every-n-runs / manual) |
+| `enforcement.retro_skip_allowed` | Whether "skip retro" is allowed (false for mission-critical) |
 
 ---
 
