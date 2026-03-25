@@ -62,6 +62,33 @@ Before completing stories that reference other stories' functionality:
 - [ ] No direct method calls between systems (combat <-> movement <-> UI)
 - [ ] Check CLAUDE.md conventions are followed
 
+## Type Safety
+
+- [ ] Never use `:=` type inference in production code -- always explicitly type variables: `var x: int = 5` not `var x := 5`
+- [ ] Enable strict type warnings in Project Settings > Debug > GDScript:
+  - UNSAFE_METHOD_ACCESS = Error
+  - UNSAFE_PROPERTY_ACCESS = Error
+  - UNSAFE_CAST = Error
+- [ ] When renaming a method or property, search ALL .gd files for the old name before committing
+
+**Detection command:**
+```bash
+# Find all := usage (should be zero in production code)
+grep -rn ":=" --include="*.gd" src/ | grep -v "test"
+```
+
+## Array/Enum Consistency
+
+- [ ] Every array indexed by an enum must have exactly as many elements as the enum has values
+- [ ] Use `enum.size()` or `EnumName.values().size()` to validate array length at runtime
+- [ ] When adding a value to an enum, search for all arrays indexed by that enum and add corresponding entries
+
+**Detection command:**
+```bash
+# Find all enum declarations and their value counts
+grep -rn "^enum " --include="*.gd" src/
+```
+
 ## Defect Metrics
 
 Track defect rate per sprint to measure improvement. Record defects in `.delivery/defects/` with sprint, story ID, category, and root cause.

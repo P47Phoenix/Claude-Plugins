@@ -207,3 +207,82 @@ When testing Godot game code, apply these heuristics in addition to standard tes
 - Verify @onready access happens only after _ready() runs (not in initialize/setup called pre-tree)
 - Test queue_free() cleanup (no orphaned references in tracking dictionaries like MapManager._unit_positions)
 - Verify _process/_physics_process guard clauses (null checks, is_moving flags)
+
+## GdUnit4 Testing Framework
+
+GdUnit4 is the recommended testing framework for Godot 4.x projects. It provides unit testing, scene runner (integration testing), signal verification, and fuzzing.
+
+### Setup
+- Install: Godot Asset Library -> search "GdUnit4" (ID: 4390)
+- Or clone: `git clone https://github.com/godot-gdunit-labs/gdUnit4 addons/gdUnit4`
+- Test directory: `res://tests/` (mirror source structure)
+
+### Unit Test Pattern
+```gdscript
+class_name TestMovementController
+extends GdUnitTestSuite
+
+var _controller: MovementController
+
+func before_test() -> void:
+    _controller = auto_free(MovementController.new())
+
+func test_movement_cost_calculation() -> void:
+    assert_int(_controller.calculate_cost(Vector2i(0,0), Vector2i(1,0))).is_equal(1)
+
+func test_cannot_move_beyond_range() -> void:
+    _controller.movement_range = 3
+    assert_bool(_controller.can_move_to(Vector2i(5,0))).is_false()
+```
+
+### Signal Verification
+```gdscript
+func test_unit_selected_signal() -> void:
+    var unit = auto_free(Unit.new())
+    var monitor = monitor_signals(unit)
+    unit.select()
+    await assert_signal(monitor).is_emitted("unit_selected")
+```
+
+### Scene Runner (Integration Tests)
+```gdscript
+func test_attack_range_display() -> void:
+    var runner = scene_runner("res://scenes/game_board.tscn")
+    var board = runner.scene()
+    # Simulate selecting a unit
+    runner.simulate_mouse_click(Vector2(100, 100))
+    await runner.simulate_frames(2)
+    # Verify attack range overlay is visible
+    var overlay = board.find_child("AttackRangeOverlay")
+    assert_bool(overlay.visible).is_true()
+    # Verify overlay doesn't block input (mouse_filter)
+    assert_int(overlay.mouse_filter).is_equal(Control.MOUSE_FILTER_IGNORE)
+```
+
+### CI/CD Integration
+```yaml
+# .github/workflows/godot-tests.yml
+name: GdUnit4 Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: godot-gdunit-labs/gdUnit4-action@v1
+        with:
+          godot-version: '4.3'
+          test-paths: 'res://tests'
+          warnings-as-errors: true
+```
+
+### What GdUnit4 Catches That Other Tools Miss
+
+| Category | Example | GdUnit4 Solution |
+|----------|---------|-----------------|
+| Logic bugs | Counter increments per player not per round | Unit test with assertion on counter value |
+| Signal wiring | emit without connect | `monitor_signals()` + `assert_signal().is_emitted()` |
+| Array/enum mismatch | 2-element array for 4-value enum | Unit test iterates enum, asserts array coverage |
+| AI behavior | AI ignores objectives | Scene runner simulates turns, asserts AI actions |
+| Visual ordering | Z-index wrong, terrain over units | Scene runner checks node z_index values |
+| Input blocking | ColorRect blocks Area2D clicks | Scene runner simulates click, asserts signal fires |

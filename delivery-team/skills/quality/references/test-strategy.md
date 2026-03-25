@@ -169,3 +169,25 @@ Testing can continue indefinitely. These criteria help decide when to stop:
 - **Confidence level**: The team has sufficient confidence that the software meets its requirements
 
 Never stop testing solely because of a deadline. If testing is cut short, the risk of untested areas must be documented and communicated to stakeholders.
+
+---
+
+## Godot-Specific Test Strategy
+
+For GAME_DEV projects using Godot, layer tests with GdUnit4:
+
+| Layer | Tool | What It Catches | Run When |
+|-------|------|----------------|----------|
+| Static analysis | Editor type warnings (strict mode) | Type inference errors, missing methods | Every save |
+| Lint | gdlint | Style violations, naming conventions | Pre-commit |
+| Unit tests | GdUnit4 | Logic bugs, calculations, state management | After each story |
+| Signal tests | GdUnit4 signal assertions | Orphaned signals, wrong parameters | After wiring changes |
+| Integration tests | GdUnit4 scene runner | Visual bugs, input handling, AI behavior | After each sprint |
+| Headless validation | godot --headless | Parse errors, autoload failures | After every write |
+| CI/CD | GdUnit4 GitHub Action | Regressions across all of the above | Every push |
+
+### Test naming convention
+- Test files: `test_<source_file_name>.gd`
+- Test classes: `TestClassName extends GdUnitTestSuite`
+- Test methods: `test_<behavior_being_tested>()`
+- Directory: `res://tests/` mirroring `res://src/` structure

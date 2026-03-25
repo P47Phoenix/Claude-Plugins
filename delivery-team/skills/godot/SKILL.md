@@ -185,6 +185,9 @@ The sub-agent must enforce these in every output:
 - **Self-contained scenes** — scenes must work regardless of where they are placed in the tree
 - **Type everything** — all variables, parameters, and return types must be typed in GDScript
 - **No @onready access before tree entry** — never call methods that use @onready variables on a node that hasn't been added to the scene tree yet. Use `call_deferred()` or add the node first, then configure.
+- **Never use `:=` type inference** — always use explicit types (`var x: int = 5`). The `:=` operator causes silent failures in the editor that headless validation doesn't catch.
+- **Run GdUnit4 tests when available** — if `addons/gdUnit4/` exists in the project and test files exist in `res://tests/`, run `godot --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` after implementation.
+- **Array sizes must match enum sizes** — every array indexed by an enum must have the same number of elements. Validate at runtime or in tests.
 - **Validate after implementation** — if `godot` is available on PATH, run `godot --headless --path <project> --quit` after every `write` or `fix` task on `.gd` or `.tscn` files and report any new errors. If `godot` is not available, note that headless validation was skipped and recommend manual validation
 - **Run defect prevention checklist** — before marking any story as complete, run through `references/defect-prevention.md` checklist items relevant to the story's changes
 
