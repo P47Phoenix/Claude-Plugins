@@ -60,7 +60,7 @@ Before checking config, check for an existing pipeline state:
    - Announce: `> Existing pipeline found: [pipeline_id], started [date], last completed Stage [N] ([name]). Currently at Stage [N+1].`
    - **Validate**: verify all artifact files in the `artifacts` map exist on disk. If any are missing, announce which and offer: Restart from that stage / Abandon.
    - **Semantic validation**: current_stage in range 1-7, not in stages_completed, no gaps in completed+skipped.
-   - **Config divergence check**: diff `config_snapshot` against current `.delivery/config.md`. If different, warn: "Config has changed since this pipeline started. Resume uses the original config. Choose Restart to apply new config."
+   - **Config divergence check**: diff `config_snapshot` against current `.delivery/config.yml`. If different, warn: "Config has changed since this pipeline started. Resume uses the original config. Choose Restart to apply new config."
    - Offer the user: **Resume** / **Restart** / **Abandon**
    - Resume: load config from snapshot, skip completed stages, start at current_stage.
    - Restart: move state file to `.delivery/state-archive/state-<timestamp>.md` (cap at 5, delete oldest), start fresh.
@@ -71,15 +71,16 @@ Before checking config, check for an existing pipeline state:
 4. **If state exists with `status: completed`**: ignore (previous run finished normally).
 5. **If no state file exists**: proceed to config check (normal flow).
 
-1. **Check for `.delivery/config.md`** in the current working directory.
+1. **Check for `.delivery/config.yml`** in the current working directory.
+   If `.delivery/config.yml` is not found, also check for `.delivery/config.md` (legacy format). If found, read it and announce: "Legacy config.md found. Run setup to migrate to config.yml."
 2. **If config exists and is fresh** (< 30 days old):
-   - Read the YAML frontmatter to load all project settings.
+   - Read the YAML configuration to load all project settings.
    - **Version check**: Compare `config_version` to the current schema version in
      `references/config-schema.md`. If the config is older (or has no `config_version`),
      apply defaults for any missing keys from the schema and announce:
      `> Config upgraded from v[old] to v[current]. New settings applied with defaults: [list]`
      Offer the user `setup` to configure new settings interactively.
-   - Announce: `> Config loaded from .delivery/config.md (v[version], created [date])`
+   - Announce: `> Config loaded from .delivery/config.yml (v[version], created [date])`
    - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements, persona config.
    - For any key missing from the config, use the default from `references/config-schema.md`.
    - Skip Phase 1 (type detection) — use `project_type` from config.
@@ -95,11 +96,11 @@ Before checking config, check for an existing pipeline state:
    - The wizard has 4 phases:
      - **Scan**: Auto-detect project state (languages, frameworks, CI/CD, git history, existing `.delivery/`)
      - **Present & Ask**: For each configuration topic, show what was detected and present 3-5 smart options. Each question supports single-select or multi-select as appropriate, plus Custom, Let's discuss, and Skip.
-     - **Generate Config**: Write `.delivery/config.md` with all settings as YAML frontmatter + markdown context.
+     - **Generate Config**: Write `.delivery/config.yml` as a pure YAML configuration file.
      - **Initialize Directory**: Create `.delivery/artifacts/`, `.delivery/memory/`, `.delivery/README.md`.
      - **Install Enforcement Hook**: If `enforcement.source_code_hook` is true (default), install a PreToolUse hook in the project's `.claude/settings.json` that warns when source code is edited outside an active delivery pipeline. See `references/setup-wizard.md` for the hook definition and installation process.
-   - After the wizard completes, `.delivery/config.md` MUST exist before proceeding.
-   - If the user wants to skip the wizard entirely, they must explicitly say "skip setup" or "use defaults" — in which case, generate a minimal `.delivery/config.md` with auto-detected defaults and proceed. The pipeline NEVER runs without a config file.
+   - After the wizard completes, `.delivery/config.yml` MUST exist before proceeding.
+   - If the user wants to skip the wizard entirely, they must explicitly say "skip setup" or "use defaults" — in which case, generate a minimal `.delivery/config.yml` with auto-detected defaults and proceed. The pipeline NEVER runs without a config file.
 
 5. **User can re-run the wizard at any time** with the `setup` command.
 
@@ -111,7 +112,7 @@ If the user says "quick start", "quick setup", or "just get started", run a 3-qu
 2. **What language/framework?** -- auto-detect from codebase, user confirms
 3. **How strict?** -- Prototype (minimal) / Standard (balanced) / Strict (full)
 
-All other settings use smart defaults from `references/config-schema.md` based on the project type and strictness level. Generate `.delivery/config.md` and proceed.
+All other settings use smart defaults from `references/config-schema.md` based on the project type and strictness level. Generate `.delivery/config.yml` and proceed.
 
 See `references/getting-started.md` for the complete quick-start walkthrough, skill map, and command cheat sheet.
 
@@ -159,7 +160,7 @@ When a config is loaded, these settings override defaults:
 
 ## Phase 1: Project Type Detection
 
-**Note:** `.delivery/config.md` must exist at this point (generated by Phase 0 wizard or
+**Note:** `.delivery/config.yml` must exist at this point (generated by Phase 0 wizard or
 from a previous run). If it contains `project_type`, this phase is skipped and the config
 value is used directly. If `project_type` is not set in config (user skipped that question
 during wizard), detect from the user's input using the signal table below.
@@ -984,7 +985,7 @@ Write initial state file to `.delivery/state.md` with atomic write:
 - `status`: `in_progress`
 - `current_stage`: 1
 - `stages_completed`: []
-- `config_snapshot`: entire config.md YAML frontmatter
+- `config_snapshot`: entire config.yml YAML content
 - `artifacts`: {}
 
 **At pipeline completion** (after UAT accepted):
@@ -1059,7 +1060,7 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 - **No pipeline bypass.** ALL story implementation MUST go through the delivery-flow
   pipeline. Never spawn developer/godot agents directly for story work. The PreToolUse
   hook enforces this by detecting Skill invocations outside pipeline context. Developer
-  and godot skills also warn when no `.delivery/config.md` exists. The only exception
+  and godot skills also warn when no `.delivery/config.yml` exists. The only exception
   is quick one-off fixes explicitly approved by the user (not story implementations).
 - **Test cases per story are mandatory.** Stage 5 (Plan) produces test cases alongside
   every user story — not as a separate QA step that can be skipped. Every story artifact

@@ -67,4 +67,4 @@ pipeline:
 
 ## Migration from Pre-1.9 Configs
 
-Configs without `pipeline.scope` default to "code-only", which preserves the pre-1.9 behavior exactly. No action required for existing projects. To opt in to broader governance, set scope to "all" or "custom" in `.delivery/config.md`.
+Configs without `pipeline.scope` default to "code-only", which preserves the pre-1.9 behavior exactly. No action required for existing projects. To opt in to broader governance, set scope to "all" or "custom" in `.delivery/config.yml`.

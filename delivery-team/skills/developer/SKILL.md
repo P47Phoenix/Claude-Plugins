@@ -22,7 +22,7 @@ The main context receives only the finished code artifact. All language-specific
 
 Before executing any `write` or `fix` task, check for delivery pipeline context:
 
-1. Check if `.delivery/config.md` exists in the current working directory.
+1. Check if `.delivery/config.yml` exists in the current working directory.
 2. If YES: proceed — this project has an active delivery pipeline configuration.
 3. If NO: announce a warning before proceeding:
 
@@ -167,7 +167,7 @@ Triggers: mentions of "functional", "pure function", "immutable", "immutability"
 
 ### Paradigm Selection from Config
 
-If `.delivery/config.md` exists, check `tech_stack.paradigm` and `tech_stack.paradigm_by_language`:
+If `.delivery/config.yml` exists, check `tech_stack.paradigm` and `tech_stack.paradigm_by_language`:
 
 - `paradigm: oop` → always load `references/oop-patterns.md` for multi-paradigm languages
 - `paradigm: fp` → always load `references/fp-patterns.md` for multi-paradigm languages

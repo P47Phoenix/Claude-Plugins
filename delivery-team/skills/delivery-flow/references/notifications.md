@@ -98,7 +98,7 @@ If `gh` is not available or discussions are not enabled, log a warning and skip.
 
 ## Configuration
 
-Config keys in `.delivery/config.md`:
+Config keys in `.delivery/config.yml`:
 
 ```yaml
 notifications:

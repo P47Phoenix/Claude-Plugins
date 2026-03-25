@@ -16,7 +16,7 @@ Godot development spans multiple overlapping concerns (scripting, scene architec
 
 Before executing any `write` or `fix` task, check for delivery pipeline context:
 
-1. Check if `.delivery/config.md` exists in the current working directory.
+1. Check if `.delivery/config.yml` exists in the current working directory.
 2. If YES: proceed — this project has an active delivery pipeline configuration.
 3. If NO: announce a warning before proceeding:
 

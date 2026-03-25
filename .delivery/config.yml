@@ -1,4 +1,3 @@
----
 config_version: "1.3"
 project_type: FEATURE
 tech_stack:
@@ -60,28 +59,3 @@ enforcement:
   retro_frequency: every-run
   retro_skip_allowed: false
 wizard_completed: 2026-03-24
----
-
-# Delivery Configuration
-
-## Project Context
-Claude Code plugin repository (Claude-Plugins). Contains 5 plugins with the delivery-team being the primary plugin (9 skills, 4 hooks). This is an ongoing feature-development project — most work is adding/improving skills, references, hooks, and pipeline features.
-
-## Tech Stack Details
-- Python 3.10+: scripts for agentic-flow-builder and prd-quality-gate-flow
-- Markdown: all SKILL.md files and reference documents (primary content format)
-- Shell (Bash 5+): hook scripts (flag-empirical-validation.sh, validate-gdscript.sh, check-config.sh)
-- TypeScript/JavaScript: planned for future Nx plugin and frontend skill examples
-
-## Constraints & Decisions
-- No external dependencies or package managers — scripts run directly
-- No CI/CD configured — manual deployment via git push
-- Volatility-based decomposition preferred — skills/references change independently at different rates
-- Strict enforcement: retrospectives mandatory after every run, no skip allowed
-- 2 human checkpoints: after Refine (PRD approval) and at UAT (accept/reject)
-- All 4 persona categories enabled for diverse user feedback
-
-## Notes
-- Plugin follows three-level context loading: metadata → SKILL.md → references
-- Config schema versioned (currently v1.3) with migration protocol
-- Always use plugin-dev skills when modifying plugin components (hook-development, skill-development, etc.)

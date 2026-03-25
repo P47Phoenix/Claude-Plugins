@@ -106,7 +106,7 @@ When an ADR is related to (but does not supersede) another ADR, use a `Related:`
 ADRs can become stale when the context that drove the decision has shifted.
 
 - **Default threshold**: 6 months from the `Date` field (or from last status change).
-- **Configurable**: Set `architecture.adr_staleness_months` in `.delivery/config.md` to override.
+- **Configurable**: Set `architecture.adr_staleness_months` in `.delivery/config.yml` to override.
 - **Review-by date**: Each ADR includes a `Review by:` date. If set, this takes precedence over the threshold.
 - **Detection**: The `adr review` command checks all Accepted ADRs against the threshold and flags those due for review.
 

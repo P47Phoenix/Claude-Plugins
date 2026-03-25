@@ -29,7 +29,7 @@ These three issues share a root cause: the orchestrator lacks a proper agent lif
 
 - Must work within Claude Code's sub-agent capabilities -- we cannot invent agent primitives that the platform does not support
 - Artifact file contracts (defined in `references/artifact-contracts.md`) are the only sanctioned communication channel between agents
-- Cannot break existing pipeline stage definitions or config schema -- changes must be backward compatible with current `.delivery/config.md` files
+- Cannot break existing pipeline stage definitions or config schema -- changes must be backward compatible with current `.delivery/config.yml` files
 - Parallel execution must degrade gracefully to sequential if the platform does not support concurrent sub-agents
 - The orchestrator must remain a single coordinating agent -- we are fixing delegation, not creating a multi-orchestrator architecture
 - Hook contracts (PreToolUse, PostToolUse, SubagentStop) must continue to fire correctly under the new execution model

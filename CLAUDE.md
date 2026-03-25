@@ -86,7 +86,7 @@ No build step, linting config, or test runner is configured.
 - Team DoD validation (ALL validators must say DONE)
 - 6 collaboration patterns: evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus
 - Self-learning memory in `.delivery/memory/` (tiered chunked retrieval)
-- Config-driven via `.delivery/config.md` with versioned schema
+- Config-driven via `.delivery/config.yml` with versioned schema
 - Setup wizard with 10 questions (auto-detect + smart options)
 - Defect tracking with plugin self-improvement PR triggers
 
@@ -107,7 +107,7 @@ No build step, linting config, or test runner is configured.
 - After creating a skill → use `plugin-dev:skill-reviewer` to review it
 - After creating a plugin → use `plugin-dev:plugin-validator` to validate it
 
-**Config schema**: The single source of truth for `.delivery/config.md` format is `delivery-flow/references/config-schema.md`. When adding new config keys, follow the extension protocol documented there.
+**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md`. When adding new config keys, follow the extension protocol documented there.
 
 ## Permissions
 

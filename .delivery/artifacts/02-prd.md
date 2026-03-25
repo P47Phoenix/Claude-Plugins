@@ -42,7 +42,7 @@ These three issues share a root cause: the orchestrator lacks a disciplined agen
 | Parallel speedup | DoD validation wall-clock time reduced vs sequential baseline | Time DoD validation with parallel vs sequential execution; parallel should complete faster |
 | Artifact-only communication | 100% of inter-agent data passes through `.delivery/artifacts/` files | Audit agent prompts: no artifact content pasted inline, no summarized output forwarded, only file paths provided |
 | Collaboration pattern correctness | All 6 patterns produce valid results under new model | Run each pattern and verify output quality matches pre-change baseline |
-| Backward compatibility | Existing config.md files work without modification | Run pipeline with a config.md that has no parallel keys; defaults apply, pipeline completes normally |
+| Backward compatibility | Existing config.yml files work without modification | Run pipeline with a config.yml that has no parallel keys; defaults apply, pipeline completes normally |
 
 ---
 
@@ -260,7 +260,7 @@ If the orchestrator detects that it is about to produce domain content inline (a
 
 #### FR-07: Parallel Configuration
 
-New config keys added to `.delivery/config.md` under the `pipeline` section:
+New config keys added to `.delivery/config.yml` under the `pipeline` section:
 
 ```yaml
 pipeline:
@@ -269,7 +269,7 @@ pipeline:
   parallel_validators: true   # enable parallel DoD validation at all stages
 ```
 
-**Defaults:** If these keys are absent from config.md, the following defaults apply:
+**Defaults:** If these keys are absent from config.yml, the following defaults apply:
 - `max_parallel_agents`: 3
 - `parallel_stories`: true
 - `parallel_validators`: true
@@ -313,7 +313,7 @@ The orchestrator's only file-write responsibilities:
 
 **NFR-02: Parallel Performance.** Parallel DoD validation should complete in less wall-clock time than sequential validation for the same set of validators. The improvement scales with the number of validators (2-4 per stage).
 
-**NFR-03: Backward Compatibility.** Existing `.delivery/config.md` files that do not contain the new parallel configuration keys SHALL work without modification. Default values are applied for absent keys. No existing pipeline behavior changes unless the user opts in via config.
+**NFR-03: Backward Compatibility.** Existing `.delivery/config.yml` files that do not contain the new parallel configuration keys SHALL work without modification. Default values are applied for absent keys. No existing pipeline behavior changes unless the user opts in via config.
 
 **NFR-04: Collaboration Pattern Correctness.** All six collaboration patterns (evaluator-optimizer, adversarial review, multi-perspective review board, decision ownership routing, debate, consensus) SHALL produce correct results under the new agent lifecycle model. Correctness means: each pattern's protocol (as defined in `references/team-patterns.md`) is followed exactly, with the additional guarantee that context isolation is enforced at every agent boundary.
 

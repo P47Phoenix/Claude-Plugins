@@ -163,7 +163,7 @@ These ship with the delivery-team plugin (in `delivery-flow/references/aliases/`
 | `breaking-bad` | Breaking Bad | Say my name (it's in the config) |
 | `the-office` | The Office | Dunder Mifflin delivery team |
 
-To activate: set `aliases.theme: lotr` in `.delivery/config.md`.
+To activate: set `aliases.theme: lotr` in `.delivery/config.yml`.
 
 ---
 

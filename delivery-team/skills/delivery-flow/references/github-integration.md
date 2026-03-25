@@ -5,7 +5,7 @@ This reference covers the delivery pipeline's optional GitHub integration: creat
 All GitHub integration is config-driven and optional. It requires:
 - The `gh` CLI installed and authenticated
 - A git remote configured for the current repository
-- The relevant config flags enabled in `.delivery/config.md`
+- The relevant config flags enabled in `.delivery/config.yml`
 
 If `gh` is not available or the repo has no remote, all GitHub integration steps are silently skipped.
 

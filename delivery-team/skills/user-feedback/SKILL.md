@@ -33,7 +33,7 @@ Auto-detect relevant persona categories from project type:
 | ENTERPRISE, B2B | Enterprise/B2B | Admin Alice, End User Eddie, Manager Maya, IT/Security Ivan |
 | Any | Demographic Overlays | Gen Z Zara, Millennial Mia, Gen X Xavier, Boomer Barbara |
 
-Read `.delivery/config.md` for:
+Read `.delivery/config.yml` for:
 - `personas.selected` — list of built-in persona names to use
 - `personas.custom` — custom persona definitions (see `references/custom-personas.md`)
 - `personas.count` — preferred number of personas (overrides default)

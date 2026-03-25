@@ -11,7 +11,7 @@ How persona feedback works at each stage of the delivery pipeline. Each protocol
 1. Select personas based on project type and config (see SKILL.md Phase 1)
 2. Minimum 3, recommended 3-5, maximum 7 personas per review
 3. Always include at least 1 accessibility persona
-4. If project has custom personas defined in `.delivery/config.md`, include those
+4. If project has custom personas defined in `.delivery/config.yml`, include those
 5. Read each persona's full profile from persona-library.md or custom definition
 
 ### Persona Independence

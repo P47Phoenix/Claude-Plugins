@@ -8,7 +8,7 @@ The wizard serves four purposes:
 
 1. **Auto-detect project state** from the codebase using Glob, Grep, Read, and Bash tools
 2. **Present findings with smart options** so the user confirms or overrides detected values
-3. **Generate `.delivery/config.md`** as the persistent configuration file
+3. **Generate `.delivery/config.yml`** as the persistent configuration file
 4. **Initialize the `.delivery/` directory structure** for artifacts, memory, and config
 
 ### Four Phases
@@ -19,7 +19,7 @@ Scan --> Present & Ask --> Generate Config --> Initialize Directory
 
 - **Scan**: Gather signals from the codebase (languages, frameworks, git state, existing config)
 - **Present & Ask**: Show detected values, ask 9 questions with smart defaults
-- **Generate Config**: Write `.delivery/config.md` with YAML frontmatter and markdown body
+- **Generate Config**: Write `.delivery/config.yml` as a YAML configuration file
 - **Initialize Directory**: Create `.delivery/`, `artifacts/`, `memory/`, and `README.md`
 
 ---
@@ -38,7 +38,7 @@ Before presenting any questions, scan the codebase to populate smart defaults. E
 | Database | Grep for: `prisma/schema.prisma`, `migrations/`, `alembic/`, `knex`, `sequelize`, `diesel.toml`, `.sql` files | Connection strings in config files (sanitized -- never display credentials) |
 | Git state | Run: `git log --oneline -100`, `git shortlog -sn`, `git remote -v`, `git branch -a` | Contributor count, branch count, last commit age, remote URL |
 | Existing docs | Check for: `README.md`, `docs/`, `doc/`, `documentation/`, `CHANGELOG.md`, ADRs, API specs | Documentation maturity signal |
-| Existing `.delivery/` | Check for: `.delivery/config.md`, `.delivery/memory/*.md`, `.delivery/artifacts/` | Prior wizard run, existing memories, config staleness |
+| Existing `.delivery/` | Check for: `.delivery/config.yml`, `.delivery/memory/*.md`, `.delivery/artifacts/` | Prior wizard run, existing memories, config staleness |
 | Project structure | Check for: `src/`, `lib/`, `app/`, `cmd/`, `scenes/`, `assets/`, `public/`, `tests/` | Monorepo vs single app, game vs web vs API vs CLI |
 
 For each scan, the orchestrator uses Glob, Grep, Read, and Bash tools to gather data. Results are compiled into a `detected_state` object that feeds smart defaults into every wizard question.
@@ -239,7 +239,7 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ### Q9: Existing .delivery/ State (single-select)
 
-**Auto-detect**: Check for `.delivery/` directory. If found, read `.delivery/config.md` frontmatter for `wizard_completed` date, count memory files in `.delivery/memory/`, check for artifacts in `.delivery/artifacts/`.
+**Auto-detect**: Check for `.delivery/` directory. If found, read `.delivery/config.yml` for `wizard_completed` date, count memory files in `.delivery/memory/`, check for artifacts in `.delivery/artifacts/`.
 
 **Present**: "I found an existing delivery setup from [date] with [N] memories and [M] artifacts."
 
@@ -341,13 +341,12 @@ If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse hook
 
 ## Config File Format
 
-The wizard generates `.delivery/config.md` with YAML frontmatter for machine-readable settings and a markdown body for human-readable context.
+The wizard generates `.delivery/config.yml` as a pure YAML configuration file.
 
 **Schema reference**: See `references/config-schema.md` for the complete schema with all keys, types, defaults, valid values, and consuming skills. The wizard uses the schema as its source of truth for defaults and validation.
 
-```markdown
----
-config_version: "1.0"
+```yaml
+config_version: "2.1"
 project_type: GREENFIELD
 tech_stack:
   languages: [TypeScript, Python]
@@ -390,24 +389,9 @@ enforcement:
   retro_frequency: every-run
   retro_skip_allowed: false
 wizard_completed: YYYY-MM-DD
----
-
-# Delivery Configuration
-
-## Project Context
-[Summary from wizard: what was detected, what the user confirmed, any notable decisions]
-
-## Tech Stack Details
-[Languages, frameworks, databases with version info if available]
-
-## Constraints & Decisions
-[Compliance requirements, risk tolerance rationale, deployment constraints]
-
-## Notes
-[Free-form notes from any "Let's discuss" conversations during the wizard]
 ```
 
-### Frontmatter Field Rules
+### YAML Field Rules
 
 - `project_type`: One of GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY
 - `tech_stack.languages`: List of detected or confirmed language names
@@ -442,7 +426,7 @@ After the config file is generated, initialize the `.delivery/` directory struct
 4. Create `.delivery/memory/stages/`
 5. Create `.delivery/memory/topics/`
 6. Create `.delivery/memory/archive/`
-7. Write `.delivery/config.md` (the config generated above)
+7. Write `.delivery/config.yml` (the config generated above)
 8. Create `.delivery/state-archive/`
 9. Add to `.gitignore` (if it exists): `state.md`, `state.tmp.md`, `state-archive/`
 10. Write `.delivery/README.md` with the following content:
@@ -454,7 +438,7 @@ This directory contains delivery pipeline state for this project.
 
 ## Structure
 
-- `config.md` -- Project configuration (generated by setup wizard, edit to customize)
+- `config.yml` -- Project configuration (generated by setup wizard, edit to customize)
 - `artifacts/` -- Stage output files (01-idea-brief.md through 07-uat-report.md)
 - `memory/` -- Self-learning memory (tiered chunked system)
   - `index.md` -- Routing index (read first, points to relevant chunks)
@@ -486,9 +470,9 @@ The delivery-flow SKILL.md reads the config at pipeline start and applies all se
 
 ### On Pipeline Start
 
-1. **Check for `.delivery/config.md`** in the current working directory.
+1. **Check for `.delivery/config.yml`** in the current working directory.
 
-2. **If config exists**, read the YAML frontmatter and apply all settings:
+2. **If config exists**, read the YAML configuration and apply all settings:
    - `project_type` -- Skip Phase 1 detection entirely; use the configured type
    - `pipeline.checkpoints` -- Enable only the listed human checkpoints
    - `pipeline.collaboration_patterns` -- Enable only the listed patterns per stage
@@ -512,7 +496,7 @@ The wizard can be re-run at any time via the `setup` command.
 
 ### Behavior on Re-Run
 
-- The wizard detects the existing `.delivery/config.md` and pre-populates all questions with current settings
+- The wizard detects the existing `.delivery/config.yml` and pre-populates all questions with current settings
 - Each question shows the current value alongside the auto-detected value (if different)
 - The user can update individual settings or run the full wizard again
 - Existing memory files in `.delivery/memory/` are always preserved unless the user explicitly chooses "Fresh start"

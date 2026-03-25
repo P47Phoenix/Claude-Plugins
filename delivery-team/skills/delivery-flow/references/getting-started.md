@@ -94,13 +94,13 @@ This triggers `delivery-team:delivery-flow`. The orchestrator activates and chec
 
 ### Step 2: Quick-Start Wizard
 
-If no `.delivery/config.md` exists, the wizard launches. Say "quick start" to use the 3-question mode:
+If no `.delivery/config.yml` exists, the wizard launches. Say "quick start" to use the 3-question mode:
 
 1. Describe what you are building.
 2. Confirm the detected tech stack (or specify it).
 3. Pick prototype / standard / strict.
 
-The wizard generates `.delivery/config.md` and initializes the `.delivery/` directory.
+The wizard generates `.delivery/config.yml` and initializes the `.delivery/` directory.
 
 ### Step 3: Idea (Stage 1)
 
@@ -142,7 +142,7 @@ User Acceptance Testing runs. Simulated personas test the deliverables. You revi
 | Get architecture | "design the architecture for..." |
 | Run tests | "create test cases for..." |
 | Get user feedback | "run a focus group on this design" |
-| Change theme | Edit `.delivery/config.md` and set `aliases.theme: lotr` |
+| Change theme | Edit `.delivery/config.yml` and set `aliases.theme: lotr` |
 | See pipeline status | "status" |
 | Re-run setup | "setup" |
 | Change one setting | "change risk tolerance to strict" |
@@ -178,7 +178,7 @@ Quick-start gets you going fast, but you can always fine-tune later:
 
 - **Re-run the full wizard**: say "setup" to answer all 9+ questions
 - **Change one setting**: say "change [setting] to [value]" and the wizard updates just that key
-- **Edit directly**: open `.delivery/config.md` and modify the YAML frontmatter
+- **Edit directly**: open `.delivery/config.yml` and modify the YAML frontmatter
 
 See `config-schema.md` for the complete list of all configuration keys, their types, defaults, and valid values.
 
@@ -188,7 +188,7 @@ See `config-schema.md` for the complete list of all configuration keys, their ty
 
 **"Pipeline bypass detected" warning**: You invoked a skill (like `developer` or `godot`) outside the delivery pipeline. This is the enforcement hook doing its job. If you want to use the skill directly without the pipeline, that is fine -- the warning is informational, not blocking.
 
-**"Config is stale" message**: Your `.delivery/config.md` is more than 30 days old. Run "setup" to refresh it, or ignore the message if your settings are still correct.
+**"Config is stale" message**: Your `.delivery/config.yml` is more than 30 days old. Run "setup" to refresh it, or ignore the message if your settings are still correct.
 
 **Pipeline seems stuck**: Check "status" to see where the pipeline is. If a self-correction loop hit its limit, the pipeline escalates to you for a decision.
 

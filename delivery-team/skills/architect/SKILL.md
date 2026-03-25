@@ -82,7 +82,7 @@ If the task requires modifying existing files, use the Read, Edit, Write, Glob, 
 
 ## Architecture Style and Decomposition from Config
 
-If `.delivery/config.md` exists, check `architecture.style` and `architecture.decomposition`:
+If `.delivery/config.yml` exists, check `architecture.style` and `architecture.decomposition`:
 
 ### Architecture Style
 

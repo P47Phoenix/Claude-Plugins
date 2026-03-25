@@ -6,7 +6,7 @@ How to create project-specific personas that supplement or replace the built-in 
 
 ## Defining Custom Personas
 
-### In `.delivery/config.md` (persisted across pipeline runs)
+### In `.delivery/config.yml` (persisted across pipeline runs)
 
 Add a `personas` section to the config YAML frontmatter:
 

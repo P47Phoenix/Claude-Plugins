@@ -189,7 +189,7 @@ Examples:
 | Anti-Pattern | Problem | Alternative |
 |-------------|---------|-------------|
 | Running full pipeline for every package on every change | Wastes time; most changes affect 1-2 packages | Use affected-only mode |
-| Single `.delivery/config.md` for packages with different tech stacks | Config becomes contradictory | Use per-package scope |
+| Single `.delivery/config.yml` for packages with different tech stacks | Config becomes contradictory | Use per-package scope |
 | Ignoring cross-package dependencies | Changes to shared packages break dependents silently | Always check transitive dependents |
 | Per-package configs that duplicate root settings | Config drift; updates missed | Use root for shared settings, per-package only for overrides |
 | Skipping affected detection and always running "all" | Defeats the purpose of monorepo-aware pipeline | Default to affected-only; use "all" only for release validation |

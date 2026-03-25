@@ -10,7 +10,7 @@ Artifact contracts define the exact structure each skill outputs and the next sk
 
 Contracts evolve with the pipeline. The contract version matches the config schema version in `references/config-schema.md`. When the config schema version increments, review contracts for any structural changes.
 
-Current contract version: matches `config_version` in `.delivery/config.md`.
+Current contract version: matches `config_version` in `.delivery/config.yml`.
 
 ---
 

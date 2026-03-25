@@ -99,7 +99,7 @@ Closes #12
 
 fix(parser): prevent crash on empty config file
 
-The YAML parser threw an unhandled exception when config.md had
+The YAML parser threw an unhandled exception when config.yml had
 no frontmatter. Now returns empty dict with a warning.
 
 docs(api): add rate limiting section to API reference
