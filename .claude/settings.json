@@ -5,9 +5,9 @@
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if this Edit/Write/NotebookEdit should go through the delivery-team pipeline. Check .delivery/config.yml for pipeline.scope setting. If scope is 'code-only' (default): only warn on source code files (.py, .ts, .js, .go, .rs, .cs, .java, .gd, .scala, .hs, .ex, .fs, .tsx, .jsx, .vue, .svelte, .sh). If scope is 'all': warn on ALL files except those in pipeline.scope_exclude (.delivery/, .git/, node_modules/, __pycache__/, .lock files). If scope is 'custom': warn on files matching pipeline.scope_include patterns. In all modes: if there is no active delivery-team pipeline context in this conversation (no Stage references, no delivery-flow invocation), return a warning. If a pipeline IS active or the file is excluded, return 'allow'.",
-            "timeout": 10
+            "type": "command",
+            "command": "python delivery-team/hooks/enforce_pipeline_scope.py",
+            "timeout": 5
           }
         ]
       }
