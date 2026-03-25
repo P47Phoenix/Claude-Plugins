@@ -130,6 +130,9 @@ Add an entry to the Version History table. When the pipeline detects an older `c
 
 Update the skill that reads the new key to reference `config-schema.md` for the default value.
 
+### Step 6.5: Regenerate JSON Schema
+Run `python delivery-team/scripts/generate-schema.py` to regenerate `config-schema.json` from the updated markdown table. Do NOT edit config-schema.json by hand -- it is always generated.
+
 ---
 
 ## Migration Protocol

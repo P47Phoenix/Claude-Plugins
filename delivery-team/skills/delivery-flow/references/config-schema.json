@@ -1,0 +1,676 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/P47Phoenix/Claude-Plugins/delivery-team/config-schema.json",
+  "title": "Delivery Pipeline Configuration",
+  "description": "Schema for .delivery/config.yml -- generated from config-schema.md. Do NOT edit by hand.",
+  "type": "object",
+  "properties": {
+    "config_version": {
+      "type": "string",
+      "default": "2.1"
+    },
+    "project_type": {
+      "type": "string",
+      "enum": [
+        "GREENFIELD",
+        "FEATURE",
+        "BUG_FIX",
+        "GAME_DEV+GREENFIELD",
+        "GAME_DEV+FEATURE",
+        "GAME_DEV+BUG_FIX",
+        "SPIKE",
+        "DOCS_ONLY"
+      ],
+      "default": "FEATURE"
+    },
+    "tech_stack": {
+      "type": "object",
+      "properties": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "databases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "ci_cd": {
+          "type": "string",
+          "enum": [
+            "github-actions",
+            "circleci",
+            "jenkins",
+            "gitlab-ci",
+            "azure-pipelines",
+            "none"
+          ],
+          "default": "none"
+        },
+        "paradigm": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "oop",
+            "fp",
+            "hybrid"
+          ],
+          "default": "auto"
+        },
+        "paradigm_by_language": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "nx_workspace": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "languages"
+      ]
+    },
+    "architecture": {
+      "type": "object",
+      "properties": {
+        "style": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "layered",
+            "hexagonal",
+            "clean",
+            "modular-monolith",
+            "microservices",
+            "event-driven",
+            "serverless"
+          ],
+          "default": "auto"
+        },
+        "style_overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "decomposition": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "volatility",
+            "ddd",
+            "team-topology",
+            "event-storming",
+            "business-capability"
+          ],
+          "default": "auto"
+        },
+        "decision_matrix_inputs": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "enforcement": {
+      "type": "object",
+      "properties": {
+        "source_code_hook": {
+          "type": "boolean",
+          "default": true
+        },
+        "retro_frequency": {
+          "type": "string",
+          "enum": [
+            "every-run",
+            "every-n-runs",
+            "manual"
+          ],
+          "default": "every-run"
+        },
+        "retro_skip_allowed": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "pipeline": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "code-only",
+            "all",
+            "custom"
+          ],
+          "default": "code-only"
+        },
+        "scope_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "scope_exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".delivery/",
+            ".git/",
+            "node_modules/",
+            "__pycache__/"
+          ]
+        },
+        "verify_skill_loading": {
+          "type": "boolean",
+          "default": true
+        },
+        "delegation_retry_max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 2
+        },
+        "isolation_audit": {
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ],
+          "default": "warn"
+        },
+        "metadata_max_chars": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 500,
+          "default": 200
+        },
+        "agent_timeout": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 600,
+          "default": 120
+        },
+        "required_agent_retry_max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 2
+        },
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "refine",
+              "architect",
+              "plan",
+              "uat"
+            ]
+          },
+          "default": [
+            "refine",
+            "architect",
+            "plan",
+            "uat"
+          ]
+        },
+        "collaboration_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "evaluator-optimizer",
+              "adversarial",
+              "review-board",
+              "debate",
+              "consensus",
+              "decision-routing"
+            ]
+          },
+          "default": [
+            "evaluator-optimizer",
+            "adversarial",
+            "review-board",
+            "debate",
+            "consensus",
+            "decision-routing"
+          ]
+        },
+        "max_self_correction": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "max_dod_rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "max_parallel_agents": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "parallel_stories": {
+          "type": "boolean",
+          "default": true
+        },
+        "parallel_validators": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "team": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "composition": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "size"
+      ]
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "enum": [
+            "cloud-aws",
+            "cloud-gcp",
+            "cloud-azure",
+            "on-premise",
+            "edge",
+            "serverless",
+            "hybrid"
+          ],
+          "default": "cloud-aws"
+        },
+        "containerized": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "risk_tolerance": {
+          "type": "string",
+          "enum": [
+            "prototype",
+            "standard",
+            "mission-critical",
+            "regulated"
+          ],
+          "default": "standard"
+        },
+        "deadline": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "HIPAA",
+              "GDPR",
+              "CCPA",
+              "PCI-DSS",
+              "SOC2",
+              "ISO27001"
+            ]
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "dod_validators": {
+      "type": "object",
+      "properties": {
+        "idea": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "po",
+            "architect"
+          ]
+        },
+        "refine": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "po",
+            "architect",
+            "qa"
+          ]
+        },
+        "design": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "ux",
+            "po",
+            "qa",
+            "architect"
+          ]
+        },
+        "architect": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "architect",
+            "qa",
+            "devops",
+            "security"
+          ]
+        },
+        "plan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "sm",
+            "po",
+            "qa",
+            "devops"
+          ]
+        },
+        "development": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "developer",
+            "qa",
+            "architect",
+            "tech-writer"
+          ]
+        },
+        "uat": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "qa",
+            "devops",
+            "po",
+            "tech-writer"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "personas": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "gamers",
+              "web-users",
+              "enterprise",
+              "demographics"
+            ]
+          }
+        },
+        "selected": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "feedback_stages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "refine",
+              "design",
+              "dev",
+              "uat"
+            ]
+          },
+          "default": [
+            "refine",
+            "design",
+            "dev",
+            "uat"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 7,
+          "default": 5
+        },
+        "overlays": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Gen Z Zara",
+              "Millennial Mike",
+              "Gen X Grace",
+              "Boomer Bob"
+            ]
+          },
+          "default": []
+        },
+        "custom": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "aliases": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "default": "business"
+        },
+        "custom_path": {
+          "type": "string",
+          "default": ".delivery/aliases/"
+        }
+      },
+      "additionalProperties": false
+    },
+    "git": {
+      "type": "object",
+      "properties": {
+        "branch_strategy": {
+          "type": "string",
+          "enum": [
+            "trunk-based",
+            "github-flow",
+            "gitflow",
+            "none"
+          ],
+          "default": "github-flow"
+        },
+        "auto_branch": {
+          "type": "boolean",
+          "default": true
+        },
+        "commit_convention": {
+          "type": "string",
+          "enum": [
+            "conventional",
+            "none"
+          ],
+          "default": "conventional"
+        },
+        "clean_tree_check": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "github": {
+      "type": "object",
+      "properties": {
+        "create_issues": {
+          "type": "boolean",
+          "default": false
+        },
+        "create_pr": {
+          "type": "boolean",
+          "default": false
+        },
+        "link_commits": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "monorepo": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "tool": {
+          "type": "string",
+          "enum": [
+            "nx",
+            "turbo",
+            "lerna",
+            "pnpm",
+            "none"
+          ],
+          "default": "none"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "root",
+            "per-package"
+          ],
+          "default": "root"
+        }
+      },
+      "additionalProperties": false
+    },
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "console",
+              "file",
+              "slack",
+              "github-discussion"
+            ]
+          },
+          "default": [
+            "console"
+          ]
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "abort",
+              "escalation",
+              "checkpoint",
+              "defect-threshold"
+            ]
+          },
+          "default": [
+            "complete",
+            "abort",
+            "escalation"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "wizard_completed": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "config_version",
+    "project_type",
+    "wizard_completed"
+  ]
+}
