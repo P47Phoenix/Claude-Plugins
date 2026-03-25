@@ -308,7 +308,7 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ### Project-Level Hook Installation
 
-If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse hook in the **project's** `.claude/settings.json` (not the plugin hooks.json):
+If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse command hook in the **project's** `.claude/settings.json` (not the plugin hooks.json). This is a Python command hook that reads `.delivery/config.yml` to determine scope and checks `.delivery/state.md` for an active pipeline, rather than relying on a prompt-based hook:
 
 ```json
 {
@@ -318,9 +318,9 @@ If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse hook
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if this Edit/Write/NotebookEdit is modifying source code files. If the file path matches source code patterns (.py, .ts, .js, .go, .rs, .cs, .java, .gd, .scala, .hs, .ex, .fs, .tsx, .jsx, .vue, .svelte) AND there is no active delivery-team pipeline context in this conversation (no Stage references, no delivery-flow invocation), return a warning: 'Source code change detected outside delivery-team pipeline. Route through delivery-team:delivery-flow for QA review and defect prevention.' If the file is NOT source code (docs, config, .delivery/, .md, .json, .yml, .yaml, .toml, .lock, .gitignore) OR a delivery-team pipeline IS active, return 'allow'.",
-            "timeout": 10
+            "type": "command",
+            "command": "python delivery-team/hooks/enforce_pipeline_scope.py",
+            "timeout": 5
           }
         ]
       }
@@ -331,9 +331,9 @@ If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse hook
 
 **Installation process**:
 1. Check if `.claude/settings.json` exists in the project root
-2. If yes: read the existing content, merge the hook into the `hooks` section (preserve existing hooks)
-3. If no: create `.claude/settings.json` with just the hook
-4. Announce: "Source code enforcement hook installed in .claude/settings.json. Edit/Write on source code files will warn when outside the delivery pipeline."
+2. If yes: read the existing content, merge the command hook into the `hooks` section (preserve existing hooks)
+3. If no: create `.claude/settings.json` with just the command hook
+4. Announce: "Pipeline scope enforcement hook installed in .claude/settings.json. The hook runs enforce_pipeline_scope.py on Edit/Write/NotebookEdit to warn when source code changes happen outside an active delivery pipeline."
 
 **Important**: This is the project's settings file (not `.claude/settings.local.json`) so it can be committed and shared with the team.
 

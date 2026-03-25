@@ -175,6 +175,8 @@ def main() -> None:
     except OSError:
         sys.exit(0)
 
+    config_text = config_text.rstrip() + "\n"  # Ensure trailing newline for regex matching
+
     scope = _parse_yaml_string("pipeline.scope", config_text)
     if not scope:
         sys.exit(0)
