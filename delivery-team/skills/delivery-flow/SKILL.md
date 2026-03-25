@@ -151,6 +151,9 @@ When a config is loaded, these settings override defaults:
 | `github.link_commits` | Whether commit messages reference issue numbers |
 | `notifications.channels` | Which notification channels to use (console, file, slack, github-discussion) |
 | `notifications.events` | Which events trigger notifications (complete, abort, escalation, checkpoint, defect-threshold) |
+| `pipeline.scope` | What file types go through the pipeline (code-only / all / custom) |
+| `pipeline.scope_include` | Custom glob patterns for pipeline scope (when scope=custom) |
+| `pipeline.scope_exclude` | Patterns always excluded from pipeline enforcement |
 
 ---
 
@@ -1135,3 +1138,4 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/notifications.md` | Configurable notifications: event types, channels (console/file/slack/github-discussion), report format, integration protocol |
 | `references/project-templates.md` | Project templates: pre-built starting artifacts for common stacks (nextjs-api, python-cli, godot-game, dotnet-microservice, react-spa, express-api, fullstack-nx) |
 | `references/feature-knowledge.md` | Feature Knowledge System: FKCs, Impact Analysis Gate, interaction map, decision trail, staleness detection |
+| `references/pipeline-scope.md` | Pipeline scope: code-only, all, custom modes with content-type-aware stage depth |

@@ -1,5 +1,5 @@
 {
-  "description": "Delivery team hooks: session config check, pipeline enforcement, source code enforcement, retrospective enforcement, empirical validation, GDScript parse checking",
+  "description": "Delivery team hooks: session config check, pipeline enforcement, source code enforcement, retrospective enforcement, empirical validation, GDScript parse checking, agent prompt audit, skill load verification",
   "hooks": {
     "SessionStart": [
       {
@@ -35,6 +35,16 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/audit-agent-prompt.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -45,6 +55,16 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-gdscript.sh",
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/verify-skill-load.sh",
+            "timeout": 10
           }
         ]
       }
