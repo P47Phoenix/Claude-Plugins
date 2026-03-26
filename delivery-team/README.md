@@ -1,10 +1,10 @@
 # Delivery Team
 
-A full software delivery team with 9 specialized skills covering the complete delivery lifecycle from idea to release.
+A full software delivery team with 10 specialized skills covering the complete delivery lifecycle from idea to release.
 
 ## Overview
 
-The delivery team orchestrates Product Owners, Developers, Architects, QA Engineers, DevOps, UX/UI Designers, and simulated end users through a structured pipeline with self-correction, adversarial review, and self-learning memory.
+The delivery team orchestrates Product Owners, Developers, Architects, QA Engineers, DevOps, UX/UI Designers, and simulated end users through a structured pipeline with self-correction, adversarial review, and self-learning memory. 10 specialized skills cover the complete delivery lifecycle.
 
 ## Quick Start
 
@@ -31,15 +31,19 @@ See `skills/delivery-flow/references/getting-started.md` for a complete walkthro
 | **operations** | DevOps, Release Manager, Technical Writer | CI/CD, deployment, infrastructure, release planning, API docs, runbooks |
 | **ui** | UX Designer, UI Designer, Game UI Designer | User flows, wireframes, design systems, accessibility, HUD, game menus |
 | **user-feedback** | 20+ simulated personas | Persona-based testing across gamers, web users, enterprise, and demographics |
+| **alias-creator** | 13 built-in themes | Create and manage agent personality themes (LOTR, Marvel, Star Wars, Breaking Bad, The Office, etc.) |
 
 ## Hooks
 
 | Hook | Event | Purpose |
 |------|-------|---------|
-| Pipeline bypass detection | PreToolUse (Skill) | Warns when developer/godot invoked outside delivery-flow |
-| GDScript validation | PostToolUse (Write/Edit) | Parse-validates .gd files after write |
-| Empirical validation | SubagentStop (developer/godot) | Detects runtime-only acceptance criteria |
+| Config check | SessionStart | Validates .delivery/config.yml exists and is current |
 | Retrospective enforcement | Stop | Blocks session end if pipeline work occurred without retrospective |
+| Pipeline bypass detection | PreToolUse (Skill) | Warns when developer/godot invoked outside delivery-flow |
+| Agent prompt audit | PreToolUse (Agent) | Audits agent prompts for context isolation compliance |
+| GDScript validation | PostToolUse (Write/Edit) | Parse-validates .gd files via godot --headless --check-only |
+| Skill load verification | PostToolUse (Agent) | Verifies SKILL_LOADED signal in agent responses |
+| Empirical validation | SubagentStop (developer/godot) | Detects runtime-only acceptance criteria |
 
 ## Key Features
 
@@ -52,6 +56,11 @@ See `skills/delivery-flow/references/getting-started.md` for a complete walkthro
 - **Domain discovery**: Architect interviews PO with strategy-specific questions before design
 - **Config-driven**: Architecture style, decomposition strategy, paradigm, personas all configurable
 - **Session keepalive**: Companion process keeps Claude active -- anti-idle nudges, rate-limit wait-and-resume, periodic monitoring. Cross-platform (Linux, macOS, Windows).
+- **13 alias themes**: Personality injection with LOTR, Marvel, Star Wars, Breaking Bad, The Office, and more
+- **Config validation toolchain**: JSON Schema generation + validation
+- **Pipeline analytics dashboard**: Visualize pipeline metrics and team performance
+- **Git/GitHub integration**: Branching, conventional commits, issue/PR creation
+- **Feature Knowledge System**: FKCs, Impact Analysis Gate
 
 ## Installation
 
@@ -74,6 +83,7 @@ delivery-team:quality        # Test planning
 delivery-team:operations     # DevOps, releases, docs
 delivery-team:ui             # UX/UI design
 delivery-team:user-feedback  # Persona-based testing
+delivery-team:alias-creator  # Create/manage alias themes
 ```
 
 ## License

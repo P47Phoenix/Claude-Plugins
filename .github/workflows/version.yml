@@ -1,0 +1,111 @@
+name: Semantic Version Bump
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    # Skip version bump on commits made by this workflow
+    if: "!startsWith(github.event.head_commit.message, 'chore: bump version')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version bump from commit message
+        id: bump
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          FIRST_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+          FULL_MSG="$COMMIT_MSG"
+
+          BUMP=""
+
+          # Check for BREAKING CHANGE in body or ! before colon in header
+          if echo "$FULL_MSG" | grep -qE '^BREAKING CHANGE:|^[a-z]+(\(.+\))?!:'; then
+            BUMP="major"
+          elif echo "$FIRST_LINE" | grep -qE '^feat(\(.+\))?:'; then
+            BUMP="minor"
+          elif echo "$FIRST_LINE" | grep -qE '^fix(\(.+\))?:'; then
+            BUMP="patch"
+          fi
+
+          if [ -z "$BUMP" ]; then
+            echo "No conventional commit prefix found. Skipping version bump."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Detected bump type: $BUMP"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "type=$BUMP" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version and tag
+        if: steps.bump.outputs.skip == 'false'
+        run: |
+          BUMP_TYPE="${{ steps.bump.outputs.type }}"
+
+          # Read current version from marketplace.json
+          CURRENT=$(python3 -c "
+          import json
+          with open('.claude-plugin/marketplace.json') as f:
+              data = json.load(f)
+          print(data['metadata']['version'])
+          ")
+
+          echo "Current version: $CURRENT"
+
+          # Split into major.minor.patch
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "$BUMP_TYPE" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "New version: $NEW_VERSION"
+
+          # Update marketplace.json
+          python3 -c "
+          import json
+          with open('.claude-plugin/marketplace.json', 'r') as f:
+              data = json.load(f)
+          data['metadata']['version'] = '${NEW_VERSION}'
+          with open('.claude-plugin/marketplace.json', 'w') as f:
+              json.dump(data, f, indent=2)
+              f.write('\n')
+          "
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Commit version bump
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: bump version to ${NEW_VERSION}"
+
+          # Create tag
+          git tag "v${NEW_VERSION}"
+
+          # Push commit and tag
+          git push origin main
+          git push origin "v${NEW_VERSION}"
+
+          echo "### Version bumped: $CURRENT → $NEW_VERSION ($BUMP_TYPE)" >> "$GITHUB_STEP_SUMMARY"

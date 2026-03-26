@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Collection of plugins for creating Claude Code extensions and building production-grade agentic workflows",
-    "version": "2.6.0"
+    "version": "2.7.0"
   },
   "plugins": [
 {
@@ -45,7 +45,7 @@
     },
     {
       "name": "delivery-team",
-      "description": "Full delivery team with 9 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (10 languages + OOP + frontend), Godot (game dev), Architect (11 roles + game architecture), Quality (QA), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), and User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics).",
+      "description": "Full delivery team with 10 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator with session keepalive), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (14 languages + OOP + FP patterns + frontend + Nx monorepo), Godot (game dev), Architect (11 roles + game architecture + 4 architecture decomposition strategies), Quality (QA with Feature Knowledge System), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), Alias Creator (alias themes), and User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics).",
       "source": "./",
       "strict": false,
       "skills": [

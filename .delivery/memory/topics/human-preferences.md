@@ -1,6 +1,6 @@
 # Human Preferences
 
-**Entries**: 7 | **Last updated**: 2026-03-25
+**Entries**: 8 | **Last updated**: 2026-03-25
 
 ## Process Enforcement
 
@@ -38,3 +38,9 @@
 - Team makes prioritization and execution decisions autonomously when technical basis is clear. (validated: 1)
 - Never bring problems without solutions + evidence. Always present recommended solution with rationale.
 - Don't escalate what the team can decide.
+
+## Documentation
+
+- Keep ALL documentation (CLAUDE.md, README.md, delivery-team/README.md, marketplace.json) up to date when planning future work. (validated: 1)
+- After any pipeline run that changes features, hooks, skills, or config: update affected doc files as part of the Dev or UAT stage — not as a separate follow-up.
+- "Stale docs are worse than no docs — they teach the wrong thing with authority."

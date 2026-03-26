@@ -15,8 +15,9 @@ Each plugin lives in its own top-level directory and follows this pattern:
 ├── SKILL.md           # Primary skill instructions (loaded when skill triggers)
 ├── LICENSE.txt
 ├── hooks/             # Event-driven automation (optional)
-│   └── hooks.json     # Hook definitions (PreToolUse, PostToolUse, SubagentStop, etc.)
-├── scripts/           # Python implementation scripts
+│   ├── hooks.json     # Hook definitions (SessionStart, Stop, PreToolUse, PostToolUse, SubagentStop)
+│   └── *.py           # Python hook implementation scripts
+├── scripts/           # Python implementation scripts (shared utilities)
 ├── skills/            # Sub-skills (optional)
 └── references/        # Supporting documentation and examples
 ```
@@ -27,33 +28,38 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 
 | Directory | Purpose |
 |-----------|---------|
-| `delivery-team/` | Full delivery team with 9 skills (see below) |
+| `delivery-team/` | Full delivery team with 10 skills (see below) |
 | `agentic-flow-builder/` | Builds multi-agent workflows using ReAcTree hierarchical decomposition |
 | `prompt-engineer/` | Expert LLM prompt optimization |
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
 | `research-agent/` | Research agent with 5 research types and academic frameworks |
 
-### delivery-team Plugin (9 skills)
+### delivery-team Plugin (10 skills)
 
 | Skill | Roles / Purpose |
 |-------|----------------|
-| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard |
+| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard (18 reference docs + 13 alias themes) |
 | `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
-| `developer/` | 10 languages + OOP + frontend patterns |
+| `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading from config) |
 | `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) |
-| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture |
+| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies |
 | `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
 | `operations/` | DevOps, Release Manager, Technical Writer |
 | `ui/` | UX Designer, UI Designer, Game UI Designer |
 | `user-feedback/` | Simulated persona-based testing (20+ built-in personas across gamers, web users, enterprise, demographics) |
+| `alias-creator/` | Creates personality-injected aliases from 13 built-in themes |
 
-### delivery-team Hooks
+### delivery-team Hooks (7 hooks across 5 event types)
 
 | Hook | Event | Purpose |
 |------|-------|---------|
-| PreToolUse (Skill) | Before implementation skill invocation | Pipeline bypass detection — warns when developer/godot invoked outside delivery-flow |
-| PostToolUse (Write/Edit) | After .gd file write | GDScript parse validation via `godot --headless --check-only` |
-| SubagentStop (developer/godot) | After dev agent completes | Empirical validation keyword detection |
+| Config check | SessionStart | Validates `.delivery/config.yml` exists and is current |
+| Retrospective enforcement | Stop | Blocks session end if pipeline work occurred without retrospective |
+| Pipeline bypass detection | PreToolUse (Skill) | Warns when developer/godot invoked outside delivery-flow |
+| Agent prompt audit | PreToolUse (Agent) | Audits agent prompts for context isolation compliance |
+| GDScript validation | PostToolUse (Write/Edit) | Parse-validates `.gd` files via `godot --headless --check-only` |
+| Skill load verification | PostToolUse (Agent) | Verifies SKILL_LOADED signal in agent responses |
+| Empirical validation | SubagentStop (developer/godot) | Detects runtime-only acceptance criteria |
 
 ## Running Scripts
 
@@ -89,6 +95,13 @@ No build step, linting config, or test runner is configured.
 - Config-driven via `.delivery/config.yml` with versioned schema
 - Setup wizard with 10 questions (auto-detect + smart options)
 - Defect tracking with plugin self-improvement PR triggers
+- Feature Knowledge System: Feature Knowledge Cards (FKCs), Impact Analysis Gate, decision trail for cross-cutting change tracking
+- Session keepalive: cross-platform companion process for long-running sessions
+- Pipeline state persistence and resume across sessions
+- Git/GitHub integration: branching strategies, conventional commits, automated issue/PR creation
+- 13 alias themes with personality injection (via alias-creator skill)
+- Config validation toolchain: JSON Schema generation + validation scripts
+- Pipeline analytics dashboard for delivery metrics
 
 **Agentic flow core components** (shared pattern between `agentic-flow-builder/` and `prd-quality-gate-flow/`):
 - `database.py` — SQLite schema, DAL, execution tracking, audit logs

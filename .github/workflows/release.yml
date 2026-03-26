@@ -1,0 +1,97 @@
+name: Release Notes
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Skip the version-bump commit tag if needed
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: prev
+        run: |
+          # Get the tag before the current one
+          PREV_TAG=$(git tag --sort=-v:refname | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            # First release — use initial commit
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          echo "tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "Previous tag: $PREV_TAG"
+
+      - name: Build release notes
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PREV="${{ steps.prev.outputs.tag }}"
+
+          # Collect commits between tags
+          COMMITS=$(git log "${PREV}..${TAG}" --pretty=format:"%s|%h" --no-merges)
+
+          FEATURES=""
+          FIXES=""
+          DOCS=""
+          CHORES=""
+          OTHER=""
+
+          while IFS='|' read -r MSG HASH; do
+            [ -z "$MSG" ] && continue
+            ENTRY="- ${MSG} (\`${HASH}\`)"
+
+            if echo "$MSG" | grep -qE '^feat(\(.+\))?:'; then
+              FEATURES="${FEATURES}${ENTRY}"$'\n'
+            elif echo "$MSG" | grep -qE '^fix(\(.+\))?:'; then
+              FIXES="${FIXES}${ENTRY}"$'\n'
+            elif echo "$MSG" | grep -qE '^docs(\(.+\))?:'; then
+              DOCS="${DOCS}${ENTRY}"$'\n'
+            elif echo "$MSG" | grep -qE '^chore(\(.+\))?:'; then
+              CHORES="${CHORES}${ENTRY}"$'\n'
+            else
+              OTHER="${OTHER}${ENTRY}"$'\n'
+            fi
+          done <<< "$COMMITS"
+
+          # Assemble body
+          BODY=""
+
+          if [ -n "$FEATURES" ]; then
+            BODY="${BODY}## Features"$'\n'"${FEATURES}"$'\n'
+          fi
+          if [ -n "$FIXES" ]; then
+            BODY="${BODY}## Bug Fixes"$'\n'"${FIXES}"$'\n'
+          fi
+          if [ -n "$DOCS" ]; then
+            BODY="${BODY}## Documentation"$'\n'"${DOCS}"$'\n'
+          fi
+          if [ -n "$CHORES" ]; then
+            BODY="${BODY}## Maintenance"$'\n'"${CHORES}"$'\n'
+          fi
+          if [ -n "$OTHER" ]; then
+            BODY="${BODY}## Other Changes"$'\n'"${OTHER}"$'\n'
+          fi
+
+          BODY="${BODY}---"$'\n'
+          BODY="${BODY}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV}...${TAG}"$'\n'
+
+          # Write to file to avoid quoting issues
+          echo "$BODY" > /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --notes-file /tmp/release-notes.md
