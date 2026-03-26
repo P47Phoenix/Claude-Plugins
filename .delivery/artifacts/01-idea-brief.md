@@ -1,89 +1,125 @@
-## Idea Brief
+## Idea Brief: Presentation Skill
 
-**Project Type**: DOCS_ONLY
+**Project Type**: FEATURE
 **Date**: 2026-03-25
-**Applies To**: repository documentation, marketplace metadata, CI/CD workflows
 
 ### Problem Statement
 
-The Claude-Plugins repository documentation has drifted significantly from the actual codebase. A full audit comparing documentation claims against the filesystem reveals **28+ factual inaccuracies** spread across 5 files, plus 1 missing file that should exist.
+The delivery team produces rich artifacts throughout the pipeline -- PRDs, architecture decisions, sprint plans, Feature Knowledge Cards, UAT reports, retrospectives, analytics dashboards -- but has no structured way to turn these into presentation-ready material. When stakeholders need a sprint review deck, a roadmap presentation, or a pitch for a new feature, team members must manually extract and reshape delivery artifacts into slide content outside of the pipeline.
 
-**CLAUDE.md** (6 gaps):
-- States "9 skills" when there are 10 (missing alias-creator)
-- States "10 languages" when developer skill covers 14 (missing F#, Elixir, Haskell, Scala)
-- Hooks table documents 3 of 7 hooks (missing SessionStart/check_config, Stop/retrospective, PreToolUse/Agent/audit, PostToolUse/Agent/verify_skill_load)
-- Missing features: Feature Knowledge System, session keepalive, pipeline resume/state persistence, git/GitHub integration, alias themes (13 themes), config validation toolchain
-- Developer skill description omits FP patterns and Nx monorepo support
-- Repo structure section has wrong reference file counts and is missing delivery-team/scripts/
-
-**README.md** (7 gaps):
-- States "9 skills" when there are 10
-- States "10 languages" when there are 14
-- Repo structure lists shell scripts (flag-empirical-validation.sh, validate-gdscript.sh) that no longer exist — they were replaced by Python scripts
-- Reference file counts in repo structure are wrong (e.g., "9 reference files" for delivery-flow should be 18+)
-- Missing: alias-creator skill, scripts/ directory, alias themes
-- Missing quick-start section and "What is this?" opener for new users
-- Contributing section is thin with no link to a CONTRIBUTING.md
-
-**delivery-team/README.md** (4 gaps):
-- States "9 skills" when there are 10 (missing alias-creator)
-- Hooks table shows 4 of 7 hooks (missing PreToolUse/Agent/audit, PostToolUse/Agent/verify_skill_load, SessionStart/check_config)
-- Missing: alias themes, config validation toolchain, scripts directory
-
-**marketplace.json** (2 gaps):
-- delivery-team description says "9 skills" and "10 languages" — should be 10 skills and 14 languages
-- Missing mention of: alias themes, FP patterns, Nx monorepo, Feature Knowledge System, session keepalive
-
-**Missing entirely** (1 file):
-- CONTRIBUTING.md — no contribution guidelines exist for external contributors
-
-**Separately**, the repository has no CI/CD automation. There are no GitHub Actions workflows for versioning or release notes, making it difficult to track what changed between releases.
+This gap means:
+- Presentation creation is ad-hoc and inconsistent across the team
+- Product knowledge locked in `.delivery/` artifacts does not flow into stakeholder communication
+- Sprint reviews, roadmap updates, and technical deep-dives are rebuilt from scratch each time instead of generated from existing pipeline state
+- The Technical Writer role in operations covers documentation (API docs, runbooks, user guides, release notes) -- not presentation narratives, visual storytelling, or slide structure
 
 ### Target Users
 
-1. **New users** discovering the repo — need accurate README and quick-start guidance
-2. **Claude Code itself** — CLAUDE.md is loaded as system context; inaccuracies cause incorrect assumptions and hallucinated capabilities
-3. **Contributors** — need accurate repo structure docs and contribution guidelines
-4. **Plugin consumers** — rely on marketplace.json metadata to evaluate plugins before installing
+1. **Product Owner** -- sprint review decks, roadmap presentations, stakeholder updates, feature pitch decks
+2. **Architect** -- technical deep-dives, architecture decision presentations, system overviews for non-technical audiences
+3. **Scrum Bag / Data Analyst** -- sprint metrics presentations, velocity reports, retrospective summaries
+4. **Developer** -- demo walkthroughs, onboarding presentations for new team members
+5. **External stakeholders** -- executives, clients, partners who receive formatted presentation output
 
-### Goals
+### Proposed Scope
 
-1. Fix all verified factual inaccuracies in CLAUDE.md (skill count, language count, hooks table, repo structure, feature coverage)
-2. Fix all verified factual inaccuracies in README.md (counts, stale shell script references, repo structure, missing sections)
-3. Fix all verified factual inaccuracies in delivery-team/README.md (skill count, hooks table, missing sections)
-4. Fix marketplace.json metadata (skill count, language count, feature descriptions)
-5. Create CONTRIBUTING.md with guidelines for plugin contributions, skill authoring, and PR expectations
-6. Add a quick-start section and "What is this?" opener to README.md
-7. Set up GitHub Actions workflow for semantic versioning (tag-based or conventional-commits-based)
-8. Set up GitHub Actions workflow for automated release notes generation
+#### Presentation Types
 
-### Constraints
+The skill should support these presentation categories, each with a dedicated template and content strategy:
 
-- **Accuracy over speed**: Every number and claim must be re-verified against the filesystem before writing. Do not propagate the audit findings blindly — confirm each one at write time.
-- **No code changes**: This is DOCS_ONLY. Do not modify any Python scripts, SKILL.md files, hooks, or plugin logic.
-- **No new features**: Document what exists today. Do not describe planned or aspirational capabilities.
-- **YAML correctness**: marketplace.json edits must preserve valid JSON. Config references must match the config-schema.md source of truth.
-- **Preserve voice**: CLAUDE.md is terse and directive (it is machine-consumed context). README.md is human-friendly. Keep each file's tone consistent with its audience.
-- **GitHub Actions must be minimal**: Workflows should use standard GitHub-maintained actions where possible. No third-party actions without justification.
+| Type | Source Artifacts | Typical Audience |
+|------|-----------------|------------------|
+| **Sprint Review** | Sprint plan, UAT report, FKCs, commit history | Team + stakeholders |
+| **Roadmap** | PRD backlog, architecture decisions, pipeline analytics | Executives, clients |
+| **Feature Pitch** | Idea brief, PRD, architecture overview | Decision-makers |
+| **Technical Deep-Dive** | Architecture docs, design decisions, code patterns | Engineering teams |
+| **Stakeholder Update** | Pipeline state, sprint metrics, risk register | Sponsors, management |
+| **Product Demo** | UAT report, user flows, screenshots/descriptions | Customers, sales |
+| **Onboarding** | CLAUDE.md, README, config, architecture overview | New team members |
+| **Retrospective Summary** | Retro artifacts, memory entries, defect trends | Team + management |
 
-### Scope
+#### Output Format
 
-**Files to update**:
-- `CLAUDE.md` — fix counts, hooks table, repo structure, add missing features
-- `README.md` — fix counts, remove stale references, add quick-start, fix repo structure
-- `delivery-team/README.md` — fix counts, hooks table, add missing sections
-- `.claude-plugin/marketplace.json` — fix metadata descriptions
+**Recommendation: Marp (Markdown-to-slides) as primary, with structured markdown as fallback.**
 
-**Files to create**:
-- `CONTRIBUTING.md` — contribution guidelines
-- `.github/workflows/release.yml` — semantic versioning + release notes workflow
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **Marp markdown** | Native markdown (Claude writes it naturally); renders to HTML/PDF/PPTX via CLI; version-controllable; themeable; supports speaker notes, diagrams, code blocks | Requires marp-cli for conversion; less layout flexibility than native PPTX | **Primary format** |
+| **python-pptx script** | True .pptx output; full layout control | Claude generates code, not slides; user must run script; harder to iterate on content; binary output not diffable | Secondary option for corporate-template compliance |
+| **reveal.js HTML** | Rich interactivity; web-native; embeddable | Heavier toolchain; overkill for most team presentations | Out of scope for v1 |
+| **Structured markdown outline** | Zero tooling needed; works everywhere | Not presentation-ready; requires manual conversion | **Fallback** when no tooling available |
 
-### Out of Scope
+The skill should detect whether `marp-cli` is available and adapt its output accordingly. When Marp is present, produce `.md` files with Marp frontmatter (`marp: true`, theme, paginate). When not available, produce structured markdown with clear slide breaks (`---`) and speaker notes that the user can paste into any slide tool.
 
-- Modifying any plugin code, scripts, hooks, or SKILL.md files
-- Changing the plugin architecture or directory structure
-- Adding new plugins or skills
-- Updating .delivery/config.yml or config-schema.md
-- Writing user guides or tutorials beyond what README covers
-- Setting up CI for testing (no test runner exists)
-- NPM/PyPI publishing workflows
+#### Product Knowledge Sources
+
+The skill draws content from these sources (read-only, never modifies them):
+
+- `.delivery/artifacts/` -- idea briefs, PRDs, architecture docs, sprint plans, UAT reports
+- `.delivery/memory/` -- team learnings, retrospective insights, defect patterns
+- `.delivery/config.yml` -- project context (name, type, team, tech stack)
+- Feature Knowledge Cards (FKCs) -- cross-cutting change history
+- Pipeline state -- current stage, blockers, progress metrics
+- Git history -- recent commits, PR summaries, changelog data
+
+### Key Design Decisions
+
+#### 1. Standalone skill (not an extension of Technical Writer)
+
+**Decision**: Create a new `presentation` skill under `delivery-team/skills/`.
+
+**Rationale**:
+- Technical Writer's domain is *documentation* -- reference material, guides, runbooks. These are structured for reading and searching. Presentations are structured for *narrating and persuading* -- different information architecture, different output contracts, different guardrails.
+- The operations skill already has 3 roles with 12 reference files and 21 task types. Adding presentation concerns would bloat its context and dilute role detection accuracy.
+- A standalone skill follows the existing pattern: one skill per distinct competency (developer writes code, architect designs systems, quality tests, UI designs interfaces, presentations present).
+- The skill can still collaborate with Technical Writer via the cross-role pattern when a presentation needs documentation excerpts.
+
+#### 2. Role: Presentation Designer
+
+A single role (not multi-role like operations or UI) because presentation creation is a cohesive competency. The variation is in *presentation type*, not in fundamentally different roles.
+
+#### 3. Reference file structure
+
+| Reference | Content |
+|-----------|---------|
+| `slide-structure.md` | Slide composition patterns: title slides, content slides, comparison slides, timeline slides, metric slides, quote slides, section dividers |
+| `narrative-patterns.md` | Storytelling frameworks: situation-complication-resolution, pyramid principle, problem-solution-benefit, demo flow, before/after |
+| `marp-templates.md` | Marp syntax, theme configuration, directives, speaker notes, image placement, multi-column layouts, code highlighting |
+| `data-visualization.md` | Presenting metrics in slides: chart type selection, Mermaid diagram integration, table formatting, metric highlight patterns |
+
+### Pipeline Integration
+
+The presentation skill integrates at specific pipeline stages:
+
+| Pipeline Stage | Trigger | Presentation Type |
+|----------------|---------|-------------------|
+| **Idea** (checkpoint) | PO requests pitch deck for stakeholder buy-in | Feature Pitch |
+| **Design** (after) | Architect presents design decisions to team | Technical Deep-Dive |
+| **Plan** (after sprint planning) | Scrum Bag prepares sprint kickoff slides | Stakeholder Update |
+| **UAT** (after acceptance) | PO prepares sprint review deck | Sprint Review, Product Demo |
+| **UAT** (release) | Release Manager prepares release summary | Stakeholder Update |
+| **Cross-stage** | On demand at any checkpoint | Roadmap, Onboarding, Retrospective Summary |
+
+**Integration mechanism**: The delivery-flow orchestrator can invoke the presentation skill as an optional step at checkpoints, passing the relevant artifacts as context. This is *opt-in* -- presentations are generated when requested, not automatically at every stage.
+
+**Agentic flow**: The skill exposes the standard input/output contract pattern used by all delivery-team skills, accepting `prd_reference`, `architecture_reference`, and a new `pipeline_artifacts` context field.
+
+### Risks & Open Questions
+
+#### Risks
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Marp not installed on user's system | Slides render as raw markdown | Detect tooling availability; fallback to structured markdown; provide installation guidance in skill output |
+| Presentations become stale if artifacts change | Misleading stakeholder content | Presentations reference source artifacts by path; include "generated from" metadata; recommend regeneration at each checkpoint |
+| Scope creep into visual design territory | Overlap with UI skill, bloated skill | Guardrail: presentation skill handles *content and structure*, not pixel-level visual design. Theme customization is limited to Marp themes. |
+| Corporate template compliance | Some orgs require branded .pptx | python-pptx script generation as secondary output path; document as future enhancement |
+
+#### Open Questions
+
+1. **Should the skill auto-detect presentation type from pipeline context?** (e.g., if invoked during UAT, default to Sprint Review) Or always require explicit type selection?
+2. **How deep should Mermaid diagram integration go?** Architecture diagrams, flow charts, and sequence diagrams could be embedded directly in Marp slides via Mermaid. Worth investing in for v1?
+3. **Speaker notes**: Should the skill always generate speaker notes, or only when requested? Speaker notes add significant value for less-experienced presenters but add generation time.
+4. **Presentation versioning**: Should generated presentations be saved to `.delivery/artifacts/presentations/` and tracked across sprints? This would enable "diff this sprint review vs last sprint" but adds storage.
+5. **python-pptx path**: Should v1 include python-pptx script generation for corporate template compliance, or defer to v2?
+6. **Dogfooding plan**: The team should use this skill to generate its own sprint review deck for at least one full sprint cycle before considering it shippable. What is the first real presentation we can generate to validate the skill?

@@ -1,6 +1,6 @@
 # Human Preferences
 
-**Entries**: 8 | **Last updated**: 2026-03-25
+**Entries**: 9 | **Last updated**: 2026-03-25
 
 ## Process Enforcement
 
@@ -32,6 +32,12 @@
 ## Plugin Development
 
 - Always use plugin-dev skills (hook-development, skill-development, etc.) when creating or modifying plugin components in this repo. (validated: 1)
+
+## Self-Improvement
+
+- Team members should open GitHub issues on this repo when they spot something in the plugin that could be fixed or improved. (validated: 1)
+- During reviews, dogfooding, QA validation, or any pipeline work — if you see a gap, inconsistency, or improvement opportunity, log it as an issue using the appropriate template (bug_report, feature_request, or defect_pattern).
+- "The team that files its own bugs ships better software."
 
 ## Team Autonomy
 

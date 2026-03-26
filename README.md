@@ -40,9 +40,9 @@ Or browse interactively:
 
 ### Delivery Team
 
-A full software delivery team with 10 specialized skills covering the complete delivery lifecycle — from idea to release. Designed for both standalone use and multi-agent orchestration.
+A full software delivery team with 11 specialized skills covering the complete delivery lifecycle — from idea to release. Designed for both standalone use and multi-agent orchestration.
 
-**10 Skills:**
+**11 Skills:**
 
 | Skill | Roles | What It Does |
 |-------|-------|-------------|
@@ -56,6 +56,7 @@ A full software delivery team with 10 specialized skills covering the complete d
 | **UI** | UX Designer, UI Designer, Game UI Designer | User flows, wireframes, design systems, accessibility, HUD, game menus, inventory UI |
 | **User Feedback** | 20+ simulated personas | Persona-based testing across gamers, web users, enterprise, and demographics with consensus detection |
 | **Alias Creator** | 13 built-in themes | Create and manage agent personality themes (LOTR, Marvel, Star Wars, etc.) |
+| **Presentation** | Presentation Composer | Team-collaborative presentations with 6-step gated flow. 4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive. 3 output formats (structured markdown, Marp, paste-ready) |
 
 **Key Features:**
 - **Setup wizard**: 10-question config wizard with auto-detection from codebase
@@ -140,7 +141,8 @@ Production-grade research agent with 5 research types.
 │   │   ├── operations/               # DevOps + Release + TechWriter (12 references)
 │   │   ├── ui/                       # UX + UI + Game UI (12 references)
 │   │   ├── user-feedback/            # Persona testing (4 references)
-│   │   └── alias-creator/            # 13 personality themes
+│   │   ├── alias-creator/            # 13 personality themes
+│   │   └── presentation/              # Team presentations (4 references)
 │   └── LICENSE.txt
 ├── agentic-flow-builder/             # Multi-agent workflow plugin
 ├── prompt-engineer/                  # Prompt optimization plugin

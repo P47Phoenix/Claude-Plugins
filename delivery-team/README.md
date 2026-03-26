@@ -1,10 +1,10 @@
 # Delivery Team
 
-A full software delivery team with 10 specialized skills covering the complete delivery lifecycle from idea to release.
+A full software delivery team with 11 specialized skills covering the complete delivery lifecycle from idea to release.
 
 ## Overview
 
-The delivery team orchestrates Product Owners, Developers, Architects, QA Engineers, DevOps, UX/UI Designers, and simulated end users through a structured pipeline with self-correction, adversarial review, and self-learning memory. 10 specialized skills cover the complete delivery lifecycle.
+The delivery team orchestrates Product Owners, Developers, Architects, QA Engineers, DevOps, UX/UI Designers, and simulated end users through a structured pipeline with self-correction, adversarial review, and self-learning memory. 11 specialized skills cover the complete delivery lifecycle.
 
 ## Quick Start
 
@@ -32,6 +32,7 @@ See `skills/delivery-flow/references/getting-started.md` for a complete walkthro
 | **ui** | UX Designer, UI Designer, Game UI Designer | User flows, wireframes, design systems, accessibility, HUD, game menus |
 | **user-feedback** | 20+ simulated personas | Persona-based testing across gamers, web users, enterprise, and demographics |
 | **alias-creator** | 13 built-in themes | Create and manage agent personality themes (LOTR, Marvel, Star Wars, Breaking Bad, The Office, etc.) |
+| **presentation** | Presentation Composer | Team-collaborative presentations with 6-step gated flow (4 types, 3 output formats, narrative adaptation, source citations) |
 
 ## Hooks
 
@@ -84,6 +85,7 @@ delivery-team:operations     # DevOps, releases, docs
 delivery-team:ui             # UX/UI design
 delivery-team:user-feedback  # Persona-based testing
 delivery-team:alias-creator  # Create/manage alias themes
+delivery-team:presentation  # Team presentations
 ```
 
 ## License

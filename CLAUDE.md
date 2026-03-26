@@ -28,13 +28,13 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 
 | Directory | Purpose |
 |-----------|---------|
-| `delivery-team/` | Full delivery team with 10 skills (see below) |
+| `delivery-team/` | Full delivery team with 11 skills (see below) |
 | `agentic-flow-builder/` | Builds multi-agent workflows using ReAcTree hierarchical decomposition |
 | `prompt-engineer/` | Expert LLM prompt optimization |
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
 | `research-agent/` | Research agent with 5 research types and academic frameworks |
 
-### delivery-team Plugin (10 skills)
+### delivery-team Plugin (11 skills)
 
 | Skill | Roles / Purpose |
 |-------|----------------|
@@ -48,6 +48,7 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 | `ui/` | UX Designer, UI Designer, Game UI Designer |
 | `user-feedback/` | Simulated persona-based testing (20+ built-in personas across gamers, web users, enterprise, demographics) |
 | `alias-creator/` | Creates personality-injected aliases from 13 built-in themes |
+| `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (Assemble, Content Gate, Draft, Compose, Review Gate, User Review). 4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive |
 
 ### delivery-team Hooks (7 hooks across 5 event types)
 
