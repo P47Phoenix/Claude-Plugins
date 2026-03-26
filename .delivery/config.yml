@@ -83,7 +83,7 @@ git:
   commit_convention: conventional
   clean_tree_check: true
 github:
-  create_issues: false
+  create_issues: true
   create_pr: false
   link_commits: true
 wizard_completed: 2026-03-25
