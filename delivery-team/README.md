@@ -51,6 +51,7 @@ See `skills/delivery-flow/references/getting-started.md` for a complete walkthro
 - **Empirical validation**: Detects acceptance criteria requiring runtime verification (CODE_COMPLETE status)
 - **Domain discovery**: Architect interviews PO with strategy-specific questions before design
 - **Config-driven**: Architecture style, decomposition strategy, paradigm, personas all configurable
+- **Session keepalive**: Companion process keeps Claude active -- anti-idle nudges, rate-limit wait-and-resume, periodic monitoring. Cross-platform (Linux, macOS, Windows).
 
 ## Installation
 

@@ -1,25 +1,31 @@
 ## Product Requirements Document
 
-**Product / Feature:** Agent Delegation, Isolation, and Parallelism
-**Version:** 1.0
+**Product / Feature:** Session Keepalive Companion (Active Session Productivity)
+**Version:** 2.0
 **Author:** Gandalf (Product Owner)
 **Status:** Draft
-**Last Updated:** 2026-03-24
-**GitHub Issues:** #25, #26, #27, #28
+**Last Updated:** 2026-03-25
+**GitHub Issues:** #39
 
 ---
 
 ### 1. Problem Statement
 
-The delivery-flow orchestrator suffers from a threefold failure in how it manages its agents -- and these three failures share a single root cause: the absence of a proper agent lifecycle discipline.
+The previous version of this PRD was wrong. It solved the wrong problem. It concerned itself with tasks surviving between sessions -- persistence, session hooks, YAML files of deferred obligations. All very tidy. All beside the point.
 
-**The first failure is delegation (#25).** The orchestrator sometimes neglects to delegate work to sub-agents at all. Instead of spawning a dedicated agent instance with the correct skill loaded, it runs the task inline within its own context window. When this happens, the worker role's SKILL.md and reference documents are never loaded. The Product Owner writes a PRD without the product-delivery skill's guidance. The Architect designs without the architect skill's references. The orchestrator plays every part itself, poorly, like a single actor performing all roles in the play without ever reading the scripts.
+The real problem is simpler and more urgent: Claude stops working in the middle of an active session, and nobody is there to tell it to continue.
 
-**The second failure is isolation (#26).** Even when sub-agents are spawned, they inherit context from the orchestrator's conversation. The QA engineer can see the developer's reasoning. The adversarial reviewer -- whose entire purpose is to provide an independent challenge -- can see how the primary agent produced the artifact. You cannot get an honest second opinion from someone who watched you write the first one. This defeats every collaboration pattern the pipeline defines: evaluator-optimizer, adversarial review, review board, debate, and consensus all assume that each agent brings an independent perspective. Shared context makes that independence a fiction.
+Three things happen today that should not:
 
-**The third failure is sequencing (#27).** The pipeline executes everything sequentially, even when tasks have no dependencies on each other. DoD validators run one after another when they could run simultaneously. Review board members wait in line. Independent stories are implemented one at a time. Supporting agents queue behind the primary worker. A real team does not work this way. A real team assigns independent tasks to independent people and lets them work in parallel.
+1. **Claude goes idle mid-task.** The delivery team is executing a long pipeline -- Development stage, multi-file implementation, tests to write. Claude pauses. Perhaps it believes it is waiting for input. Perhaps it has lost the thread. The user stepped away for coffee. The work stops. There is no mechanism to nudge Claude back into motion without a human physically typing at the terminal.
 
-These three issues share a root cause: the orchestrator lacks a disciplined agent lifecycle protocol that governs how agents are created, what context they receive, and whether independent agents can run concurrently.
+2. **A rate limit kills momentum.** The session hits a token or rate limit. Claude cannot proceed. The user is not watching. The session sits dead for an hour, two hours, until someone notices. There is no mechanism to wait out the cooldown and then wake Claude back up.
+
+3. **Periodic work requires babysitting.** The user wants "check for new issues every 30 minutes." Today this requires the user to sit at the terminal and type the same prompt every 30 minutes. There is no mechanism to execute a prompt at intervals within a running session.
+
+All three problems share a root cause: once Claude is running, nothing outside the user's keyboard can send input to the terminal. We need a companion process -- a small, disciplined background script -- that watches the session and types into the terminal when Claude needs a push.
+
+This is not scheduling. This is not persistence. This is keeping a live session productive when the human is away from the keyboard.
 
 ---
 
@@ -27,370 +33,326 @@ These three issues share a root cause: the orchestrator lacks a disciplined agen
 
 **Goals:**
 
-1. Sub-agent delegation is reliable -- the orchestrator never falls back to inline execution when a sub-agent is specified by the pipeline stage definition
-2. Each sub-agent runs in a fully isolated context, receiving only artifact file paths and its own skill references -- no orchestrator reasoning, no other agent output, no shared conversation history
-3. Independent tasks within a stage run concurrently where the platform supports it
-4. Agent communication happens exclusively through artifact files in `.delivery/artifacts/` -- no context passing, no inline handoffs
-5. All six existing collaboration patterns continue to function correctly under the new execution model
+1. Anti-idle detection resumes stalled work within a configurable timeout
+2. Wait-resume mode auto-recovers from rate limits after a cooldown period
+3. Monitor mode executes user-specified prompts at regular intervals
+4. Cross-platform support: Windows (Bash + PowerShell terminal), Linux (X11 + Wayland), macOS
+5. Zero external Python dependencies -- stdlib only for the core script; platform tools (xdotool, ydotool, osascript) are system-level
 
 **Success Metrics:**
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Delegation reliability | 100% of stage-defined sub-agent invocations use the Agent tool | Audit pipeline execution: every task listed in pipeline-stages.md is dispatched via Agent tool, never produced inline |
-| Context isolation | 100% of orchestrator-to-agent prompts pass metadata-only audit | Orchestrator passes only: file paths, status enums, role IDs, summaries (<200 chars). No code fences, no artifact content, no other agent output. PreToolUse audit hook validates. |
-| Parallel speedup | DoD validation wall-clock time reduced vs sequential baseline | Time DoD validation with parallel vs sequential execution; parallel should complete faster |
-| Artifact-only communication | 100% of inter-agent data passes through `.delivery/artifacts/` files | Audit agent prompts: no artifact content pasted inline, no summarized output forwarded, only file paths provided |
-| Collaboration pattern correctness | All 6 patterns produce valid results under new model | Run each pattern and verify output quality matches pre-change baseline |
-| Backward compatibility | Existing config.yml files work without modification | Run pipeline with a config.yml that has no parallel keys; defaults apply, pipeline completes normally |
+| Anti-idle recovery | Claude resumes work within `interval` seconds of going silent | Start a long task, observe idle, confirm companion sends nudge and work resumes |
+| Rate limit recovery | Session resumes automatically after cooldown | Trigger a rate limit, set wait time, confirm companion sends resume message after wait |
+| Monitor execution | Prompts delivered at specified intervals | Configure 60-second interval, confirm prompt sent at each interval for 5 cycles |
+| Cross-platform | Works on Windows (Bash + PowerShell), Linux (X11 + Wayland), macOS | Run the companion on each platform; terminal input is delivered correctly |
+| Self-termination | No orphan processes after session ends | Kill the Claude session, confirm companion exits within 60 seconds |
+| Zero dependencies | No pip install required | Inspect imports: only Python stdlib used |
 
 ---
 
 ### 3. User Personas
 
-**The Pipeline User (any project type)**
+**The Long-Session Developer**
 
-Every user running delivery-flow is affected. Inline execution can happen on any run. Context bleed undermines every collaboration pattern. Sequential execution slows every multi-agent stage. This user needs the orchestrator to delegate reliably, isolate properly, and parallelize where possible -- without requiring any change to their workflow.
+This user kicks off a delivery pipeline and walks away. Development stage takes 30 minutes. The user expects to come back and find the work done. Instead, Claude stalled 8 minutes in and has been sitting idle ever since. This user needs a companion that detects silence and says "keep going."
 
-**The Quality-Sensitive User**
+**The Overnight Runner**
 
-This user relies on adversarial review and Team DoD validation to catch real problems. They trust the pipeline to provide genuine independent assessment. If the reviewer already saw the work being produced, the review is theater, not verification. This user needs context isolation to be absolute, not aspirational.
+This user runs autonomous sessions overnight -- large refactors, multi-file implementations, comprehensive test suites. Rate limits are inevitable. Today, a rate limit at 2 AM means the session is dead until 8 AM when someone notices. This user needs a companion that waits out the cooldown and restarts work automatically.
 
-**The Large-Pipeline User**
+**The Periodic Monitor**
 
-This user runs GREENFIELD or GAME_DEV projects with full depth settings. These pipelines invoke the most sub-agents and suffer the most from sequential bottlenecks. A full pipeline with evaluator-optimizer loops, adversarial review, debate, consensus, and Team DoD at every stage -- run sequentially -- takes far longer than it should. This user needs parallel execution for independent tasks to bring pipeline duration closer to the critical path.
+This user wants Claude to check for new GitHub issues every 30 minutes, or run a code quality sweep every hour. They do not want to type the same prompt repeatedly. They need a companion that sends a prompt to the terminal at fixed intervals.
 
 ---
 
 ### 4. User Stories
 
-**US-01: Orchestrator delegates ALL domain work via Agent tool**
+**US-01: Auto-resume on idle**
 
-As the orchestrator, I delegate ALL domain work to sub-agents via the Agent tool, never producing artifacts inline, so that each worker role executes with its proper skill loaded and its full reference set available.
-
-**Acceptance Criteria:**
-- Every task defined in pipeline-stages.md is dispatched via the Agent tool
-- The orchestrator never uses Write/Edit to produce domain content (PRDs, designs, architecture docs, code, test plans) directly
-- Each Agent invocation specifies the correct skill name and task_type
-- If the Agent tool is unavailable or fails, the orchestrator reports the failure rather than falling back to inline execution
-
-**US-02: Sub-agents receive only artifact file paths and skill references**
-
-As a sub-agent, I receive only artifact file paths and my skill references -- no orchestrator conversation history -- so that my work is based solely on the defined inputs and my specialized knowledge.
+As a user running a long task, I want Claude to auto-resume when it goes idle, so that work continues without me typing at the keyboard.
 
 **Acceptance Criteria:**
-- The sub-agent prompt contains: skill name, task description, file paths to upstream artifacts, memory lessons for this stage, alias personality (if theme active)
-- The sub-agent prompt does NOT contain: orchestrator reasoning, other agents' output, conversation history, artifact content pasted inline
-- The sub-agent reads artifact files itself using the file paths provided
-- The sub-agent loads its own SKILL.md and references (not pre-loaded by the orchestrator)
+- Companion detects no terminal activity for `--interval` seconds (default: 300)
+- Companion sends a configurable nudge message to the terminal
+- Claude receives the nudge and resumes working
+- Companion waits for activity before nudging again (no rapid-fire nudges)
 
-**US-03: DoD validators run in parallel**
+**US-02: Wait out rate limits**
 
-As a DoD validator, I run in parallel with other validators, seeing only the artifact and gate criteria, so that validation completes faster and each validator's judgment is independent.
-
-**Acceptance Criteria:**
-- All DoD validators for a stage are spawned in a single message (parallel Agent calls)
-- Each validator receives: the artifact file path, its role-specific gate criteria, and the instruction to vote DONE or NOT_DONE
-- No validator sees another validator's output or vote
-- Results are collected after all validators complete; the orchestrator synthesizes the outcome
-
-**US-04: Adversarial reviewers receive only the artifact**
-
-As an adversarial reviewer, I receive only the artifact to review -- not the production conversation or the primary agent's reasoning -- so that my challenge is genuinely independent.
+As a user who hit a rate limit, I want the companion to wait for the cooldown and then resume automatically, so that I do not lose the session.
 
 **Acceptance Criteria:**
-- The challenger agent receives: the artifact file path, the adversarial review prompt template, and gate criteria
-- The challenger does NOT receive: the primary agent's prompt, the primary agent's reasoning, the evaluator-optimizer loop history, or the orchestrator's internal notes
-- The challenger reads the artifact from the file path and produces its challenge based solely on the artifact content
+- User starts companion with `--mode wait-resume --wait 3600` (1 hour cooldown)
+- Companion sleeps for the specified duration
+- After sleep, companion sends resume message to the terminal
+- Single-shot: companion exits after sending the resume
 
-**US-05: Independent stories run in parallel**
+**US-03: Periodic prompt execution**
 
-As a developer implementing independent stories, I run in parallel with other story agents (max configurable), so that stories without dependency edges are completed concurrently.
-
-**Acceptance Criteria:**
-- Stories with no dependency edges are dispatched as parallel Agent calls (up to `pipeline.max_parallel_agents`)
-- Each story agent receives: the story file path, the architecture artifact file path, and relevant references
-- Stories with dependency edges are dispatched sequentially in dependency order
-- The max parallel agent count is configurable via `pipeline.max_parallel_agents` (default: 3)
-
-**US-06: Orchestrator communicates through artifact files exclusively**
-
-As the orchestrator, I communicate with sub-agents exclusively through artifact files in `.delivery/artifacts/`, so that no information passes through my context as a bridge between agents.
+As a user, I want to schedule periodic prompts so that Claude performs recurring checks without me babysitting.
 
 **Acceptance Criteria:**
-- The orchestrator passes file paths to sub-agents, not file content
-- When a sub-agent produces output, the orchestrator writes it to an artifact file before the next agent references it
-- The orchestrator does not summarize, paraphrase, or filter a sub-agent's output when passing it downstream
-- The next sub-agent reads the artifact file directly
+- User starts companion with `--mode monitor --interval 1800 --prompt "Check for new issues"`
+- Companion sends the prompt to the terminal every 1800 seconds
+- Runs until stopped or `--max-iterations` reached
 
-**US-07: Review board members produce independent reviews**
+**US-04: Simple start command**
 
-As a review board member, I produce my review independently -- I do not see other reviewers' output until synthesis -- so that my perspective is uncontaminated by groupthink.
-
-**Acceptance Criteria:**
-- All review board members are spawned in a single message (parallel Agent calls)
-- Each reviewer receives: the artifact file path, their role-specific evaluation criteria, and the instruction to vote RECOMMEND or BLOCK
-- No reviewer sees another reviewer's findings or vote during their review
-- The orchestrator collects all reviews after completion and performs synthesis
-
-**US-08: Consensus participants produce independent Round 1 analysis**
-
-As a consensus participant, my Round 1 analysis is independent -- I see other agents' positions only in Round 2 -- so that the consensus process begins with genuinely diverse perspectives.
+As a user, I want to start the keepalive with a single command, so that setup is trivial.
 
 **Acceptance Criteria:**
-- All consensus participants are spawned in parallel for Round 1
-- Each participant receives: the topic, artifact file paths, and their role-specific perspective prompt
-- No participant sees another's Round 1 output
-- In Round 2, all Round 1 outputs are written to artifact files and all participants receive file paths to all Round 1 outputs
-- Round 2 participants are spawned in parallel with the full set of Round 1 artifact file paths
+- `python session_keepalive.py --mode anti-idle --interval 300 --pid $PPID &`
+- Companion writes its PID to `.delivery/keepalive.lock`
+- Companion logs startup to `.delivery/keepalive.log`
 
-**US-09: Orchestrator delegates to delivery-flow after plan approval (Must Have)**
+**US-05: Simple stop command**
 
-As the orchestrator exiting plan mode, when the approved plan involves delivery-team work (code, architecture, testing, docs), I invoke delivery-team:delivery-flow rather than implementing directly.
+As a user, I want to stop the keepalive cleanly.
 
 **Acceptance Criteria:**
-- When exiting plan mode with an approved plan that involves code, architecture, testing, or documentation changes, the orchestrator invokes `delivery-team:delivery-flow`
-- The orchestrator does NOT implement the plan directly
-- The delivery-flow pipeline receives the approved plan as input and executes it through the standard stage progression
+- Deleting `.delivery/keepalive.lock` causes the companion to self-terminate within 30 seconds
+- Alternatively: `kill $(cat .delivery/keepalive.lock)` sends SIGTERM, companion exits cleanly
+- Companion logs shutdown reason
+
+**US-06: Auto-terminate on session end**
+
+As a user, I want the companion to self-terminate when the Claude session ends, so that no orphan processes linger.
+
+**Acceptance Criteria:**
+- Companion checks every 30 seconds if the parent PID is still alive
+- If parent PID is gone, companion logs "parent process exited" and terminates
+- No orphan companion processes remain after session end
+
+**US-07: Safety rails**
+
+As a user, I want safety mechanisms so the companion does not type into the wrong window or loop endlessly.
+
+**Acceptance Criteria:**
+- Window ID is captured at launch and reused for every send (X11/macOS)
+- Before every send: verify the target window still exists; if not, log error and exit
+- Max nudge cap: `--max-retries` (default: 10 for anti-idle, 1 for wait-resume)
+- All actions logged with timestamps to `.delivery/keepalive.log`
+
+**US-08: Cross-platform support**
+
+As a user on any OS, I want this to work on my platform.
+
+**Acceptance Criteria:**
+- Linux X11: uses `xdotool` to send keystrokes to the correct window
+- Linux Wayland: uses `ydotool` to send keystrokes
+- macOS: uses `osascript` to send input to Terminal/iTerm
+- Windows: uses PowerShell `SendKeys` via subprocess
+- If the required platform tool is missing: graceful exit with install instructions
+- Auto-detection via `platform.system()` and `shutil.which()`
 
 ---
 
 ### 5. Functional Requirements
 
-#### FR-01: Agent Invocation Protocol
+#### FR-01: Companion Process
 
-Every domain task specified in pipeline-stages.md MUST be executed via the Agent tool. Each invocation SHALL include:
+A single Python script: `delivery-team/scripts/session_keepalive.py`
 
-- The specific skill name and task_type
-- Input: file paths to upstream artifacts (NOT content pasted inline)
-- Skill references loaded by the sub-agent itself (NOT pre-loaded by the orchestrator)
-- Alias personality injection (from active theme, if any)
-- Memory lessons (from relevant stage/topic chunks)
-- Explicit instruction: "Read artifacts from the file paths provided. Do not reference any prior conversation context."
-
-The orchestrator constructs the agent prompt. The sub-agent instructs and verifies skill loading, reads the artifacts, and executes the task. The orchestrator collects the result.
-
-**Skill Loading Verification (Verify-After-Invoke):**
-- The orchestrator's delegation prompt includes: "Begin your response with 'SKILL_LOADED: [skill-name]' to confirm you have loaded the skill."
-- The orchestrator checks the sub-agent's output for this marker.
-- If marker is absent or mismatched: flag as unreliable delegation, retry once, then escalate.
-- A PostToolUse hook on Agent invocations provides a second verification layer.
-
-#### FR-02: Context Isolation Protocol
-
-Each sub-agent receives a fresh context containing ONLY:
-
-- Its skill's SKILL.md and relevant references (loaded by the skill itself when the Agent tool invokes it)
-- File paths to upstream artifacts (the agent reads them)
-- Memory lessons for this stage (from `.delivery/memory/`)
-- Alias personality (if theme is active)
-- Gate criteria (for validators)
-
-Each sub-agent does NOT receive:
-
-- Orchestrator reasoning or internal notes
-- Other agents' output, findings, or votes
-- Conversation history from the orchestrator's context
-- Artifact content pasted inline (only file paths)
-
-This isolation is enforced by the Agent tool's natural context boundary. The orchestrator's responsibility is to never include prohibited context in the agent prompt.
-
-#### FR-03: Two-Channel Communication Model
-
-The orchestrator uses two strictly separated communication channels:
-
-**Signal Channel** (flows through orchestrator):
-- DoD votes: DONE / NOT_DONE / CODE_COMPLETE
-- Routing decisions: RECOMMEND / BLOCK
-- Stage status: completed / failed / skipped
-- File paths to artifacts
-- Summary strings (max 200 characters)
-
-**Artifact Channel** (never flows through orchestrator):
-- File contents -- sub-agents read artifact files directly by path
-- The orchestrator passes file PATHS, never file CONTENTS
-- Sub-agents return: STATUS + FILE_PATHS + SUMMARY (signal only)
-- Downstream agents receive file paths and read files themselves
-
-**Exception**: Collaboration patterns requiring multi-round interaction (Consensus Round 2, Debate Judge) intentionally share prior-round artifacts in later rounds. This is defined in each pattern's protocol.
-
-The orchestrator NEVER reads artifact file contents. It reads only signal-channel data from sub-agent responses.
-
-#### FR-04: Parallel Execution for Independent Tasks
-
-When tasks have no dependencies, the orchestrator SHALL spawn multiple Agent calls in a single message. The following task groups are eligible for parallel execution:
-
-- **DoD validators:** ALL validators for a stage run in parallel
-- **Review Board:** ALL reviewers run in parallel
-- **Consensus Round 1:** ALL participants run in parallel
-- **Supporting agents:** Independent supporting agents within a stage (e.g., Data Analyst + UX Researcher at Refine) run in parallel
-- **Independent stories:** Stories with no dependency edges run in parallel (max `pipeline.max_parallel_agents`)
-- **Debate PRO/CON:** Both sides of a debate run in parallel (the Judge runs after, sequentially)
-
-#### FR-05: Parallel Execution Map
-
-The following table defines explicitly which tasks are sequential (order required) versus parallel (independent) at each pipeline stage:
-
-| Stage | Sequential (order required) | Parallel (independent) |
-|-------|---------------------------|----------------------|
-| 2 Refine | PRD creation first | Metrics + UX research after PRD |
-| 3 Design | UX flows first | UI specs + accessibility review after flows |
-| 5 Plan | Story writing first | Test strategy + deploy plan + estimates after stories |
-| 6 Dev | Dependent stories in order | Independent stories (max 3 parallel) |
-| 7 UAT | Test plan first | Release plan + docs + test execution after plan |
-| All DoD | -- | All validators in parallel |
-| Review Board | -- | All reviewers in parallel |
-| Consensus R1 | -- | All participants in parallel |
-| Consensus R2 | -- | All participants in parallel (with R1 outputs) |
-| Adversarial | Primary artifact first | Challenger runs independently after |
-| Debate | -- | PRO + CON in parallel; Judge sequential after |
-
-#### FR-06: Delegation Guardrail
-
-The orchestrator MUST NOT:
-
-1. Use Write/Edit to create domain content in `.delivery/artifacts/` directly (permitted only for writing sub-agent output to file)
-2. Paste artifact content into a sub-agent prompt (pass file path instead)
-3. Summarize or paraphrase a sub-agent's output for the next agent (let the next agent read the file)
-4. Skip a sub-agent invocation that is defined in pipeline-stages.md
-5. Fall back to inline execution when the Agent tool is available
-
-If the orchestrator detects that it is about to produce domain content inline (a self-check), it SHALL stop and delegate to the appropriate sub-agent instead.
-- When exiting plan mode with an approved plan that involves code, architecture, testing, or documentation changes, the orchestrator MUST invoke `delivery-team:delivery-flow` to execute the plan. It MUST NOT implement the plan directly.
-
-#### FR-07: Parallel Configuration
-
-New config keys added to `.delivery/config.yml` under the `pipeline` section:
-
-```yaml
-pipeline:
-  max_parallel_agents: 3     # max concurrent sub-agents per parallel group
-  parallel_stories: true      # enable parallel story implementation in Stage 6
-  parallel_validators: true   # enable parallel DoD validation at all stages
+**Invocation:**
+```bash
+python delivery-team/scripts/session_keepalive.py --mode anti-idle --interval 300 --pid $PPID &
 ```
 
-**Defaults:** If these keys are absent from config.yml, the following defaults apply:
-- `max_parallel_agents`: 3
-- `parallel_stories`: true
-- `parallel_validators`: true
+**Arguments:**
 
-These defaults ensure backward compatibility -- existing config files work without modification.
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `--mode` | YES | -- | One of: `anti-idle`, `wait-resume`, `monitor` |
+| `--interval` | NO | 300 | Seconds between checks (anti-idle) or between prompt sends (monitor) |
+| `--wait` | NO | 3600 | Seconds to sleep before sending resume (wait-resume mode only) |
+| `--prompt` | NO | See below | Message to send to terminal |
+| `--pid` | YES | -- | Parent process PID to monitor for self-termination |
+| `--max-retries` | NO | 10 | Maximum nudges before companion gives up (anti-idle/monitor) |
+| `--max-iterations` | NO | 0 | Maximum prompt sends for monitor mode (0 = unlimited) |
 
-#### FR-08: Graceful Degradation
+**Default prompts by mode:**
+- `anti-idle`: "Continue working on the current task. Do not stop until complete."
+- `wait-resume`: "Resume the previous task. The rate limit cooldown has passed."
+- `monitor`: (no default -- user must specify)
 
-If parallel execution is not supported by the platform (e.g., the Agent tool does not support multiple concurrent calls), the orchestrator SHALL fall back to sequential execution transparently. The pipeline produces identical results whether run in parallel or sequential -- only wall-clock time differs. The orchestrator SHALL NOT error or abort due to a platform limitation on parallelism.
+**Lifecycle:**
+1. Write own PID to `.delivery/keepalive.lock`
+2. Log startup: mode, interval, parent PID, platform, detected terminal driver
+3. Enter mode-specific loop (see FR-03, FR-04, FR-05)
+4. On exit: delete `.delivery/keepalive.lock`, log shutdown reason
 
-#### FR-09: Parallel Failure Handling (Scatter-Gather Model)
+#### FR-02: Platform-Specific Terminal Drivers
 
-Each agent in a parallel group is tagged `required` or `optional` in the stage definition:
-- **Required agent fails/times out**: Stage halts. Error report names the failed agent, the error, and the stage context. Orchestrator retries the failed agent only (not the full group), up to 2 attempts. After 2 retries, escalate to user.
-- **Optional agent fails/times out**: Orchestrator logs the gap, proceeds with partial results. The gap is noted in the stage artifact.
-- **All agents timeout**: Clean stage-level failure with error report.
-- **Per-agent timeout**: Configurable, default 120 seconds.
-- **Retry targets only the failed agent**, never re-runs successful agents in the group.
+A `TerminalDriver` abstraction with platform-specific backends, auto-detected at startup.
 
-#### FR-10: Sub-Agent Write Ownership
+| Platform | Backend | Mechanism |
+|----------|---------|-----------|
+| Linux X11 | `xdotool` | `xdotool type --window [wid] "text"` + Enter keystroke |
+| Linux Wayland | `ydotool` | `ydotool type "text"` + Enter keystroke (active window) |
+| macOS | `osascript` | `osascript -e 'tell app "Terminal" to do script "text"'` |
+| Windows | PowerShell | `[System.Windows.Forms.SendKeys]::SendWait("text")` via `subprocess.run(["powershell", ...])` |
 
-Sub-agents always write their own artifacts. The orchestrator never writes artifact content.
+**Auto-detection order:**
+1. `platform.system()` -- determine OS family
+2. For Linux: check `$XDG_SESSION_TYPE` or `$WAYLAND_DISPLAY` to distinguish X11 vs Wayland
+3. `shutil.which()` -- verify the required tool is installed
+4. If no tool found: log error with install instructions and exit with code 1
 
-**Namespace isolation**: Each sub-agent writes to `.delivery/artifacts/{stage-number}-{stage-name}/{role}/`. Examples:
-- Architect writes to `.delivery/artifacts/04-architect/solution/`
-- Developer writes to `.delivery/artifacts/06-development/developer/`
-- QA validator writes to `.delivery/artifacts/06-development/qa-review/`
+**Window ID locking (X11/macOS):**
+- At startup, capture the terminal window ID once
+- Store it for the lifetime of the companion
+- Before every send: verify the window still exists
+- If window is gone: log error and exit (do not send to a different window)
 
-No two agents share a write directory. Collisions are impossible by structure.
+#### FR-03: Anti-Idle Mode
 
-The orchestrator's only file-write responsibilities:
-- `.delivery/state.md` (pipeline state)
-- `.delivery/artifacts/` stage summary/routing metadata
-- Never artifact content
+**Purpose:** Detect when Claude has gone silent and nudge it to continue.
+
+**Mechanism:**
+1. Every `--interval` seconds, check for terminal activity
+2. Activity detection: check modification time of `.delivery/keepalive.heartbeat` -- Claude (or a hook) touches this file periodically during active work. If the file has not been modified within `--interval` seconds, Claude is considered idle.
+3. If idle: send the nudge message to the terminal via the terminal driver
+4. After sending: wait for the heartbeat file to update before nudging again (avoids rapid-fire nudges)
+5. Increment nudge counter. If `--max-retries` reached: log warning "max nudges reached, stopping" and exit.
+
+**Heartbeat file:** `.delivery/keepalive.heartbeat` -- a simple file whose modification time indicates activity. The companion monitors this file's mtime. If a heartbeat mechanism is not feasible in v1, fall back to a simple timer: nudge every `--interval` seconds regardless, relying on `--max-retries` to prevent runaway nudging.
+
+#### FR-04: Wait-Resume Mode
+
+**Purpose:** Sleep through a rate limit cooldown, then wake Claude back up.
+
+**Mechanism:**
+1. Log: "Waiting [wait] seconds for cooldown..."
+2. Sleep for `--wait` seconds (using `time.sleep` with periodic parent-PID checks every 30 seconds)
+3. After sleep: send the resume message to the terminal via the terminal driver
+4. Log: "Resume message sent."
+5. Exit.
+
+This is single-shot. One wait, one send, done.
+
+#### FR-05: Monitor Mode
+
+**Purpose:** Execute a user-specified prompt at regular intervals.
+
+**Mechanism:**
+1. Every `--interval` seconds: send `--prompt` to the terminal via the terminal driver
+2. Log each send with timestamp and iteration count
+3. If `--max-iterations` > 0 and iteration count reaches it: log "max iterations reached" and exit
+4. Otherwise: run until stopped (lock file deleted or parent PID gone)
+
+**Example:**
+```bash
+python session_keepalive.py --mode monitor --interval 1800 --prompt "Check for new GitHub issues and summarize any that are open" --pid $PPID &
+```
+
+#### FR-06: Safety Rails
+
+**SR-01: Window ID locking.** Captured once at launch. Reused for every send. Verified before every send. If the window no longer exists, exit immediately.
+
+**SR-02: Parent PID monitoring.** Every 30 seconds (independent of mode interval), check if the parent PID is still alive using `os.kill(pid, 0)` (signal 0 checks existence without killing). If parent is gone, exit.
+
+**SR-03: Killswitch file.** Every 30 seconds, check if `.delivery/keepalive.lock` still exists. If deleted, exit. This gives users a simple stop mechanism: `rm .delivery/keepalive.lock`.
+
+**SR-04: Max retry/nudge cap.** Configurable via `--max-retries`. Prevents infinite nudging. Default: 10 for anti-idle, 1 for wait-resume, configurable for monitor.
+
+**SR-05: Log rotation.** `.delivery/keepalive.log` is rotated when it exceeds 1MB. Old log is renamed to `.delivery/keepalive.log.1` (only one backup kept).
+
+**SR-06: Graceful signal handling.** SIGTERM and SIGINT are caught. On receipt: delete lock file, log shutdown, exit cleanly.
+
+#### FR-07: Delivery-Flow Integration
+
+The following commands are added to the delivery-flow skill vocabulary (in SKILL.md):
+
+| Command | Action |
+|---------|--------|
+| `keepalive start [mode] [options]` | Claude launches the companion via Bash: `python delivery-team/scripts/session_keepalive.py [args] &` |
+| `keepalive stop` | Claude runs: `rm .delivery/keepalive.lock` -- companion self-terminates |
+| `keepalive status` | Claude checks: is `.delivery/keepalive.lock` present? If yes, read PID, check if process is alive, tail the log. Report mode, uptime, nudge count. |
+
+These are convenience wrappers. The companion is a standalone script that can be launched directly by the user without delivery-flow.
+
+#### FR-08: Cross-Platform Implementation Constraints
+
+- **Python stdlib only.** Imports limited to: `pathlib`, `subprocess`, `platform`, `shutil`, `time`, `os`, `signal`, `sys`, `argparse`, `datetime`, `logging`.
+- **No bash-isms in Python.** No `os.system()`, no shell=True, no backtick expansion.
+- **pathlib for all file paths.** No `os.path.join`, no string concatenation for paths.
+- **subprocess for platform tools only.** The only subprocess calls are to the terminal drivers (xdotool, ydotool, osascript, powershell).
+- **UTF-8 encoding on all file operations.**
+- **Works when invoked from:** Bash, Zsh, Fish, PowerShell, CMD.
 
 ---
 
 ### 6. Non-Functional Requirements
 
-**NFR-01: Artifact Quality Preservation.** No change to artifact quality as a result of context isolation. The same DoD pass rate must be achievable with isolated agents as with the current (non-isolated) model. If isolation causes a quality regression, the isolation protocol must be revised -- not the quality bar.
+**NFR-01: Low CPU usage.** The companion must not consume meaningful CPU. It sleeps between checks. No busy-waiting, no polling loops shorter than 10 seconds.
 
-**NFR-02: Parallel Performance.** Parallel DoD validation should complete in less wall-clock time than sequential validation for the same set of validators. The improvement scales with the number of validators (2-4 per stage).
+**NFR-02: Clean self-termination.** No orphan processes. The companion must exit when: (a) parent PID dies, (b) lock file is deleted, (c) max retries reached, (d) SIGTERM/SIGINT received, or (e) target window no longer exists.
 
-**NFR-03: Backward Compatibility.** Existing `.delivery/config.yml` files that do not contain the new parallel configuration keys SHALL work without modification. Default values are applied for absent keys. No existing pipeline behavior changes unless the user opts in via config.
+**NFR-03: Bounded log growth.** Log file must not grow unbounded. Rotate at 1MB, keep one backup.
 
-**NFR-04: Collaboration Pattern Correctness.** All six collaboration patterns (evaluator-optimizer, adversarial review, multi-perspective review board, decision ownership routing, debate, consensus) SHALL produce correct results under the new agent lifecycle model. Correctness means: each pattern's protocol (as defined in `references/team-patterns.md`) is followed exactly, with the additional guarantee that context isolation is enforced at every agent boundary.
+**NFR-04: Non-interference with user input.** If the user returns to the terminal and starts typing, the companion's nudge is a complete message (not partial keystrokes that interleave with user input). The nudge includes a newline/Enter to submit it as a complete prompt.
 
-**NFR-05: Hook Contract Preservation.** Hook contracts (PreToolUse, PostToolUse, SubagentStop) SHALL fire correctly for agents spawned in parallel. Each agent's lifecycle events trigger hooks independently. Parallel execution does not suppress, duplicate, or reorder hook events.
+**NFR-05: Works with Claude Code CLI.** The companion must work with `claude` CLI terminal sessions. It sends text to the terminal where `claude` is running, not to Claude's API.
 
 ---
 
 ### 7. Out of Scope
 
-These items are explicitly excluded from this feature:
-
-- **Agent-to-agent direct communication.** Agents communicate through artifact files, not to each other. No message-passing, no shared memory, no direct invocation between sub-agents.
-- **Dynamic parallelism tuning based on system load or token budgets.** Parallelism is configured statically via `max_parallel_agents`. Adaptive throttling is a future consideration.
-- **Partial result streaming from sub-agents back to the orchestrator mid-execution.** Sub-agents complete their full task before the orchestrator processes results.
-- **Changes to pipeline stage definitions.** This feature fixes how agents are managed, not what stages do. The stages, their agents, and their artifacts remain as defined in `references/pipeline-stages.md`.
-- **Multi-orchestrator or distributed pipeline execution.** The orchestrator remains a single coordinating agent. We are fixing delegation, not creating a distributed system.
-- **New collaboration patterns beyond the existing six.** The six patterns are unchanged in definition; only their execution model (isolation and parallelism) is improved.
+- **Cross-session task persistence.** That was the previous PRD's approach. It is a different problem. If we solve it later, it will be a separate feature.
+- **GUI or desktop notifications.** The companion is headless.
+- **Multi-terminal management.** One companion per session. If you have three terminals, you launch three companions.
+- **Automatic mode detection.** The user specifies the mode explicitly. The companion does not try to guess whether Claude is idle vs rate-limited.
+- **Integration with CronCreate.** CronCreate is an in-session scheduler. The keepalive companion is a background process. They are separate mechanisms.
+- **API-level interaction.** The companion does not call the Anthropic API. It sends keystrokes to a terminal. It is a keyboard automation tool, not an API client.
+- **Scheduled task file (.delivery/scheduled-tasks.yml).** The previous PRD's artifact. Not part of this feature.
 
 ---
 
 ### 8. Dependencies & Risks
 
-**Dependencies:**
-
-| Dependency | Nature | Impact |
-|-----------|--------|--------|
-| Agent tool support for parallel calls | Multiple Agent tool invocations in a single message must be supported by the platform | High -- if not supported, FR-04 degrades to sequential (FR-08 mitigates) |
-| Agent tool context isolation | The Agent tool must create a fresh context for each sub-agent, not inheriting the caller's conversation | High -- if the Agent tool shares context, FR-02 cannot be fully enforced |
-| Existing pipeline-stages.md definitions | Stage definitions specify which agents to invoke and in what order | Low -- no changes to stage definitions required |
-| Artifact file contracts (artifact-contracts.md) | Artifacts must have well-defined schemas so sub-agents can read them without additional context | Medium -- poorly defined artifact contracts may require sub-agents to need more context than file paths alone |
-| Config schema (config-schema.md) | New parallel config keys must follow the extension protocol | Low -- additive keys with defaults |
-| State persistence (Issue #11) | State file write points must account for parallel agent completion | Low -- state writes occur after all agents for a step complete, not during |
-
-**Risks:**
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| Agent tool does not support parallel invocation | Medium | High -- no parallel speedup | FR-08 graceful degradation: fall back to sequential execution transparently |
-| Context isolation incomplete -- Agent tool leaks caller context | Medium | High -- collaboration patterns compromised | Validate sub-agent prompts explicitly; include instruction to ignore prior context; test isolation empirically |
-| Artifact files insufficient as sole communication channel | Low | Medium -- sub-agents may lack context needed for quality output | Strengthen artifact-contracts.md to ensure artifacts are self-contained; include all necessary context in artifact files |
-| Parallel agents produce conflicting writes to the same artifact file | Low | High -- data corruption | Each parallel agent writes to a distinct output file; the orchestrator merges if needed |
-| Hook events fire in unexpected order under parallel execution | Medium | Medium -- hook side effects may conflict | Document hook behavior under parallelism; ensure hooks are idempotent where possible |
-| Quality regression from strict isolation (agents lack helpful context they previously received) | Medium | High -- DoD pass rate drops | Monitor DoD pass rates; if isolation causes regression, enrich artifact files rather than loosening isolation |
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Wrong-window input | **HIGH** -- keystrokes sent to the wrong application (email, browser, chat) | Window ID locked at launch, verified before every send. If window gone, exit. |
+| Orphan companion process | **MEDIUM** -- background process lingers after session ends, consuming resources or sending stale nudges | Parent PID monitoring every 30s + killswitch file + signal handling |
+| Rate limit loop | **MEDIUM** -- anti-idle nudge triggers work that triggers another rate limit, companion nudges again | Max retry cap + recommend wait-resume mode for rate limit scenarios, not anti-idle |
+| Platform tool not installed | **LOW** -- xdotool/ydotool missing on user's system | Graceful exit with specific install instructions for the user's platform |
+| Wayland restrictions | **LOW** -- ydotool requires root or input group membership | Document as known limitation; suggest X11 fallback or user group configuration |
+| User returns mid-nudge | **LOW** -- companion sends a nudge while user is typing | Nudge is a complete, self-contained message terminated with Enter. User's partial input may be disrupted, but the nudge is not fragmented. |
+| Terminal emulator compatibility | **LOW** -- osascript/SendKeys may not work with all terminal emulators | Document tested terminals (Terminal.app, iTerm2, Windows Terminal, GNOME Terminal, Konsole). Provide escape hatch: users can implement custom drivers. |
 
 ---
 
-### 9. Timeline
+### 9. Open Questions (team resolves)
 
-This feature is scoped for a single sprint (FEATURE type pipeline) with the following stage estimates:
+| # | Question | Owner | Recommendation |
+|---|----------|-------|----------------|
+| 1 | Should anti-idle detect silence by monitoring a heartbeat file or by simple timer? | Celebrimbor (Architect) | Heartbeat file is more accurate but requires Claude to touch the file during work. Timer is simpler but may nudge Claude while it is actively thinking (not idle, just slow). Recommend: start with timer in v1, add heartbeat in v2 if needed. |
+| 2 | Should the keepalive be auto-launched by delivery-flow during long Development stages? | Gandalf (PO) | Manual launch only in v1. Auto-launch is a convenience that can be added once we trust the safety rails. |
+| 3 | For Wayland, should we support `wtype` as an alternative to `ydotool`? | Celebrimbor (Architect) | `wtype` works without root but only on Wayland compositors that support wlr-virtual-keyboard-unstable-v1. Document both options, prefer `ydotool` as primary, `wtype` as fallback. |
+| 4 | Should the companion detect rate limit messages in terminal output and automatically switch to wait-resume behavior? | Celebrimbor (Architect) | Desirable but complex -- requires reading terminal output, not just sending input. Defer to v2. |
+| 5 | What is the right default interval for anti-idle? | Gandalf (PO) | 300 seconds (5 minutes). Short enough to catch genuine stalls, long enough to not interrupt Claude mid-thought. Configurable, so users can tune. |
+
+---
+
+### 10. Timeline
+
+This feature is scoped as a FEATURE type pipeline with the following stage estimates:
 
 | Stage | Effort | Notes |
 |-------|--------|-------|
 | 1 Idea | Done | Idea brief completed (01-idea-brief.md) |
 | 2 Refine (PRD) | Done | This document |
-| 3 Design | Minimal | No user-facing UI. The "design" is the agent invocation protocol and parallel execution map defined in FR-01 through FR-05 |
-| 4 Architect | Light | Integration points: SKILL.md Phase 4 execution protocol, team-patterns.md collaboration protocols, config-schema.md extension |
-| 5 Plan | Light | Implementation stories derived from FR-01 through FR-10 |
-| 6 Development | Medium | Modify SKILL.md Phase 4 (Steps 4-7) to enforce delegation, isolation, and parallelism. Update team-patterns.md templates. Add parallel config keys to config-schema.md |
-| 7 UAT | Medium | Verify all 6 collaboration patterns under new model. Verify parallel execution. Verify graceful degradation. Verify backward compatibility |
-
-The primary implementation work is in the Development stage: rewriting the Pipeline Execution Protocol (SKILL.md Phase 4, Steps 4 through 7) and the collaboration pattern templates (team-patterns.md) to enforce the agent invocation protocol, context isolation, and parallel dispatch.
+| 3 Design | Light | Terminal driver abstraction, platform detection logic, mode state machines. No UI design -- this is a background script. |
+| 4 Architect | Light | File layout, class structure, subprocess safety, signal handling patterns. Integration point: delivery-flow SKILL.md command vocabulary. |
+| 5 Plan | Light | 3-5 implementation stories derived from FR-01 through FR-08. |
+| 6 Development | Medium | Single script with ~400-600 lines. Terminal drivers are the bulk of the work -- each platform has its own quirks. |
+| 7 UAT | Medium | Cross-platform validation (5 backends), safety rail verification, orphan process testing, long-running session test. |
 
 ---
 
-### 10. Open Questions
-
-| # | Question | Owner | Status |
-|---|----------|-------|--------|
-| 1 | Does the Agent tool support multiple concurrent invocations in a single message? | Gandalf (PO) | RESOLVED -- Yes. Claude Code supports multiple tool calls in a single response. FR-08 provides graceful degradation if this changes. |
-| 2 | Does the Agent tool create a truly fresh context, or does it inherit the caller's conversation history? | Gandalf (PO) | RESOLVED -- The Agent tool creates a fresh context. The sub-agent receives only what is explicitly passed in the prompt. The orchestrator's responsibility is to pass only permitted content. |
-| 3 | Should the orchestrator be allowed to read artifact content for routing decisions (e.g., checking a DoD vote)? | Gandalf (PO) | RESOLVED -- Yes. The orchestrator may read artifacts for routing and control flow. The prohibition is on pasting artifact content into another agent's prompt as a substitute for passing the file path. |
-| 4 | Should `max_parallel_agents` apply globally or per-stage? | Gandalf (PO) | RESOLVED -- Globally, in v1. A per-stage override is unnecessary complexity for the initial implementation. The global default of 3 is sufficient for all current parallel groups (max 4 DoD validators, but 3 concurrent is acceptable). |
-| 5 | How should the orchestrator handle a sub-agent that fails or times out during parallel execution? | Gandalf (PO) | RESOLVED -- Scatter-Gather model with required/optional tags. Required failure halts + retry (max 2). Optional failure logs + continues. See FR-09. |
-| 6 | Should Debate PRO and CON agents run in parallel or sequentially? | Gandalf (PO) | RESOLVED -- In parallel. The PRO and CON agents argue independently by definition. Neither needs to see the other's arguments. The Judge runs sequentially after both complete. |
-
----
-
-*"A wizard is never late, nor is he early -- but an orchestra that plays every instrument one at a time will empty the hall before the overture is done. Let the instruments that can play together, play together. Let each musician read only their own sheet. And let no one conduct by playing every part themselves."*
+*"I am not asking you to build a scheduler. I am asking you to build a companion -- a small, watchful presence that sits beside the session and, when the silence stretches too long, says the words the absent user would have said: keep going."*
 
 -- Gandalf, Product Owner

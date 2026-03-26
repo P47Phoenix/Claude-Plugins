@@ -1121,6 +1121,9 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 | `features` | List all feature knowledge cards |
 | `stale-features` | List FKCs that need updating |
 | `decisions` | List all decisions in the Decision Trail |
+| `keepalive start [mode] [options]` | Launch session keepalive companion (anti-idle/wait-resume/monitor) |
+| `keepalive stop` | Stop the keepalive companion |
+| `keepalive status` | Show keepalive status and log tail |
 
 ---
 

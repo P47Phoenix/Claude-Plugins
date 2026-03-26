@@ -2,46 +2,64 @@
 
 **Project Type**: BUG_FIX
 **Date**: 2026-03-25
-**GitHub Issues**: #40
-**Applies To**: delivery-team hooks, project-level enforcement
+**GitHub Issues**: #39
+**Applies To**: delivery-team infrastructure, scheduled task persistence, cross-platform support
 
 ### Problem Statement
 
-The project-level enforcement hook in `.claude/settings.json` is a prompt-based hook that instructs Claude to "check .delivery/config.yml for pipeline.scope" — but prompt hooks cannot read files. They evaluate based on text instructions and tool input only. The hook describes filesystem checks it is structurally incapable of performing.
+When a user asks the delivery team to perform a task on a delay — "at 11:05 PM, check for open issues and fix them" — the task dies the moment the session ends. CronCreate is an in-memory scheduler bound to the active REPL. Close the terminal, and the task vanishes as if it never existed.
 
-This means the enforcement is entirely illusory. The hook cannot read `pipeline.scope` from config. It cannot evaluate `scope_include` or `scope_exclude` patterns against actual config values. It cannot detect an active pipeline by reading `.delivery/state.md`. When a user changes their config, the hook behavior does not change because the scope rules are hardcoded in the prompt text, not read from the config file.
+This is not a minor inconvenience. It means:
 
-A guard who cannot read the law he enforces is no guard at all.
+1. **Long-delay tasks never fire.** A task scheduled hours out will not survive the user closing their laptop.
+2. **External systems cannot trigger the team.** No webhook, no CI event, no scheduled pipeline can wake the delivery team to do work.
+3. **The team cannot be "on call."** We exist only while someone is actively sitting in a session. That is a fundamental limitation for any team that claims to deliver.
+
+A delivery team that forgets its commitments the moment you look away is not a delivery team. It is a conversation.
 
 ### Target Users
 
-- **Any delivery-flow user**: Everyone with a `.delivery/config.yml` expects the enforcement hook to respect their configured scope settings. It does not.
-- **Users with custom scope configs**: Anyone who has set `pipeline.scope: custom` or modified `scope_exclude` patterns is getting zero benefit from those settings — the hook ignores them entirely.
+- **Any delivery-flow user** who schedules background work and expects it to actually run
+- **Teams using CI/CD pipelines** who want the delivery team to respond to GitHub events (new issues, webhook triggers, scheduled checks)
+- **Cross-platform users** on Windows (Bash and PowerShell), Linux, and macOS — the solution must work for all of them without OS-specific dependencies
 
 ### Goals
 
-1. The enforcement hook reads `pipeline.scope`, `scope_include`, and `scope_exclude` from `.delivery/config.yml` at invocation time — not from hardcoded prompt text
-2. The hook detects active pipeline status by reading `.delivery/state.md`
-3. Missing config or missing state file results in graceful pass-through (no enforcement, no crash)
-4. The hook uses the shared `hooks/lib/hook_utils.py` library for stdin/stdout handling, consistent with other Python command hooks in this repo
+1. Background tasks survive session end — a scheduled task persists and executes even if the originating session is closed
+2. External events can trigger the delivery team — GitHub webhooks, CI pipelines, or cron-equivalent mechanisms can invoke Claude Code to perform work
+3. Cross-platform by default — Windows (Bash AND PowerShell), Linux, macOS, all supported with a single Python-based implementation, no OS-specific dependencies
+4. The solution integrates cleanly with the existing delivery-team plugin structure (hooks, config, artifacts)
 
 ### Constraints
 
-- Must be a Python command hook, not a prompt hook — this is the entire point of the fix
-- Must be cross-platform (pathlib, no shell-isms)
-- Must use the existing hook_utils.py shared library for hook I/O
-- Hook timeout budget remains 10 seconds (same as current prompt hook)
-- Must not break the existing `.claude/settings.json` structure beyond replacing the hook entry
+- **Python only** — no shell scripts, no OS-specific schedulers (no crontab, no Windows Task Scheduler)
+- **No external dependencies** beyond Python stdlib unless the team demonstrates clear justification
+- **Cross-platform file paths** — pathlib only, no hardcoded separators
+- **Must not break existing hook infrastructure** — CronCreate may still be useful for in-session tasks; this extends capability, it does not replace what works within a session
 
 ### Initial Scope
 
-- New script: `delivery-team/hooks/enforce_pipeline_scope.py` that reads config and state files, evaluates scope rules, and returns allow/warn via hook protocol
-- Update `.claude/settings.json` to replace the prompt hook with a command hook pointing to the new script
-- Handle all three scope modes: `code-only` (default), `all`, and `custom`
+This is a research-first engagement. The team must evaluate five proposed options before any code is written:
+
+| # | Option | Evaluate For |
+|---|--------|-------------|
+| 1 | **GitHub Actions scheduled workflows** | Cron-triggered Action runs Claude Code headless. Runs in CI, inherently cross-platform. |
+| 2 | **Claude Code remote triggers** | Does Claude Code support remote/API triggering? If so, this may be the simplest path. |
+| 3 | **Webhook-to-Claude bridge** | GitHub webhook fires on events (new issue, PR), triggers a Claude Code session. |
+| 4 | **Persistent task file + SessionStart hook** | Write tasks to `.delivery/scheduled-tasks.yml`. A Python SessionStart hook checks for overdue tasks on next session start and executes them. |
+| 5 | **Cross-platform scheduler wrapper** | Python background process using `schedule` library or stdlib `sched` module. |
+
+**Each option must be evaluated against these criteria:**
+- Cross-platform support (Windows Bash, Windows PowerShell, Linux, macOS)
+- Reliability (does it actually survive session end?)
+- Complexity (how much do we build and maintain?)
+- Integration (how cleanly does it fit the existing plugin architecture?)
+
+The team produces a recommendation with evidence before moving to design. No option is pre-selected. If the research reveals a sixth option that is clearly superior, the team is free to recommend it — but the five listed above are the minimum investigation set.
 
 ### Out of Scope
 
-- Changes to the config schema itself — we are reading existing config keys, not adding new ones
-- Changes to other hooks (PreToolUse/Skill, PostToolUse/Write, SubagentStop) — those are working correctly
-- New scope modes beyond the three already defined
-- UI or messaging changes to the warning output beyond what is needed for accurate enforcement
+- Removing or deprecating CronCreate — it works for in-session scheduling and should continue to
+- Building a full job queue or message broker — we are solving task persistence, not distributed computing
+- Platform-specific optimizations — if it does not work on all three OS families with one codebase, it is out of scope
+- Changes to the delivery-flow pipeline stages — this is infrastructure, not workflow modification
