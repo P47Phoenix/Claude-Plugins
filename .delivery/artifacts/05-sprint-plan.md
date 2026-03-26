@@ -1,108 +1,112 @@
-# Sprint Plan -- Issue #40: Enforcement Hook Cannot Read Config
+# Sprint Plan -- Issues #41 and #42: Pipeline Guardrail Gaps
 
 **Type**: BUG_FIX | **Light Mode** | **Scrum Bag**: Aragorn
 **Date**: 2026-03-25
 
+**Sprint Goal**: Close the two guardrail gaps that let the pipeline silently degrade -- treating light as skip, and shipping without dogfooding.
+
 ---
 
-## User Story
+## Story 1: Light Stages MUST Execute (#41)
 
-**As a** delivery-flow user with a configured `pipeline.scope` setting,
-**I want** the enforcement hook to actually read my `.delivery/config.yml` at invocation time,
-**So that** scope enforcement reflects my real configuration rather than ignoring it entirely.
+**As a** delivery-flow orchestrator,
+**I want** an explicit guardrail that forbids treating light-depth stages as skipped,
+**So that** every routed stage produces an artifact, even at reduced depth.
 
 ### Acceptance Criteria
 
-**AC-1: Config-driven scope evaluation**
+**AC-1: Guardrails section states the rule**
 
-- Given a `.delivery/config.yml` with `pipeline.scope: code-only`
-- When a Write/Edit targets a `.py` file and no pipeline is active
-- Then the hook returns a warning advising the user to use the delivery pipeline
+- Given the Guardrails section of `delivery-team/skills/delivery-flow/SKILL.md`
+- When an orchestrator reads the guardrails
+- Then there is a bullet stating: light stages MUST execute -- light means reduced depth, NOT skip. A light stage still produces an artifact, runs the primary agent, and passes blocking DoD criteria.
 
-**AC-2: Custom scope patterns respected**
+**AC-2: Depth Definitions section reinforces the distinction**
 
-- Given a `.delivery/config.yml` with `pipeline.scope: custom` and `scope_include` patterns defined
-- When a Write/Edit targets a file matching a `scope_include` pattern
-- Then the hook enforces on that file (warns if no active pipeline)
+- Given the Depth Definitions section of `delivery-team/skills/delivery-flow/SKILL.md`
+- When an orchestrator reads the Light definition
+- Then the definition explicitly states that light stages execute and produce artifacts, and cross-references the guardrail to prevent conflation with skip.
 
-**AC-3: All-scope with exclusions**
+### Test Cases
 
-- Given a `.delivery/config.yml` with `pipeline.scope: all`
-- When a Write/Edit targets a file matching a `scope_exclude` pattern (e.g., `.delivery/`, `.git/`)
-- Then the hook allows the edit without warning
+| ID | Scenario | Verification | Expected |
+|----|----------|--------------|----------|
+| T1 | Read Guardrails section | Search for "light" in Guardrails | Explicit statement that light != skip, with enforcement language ("MUST execute") |
+| T2 | Read Depth Definitions | Compare Light vs Skip entries | Light says "executes" and "produces artifacts"; Skip says "does not execute". No ambiguity between them |
+| T3 | Stage routing for BUG_FIX Plan stage | Check routing matrix row for BUG_FIX, Stage 5 | Marked "light" -- orchestrator must run it, not skip it |
 
-**AC-4: Graceful degradation**
+### Implementation Approach
 
-- Given no `.delivery/config.yml` exists, or the file is malformed
-- When any Write/Edit is invoked
-- Then the hook passes through silently (no enforcement, no crash)
+Two edits to `delivery-team/skills/delivery-flow/SKILL.md`:
 
-**AC-5: Active pipeline detection**
+1. **Guardrails section**: Add a new bullet after "No skipping DoD" that reads: *"Light stages MUST execute. Light depth means reduced ceremony (primary agent only, blocking criteria only) -- it does NOT mean skip. Every light stage produces an artifact and passes DoD validation. Treating light as skip is a pipeline violation."*
 
-- Given a `.delivery/state.md` file exists indicating an active pipeline
-- When a Write/Edit targets an in-scope file
-- Then the hook allows the edit (pipeline is running, enforcement satisfied)
+2. **Depth Definitions section**: Amend the Light bullet to add: *"Light stages always execute and always produce an artifact. Do not conflate light with skip."*
 
-**AC-6: Settings.json updated**
-
-- Given the fix is applied
-- When Claude loads `.claude/settings.json`
-- Then the hook entry is type `command` pointing to `python delivery-team/hooks/enforce_pipeline_scope.py`, not a prompt hook
+No other files touched.
 
 ---
 
-## Test Cases
+## Story 2: Dogfooding Criterion in Gate 7 UAT (#42)
 
-| ID | Scenario | Input | Expected |
-|----|----------|-------|----------|
-| T1 | Code-only scope, no pipeline, source file | scope=`code-only`, target=`app.py`, no state.md | Warning returned |
-| T2 | Code-only scope, no pipeline, non-source file | scope=`code-only`, target=`README.md`, no state.md | Allow (not a source file) |
-| T3 | Code-only scope, active pipeline, source file | scope=`code-only`, target=`app.py`, state.md exists | Allow |
-| T4 | All scope, excluded path | scope=`all`, target=`.delivery/state.md` | Allow (excluded) |
-| T5 | All scope, non-excluded path, no pipeline | scope=`all`, target=`src/main.rs`, no state.md | Warning |
-| T6 | Custom scope, matching include pattern | scope=`custom`, include=`["*.py"]`, target=`fix.py`, no state.md | Warning |
-| T7 | Custom scope, non-matching file | scope=`custom`, include=`["*.py"]`, target=`style.css` | Allow |
-| T8 | Missing config file entirely | no config.yml | Allow (pass-through) |
-| T9 | Malformed YAML in config | config.yml contains `{{{broken` | Allow (pass-through, no crash) |
-| T10 | Missing scope key in valid config | config.yml exists but no `pipeline.scope` key | Allow (defaults to pass-through) |
+**As a** QA Engineer validating a pipeline change,
+**I want** Gate 7 to require dogfooding as a blocking criterion,
+**So that** changes to hooks, config, skills, and pipeline logic are validated by actual use before they ship.
 
----
+### Acceptance Criteria
 
-## Implementation Approach
+**AC-1: Gate 7 has a blocking dogfooding criterion**
 
-### New File: `delivery-team/hooks/enforce_pipeline_scope.py`
+- Given the Gate 7 criteria in `delivery-team/skills/delivery-flow/references/quality-gates.md`
+- When a QA Engineer evaluates the gate
+- Then there is a blocking criterion requiring that changes are validated by using them as an end user would, not solely by code review.
 
-The heart of the fix. A Python command hook that:
+**AC-2: The criterion specifies what dogfooding means by change type**
 
-1. Reads hook input via `hook_utils.read_hook_input()` to get the target file path from the tool invocation
-2. Reads `.delivery/config.yml` using `pathlib` + stdlib YAML parsing
-3. Reads `.delivery/state.md` to detect active pipeline
-4. Evaluates scope rules against the target file path:
-   - `code-only`: match against known source extensions
-   - `all`: allow if file matches any `scope_exclude` pattern
-   - `custom`: match against `scope_include` glob patterns
-5. Returns response via `hook_utils.emit_response()`
+- Given the dogfooding criterion in Gate 7
+- When a team member reads it
+- Then it specifies:
+  - **Hooks**: trigger the hook in a real scenario and verify behavior
+  - **Config changes**: run a pipeline with the new config and confirm it applies
+  - **Skill changes**: invoke the skill and confirm instructions produce correct behavior
+  - **Pipeline logic changes**: run at least one stage through the modified pipeline and verify output
 
-Uses `pathlib` throughout. No shell calls. No external dependencies beyond what `hook_utils.py` already establishes.
+### Test Cases
 
-### Modified File: `.claude/settings.json`
+| ID | Scenario | Verification | Expected |
+|----|----------|--------------|----------|
+| T1 | Read Gate 7 criteria | Search for "dogfood" in quality-gates.md | Blocking criterion present with [blocking] tag |
+| T2 | Hook change ships without dogfooding | Evaluate against Gate 7 | Fails -- dogfooding criterion not met |
+| T3 | Config change validated only by code review | Evaluate against Gate 7 | Fails -- code review alone does not satisfy the criterion |
+| T4 | Skill change tested by invoking the skill | Evaluate against Gate 7 | Passes -- skill was used as an end user would |
 
-Replace the prompt hook with a command hook:
+### Implementation Approach
 
-```json
-{
-  "type": "command",
-  "command": "python delivery-team/hooks/enforce_pipeline_scope.py",
-  "timeout": 10
-}
+One edit to `delivery-team/skills/delivery-flow/references/quality-gates.md`:
+
+Add a new blocking criterion to Gate 7 after the "All defects found during UAT logged" line:
+
+```
+- [ ] Dogfooding completed: changes to hooks, config, skills, or pipeline logic
+  have been validated by using them as an end user would -- not solely by code
+  review. Hooks must be triggered in a real scenario; config changes must be
+  applied in a pipeline run; skill changes must be invoked and output verified;
+  pipeline logic changes must execute at least one stage end-to-end [blocking]
 ```
 
-The matcher (`Edit|Write|NotebookEdit`) stays the same. Only the hook definition changes.
-
-### No Other Files Touched
-
-The config schema is unchanged. Other hooks are unchanged. This is a surgical replacement of one broken hook with one that works.
+No other files touched.
 
 ---
 
-*A guard who cannot read the law is no guard at all. We give him eyes.*
+## Commitment Summary
+
+| Story | Points | Risk |
+|-------|--------|------|
+| #41 Light != Skip guardrail | 1 | Low -- two targeted text edits |
+| #42 Dogfooding gate criterion | 1 | Low -- one targeted text edit |
+
+Two stories, two total points. Well under capacity. Both are documentation-level changes with no code risk.
+
+---
+
+*The road is long, but these fences are short to build and will keep us from wandering off the path again.*

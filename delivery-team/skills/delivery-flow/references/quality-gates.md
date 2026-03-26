@@ -214,6 +214,11 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] GAME_DEV: playtest feedback addressed, performance budgets met on target hardware [warning, if applicable]
 - [ ] Exploratory testing session completed with observations logged (cross-story interactions tested, GAME_DEV gets 2 sessions) [warning]
 - [ ] All defects found during UAT logged to `.delivery/defects/` with severity, category, and root cause [blocking]
+- [ ] Dogfooding: changes were validated by actually USING them as a real user would, not just code review [blocking]
+  - For hook changes: trigger the hook by performing the action it monitors and verify it fires correctly
+  - For config changes: re-run the setup wizard or reload config and verify new values are applied
+  - For skill changes: invoke the skill with a representative task and verify references load and output matches
+  - For pipeline changes: run a mini pipeline (BUG_FIX for a trivial issue) and verify all stages execute
 - **DoD validators**: QA Engineer (all tests pass, coverage complete), DevOps (rollback ready, deployment verified), Product Owner (business acceptance), Technical Writer (documentation complete)
 - **Max self-correction**: 2
 

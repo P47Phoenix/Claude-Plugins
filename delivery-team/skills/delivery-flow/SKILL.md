@@ -266,6 +266,10 @@ data models, external integrations, security-sensitive changes, or touches more 
 modules. Apply Skip if the change is UI-only, contained within a single module, with no
 new data models, no security implications, and no new external dependencies.
 
+**CRITICAL**: Light and Skip are DIFFERENT. Light stages execute with reduced ceremony.
+Skip stages do not execute at all. Never conflate them. If the routing matrix says
+"light" for a stage, that stage MUST run and MUST produce an artifact.
+
 ---
 
 ## Phase 4: Pipeline Execution Protocol
@@ -1057,6 +1061,11 @@ These guardrails prevent runaway execution and ensure predictable behavior:
   outputs.
 - **No skipping DoD.** Every active stage must pass team DoD validation before
   advancing. There is no bypass except human override via escalation.
+- **Light stages MUST execute.** Light means reduced depth (primary agent only, blocking
+  criteria only, reduced DoD, max 2 iterations). It does NOT mean skip. Only stages
+  explicitly marked "skip" in the Stage Routing Matrix are skipped. Every stage marked
+  "light" MUST produce an artifact and pass its DoD gate before the pipeline advances.
+  Treating "light" as "skip" is a guardrail violation.
 - **No pipeline bypass.** ALL story implementation MUST go through the delivery-flow
   pipeline. Never spawn developer/godot agents directly for story work. The PreToolUse
   hook enforces this by detecting Skill invocations outside pipeline context. Developer
