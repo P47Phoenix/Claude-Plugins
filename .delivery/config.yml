@@ -1,10 +1,10 @@
-config_version: "2.1"
+config_version: "2.2"
 project_type: FEATURE
 tech_stack:
   languages: [Python, Markdown, Shell, TypeScript, JavaScript]
   frameworks: []
   databases: []
-  ci_cd: none
+  ci_cd: github-actions
   paradigm: hybrid
   paradigm_by_language:
     python: hybrid
@@ -18,7 +18,7 @@ architecture:
   decision_matrix_inputs:
     team_size: 4
     deploy_independence: low
-    domain_complexity: medium
+    domain_complexity: high
     change_rate: high
 enforcement:
   source_code_hook: true
@@ -26,9 +26,9 @@ enforcement:
   retro_skip_allowed: false
 team:
   size: 4
-  composition: [plugin-dev, skill-dev, qa, devops]
+  composition: [po, architect, developer, qa, operations, ui, user-feedback, presentation]
 deployment:
-  environment: cloud-aws
+  environment: local
   containerized: false
 timeline:
   risk_tolerance: standard
@@ -61,7 +61,7 @@ dod_validators:
   development: [developer, qa, architect, tech-writer]
   uat: [qa, devops, po, tech-writer]
 personas:
-  categories: [web-users, enterprise, gamers, demographics]
+  categories: [web-users, enterprise]
   selected: []
   feedback_stages: [refine, design, dev, uat]
   count: 5
@@ -86,4 +86,12 @@ github:
   create_issues: true
   create_pr: false
   link_commits: true
+presentation:
+  default_format: structured-markdown
+  default_audience: technical
+  speaker_notes: false
+  save_to_artifacts: true
+  marp_theme: default
+  staleness_warning_days: 7
+  vocabulary_overrides: {}
 wizard_completed: 2026-03-25
