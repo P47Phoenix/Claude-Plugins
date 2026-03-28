@@ -40,8 +40,8 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 |-------|----------------|
 | `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard (18 reference docs + 13 alias themes) |
 | `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
-| `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading from config) |
-| `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) |
+| `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading from config) + foundational clean code standards (always-on, configurable guide) |
+| `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) + foundational clean code standards |
 | `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies |
 | `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
 | `operations/` | DevOps, Release Manager, Technical Writer |
@@ -121,7 +121,7 @@ No build step, linting config, or test runner is configured.
 - After creating a skill → use `plugin-dev:skill-reviewer` to review it
 - After creating a plugin → use `plugin-dev:plugin-validator` to validate it
 
-**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md`. When adding new config keys, follow the extension protocol documented there.
+**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.3). When adding new config keys, follow the extension protocol documented there.
 
 ## Permissions
 

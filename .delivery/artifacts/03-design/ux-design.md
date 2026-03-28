@@ -1,616 +1,530 @@
-# UX Design: Presentation Skill
+# UX Design: Clean Code Foundational Standards
 
-**Author**: UX Designer
-**Date**: 2026-03-25
+**Version**: 1.0
+**Date**: 2026-03-27
+**Author**: UX Designer (delivery-team)
 **Status**: Draft
-**Input**: PRD v2.0
+**Input**: PRD v1.0
 
 ---
 
-## 1. Skill Invocation UX
+## Design Principles
 
-### 1.1 Invocation Modes
-
-The skill has two invocation paths. Both execute the identical 6-step flow — the difference is how parameters arrive.
-
-**Standalone invocation** (user invokes directly):
-
-```
-User: "create a sprint review presentation"
-User: "generate a feature pitch for executives"
-User: "presentation for stakeholder update, paste-ready format"
-```
-
-The skill parses the request for three parameters:
-
-| Parameter | Detection Strategy | Fallback |
-|-----------|-------------------|----------|
-| Presentation type | Keyword match: "sprint review", "feature pitch", "stakeholder update", "technical deep-dive" | Ask the user. Do not guess. |
-| Audience | Keyword match: "executive", "technical", "client-facing", "casual" | Default to `presentation.default_audience` from config, or "technical" if unset |
-| Output format | Keyword match: "marp", "paste-ready", "structured" | Default to `presentation.default_format` from config, or "structured-markdown" if unset |
-
-If the presentation type is ambiguous or missing, the skill asks exactly one question:
-
-> What type of presentation? Options: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive
-
-The skill does not ask about audience or format unless the user's request is explicitly contradictory (e.g., "executive casual" — which mode wins?). Defaults are good enough. Fewer questions means faster time-to-output.
-
-**Pipeline invocation** (orchestrator invokes at checkpoint):
-
-The delivery-flow orchestrator passes all parameters explicitly:
-
-```
-presentation_type: "sprint-review"
-audience: "technical"
-output_format: "structured-markdown"
-artifacts: ["05-sprint-plan.md", "07-uat-report.md"]
-speaker_notes: false
-```
-
-No questions asked. The orchestrator has full context. The skill executes silently through Steps 1-5 and surfaces only at Step 6 (User Review).
-
-### 1.2 Auto-Detection (Pipeline Only)
-
-When invoked at a pipeline checkpoint without an explicit type, the skill infers from stage context:
-
-| Current Stage | Default Type |
-|---------------|-------------|
-| Idea checkpoint | Feature Pitch |
-| Design after DoD | Technical Deep-Dive |
-| Plan after sprint planning | Stakeholder Update |
-| UAT after acceptance | Sprint Review |
-| UAT release | Stakeholder Update |
-
-The user always sees the detected type in Step 1 output and can override it.
-
-### 1.3 User Journey (Standalone)
-
-```
-User request
-    |
-    v
-[Parameter detection] -- type missing? --> Ask user (1 question max)
-    |
-    v
-Step 1: Assemble -- user sees outline
-    |
-    v
-Step 2: Content Gate -- user sees pass/fail
-    |                          |
-    | (pass)                   | (fail: STOP with error)
-    v                          v
-Step 3: Draft -- progress     [Error: missing artifacts list]
-    |            indicator
-    v
-Step 4: Compose -- silent
-    |
-    v
-Step 5: Review Gate -- user sees findings summary
-    |
-    v
-Step 6: User Review -- full presentation + options
-    |
-    +-- Approve --> saved to .delivery/artifacts/presentations/
-    +-- Request Changes --> returns to Step 1, 3, or 4
-    +-- Abort --> discarded
-```
-
-### 1.4 Progress Communication
-
-The user should never wonder "what is happening?" during the flow. Each step announces itself with a one-line status header:
-
-```
-[1/6] Assembling presentation outline...
-[2/6] Validating source artifacts...
-[3/6] Drafting slide content (5 roles contributing)...
-[4/6] Composing final presentation...
-[5/6] Reviewing draft (Technical Writer + UX Designer)...
-[6/6] Ready for your review.
-```
-
-Steps 1, 2, 5, and 6 produce visible output. Steps 3 and 4 are internal — the user sees only the progress line, then the composed result at Step 6. This keeps the user informed without flooding them with intermediate drafts they cannot act on.
+1. **Silent by default** -- Clean code loading should be invisible when working correctly. Developers should not manage it.
+2. **Loud on failure** -- When something is wrong (missing file, blocked review), messages must be specific, actionable, and show the fix.
+3. **Consistent with existing patterns** -- Error formats, config keys, and hook outputs follow the same style as existing delivery-team components.
+4. **One source of truth** -- Never show ambiguity about which guide is active. State it explicitly in the sub-agent declaration line.
 
 ---
 
-## 2. SKILL.md Structure
+## 1. Automatic Clean Code Loading (Silent UX)
 
-Target: under 300 lines. The SKILL.md is the Presentation Composer's instruction set. It delegates content creation to other roles and assembles the result.
+### 1.1 What the developer sees
 
-### 2.1 Section Outline
+Nothing new. Clean code loading is silent -- it happens inside the sub-agent prompt assembly, which the developer never sees directly. The only visible change is in the **declaration line** that the developer skill already prints before every task.
 
-```
-Line Range   Section
----------    -------
-  1-12       Frontmatter (name, description, triggers, license)
- 13-30       # Presentation Composer
-             Role definition, design principle (context isolation),
-             what the Composer does vs. what contributing roles do
-
- 31-70       ## Presentation Type Detection
-             Type detection from user request (keyword table)
-             Auto-detection from pipeline stage (stage mapping table)
-             Ambiguity handling: ask, never guess
-             GAME_DEV vocabulary adaptation flag
-
- 71-150      ## 6-Step Collaboration Flow
-             Step 1: Assemble (PO sub-agent, outline output contract)
-             Step 2: Content Gate (artifact validation rules, error formats)
-             Step 3: Draft (role-to-slide mapping, parallel execution, content rules)
-             Step 4: Compose (assembly instructions, tone enforcement, density limits)
-             Step 5: Review Gate (TW + UX reviewer criteria, MUST-FIX vs SUGGESTION)
-             Step 6: User Review (output presentation, approve/change/abort)
-
-151-200      ## Output Format Specifications
-             Structured markdown conventions (slide boundaries, citations)
-             Marp conventions (frontmatter, directives, theme)
-             Paste-ready conventions (slide blocks, no markdown)
-             Citation format per mode
-             Speaker notes syntax (off by default)
-
-201-240      ## Error Handling
-             Error state table (missing config, missing artifacts, empty,
-             stale, unknown type, no pipeline state, partial data)
-             Error message format: what is wrong, where to fix it, how
-
-241-270      ## User Commands
-             Command table (approve, changes, abort, format, audience,
-             notes, regenerate)
-
-271-290      ## References
-             Reference file index with descriptions
-             Loading rules: which files load when
-
-291-300      ## Config Integration
-             Config keys consumed (presentation.*)
-             Default behavior when no config exists
-```
-
-**Estimated total: 290 lines.**
-
-### 2.2 Key Design Decisions in SKILL.md Structure
-
-**Why type detection comes before the flow**: The type determines which narrative pattern loads, which artifacts the Content Gate checks, and which roles contribute to which slides. It is the routing decision for everything downstream.
-
-**Why the flow is a single section, not six**: The 6 steps are a linear protocol. Splitting them across the file would force the model to jump between sections. A single section with clear step headers reads top-to-bottom, matching execution order.
-
-**Why output format is separate from the flow**: Format is orthogonal to content. The same content renders in three modes. Keeping format conventions in their own section avoids duplicating formatting rules inside each step.
-
-**Why error handling is its own section**: Error states span multiple steps (Content Gate, Draft, Compose). A consolidated error section is easier to maintain and audit than scattered error clauses.
-
----
-
-## 3. Reference File Architecture
-
-Four reference files, each under 200 lines, loaded selectively based on context.
-
-### 3.1 Loading Strategy
-
-Not all references load for every invocation. The Composer loads references based on what the current task requires:
-
-| Reference File | Loaded When | Consumed By |
-|----------------|------------|-------------|
-| `slide-structure.md` | Always | Composer (Step 4), UX Reviewer (Step 5) |
-| `narrative-patterns.md` | Always | PO (Step 1), Composer (Step 4), TW Reviewer (Step 5) |
-| `marp-templates.md` | Output format is "marp" | Composer (Step 4) |
-| `data-visualization.md` | Presentation contains metric or architecture slides | Data Analyst (Step 3), Architect (Step 3), Composer (Step 4) |
-
-This means a structured-markdown Sprint Review with no metric slides loads only 2 of 4 references. A Marp Technical Deep-Dive with Mermaid diagrams loads all 4. Context budget is spent only when needed.
-
-### 3.2 File Designs
-
-#### `slide-structure.md` (~150 lines)
-
-The structural grammar of slides. This file answers: "What goes on a slide and how is it arranged?"
+**Current declaration line:**
 
 ```
-Section                          ~Lines   Content
--------                          ------   -------
-Slide Type Catalog                 40     10 slide types (title, content, comparison,
-                                          metric, timeline, table, diagram, image,
-                                          section divider, closing). Each type:
-                                          name, when to use, structural template,
-                                          max content limits.
-
-Information Density Rules          25     Bullet limits (5-7), one key message rule,
-                                          max data visualizations (2), text-to-
-                                          whitespace ratio guidance, "if it needs
-                                          scrolling it needs splitting" rule.
-
-Slide Sequencing Patterns          30     Opening sequence (context > agenda > content),
-                                          closing sequence (summary > next steps > CTA),
-                                          transition patterns between slide types.
-
-Slide Boundary Conventions         20     Separator format for each output mode
-                                          (---, ===, Marp ---), citation placement,
-                                          speaker note placement.
-
-Image Placeholder Conventions      15     Syntax: ![description](path), placement
-                                          rules, alt-text guidelines, sizing hints
-                                          for Marp vs structured markdown.
-
-Presentation Length Guidelines     20     Type-to-length mapping: Sprint Review
-                                          8-15 slides, Feature Pitch 6-10,
-                                          Stakeholder Update 5-8, Technical
-                                          Deep-Dive 8-20. "Add slides for content,
-                                          not for padding."
+Language: Python | Task: write | Reference: references/languages/python.md
 ```
 
-#### `narrative-patterns.md` (~180 lines)
-
-The storytelling engine. This file answers: "What story does each presentation type tell, and how does the story change when the data signals problems?"
+**New declaration line (default guide):**
 
 ```
-Section                          ~Lines   Content
--------                          ------   -------
-Sprint Review Narrative Arc        30     Slide sequence: goal recap > committed vs
-                                          delivered > feature highlights > metrics >
-                                          quality summary > risks > next sprint.
-                                          Slide-by-role assignment matrix.
-                                          Opening hook patterns (goal-anchored).
-
-Feature Pitch Narrative Arc        25     Problem (with evidence) > solution >
-                                          benefit > implementation approach > ask.
-                                          Audience adaptation: executive (ROI-led),
-                                          technical (feasibility-led), client
-                                          (value-led).
-
-Stakeholder Update Narrative Arc   25     Executive summary > progress vs plan >
-                                          risks and mitigations > metrics >
-                                          milestones > decisions needed.
-                                          Traffic-light status conventions.
-
-Technical Deep-Dive Narrative Arc  25     Context/problem > options evaluated >
-                                          decision + rationale > trade-offs >
-                                          architecture diagram > migration path.
-                                          Diagram-first vs narrative-first
-                                          decision tree.
-
-Narrative Adaptation Rules         35     Problem signal thresholds and responses:
-                                          - Completion <80%: lead with learnings
-                                          - Defects >5 unresolved: quality slide
-                                            before metrics
-                                          - Missed sprint goal: reframe to adjusted
-                                            scope + rationale
-                                          Detection rules (where to find these
-                                          signals in artifacts). Override mechanism
-                                          (user can disable adaptation in Step 1).
-
-Tone/Vocabulary Adaptation         20     Audience mode definitions (technical,
-                                          executive, client-facing, casual).
-                                          Jargon translation table: blocker >
-                                          delay, spike > investigation, DoD >
-                                          completion criteria, UAT > acceptance
-                                          testing. GAME_DEV vocabulary swaps:
-                                          sprint > milestone, features > mechanics,
-                                          UAT > playtesting.
-
-Audience Detection Heuristics      20     How to infer audience when not explicit:
-                                          pipeline stage signals, config hints,
-                                          presentation type defaults. Fallback
-                                          chain: explicit > config > type default.
+Language: Python | Task: write | Reference: references/languages/python.md | Clean Code: default
 ```
 
-#### `marp-templates.md` (~150 lines)
-
-The Marp rendering reference. This file answers: "How do I produce valid, well-formatted Marp markdown?"
+**New declaration line (custom guide):**
 
 ```
-Section                          ~Lines   Content
--------                          ------   -------
-Frontmatter Reference              25     Required directives (marp: true),
-                                          optional directives (theme, paginate,
-                                          header, footer, class, backgroundColor).
-                                          Per-presentation-type frontmatter
-                                          templates.
-
-Slide-Level Directives             20     _class (lead, invert), _backgroundColor,
-                                          _color. When to use each. Section
-                                          divider styling.
-
-Layout Patterns                    30     Two-column layout (CSS class pattern),
-                                          three-column layout, image-beside-text,
-                                          centered content. Code examples for
-                                          each layout.
-
-Code and Diagram Blocks            25     Syntax-highlighted code blocks,
-                                          Mermaid diagram embedding (```mermaid),
-                                          diagram sizing considerations,
-                                          fallback for renderers without Mermaid.
-
-Image Handling                     20     Sizing: ![w:500](path), background
-                                          images: ![bg right](path), image
-                                          positioning, placeholder conventions
-                                          for images that do not exist yet.
-
-Speaker Notes                      15     Syntax: <!-- notes: text -->,
-                                          placement (after slide content,
-                                          before ---), content guidelines
-                                          (talking points, transition cues,
-                                          data context).
-
-Theme Guide                        15     default (clean, corporate), gaia
-                                          (bold, dark option), uncover
-                                          (minimal). Type-to-theme
-                                          recommendation matrix.
+Language: Python | Task: write | Reference: references/languages/python.md | Clean Code: .delivery/standards/coding-standards.md
 ```
 
-#### `data-visualization.md` (~140 lines)
+### 1.2 Rationale
 
-The data presentation reference. This file answers: "How do I present metrics, charts, and diagrams effectively in slides?"
+- Adding `Clean Code: default` confirms the feature is active without cluttering the output. It is a single key-value pair appended to an existing line.
+- Showing the custom path when a custom guide is set makes it explicit which guide is loaded -- critical for teams switching between projects with different standards.
+- The declaration line is already expected output; extending it is lower-friction than adding a new output section.
+- No "loading clean code..." progress message. The file is small (<2000 tokens) and loads instantly. Progress indicators for instantaneous operations erode user trust.
+
+### 1.3 Combined loading with OOP/FP patterns
+
+When OOP or FP patterns also load, the declaration line stacks references:
 
 ```
-Section                          ~Lines   Content
--------                          ------   -------
-Chart Type Decision Matrix         30     When to use: table (comparison, small
-                                          datasets), bar (categorical comparison),
-                                          line (trends over time), pie (composition,
-                                          max 5 segments). Decision tree: data
-                                          type > comparison type > chart type.
-                                          "When in doubt, use a table" rule.
+Language: TypeScript | Task: refactor | Reference: references/languages/typescript.md | Clean Code: default | Patterns: oop-patterns.md
+```
 
-Mermaid Diagram Patterns           30     Presentation-appropriate Mermaid types:
-                                          flowchart (architecture), sequence
-                                          (process flows), gantt (timelines),
-                                          pie (proportions), mindmap (concept
-                                          overview). Syntax examples sized for
-                                          slides (not documentation).
+```
+Language: Scala | Task: write | Reference: references/languages/scala.md | Clean Code: default | Patterns: fp-patterns.md, oop-patterns.md
+```
 
-Metric Highlight Patterns          30     Single big number (KPI spotlight),
-                                          before/after comparison, target vs
-                                          actual with delta, trend description
-                                          (narrative sparkline), traffic light
-                                          status (red/amber/green). Template
-                                          for each pattern.
+No special interaction message is needed. Clean code and paradigm patterns are complementary layers -- clean code covers naming, functions, error handling; paradigm patterns cover design structure. The sub-agent receives both in its prompt and applies both. There is no conflict to surface to the user.
 
-Table Formatting for Slides        25     Max 5 columns, max 8 rows, header
-                                          row always bold. Column alignment
-                                          conventions. When to split a table
-                                          across slides. Highlighting
-                                          conventions (bold for emphasis,
-                                          not color — markdown limitation).
+### 1.4 Loading order (internal, not shown to user)
 
-Data Accuracy Rules                25     Always cite source artifact. Never
-                                          extrapolate or project from partial
-                                          data. Use [TBD] for missing values.
-                                          Include time context (sprint number,
-                                          date range) for all metrics.
-                                          Round to meaningful precision
-                                          (34 points, not 34.2857).
+1. Language reference (e.g., `python.md`)
+2. Clean code guide (default or custom)
+3. Conditional patterns (OOP, FP, Frontend, Nx)
+
+This order is not displayed. It matters only for prompt construction and is documented here for the architect and developer implementing it.
+
+### 1.5 Language exception suppression (FR-03)
+
+When a clean code violation is suppressed because it conflicts with a language idiom, the developer sees a `SUPPRESSED` notice in the review output. This makes suppressions visible without blocking the review.
+
+**Example: Go naming convention conflict**
+
+The clean code guide says "use descriptive multi-word names." Go idiom says receivers should be single-letter. The review output shows:
+
+```
+--- Clean Code Review ---
+
+[CLEAN CODE] SUPPRESSED: Meaningful Names -- single-letter variable name 'r'
+  File: internal/handler/user.go:15
+  Reason: Go convention -- method receivers use single-letter abbreviation of type name
+  Guide rule: "Avoid single-letter names except loop counters"
+  Language idiom: Go Effective Go § Receivers
+
+No actionable clean code violations found.
+
+RESULT: PASSED
+```
+
+**What the developer learns from this:**
+
+| Part | Purpose |
+|------|---------|
+| `SUPPRESSED` severity | This was checked but intentionally not enforced |
+| `Reason` line | Why the suppression happened (language idiom cited) |
+| `Guide rule` line | Which clean code rule would have fired |
+| `Language idiom` line | Which language convention takes precedence |
+
+Suppressions are informational only -- they never block and never count as warnings. They appear so the developer knows the system evaluated the code and made a deliberate decision, not that it missed something.
+
+**When no suppressions occur:** Nothing is shown. Suppressions only appear when a rule was actively overridden by a language exception.
+
+### 1.6 Godot skill declaration
+
+The Godot skill follows the same pattern. Its declaration line already differs slightly (includes scene info); clean code appends to it:
+
+```
+Language: GDScript | Task: write | Scene: player_controller.tscn | Clean Code: default
 ```
 
 ---
 
-## 4. Collaboration Flow UX
+## 2. Code Review Enforcement Flow
 
-This section designs what the user sees at each step. The principle: show the user what they need to act on, hide what they cannot act on.
+### 2.1 Violation message format
 
-### 4.1 Step 1: Assemble (User Sees Outline)
-
-The PO produces a presentation outline. The user sees it immediately because this is the first decision point — the user can redirect before any content is generated.
-
-**User-visible output:**
+Every violation follows this template:
 
 ```
-[1/6] Assembling presentation outline...
-
-## Presentation Outline
-
-**Type**: Sprint Review
-**Audience**: Technical
-**Format**: Structured Markdown
-**Narrative adaptation**: None detected (completion 95%, 1 open defect)
-
-| # | Slide Title              | Content Owner    | Source Artifacts                  |
-|---|--------------------------|------------------|-----------------------------------|
-| 1 | Title                    | Composer         | config.yml                        |
-| 2 | Sprint Goal              | PO               | 05-sprint-plan.md                 |
-| 3 | Committed vs Delivered   | PO, Data Analyst | 05-sprint-plan.md, sprint-metrics |
-| 4 | Feature: OAuth Flow      | Developer        | FKC-auth-oauth.md                 |
-| 5 | Feature: RBAC            | Developer        | FKC-auth-rbac.md                  |
-| 6 | Architecture Changes     | Architect        | ADR-015.md                        |
-| 7 | Sprint Metrics           | Data Analyst     | sprint-metrics.md, UAT report     |
-| 8 | Quality Summary          | QA               | 07-uat-report.md                  |
-| 9 | Risks & Blockers         | PO               | risk-register.md                  |
-| 10| Next Sprint Preview      | PO               | backlog, sprint planning notes    |
-
-Proceed with this outline? (or provide feedback to adjust)
+[CLEAN CODE] <severity>: <principle> -- <specific finding>
+  File: <path>:<line range>
+  Fix: <concrete action to resolve>
 ```
 
-**Design rationale**: The outline table shows slide titles, who creates the content, and where the data comes from. This lets the user catch structural problems before the expensive Draft step. The narrative adaptation line is always visible so the user knows whether problem-signal reframing is active.
+Severity levels:
+- `VIOLATION` -- used in `block` mode (stops review from passing)
+- `WARNING` -- used in `warn` mode (reported but review passes)
 
-**If narrative adaptation is triggered:**
+### 2.2 Block mode output (default)
 
-```
-**Narrative adaptation**: Active
-  - Completion rate 72% (<80% threshold): leading with "what we learned"
-  - 7 unresolved defects (>5 threshold): quality slide moved before metrics
-  Override? (say "no adaptation" to use standard narrative)
-```
-
-### 4.2 Step 2: Content Gate (Pass/Fail)
-
-The Content Gate runs automatically after the user approves the outline. Two possible outcomes:
-
-**Pass:**
+When `tech_stack.clean_code_enforcement: block` (the default when key is absent):
 
 ```
-[2/6] Validating source artifacts...
+--- Clean Code Review ---
 
-Content Gate: PASSED
-  Found: 05-sprint-plan.md, 07-uat-report.md (required)
-  Found: FKC-auth-oauth.md, FKC-auth-rbac.md, ADR-015.md, sprint-metrics.md (enhancing)
-  Warning: risk-register.md last modified 9 days ago (staleness threshold: 7 days)
+[CLEAN CODE] VIOLATION: Functions -- function exceeds single responsibility
+  File: src/data_processor.py:42-89
+  Fix: Extract the validation logic (lines 55-78) into a separate validate_input() function
 
-Proceeding to draft...
+[CLEAN CODE] VIOLATION: Meaningful Names -- variable name is ambiguous
+  File: src/data_processor.py:23
+  Fix: Rename 'd' to 'processed_records' to convey what the variable holds
+
+[CLEAN CODE] VIOLATION: Error Handling -- bare except clause hides errors
+  File: src/data_processor.py:91
+  Fix: Catch specific exceptions (e.g., ValueError, KeyError) instead of bare except
+
+RESULT: BLOCKED -- 3 clean code violations must be resolved before review passes.
+To report violations without blocking, set tech_stack.clean_code_enforcement: warn in .delivery/config.yml
 ```
 
-**Fail:**
+### 2.3 Warn mode output
+
+When `tech_stack.clean_code_enforcement: warn`:
 
 ```
-[2/6] Validating source artifacts...
+--- Clean Code Review ---
 
-Content Gate: FAILED — missing required artifacts
+[CLEAN CODE] WARNING: Functions -- function exceeds single responsibility
+  File: src/data_processor.py:42-89
+  Fix: Extract the validation logic (lines 55-78) into a separate validate_input() function
 
-  MISSING (required):
-  - 05-sprint-plan.md
-    Expected at: .delivery/artifacts/05-plan/05-sprint-plan.md
-    Create with: Run the Plan stage of the delivery pipeline
+[CLEAN CODE] WARNING: Meaningful Names -- variable name is ambiguous
+  File: src/data_processor.py:23
+  Fix: Rename 'd' to 'processed_records' to convey what the variable holds
 
-  - UAT report or completion data
-    Expected at: .delivery/artifacts/07-uat/ (any file)
-    Create with: Run the UAT stage or manually create a UAT summary
-
-  FOUND (enhancing):
-  - FKC-auth-oauth.md, ADR-015.md
-
-Cannot generate Sprint Review without required artifacts.
-Fix the missing items above and invoke the skill again.
+RESULT: PASSED with 2 clean code warnings.
 ```
 
-**Design rationale**: The fail message is actionable — it says what is missing, where it should be, and how to create it. The user is never left wondering "now what?" The pass message confirms what was found so the user can spot if the wrong version of an artifact was picked up.
-
-### 4.3 Step 3: Draft (Progress Indicator)
-
-The Draft step runs five roles in parallel. The user cannot act on intermediate role outputs — they are internal. The user sees only a progress indicator.
+### 2.4 Clean review output (no violations)
 
 ```
-[3/6] Drafting slide content (5 roles contributing)...
-  PO: narrative slides (2, 3, 9, 10)
-  Data Analyst: metric slides (3, 7)
-  Developer: feature slides (4, 5)
-  Architect: architecture slides (6)
-  QA: quality slides (8)
+--- Clean Code Review ---
+
+No clean code violations found.
+
+RESULT: PASSED
 ```
 
-This is the last thing the user sees until Step 6. Steps 4 and 5 run silently.
+### 2.5 How the developer knows what was violated and how to fix
 
-**Design rationale**: Showing which roles contribute to which slides gives the user confidence that the collaboration is real — not a single agent wearing five hats. But the actual draft content is not shown because: (a) it is pre-composition and will change, (b) showing raw role outputs before composition would be confusing, (c) the user's decision point is the final composed deck, not individual contributions.
+Each message has three parts that answer distinct questions:
 
-### 4.4 Step 4: Compose (Silent)
+| Part | Question it answers | Example |
+|------|-------------------|---------|
+| Principle name | "What rule did I break?" | `Functions` |
+| Specific finding | "What exactly is wrong?" | `function exceeds single responsibility` |
+| Fix line | "How do I fix it?" | `Extract the validation logic (lines 55-78) into a separate validate_input() function` |
 
-The Composer assembles role contributions. The user sees nothing beyond:
+The principle names map directly to the 10 sections of `clean-code.md`: Meaningful Names, Functions, Comments, Formatting, Error Handling, Boundaries, Unit Tests, Classes, Emergent Design, Code Smells. This gives the developer a lookup path if they want to read the full principle.
 
-```
-[4/6] Composing final presentation...
-```
+### 2.6 Multiple files in one review
 
-**Design rationale**: The Composer's work is editorial — tone normalization, transition writing, density enforcement. None of this requires user input. Showing intermediate composition states would slow the flow and create false decision points.
-
-### 4.5 Step 5: Review Gate (Findings Summary)
-
-Two reviewers evaluate the composed draft. If there are MUST-FIX issues, the Composer addresses them automatically before Step 6. The user sees only the final review summary.
-
-**No issues:**
+When a review covers multiple files, violations are grouped by file:
 
 ```
-[5/6] Reviewing draft (Technical Writer + UX Designer)...
+--- Clean Code Review ---
 
-Review Gate: PASSED — no issues found.
+src/data_processor.py:
+  [CLEAN CODE] VIOLATION: Functions -- function exceeds single responsibility
+    File: src/data_processor.py:42-89
+    Fix: Extract the validation logic (lines 55-78) into a separate validate_input() function
+
+src/utils/helpers.py:
+  [CLEAN CODE] VIOLATION: Code Smells -- dead code
+    File: src/utils/helpers.py:112-130
+    Fix: Remove the unused format_legacy_output() function
+
+RESULT: BLOCKED -- 2 clean code violations across 2 files.
+To report violations without blocking, set tech_stack.clean_code_enforcement: warn in .delivery/config.yml
 ```
-
-**Suggestions only (no MUST-FIX):**
-
-```
-[5/6] Reviewing draft (Technical Writer + UX Designer)...
-
-Review Gate: PASSED with suggestions
-  SUGGESTION: Slide 6 — "Architecture Changes" title could be more specific
-              (e.g., "Auth Service: Hexagonal Refactor")
-  SUGGESTION: Slide 7 — consider splitting metrics table across 2 slides
-              (currently 6 columns, may be hard to read projected)
-```
-
-**MUST-FIX issues found and resolved:**
-
-```
-[5/6] Reviewing draft (Technical Writer + UX Designer)...
-
-Review Gate: 2 issues found, both resolved
-  FIXED: Slide 3 — "DoD" jargon used in executive-audience deck (replaced with
-         "completion criteria")
-  FIXED: Slide 7 — 9 bullets exceeded density limit (split into 2 slides)
-  SUGGESTION: Slide 10 — next sprint preview could include tentative dates
-```
-
-**Design rationale**: The user sees review findings as a trust signal — it proves the deck was reviewed, not just generated. MUST-FIX items are shown as already resolved (the Composer fixed them) so the user knows quality issues were caught and handled. SUGGESTIONs are preserved as comments for the user to consider.
-
-### 4.6 Step 6: User Review (Full Presentation + Summary)
-
-The user sees the complete presentation followed by a collaboration summary and action options.
-
-**Output structure:**
-
-```
-[6/6] Ready for your review.
-
---- PRESENTATION START ---
-
-[Full presentation content in the requested format]
-
---- PRESENTATION END ---
-
-## Collaboration Summary
-
-| Role             | Slides Contributed | Artifacts Consumed                    |
-|------------------|--------------------|---------------------------------------|
-| Product Owner    | 2, 3, 9, 10       | 05-sprint-plan.md, risk-register.md   |
-| Data Analyst     | 3, 7              | sprint-metrics.md, 07-uat-report.md   |
-| Developer        | 4, 5              | FKC-auth-oauth.md, FKC-auth-rbac.md   |
-| Architect        | 6                  | ADR-015.md                            |
-| QA Engineer      | 8                  | 07-uat-report.md                      |
-| Composer         | 1 (title), all (tone/transitions) | config.yml             |
-| TW Reviewer      | — (review only)    | —                                     |
-| UX Reviewer      | — (review only)    | —                                     |
-
-**Warnings**: risk-register.md is 9 days old (staleness threshold: 7 days)
-**Suggestions**: 2 (see Review Gate output above)
-**[TBD] placeholders**: 0
-
-Options:
-- **approve** — save to .delivery/artifacts/presentations/sprint-review-2026-03-25.md
-- **changes** — describe what to adjust (I'll route to the right step)
-- **abort** — discard this draft
-```
-
-**Design rationale**: The collaboration summary serves two purposes: (1) it proves the deck is not single-source — multiple roles and artifacts contributed, and (2) it gives the user a quick audit trail to verify coverage. The [TBD] count is a trust metric — zero means every data point has a source. The options are verbs, not buttons, because this is a CLI interaction.
-
-### 4.7 Request Changes Routing
-
-When the user says "changes," the skill routes feedback to the appropriate step:
-
-| Feedback Type | Routes To | Example |
-|---------------|----------|---------|
-| Structural (add/remove/reorder slides) | Step 1 (Assemble) | "Add a demo highlights slide after features" |
-| Content (wrong data, missing info, different emphasis) | Step 3 (Draft) | "The velocity number on slide 7 should be story points, not hours" |
-| Formatting/tone (layout, wording, density) | Step 4 (Compose) | "Make slide 3 more concise" or "Switch to paste-ready format" |
-
-The skill re-executes from the routed step forward, not from the beginning. This is efficient — structural changes require a new outline, but formatting changes only require recomposition.
 
 ---
 
-## 5. Config Integration
+## 3. Configuration Flow
 
-### 5.1 Setup Wizard: Not Included
+### 3.1 Setting a custom clean code guide
 
-Per PRD Section 10, all `presentation.*` config keys are optional with sensible defaults. The setup wizard does not ask about presentation configuration. This is intentional:
+The developer edits `.delivery/config.yml` directly. There is no wizard question for this -- it is an advanced configuration for teams that have their own standards. The keys are:
 
-- The skill works out of the box with zero config
-- Power users discover `presentation.*` keys through documentation or after using the skill and wanting to customize defaults
-- Adding 7 questions to the wizard for an opt-in skill would slow down initial setup for all teams
+```yaml
+tech_stack:
+  languages: [python, typescript]
+  clean_code_guide: .delivery/standards/coding-standards.md
+  clean_code_enforcement: block
+```
 
-### 5.2 Config Consumption
+No confirmation message at edit time. The config file is YAML -- changes take effect on next session start or next sub-agent spawn.
 
-The SKILL.md documents which config keys exist and what they do. The skill reads them at the start of Step 1 (Assemble) and applies them as defaults that the user's explicit request overrides.
+### 3.2 Session start validation (config check hook)
 
-**Precedence chain** (highest to lowest):
+On next session start, the config check hook (`check_config.py`) validates the custom path.
 
-1. Explicit user request ("make it paste-ready for executives")
-2. `presentation.*` config keys
-3. Hardcoded defaults (structured-markdown, technical audience, no speaker notes)
+**Custom guide exists:**
 
-### 5.3 GAME_DEV Vocabulary
+```
+Delivery pipeline configured (v2.3, 2026-03-27). Use delivery-team:delivery-flow to start the pipeline.
+Custom clean code guide: .delivery/standards/coding-standards.md
+```
 
-When `project.type: GAME_DEV` is detected in config, the skill activates vocabulary adaptation automatically. This is not a presentation config key — it reads the existing project type config. No new config needed for this behavior.
+This is a single info line appended to the existing config check output. It confirms which guide is active.
+
+**Custom guide path does not exist:**
+
+```
+WARNING: Custom clean code guide not found: .delivery/standards/coding-standards.md
+  The file at this path does not exist or is not readable.
+  Fix: Either create the file, update the path in .delivery/config.yml under tech_stack.clean_code_guide, or remove the key to use the built-in default.
+  Falling back to built-in clean-code.md for this session.
+```
+
+**Scope: file existence only (FR-17).** Session-start validation checks ONLY that the custom guide file exists and is readable. It does NOT parse, validate, or inspect the file's content or structure. Content validation is intentionally omitted -- the guide is a freeform markdown document with no required schema, and validating its structure would impose constraints on how teams write their standards. The file is loaded as-is into the sub-agent prompt at task time.
+
+**Key design decision: graceful fallback, not hard failure.** A missing custom guide should not block the entire session. The hook warns loudly and falls back to the default. This matches the existing config check pattern -- `check_config.py` today warns about missing config but does not block session start.
+
+### 3.3 Enforcement level switch
+
+When a developer changes `tech_stack.clean_code_enforcement` from `block` to `warn` (or vice versa), there is no confirmation output. The change takes effect on the next code review. The review output itself communicates the active mode via the severity labels (`VIOLATION` vs `WARNING`) and the `RESULT` line.
+
+If the key is absent or empty, the default is `block`. This is stated in the config schema but not announced at runtime -- it is the expected default behavior.
+
+### 3.4 Invalid enforcement value
+
+If `tech_stack.clean_code_enforcement` is set to something other than `block` or `warn`:
+
+```
+WARNING: Invalid clean_code_enforcement value: 'strict'
+  Valid values: block, warn
+  Defaulting to: block
+```
+
+This warning is emitted at session start by the config check hook and on first code review that encounters the invalid value.
+
+---
+
+## 4. Scaffold Command Flow
+
+### 4.1 Invocation
+
+The developer invokes the scaffold as a task through the developer skill. This is not a standalone slash command -- it follows the delivery-team pattern where skills handle specific task types.
+
+The developer says something like:
+- "Generate coding standards template"
+- "Scaffold our team's coding standards"
+- "Create a coding standards file"
+- "Run the coding-standards task"
+
+The developer skill recognizes this as the `coding-standards` task type.
+
+### 4.2 Step-by-step interaction
+
+**Step 1: Task detection and confirmation**
+
+```
+Task: coding-standards | Generating team coding standards template
+
+Creating .delivery/standards/coding-standards.md from the built-in clean code template...
+```
+
+**Step 2: File generation (silent)**
+
+The skill creates the directory (`.delivery/standards/`) if it does not exist, then writes the template file. No progress indicator -- this is a single file write.
+
+**Step 3: Completion output**
+
+```
+Created: .delivery/standards/coding-standards.md
+
+The template contains all 10 clean code sections with customization placeholders:
+  1. Meaningful Names
+  2. Functions
+  3. Comments
+  4. Formatting
+  5. Error Handling
+  6. Boundaries
+  7. Unit Tests
+  8. Classes
+  9. Emergent Design
+  10. Code Smells
+
+Next step: Edit the generated file to add your team's standards, then add this to .delivery/config.yml:
+
+  tech_stack:
+    clean_code_guide: .delivery/standards/coding-standards.md
+```
+
+### 4.3 What the developer does next
+
+1. Opens `.delivery/standards/coding-standards.md` in their editor
+2. Customizes sections -- each section contains guidance comments like `<!-- Add your team's naming conventions here -->`
+3. Adds the `tech_stack.clean_code_guide` key to `.delivery/config.yml`
+4. Continues working -- the custom guide takes effect on next sub-agent spawn
+
+### 4.4 File already exists
+
+If `.delivery/standards/coding-standards.md` already exists:
+
+```
+File already exists: .delivery/standards/coding-standards.md
+Overwrite? This will replace your current customizations.
+```
+
+Proceed only with explicit user confirmation. Do not silently overwrite.
+
+---
+
+## 5. Error States and Edge Cases
+
+### 5.1 Custom guide file deleted after config is set
+
+**Scenario:** Developer sets `tech_stack.clean_code_guide: .delivery/standards/coding-standards.md`, then the file is deleted (git clean, branch switch, accidental removal).
+
+**On next session start:** The config check hook detects the missing file and produces the warning from Section 3.2. The session falls back to the built-in default. The developer sees the warning and can either restore the file or update the config.
+
+**On sub-agent spawn mid-session (file deleted while session is running):** The developer skill attempts to read the custom file, fails, and produces:
+
+```
+WARNING: Custom clean code guide not found: .delivery/standards/coding-standards.md
+  Using built-in clean-code.md for this task.
+```
+
+This is a per-task warning, not a session-blocking error. The task proceeds with the default guide.
+
+### 5.2 Developer switches from custom back to default
+
+**Scenario:** Developer removes the `tech_stack.clean_code_guide` key from config or sets it to an empty string.
+
+**Behavior:** Silent. The built-in `clean-code.md` loads on the next task. The declaration line shows `Clean Code: default` instead of the custom path. No confirmation message -- absence of the key means default, which is the expected baseline.
+
+### 5.3 Token budget exceeded (custom guide too large)
+
+**Scenario:** A team creates a lengthy coding standards document and sets it as their custom guide.
+
+**On session start**, if the custom guide exceeds 4000 tokens, the config check hook produces a warning:
+
+```
+WARNING: Custom clean code guide is large (~6200 tokens): .delivery/standards/coding-standards.md
+  The built-in guide targets <=2000 tokens to preserve context for code generation.
+  Large guides may reduce available context for complex tasks.
+  Consider condensing or splitting into sections loaded on demand.
+```
+
+This is advisory only -- it does not block or truncate. The team may have good reasons for a longer guide, and truncation would produce unpredictable behavior. The warning threshold (4000 tokens) is 2x the built-in target, giving teams room to expand while flagging obvious outliers.
+
+### 5.4 Config file exists but clean_code_guide key has invalid YAML
+
+**Scenario:** Malformed YAML in the config file (e.g., unquoted path with special characters).
+
+**Behavior:** This is caught by the existing config YAML parser. The config check hook already handles YAML parse errors. No new error handling needed -- the existing error path applies.
+
+### 5.5 Both clean_code_guide and clean_code_enforcement are absent
+
+**Scenario:** A project has `.delivery/config.yml` but neither clean code key is set (the most common case for existing projects).
+
+**Behavior:** Completely silent. Built-in `clean-code.md` loads as default. Enforcement defaults to `block`. No messages about "using defaults" -- defaults are the expected state, not a noteworthy event.
+
+---
+
+## 6. Pipeline Analytics Dashboard -- Clean Code Violations (FR-22)
+
+### 6.1 Where violation data appears
+
+Clean code violation counts are included in the pipeline analytics dashboard alongside existing delivery metrics. The data is per-pipeline-run, not cumulative across runs.
+
+### 6.2 Sample dashboard output
+
+```
+--- Pipeline Analytics: Run #47 ---
+
+Stage        | Duration | Status
+-------------|----------|--------
+Idea         | 2m       | DONE
+Refine       | 8m       | DONE
+Design       | 12m      | DONE
+Architect    | 15m      | DONE
+Plan         | 5m       | DONE
+Development  | 45m      | DONE
+UAT          | 10m      | DONE
+
+Clean Code Violations (Development stage):
+  Total violations found:  7
+  Resolved before pass:    7
+  Unresolved (warn mode):  0
+
+  By principle:
+    Functions            3
+    Meaningful Names     2
+    Error Handling       1
+    Code Smells          1
+
+  By file:
+    src/data_processor.py      4
+    src/utils/helpers.py       2
+    src/config/loader.py       1
+
+  Enforcement mode: block
+```
+
+### 6.3 When no violations occurred
+
+```
+Clean Code Violations (Development stage):
+  Total violations found:  0
+  No clean code violations were detected during this run.
+```
+
+### 6.4 Data source
+
+Violation counts are collected from code review outputs during the Development stage. No separate database or persistence is needed -- the analytics dashboard reads from the existing pipeline run artifacts.
+
+---
+
+## 7. Dogfooding Review Format (FR-23)
+
+### 7.1 Format reuse
+
+The dogfooding review (where the delivery-team validates its own changes by using them) uses the **same code review output format** defined in Section 2. There are no format differences -- dogfooding reviews produce the same `[CLEAN CODE]` violation messages, the same severity levels, and the same `RESULT` line.
+
+### 7.2 Rationale
+
+Dogfooding means using the feature as a real user would. Using a different review format for internal validation would defeat the purpose. If the standard format is insufficient for dogfooding, that is a signal the standard format needs improvement -- not that dogfooding needs a special format.
+
+### 7.3 What makes a dogfooding review different
+
+The difference is not in output format but in scope and intent:
+
+| Aspect | Standard code review | Dogfooding review |
+|--------|---------------------|-------------------|
+| **Who triggers it** | Developer during normal workflow | Team during validation of the clean code feature itself |
+| **What is reviewed** | Application code | The clean code guide, hook scripts, and skill changes |
+| **Output format** | Section 2 format | Section 2 format (identical) |
+| **Purpose** | Enforce coding standards | Confirm the feature works correctly end-to-end |
+
+---
+
+## Flow Summary
+
+```
+Session Start
+    |
+    v
+Config check hook runs
+    |
+    +--> tech_stack.clean_code_guide set?
+    |       |
+    |       +--> YES: File exists?
+    |       |       |
+    |       |       +--> YES: "Custom clean code guide: <path>" (info)
+    |       |       |
+    |       |       +--> NO: "WARNING: not found..." (warn + fallback to default)
+    |       |
+    |       +--> NO: Silent (default guide, no message)
+    |
+    v
+Developer/Godot task triggered
+    |
+    v
+Declaration line printed: "... | Clean Code: default|<path>"
+    |
+    v
+Sub-agent spawned with:
+  1. Language reference
+  2. Clean code guide (custom or default)
+  3. Conditional patterns (OOP/FP/Frontend/Nx)
+    |
+    v
+Code review requested
+    |
+    v
+Review checks code against clean code guide
+    |
+    +--> Violations found?
+    |       |
+    |       +--> YES + block mode: BLOCKED with violation details
+    |       |
+    |       +--> YES + warn mode: PASSED with warning details
+    |       |
+    |       +--> NO: PASSED (clean)
+    |
+    v
+Done
+```
 
 ---
 
@@ -618,16 +532,27 @@ When `project.type: GAME_DEV` is detected in config, the skill activates vocabul
 
 | PRD Requirement | Addressed In |
 |-----------------|-------------|
-| FR-001: Read-only artifact access | Section 4.2 (Content Gate shows what was read) |
-| FR-002: 4 presentation types | Section 2.1 (type detection), Section 3.2 (narrative-patterns.md) |
-| FR-003: 6-step collaboration flow | Section 4 (full flow UX) |
-| FR-004: Content Gate hard stop | Section 4.2 (fail output design) |
-| FR-005/006: Co-primary formats | Section 2.1 (output format section in SKILL.md) |
-| FR-007: Source citations | Section 4.6 (collaboration summary), Section 3.2 (citation formats in each reference) |
-| FR-008: No hallucination | Section 3.2 (data-visualization.md accuracy rules) |
-| FR-009: Parallel draft | Section 4.3 (progress indicator shows parallel roles) |
-| FR-010: Composer assembly | Section 4.4 (silent compose step) |
-| FR-011: Review Gate | Section 4.5 (findings summary UX) |
-| FR-012: User Review | Section 4.6 (approve/changes/abort) |
-| NFR-003: Context efficiency | Section 2 (290 lines), Section 3.1 (selective loading) |
-| NFR-006: Format consistency | Section 3.2 (slide-structure.md boundary conventions) |
+| FR-01: Built-in clean-code.md reference file | Section 1.1 (default guide, declaration line shows `Clean Code: default`) |
+| FR-02: 10 clean code principles coverage | Section 4.3, Section 2.5 (principle names map to 10 sections) |
+| FR-03: Language-specific exceptions | Section 1.5 (suppression UX with SUPPRESSED severity) |
+| FR-04: Token budget target (<=2000 tokens) | Section 5.3 (warning when custom guide exceeds 4000 tokens) |
+| FR-05: Automatic loading on developer tasks | Section 1 (silent loading, declaration line) |
+| FR-06: Automatic loading on Godot tasks | Section 1.6 (Godot declaration line) |
+| FR-07: Loading order (lang -> clean code -> patterns) | Section 1.4 |
+| FR-08: Not conditional, not in routing table | Section 1.1 (always loads, no opt-in) |
+| FR-09: Code review checks against clean code guide | Section 2 (violation format, block/warn modes) |
+| FR-10: Violations cite principle and provide fix | Section 2.5 (three-part message design) |
+| FR-11: Block/warn config | Section 3.3 (enforcement level switch) |
+| FR-12: Violation messages cite principle + config path | Section 2.2, 2.5 |
+| FR-13: Custom guide via config key | Section 3.1 |
+| FR-14: Custom guide overrides default | Section 3.1, 1.1 (declaration line shows custom path) |
+| FR-15: Custom guide fallback on missing file | Section 3.2, 5.1 (graceful fallback) |
+| FR-16: Config check validates path at session start | Section 3.2 |
+| FR-17: Session-start checks file existence only, not content | Section 3.2 (explicit no-content-validation statement) |
+| FR-18: Scaffold command generates template | Section 4.1, 4.2 |
+| FR-19: Template contains all 10 sections | Section 4.2 (completion output lists all 10) |
+| FR-20: Template includes customization placeholders | Section 4.3 (guidance comments) |
+| FR-21: Scaffold warns before overwriting existing file | Section 4.4 |
+| FR-22: Analytics dashboard shows violation data | Section 6 (sample output with counts per principle/file) |
+| FR-23: Dogfooding uses standard review format | Section 7 (format reuse confirmation) |
+| US-08: Clear error messages for violations | Section 2.5 (three-part message design) |
