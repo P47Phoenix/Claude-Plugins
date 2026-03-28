@@ -1,126 +1,112 @@
-## Idea Brief: Clean Code Foundational Standards
+## Idea Brief: Delivery Pipeline Orchestrator Stalls After Agent Completion
 
-**Project Type**: FEATURE
+**Project Type**: BUG_FIX
 **Date**: 2026-03-27
+**GitHub Issue**: #49
 
 ### Problem Statement
 
-The delivery-team developer skill supports 14 languages and loads conditional references (OOP, FP, Frontend, Nx) based on project configuration, but has no foundational layer that enforces clean code principles across all coding tasks. Language-specific references tell developers *how to write* in a given language; they do not tell developers *how to write well* regardless of language.
+The delivery-flow orchestrator intermittently stalls after all sub-agents complete their work and return results. The pipeline stops progressing -- no further output, tool calls, or stage transitions occur until the user manually sends another message to "wake" it.
 
-This gap means:
-- Code quality depends entirely on the individual developer's discipline -- the skill provides no baseline standard
-- Clean code principles (meaningful names, small functions, proper error handling, code smell avoidance) are not embedded in generation prompts, so generated code may be technically correct but hard to read, maintain, or extend
-- The PR review toolkit (`code-reviewer`, `code-simplifier`) has no shared reference for what "clean" means, so review feedback is subjective and inconsistent
-- Teams with their own coding standards have no mechanism to inject them into the developer skill's context
-- The Godot skill shares the same gap -- GDScript and C# code gets no clean code guidance
+This manifests most frequently:
+- Between pipeline stages (e.g., after Stage 2: Refine completes, before Stage 3: Design begins)
+- After parallel DoD validators all return DONE/NOT_DONE signals
+- After checkpoint reviews where multiple agents contributed results
+- During long pipeline runs where context window pressure is highest
+
+**Impact**:
+- **User experience**: Users must babysit the pipeline and send nudge messages to keep it moving, defeating the purpose of automated orchestration
+- **Pipeline reliability**: Stalls introduce unpredictable delays and break the flow state of the orchestrator's multi-stage execution
+- **Trust**: Intermittent failures erode confidence in the pipeline's ability to run autonomously through stages
+- **Dogfooding blocker**: The team cannot reliably use delivery-flow on its own work if the pipeline stalls mid-run
+
+### Root Cause Hypothesis
+
+This is a SKILL.md-level bug -- the orchestrator is prompt-driven, not code. The likely root causes are:
+
+1. **Missing explicit continuation directives after agent returns**: When multiple parallel Agent tool calls complete, the orchestrator's SKILL.md does not contain strong enough instructions to immediately process results and advance. The model may "satisfy" itself that work is done without recognizing it must continue to the next step.
+
+2. **Context window pressure during long runs**: By mid-pipeline, the context window contains the full SKILL.md, multiple agent prompts/responses, accumulated artifacts, and state tracking. The orchestrator's "what to do next" instructions may be pushed far enough from the model's attention window that it loses track of the pipeline sequence.
+
+3. **Ambiguous state after parallel completion**: When multiple validators return in parallel, the orchestrator must aggregate results (all DONE? any NOT_DONE?) and decide the next action. If the aggregation logic in SKILL.md is not explicit enough, the model may stall on an implicit decision point.
+
+4. **No self-recovery mechanism**: When the orchestrator loses its place, there is no "heartbeat" or self-check instruction that forces it to re-examine pipeline state and continue.
 
 ### Target Users
 
-1. **Developers** using the developer skill for any of the 14 supported languages -- clean code principles apply universally
-2. **Developers** using the Godot skill (GDScript, C#) -- game code benefits from the same foundational standards
-3. **Teams with custom coding standards** -- organizations that want to replace the default guide with their own house style
-4. **Code reviewers** using `pr-review-toolkit:code-reviewer` and `pr-review-toolkit:code-simplifier` -- need a shared reference to evaluate against
+1. **Anyone running delivery-flow** -- this affects all pipeline executions, all project types
+2. **The delivery-team itself** -- dogfooding the pipeline is a P0 gate, and stalls block that
 
 ### Proposed Scope
 
-#### 1. Reference File: `clean-code.md`
+#### 1. Investigate: SKILL.md Phase 4 Execution Protocol
 
-A new language-agnostic reference file in `delivery-team/skills/developer/references/` covering 10 sections drawn from Robert C. Martin's "Clean Code":
+Audit the delivery-flow SKILL.md sections that govern:
+- Post-agent-return behavior (what happens after an Agent tool call completes)
+- Stage transition logic (how the orchestrator moves from one stage to the next)
+- DoD aggregation (how parallel validator results are collected and acted on)
+- Checkpoint presentation (how results are surfaced to the user)
 
-| Section | Focus |
-|---------|-------|
-| **Meaningful Names** | Intention-revealing names, avoiding disinformation, pronounceable/searchable names, noun classes, verb methods |
-| **Functions** | Small, single-purpose, one level of abstraction, minimal arguments, no side effects, command-query separation |
-| **Comments** | Good comments (legal, informative, clarifying, warning, TODO); bad comments (redundant, misleading, noise, commented-out code) |
-| **Formatting** | Vertical openness, density, distance, ordering; horizontal alignment, indentation; team rules |
-| **Error Handling** | Exceptions over return codes, provide context, define exception classes by caller needs, don't return/pass null |
-| **Boundaries** | Clean integration with third-party code, learning tests, wrapping external APIs, adapter pattern |
-| **Unit Tests** | TDD laws, clean tests, one assert/concept per test, F.I.R.S.T. principles |
-| **Classes** | Small, single responsibility, cohesion, organizing for change, dependency inversion |
-| **Emergent Design** | Kent Beck's 4 rules: runs all tests, no duplication, expresses intent, minimal classes/methods |
-| **Code Smells** | Catalog of common smells organized by category (comments, environment, functions, general, names, tests) |
+Identify any locations where the orchestrator's next action is implicit rather than explicit.
 
-**Boundary with existing references**: SOLID principles remain in `oop-patterns.md`. The Classes section in `clean-code.md` references SRP at a practical level (class size, cohesion) without duplicating the SOLID theory.
+#### 2. Fix: Add Explicit Continuation Directives
 
-#### 2. Foundational Loading (Not Conditional)
+For every point where the orchestrator receives agent results, ensure SKILL.md contains an unambiguous "IMMEDIATELY DO X NEXT" instruction. Candidate patterns:
+- After each Agent tool call return: "Process result, then proceed to [next step]"
+- After all parallel validators return: "Aggregate results. If all DONE, advance to [next stage]. If any NOT_DONE, trigger self-correction loop"
+- After checkpoint reviews: "Present summary to user, then wait for user input before proceeding"
+- At stage boundaries: "You are now entering Stage N. Execute the following steps in order..."
 
-`clean-code.md` loads on EVERY developer and Godot task automatically. It is part of the base sub-agent prompt template, alongside the language reference. It does NOT go in the cross-language routing table (OOP/FP/Frontend/Nx) because it is not conditional on tech stack choices.
+#### 3. Fix: Add Pipeline State Anchoring
 
-**Loading order**: Language reference -> Clean code -> Conditional patterns (OOP/FP/Frontend/Nx)
+Add a lightweight state-tracking pattern to SKILL.md that the orchestrator maintains throughout execution:
+- Current stage number and name
+- Current step within the stage
+- Pending actions (what must happen next)
+- This state block should be re-emitted after every major action to keep it in the model's recent context
 
-This ensures clean code principles are always present as baseline context, regardless of which conditional patterns are loaded.
+#### 4. Fix: Add Self-Recovery Check
 
-#### 3. Code Review Enforcement
+Add an instruction that triggers when the orchestrator has not made progress:
+- "If you have received all agent results but have not yet taken the next action, re-read the pipeline state and continue immediately"
+- This acts as a safety net for cases where the model loses track despite explicit directives
 
-The `pr-review-toolkit:code-reviewer` and `pr-review-toolkit:code-simplifier` agents are extended to check code against clean code principles. The enforcement behavior is:
+#### 5. Validate: Dogfood the Fix
 
-| Enforcement Level | Behavior |
-|-------------------|----------|
-| `block` (default) | Clean code violations are blockers -- review cannot pass until resolved |
-| `warn` | Clean code violations are reported as warnings -- review can pass with acknowledged violations |
-
-Enforcement level is configured via `tech_stack.clean_code_enforcement` in `.delivery/config.yml`.
-
-#### 4. Configurable Guide
-
-Teams can point to their own coding standards file via `tech_stack.clean_code_guide` in `.delivery/config.yml`:
-
-```yaml
-tech_stack:
-  clean_code_guide: .delivery/standards/coding-standards.md
-  clean_code_enforcement: block  # block | warn
-```
-
-- **Default**: Built-in `clean-code.md` (when key is absent or empty)
-- **Custom**: Path to team's own file (replaces the default, not additive)
-- **Validation**: Config check hook validates the custom path exists at session start
-
-#### 5. Scaffold Command: `coding-standards`
-
-A command that generates a starter `.delivery/standards/coding-standards.md` template:
-- Pre-populated with the 10 sections from the default `clean-code.md`
-- Each section includes customization placeholders (e.g., team-specific naming conventions, preferred formatting rules, project-specific error handling patterns)
-- Teams edit the generated file, then point `tech_stack.clean_code_guide` to it
+Run delivery-flow on a real task (this bug fix itself, or another queued item) and observe:
+- Does the pipeline advance through all stages without stalling?
+- Do parallel validator returns get processed correctly?
+- Does the orchestrator maintain awareness of its pipeline position?
 
 ### Key Design Decisions
 
-#### 1. Foundational layer, not conditional
+#### 1. Prompt-level fix, not architectural change
 
-**Decision**: Load `clean-code.md` on every developer and Godot task, not through the cross-language routing table.
-
-**Rationale**:
-- Clean code principles are universal -- they apply to Python, TypeScript, Go, Rust, GDScript, and every other supported language equally
-- The routing table is for patterns that vary by tech stack choice (OOP vs FP vs Frontend). Clean code is not a choice; it is a baseline
-- Conditional loading would mean teams could accidentally opt out of clean code by not selecting it in their config
-- This follows the same pattern as language references -- always loaded, non-negotiable context
-
-#### 2. Custom guide replaces default (not additive)
-
-**Decision**: When `tech_stack.clean_code_guide` is set, the custom file replaces `clean-code.md` entirely.
+**Decision**: Fix this in SKILL.md instructions, not by adding external state management code or keepalive scripts.
 
 **Rationale**:
-- Additive loading would create conflicts when team standards disagree with default principles (e.g., team allows certain commented-out code patterns that the default flags)
-- A single source of truth for coding standards is cleaner than merging two potentially contradictory guides
-- The scaffold command gives teams a starting point based on the default, so they are not starting from scratch
-- Teams that want the default plus additions can copy the default content into their custom file
+- The orchestrator is prompt-driven by design -- adding code-based state management would create a parallel control plane
+- The root cause is insufficient directive clarity in the prompt, not a missing software component
+- Prompt fixes are faster to iterate on and can be validated through dogfooding immediately
+- If prompt-level fixes prove insufficient, escalation to architectural changes becomes a separate follow-up item
 
-#### 3. Block by default, warn as opt-in
+#### 2. State anchoring over state persistence
 
-**Decision**: Clean code violations are blockers by default in code review.
-
-**Rationale**:
-- Standards that are warnings-only tend to be ignored over time -- if the review passes anyway, there is no incentive to fix violations
-- Teams that find blocking too strict can explicitly opt into `warn` mode via config
-- This aligns with the delivery pipeline's philosophy of quality gates that enforce, not suggest
-
-#### 4. Godot included identically
-
-**Decision**: The Godot skill loads `clean-code.md` the same way the developer skill does.
+**Decision**: Use in-context state re-emission (anchoring) rather than file-based state persistence to maintain pipeline position.
 
 **Rationale**:
-- GDScript and C# benefit from the same clean code principles as any other language
-- Having different code quality standards for game code vs application code creates an inconsistency
-- The Godot skill already follows the same sub-agent pattern as the developer skill, so the loading mechanism is identical
+- File-based state adds tool call overhead (read/write on every step)
+- The problem is attention/context loss within a single session, not cross-session state recovery (that is a separate feature)
+- Re-emitting a compact state block keeps the "where am I" information in the model's recent context window where it has highest attention
+
+#### 3. Explicit over implicit at every decision point
+
+**Decision**: Every point where the orchestrator must decide what to do next gets an explicit instruction, even if it seems obvious.
+
+**Rationale**:
+- "Obvious" next steps are only obvious to a human reader -- the model needs explicit directives especially under context pressure
+- Redundancy in orchestrator instructions is preferable to ambiguity
+- This follows the established pattern in the SKILL.md where explicit step-by-step protocols outperform high-level descriptions
 
 ### Risks & Open Questions
 
@@ -128,16 +114,14 @@ A command that generates a starter `.delivery/standards/coding-standards.md` tem
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Context window bloat from always-on reference | Reduces available context for actual task work, especially on complex multi-file tasks | Keep `clean-code.md` concise and principle-focused (target ~2000 tokens); avoid lengthy examples; reference external resources for deep dives |
-| False positive violations in code review | Blocks legitimate code patterns that appear to violate clean code but are idiomatic for the language | Language-specific exceptions section in `clean-code.md`; `warn` mode as escape valve; team custom guide overrides |
-| Teams confused by block vs warn distinction | Unclear why their PR review is failing | Clear error messages referencing the specific principle violated and how to configure enforcement level |
-| Custom guide path breaks silently | Team points to a file that does not exist or is empty | Config check hook validates path at session start; clear error message with fix instructions |
+| Prompt bloat from added directives | Increases SKILL.md token count, worsening context pressure -- the very problem we are fixing | Keep directives concise; use structured formats (numbered lists, state blocks) that compress well; measure token count before and after |
+| State anchoring adds noise to output | User sees repeated state blocks that are not meaningful to them | Format state blocks as brief inline markers, not verbose dumps; consider using XML tags the model tracks but the user can skim |
+| Fix masks deeper architectural issue | Prompt-level patches may not be durable if the real problem is context window limits | Track stall frequency post-fix; if stalls persist, escalate to architectural investigation (chunked context, external state store) |
+| Regression in other orchestrator behaviors | Changes to SKILL.md execution protocol could break working stage transitions | Test fix across multiple project types (FEATURE, BUG_FIX, GREENFIELD) during dogfooding |
 
 #### Open Questions
 
-1. **Should `clean-code.md` include brief code examples per principle?** Examples aid comprehension but increase token count. Could use a tiered approach: principles-only in the main file, examples in a separate reference loaded on demand.
-2. **How should the scaffold command be invoked?** As a slash command (`/coding-standards`), a skill task type, or a script? The delivery-team pattern suggests a skill task type.
-3. **Should the config check hook validate the content of custom guides?** Checking file existence is simple; checking that the file covers the expected sections is more complex and potentially intrusive.
-4. **PR review toolkit integration depth**: Should the reviewers get the full `clean-code.md` in their prompt, or a condensed checklist version optimized for review (not generation)?
-5. **Metrics**: Should clean code violations be tracked in pipeline analytics? This would enable trends over time (e.g., "clean code violations per sprint decreasing") but adds complexity to the analytics dashboard.
-6. **Dogfooding plan**: The team should apply the clean code reference to its own Python scripts (`hooks/*.py`, `scripts/*.py`, `prd-quality-gate-flow/*.py`) before shipping. This validates the reference content and the enforcement mechanism on real code.
+1. **Which specific SKILL.md sections contain the gap?** The investigation step must identify exact locations before writing fixes. The hypothesis points to Phase 4 execution protocol and DoD aggregation, but the actual gap may be elsewhere.
+2. **Is there a context window size threshold where stalls become likely?** If stalls only occur after N tokens of context, the fix may need to include context management strategies (summarization, artifact offloading) in addition to continuation directives.
+3. **Do stalls correlate with parallel agent count?** If stalls only happen with 3+ parallel validators but never with sequential execution, the fix should focus specifically on parallel result aggregation.
+4. **Should the orchestrator emit a "CONTINUING" signal after processing each agent return?** This would make stalls immediately visible (absence of signal = stall) and give the user confidence the pipeline is progressing.

@@ -1,19 +1,19 @@
 # Memory Index
 
-**Last updated**: 2026-03-27
-**Total runs**: 1
+**Last updated**: 2026-03-28
+**Total runs**: 2
 
-## Stage Health (from last 1 run)
+## Stage Health (from last 2 runs)
 
 | Stage | First-Try Pass Rate | Notes |
 |-------|-------------------|-------|
-| Idea | 100% | Clean pass |
-| Refine | 100% | Clean pass |
-| Design | 50% | PO found 5 FR traceability gaps |
-| Architect | 100% | Clean pass (light depth) |
-| Plan | 50% | SM: capacity missing, QA: FR-14/15 test gaps |
-| Development | 50% | Architect: stale config-schema.json |
-| UAT | 33% | PO: dogfooding deferred, QA: review scope narrow |
+| Idea | 100% | Clean pass both runs |
+| Refine | 100% | 1 run (FEATURE), skipped for BUG_FIX |
+| Design | 50% | 1 run — PO found 5 FR traceability gaps |
+| Architect | 100% | 1 run (light depth) |
+| Plan | 75% | Run 1: SM capacity + QA gaps. Run 2: clean pass (light) |
+| Development | 75% | Run 1: stale schema.json. Run 2: clean pass |
+| UAT | 50% | Run 1: dogfooding deferred + review scope. Run 2: clean pass |
 
 ## Hot Lessons (top 5 by impact)
 
