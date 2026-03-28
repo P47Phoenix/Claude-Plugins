@@ -274,6 +274,8 @@ Skip stages do not execute at all. Never conflate them. If the routing matrix sa
 
 ## Phase 4: Pipeline Execution Protocol
 
+> **SELF-RECOVERY**: If you find yourself idle after agents have returned results, re-read `.delivery/state.md` to determine `current_stage` and immediately resume the pipeline protocol at the appropriate step. Do not wait for user input.
+
 ### Two-Channel Communication
 
 The orchestrator uses two communication channels:
@@ -404,6 +406,8 @@ Collect signals (STATUS, FINDINGS) from all validators before evaluating:
 - Max 3 DoD validation rounds per stage
 - If still NOT_DONE after 3 rounds, trigger dynamic escalation
 
+**CONTINUATION DIRECTIVE**: After collecting all validator signals, IMMEDIATELY proceed to evaluate results and advance to Step 8. Do not wait for user input. Do not stop.
+
 When `pipeline.parallel_validators` is false, dispatch validators sequentially. Same
 prompts, same isolation, same signal collection -- only wall-clock time differs.
 
@@ -439,9 +443,13 @@ After checkpoint approval, also update `.delivery/state.md`:
 - Add the checkpoint name to `human_checkpoints_passed`
 - Update `last_updated` timestamp
 
+**CONTINUATION DIRECTIVE**: After checkpoint approval, IMMEDIATELY proceed to Step 10 (Advance). Do not wait for additional input.
+
 ### Step 10: Advance
 
 Move to the next active stage in the routing matrix. Pass the artifact downstream.
+
+**STATE ANCHOR**: After advancing, emit: "Entering Stage [N+1]: [NAME]. Previous stage [N] complete. CONTINUING pipeline protocol from Step 1." Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 
 ---
 
@@ -1084,6 +1092,10 @@ These guardrails prevent runaway execution and ensure predictable behavior:
 - **State persistence after every stage.** Pipeline state is written to `.delivery/state.md`
   after every stage gate passes using atomic write (temp file → rename). If a session
   dies, the next session can resume from the last completed stage.
+- **No stalling between steps or stages.** The orchestrator must NEVER stop producing
+  output between pipeline steps or stage transitions. After every agent return, validator
+  completion, or checkpoint approval, immediately proceed to the next step. If idle with
+  no pending user input, re-read `.delivery/state.md` and resume.
 - **Orchestrator does not produce domain artifacts.** The orchestrator manages flow,
   routing, and validation. All domain work is delegated to worker skills. Before using
   Write or Edit on any file in `.delivery/artifacts/`, apply the delegation self-check
