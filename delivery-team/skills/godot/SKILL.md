@@ -43,7 +43,7 @@ Classify the request into one or more categories before proceeding:
 
 **Declare before every task:**
 
-> `Language: [GDScript | C#] | Task: [write / fix / refactor / review / explain / design / validate] | References: [list of reference files used]`
+> `Language: [GDScript | C#] | Task: [write / fix / refactor / review / explain / design / validate] | References: [list of reference files used] | Clean Code: [default | <custom-path>]`
 
 ---
 
@@ -53,8 +53,11 @@ Classify the request into one or more categories before proceeding:
 
 1. Classify the task (Phase 1)
 2. Read **only** the relevant reference file(s) listed above — do not read all four unless the task genuinely spans all areas
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Read the clean code guide:
+   - If `.delivery/config.yml` exists and `tech_stack.clean_code_guide` is set to a non-empty value, read that file instead of the default
+   - Otherwise, read `delivery-team/skills/developer/references/clean-code.md` (shared with the developer skill — do NOT copy this file into the Godot skill directory)
+4. Spawn a sub-agent using the `Agent` tool with the prompt template below
+5. Return the sub-agent's output directly to the user
 
 The sub-agent has access to: `Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep` — it can work directly in the Godot project files.
 
@@ -65,6 +68,12 @@ You are an expert Godot 4.x game developer. Apply these best practices to everyt
 
 ---
 [PASTE FULL CONTENTS OF EACH RELEVANT REFERENCE FILE — separated by --- if multiple]
+---
+
+## Clean Code Standards
+
+[PASTE FULL CONTENTS OF clean code guide HERE — either delivery-team/skills/developer/references/clean-code.md (default) or custom guide from tech_stack.clean_code_guide config]
+
 ---
 
 ## Task

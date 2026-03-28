@@ -24,8 +24,8 @@ See `skills/delivery-flow/references/getting-started.md` for a complete walkthro
 |-------|-------|---------|
 | **delivery-flow** | Pipeline orchestrator | 7-stage pipeline (Idea, Refine, Design, Architect, Plan, Dev, UAT) with setup wizard, team DoD, 6 collaboration patterns |
 | **product-delivery** | Product Owner, Scrum Bag, Data Analyst | User stories, PRDs, backlogs, sprint plans, retrospectives, metrics, A/B testing |
-| **developer** | 14 languages + OOP + FP + Frontend + Nx | Code implementation with language context isolation and paradigm-aware pattern loading |
-| **godot** | GDScript, C#, Scenes, Signals | Godot 4.x game dev with headless validation and defect prevention |
+| **developer** | 14 languages + OOP + FP + Frontend + Nx + Clean Code | Code implementation with language context isolation, paradigm-aware pattern loading, and foundational clean code standards |
+| **godot** | GDScript, C#, Scenes, Signals, Clean Code | Godot 4.x game dev with headless validation, defect prevention, and clean code standards |
 | **architect** | 11 roles + 4 decomposition strategies | Solution/Enterprise/Data/Security/Compliance/Privacy/IR + Game architecture. Config-driven style and decomposition (IDesign, DDD, Team Topology, Event Storming) |
 | **quality** | QA Engineer | Test strategy, test cases, automation, quality metrics, empirical validation, exploratory testing, milestone testing |
 | **operations** | DevOps, Release Manager, Technical Writer | CI/CD, deployment, infrastructure, release planning, API docs, runbooks |

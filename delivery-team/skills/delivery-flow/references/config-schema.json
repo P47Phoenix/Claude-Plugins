@@ -7,7 +7,7 @@
   "properties": {
     "config_version": {
       "type": "string",
-      "default": "2.1"
+      "default": "2.3"
     },
     "project_type": {
       "type": "string",
@@ -79,6 +79,18 @@
         "nx_workspace": {
           "type": "boolean",
           "default": false
+        },
+        "clean_code_guide": {
+          "type": "string",
+          "default": ""
+        },
+        "clean_code_enforcement": {
+          "type": "string",
+          "enum": [
+            "block",
+            "warn"
+          ],
+          "default": "block"
         }
       },
       "additionalProperties": false,
@@ -659,6 +671,60 @@
             "abort",
             "escalation"
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "presentation": {
+      "type": "object",
+      "properties": {
+        "default_format": {
+          "type": "string",
+          "enum": [
+            "structured-markdown",
+            "marp",
+            "paste-ready"
+          ],
+          "default": "structured-markdown"
+        },
+        "default_audience": {
+          "type": "string",
+          "enum": [
+            "technical",
+            "executive",
+            "investor",
+            "client-facing",
+            "casual"
+          ],
+          "default": "technical"
+        },
+        "speaker_notes": {
+          "type": "boolean",
+          "default": false
+        },
+        "save_to_artifacts": {
+          "type": "boolean",
+          "default": true
+        },
+        "marp_theme": {
+          "type": "string",
+          "enum": [
+            "default",
+            "gaia",
+            "uncover",
+            "custom path"
+          ],
+          "default": "default"
+        },
+        "staleness_warning_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 7
+        },
+        "vocabulary_overrides": {
+          "type": "string",
+          "default": "{}"
         }
       },
       "additionalProperties": false
