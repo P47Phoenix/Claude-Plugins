@@ -81,7 +81,14 @@ Before checking config, check for an existing pipeline state:
      `> Config upgraded from v[old] to v[current]. New settings applied with defaults: [list]`
      Offer the user `setup` to configure new settings interactively.
    - Announce: `> Config loaded from .delivery/config.yml (v[version], created [date])`
-   - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements, persona config.
+   - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements, persona config, alias theme.
+   - **Load alias theme**: Read `aliases.theme` from config (default: `business`). If the
+     value is not `business` (which uses default professional names and has no personality
+     injection), load the theme file:
+     1. Check `references/aliases/{theme}.yml` (built-in themes).
+     2. If not found, check `{aliases.custom_path}/{theme}.yml` (custom themes, default path: `.delivery/aliases/`).
+     3. If neither exists, warn: `> Alias theme '{theme}' not found. Falling back to business (no personality injection).` and set theme to `business`.
+     4. If found, parse the YAML and store the `roles` mapping and `personality_strength` for use in Phase 4 Step 4. Announce: `> Alias theme loaded: {display_name} ({personality_strength} personality)`
    - For any key missing from the config, use the default from `references/config-schema.md`.
    - Skip Phase 1 (type detection) — use `project_type` from config.
    - Proceed directly to Phase 2 (Memory Retrieval).
@@ -155,6 +162,8 @@ When a config is loaded, these settings override defaults:
 | `pipeline.scope` | What file types go through the pipeline (code-only / all / custom) |
 | `pipeline.scope_include` | Custom glob patterns for pipeline scope (when scope=custom) |
 | `pipeline.scope_exclude` | Patterns always excluded from pipeline enforcement |
+| `aliases.theme` | Which alias theme to load for agent personality injection (default: business) |
+| `aliases.custom_path` | Directory for custom theme files (default: `.delivery/aliases/`) |
 
 ---
 
@@ -328,7 +337,14 @@ and `references/pipeline-stages.md` for the exact fields per stage). The templat
 - **SKILL**, **TASK_TYPE**, **ROLE**: from the stage definition
 - **INPUT ARTIFACTS**: file paths to upstream artifacts -- NOT content. The sub-agent reads artifacts from disk.
 - **MEMORY LESSONS**: hot lessons from index.md + stage lessons loaded in Step 2
-- **ALIAS**: personality block if an alias is active
+- **ALIAS**: personality block if an alias theme is active (not `business`). Built from
+  the theme loaded in Phase 0. For the agent's role ID (e.g., `product-owner`), look up
+  the matching entry in the theme's `roles` map and inject based on `personality_strength`:
+  - **light**: `You are {character}. {personality}`
+  - **moderate**: `You are {character}. {personality} Style: {style}. Example: "{examples[0]}"`
+  - **full**: `You are {character}. {personality} Style: {style}. Catchphrase: "{catchphrase}". Examples: "{examples[0]}" / "{examples[1]}". Stay in character throughout your response.`
+  - If the agent's role has no entry in the theme (partial theme), omit the ALIAS block
+    for that agent (falls back to default professional tone).
 - **OUTPUT**: the namespaced output path (e.g., `.delivery/artifacts/02-refine/po/prd.md`)
 
 The sub-agent writes its artifact to the output path and responds with a signal block:
