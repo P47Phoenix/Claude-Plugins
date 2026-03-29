@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "preset_id": "solo",
+  "display_name": "Solo — Minimal Ceremony",
+  "description": "Prototype and solo developer profile. Fewer validators, fewer collaboration patterns, faster iteration. Warnings are non-blocking (demoted to suggestions). Designed for Sarah (freelance dev) and Jake (indie game dev) personas.",
+  "traces_to": ["PRD FR-07", "PRD DD2", "US-08"],
+
+  "strict_mode": false,
+
+  "checkpoints": ["uat"],
+
+  "collaboration_patterns": ["evaluator_optimizer"],
+
+  "severity_overrides": {
+    "warning": "suggestion"
+  },
+
+  "escalation": {
+    "sensitivity": "patient",
+    "repeated_failure_count": 5,
+    "adversarial_confidence_floor": 1,
+    "deadlock_timeout_minutes": 10
+  },
+
+  "retrospective": {
+    "frequency": "manual",
+    "skip_allowed": true
+  },
+
+  "pass_thresholds": {
+    "idea": 70,
+    "refine": 70,
+    "design": 70,
+    "architect": 70,
+    "plan": 70,
+    "development": 80,
+    "uat": 80
+  },
+
+  "stage_overrides": {
+    "idea": {
+      "dod_validators": ["product_owner"],
+      "max_iterations": 2
+    },
+    "refine": {
+      "dod_validators": ["product_owner", "qa_engineer"],
+      "max_iterations": 2
+    },
+    "design": {
+      "dod_validators": ["ux_designer", "product_owner"],
+      "max_iterations": 2
+    },
+    "architect": {
+      "dod_validators": ["architect", "qa_engineer"],
+      "max_iterations": 2
+    },
+    "plan": {
+      "dod_validators": ["scrum_bag", "product_owner"],
+      "max_iterations": 2
+    },
+    "development": {
+      "dod_validators": ["developer", "qa_engineer"],
+      "max_iterations": 3
+    },
+    "uat": {
+      "dod_validators": ["qa_engineer", "product_owner"],
+      "max_iterations": 2
+    }
+  }
+}

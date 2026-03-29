@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "preset_id": "strict",
+  "display_name": "Strict — Full Ceremony",
+  "description": "Enterprise and compliance profile. All collaboration patterns enabled, security validator added to all stages, warnings promoted to blocking, no Layer 4 runtime overrides. Designed for Priya (enterprise architect) persona. Full audit trail required with determinism category tagging.",
+  "traces_to": ["PRD FR-07", "PRD DD2", "US-08"],
+
+  "strict_mode": true,
+
+  "checkpoints": ["refine", "architect", "plan", "uat"],
+
+  "collaboration_patterns": [
+    "evaluator_optimizer",
+    "adversarial_review",
+    "multi_perspective_review_board",
+    "decision_ownership",
+    "debate",
+    "consensus"
+  ],
+
+  "severity_overrides": {
+    "warning": "blocking"
+  },
+
+  "escalation": {
+    "sensitivity": "eager",
+    "repeated_failure_count": 2,
+    "adversarial_confidence_floor": 3,
+    "deadlock_timeout_minutes": 3
+  },
+
+  "retrospective": {
+    "frequency": "every-run",
+    "skip_allowed": false
+  },
+
+  "pass_thresholds": {
+    "idea": 90,
+    "refine": 90,
+    "design": 90,
+    "architect": 95,
+    "plan": 90,
+    "development": 95,
+    "uat": 95
+  },
+
+  "additional_validators": {
+    "_comment": "These validators are ADDED to each stage's existing validator list, not replacing them.",
+    "idea": ["security"],
+    "refine": ["security"],
+    "design": ["security"],
+    "architect": ["security", "compliance"],
+    "plan": ["security"],
+    "development": ["security"],
+    "uat": ["security", "compliance"]
+  },
+
+  "stage_overrides": {
+    "idea": {
+      "max_iterations": 2
+    },
+    "refine": {
+      "max_iterations": 3
+    },
+    "design": {
+      "max_iterations": 3
+    },
+    "architect": {
+      "max_iterations": 3
+    },
+    "plan": {
+      "max_iterations": 3
+    },
+    "development": {
+      "max_iterations": 3
+    },
+    "uat": {
+      "max_iterations": 3
+    }
+  },
+
+  "layer4_overrides_allowed": false,
+  "audit_trail_required": true,
+  "project_type_auto_detection": false
+}

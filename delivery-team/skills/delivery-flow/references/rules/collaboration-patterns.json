@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Collaboration Pattern Selection Rules -- deterministic mapping of which collaboration patterns run at which stage, for which project type and depth. Pattern execution order is fixed. Skip conditions prevent unnecessary patterns at light depth or low-ceremony project types.",
+  "traces_to": ["PRD FR-09", "US-11"],
+
+  "patterns": {
+    "evaluator_optimizer": {
+      "display_name": "Evaluator-Optimizer",
+      "description": "One agent produces, another evaluates and provides structured feedback for improvement.",
+      "execution_order": 1,
+      "min_agents": 2,
+      "applicable_depths": ["full", "light", "full+game"],
+      "cost": "low"
+    },
+    "adversarial_review": {
+      "display_name": "Adversarial Review",
+      "description": "A dedicated adversary challenges assumptions, finds weaknesses, and stress-tests the work product.",
+      "execution_order": 2,
+      "min_agents": 2,
+      "applicable_depths": ["full", "full+game"],
+      "cost": "medium"
+    },
+    "debate": {
+      "display_name": "Debate",
+      "description": "Two or more agents argue opposing positions to surface trade-offs and reach a well-reasoned conclusion.",
+      "execution_order": 3,
+      "min_agents": 2,
+      "applicable_depths": ["full", "full+game"],
+      "cost": "high"
+    },
+    "multi_perspective_review_board": {
+      "display_name": "Multi-Perspective Review Board",
+      "description": "Multiple specialist agents review the same artifact from their unique perspectives simultaneously.",
+      "execution_order": 4,
+      "min_agents": 3,
+      "applicable_depths": ["full", "full+game"],
+      "cost": "high"
+    },
+    "consensus": {
+      "display_name": "Consensus",
+      "description": "All participating agents must agree before the stage advances. Used for high-stakes gates.",
+      "execution_order": 5,
+      "min_agents": 2,
+      "applicable_depths": ["full", "full+game"],
+      "cost": "high"
+    },
+    "decision_ownership": {
+      "display_name": "Decision Ownership / Routing",
+      "description": "A designated decision owner (typically PO or architect) makes the final call after reviewing inputs from other agents.",
+      "execution_order": 6,
+      "min_agents": 1,
+      "applicable_depths": ["full", "light", "full+game"],
+      "cost": "low"
+    }
+  },
+
+  "skip_conditions": {
+    "light_depth": {
+      "description": "At light depth, only low-cost patterns run. Medium and high cost patterns are skipped.",
+      "skip_patterns": ["adversarial_review", "debate", "multi_perspective_review_board", "consensus"],
+      "keep_patterns": ["evaluator_optimizer", "decision_ownership"]
+    },
+    "solo_preset": {
+      "description": "Solo preset reduces to minimal patterns at all stages.",
+      "skip_patterns": ["debate", "multi_perspective_review_board", "consensus"],
+      "keep_patterns": ["evaluator_optimizer", "adversarial_review", "decision_ownership"]
+    },
+    "docs_only_project": {
+      "description": "DOCS_ONLY projects use minimal collaboration.",
+      "skip_patterns": ["adversarial_review", "debate", "multi_perspective_review_board", "consensus"],
+      "keep_patterns": ["evaluator_optimizer", "decision_ownership"]
+    },
+    "spike_project": {
+      "description": "SPIKE projects prioritize speed. Minimal collaboration.",
+      "skip_patterns": ["debate", "multi_perspective_review_board", "consensus"],
+      "keep_patterns": ["evaluator_optimizer", "adversarial_review", "decision_ownership"]
+    }
+  },
+
+  "defaults_by_project_type": {
+    "GREENFIELD": {
+      "idea":        { "full": [],                                                                      "light": [] },
+      "refine":      { "full": ["evaluator_optimizer", "adversarial_review"],                           "light": ["evaluator_optimizer"] },
+      "design":      { "full": ["multi_perspective_review_board"],                                      "light": ["evaluator_optimizer"] },
+      "architect":   { "full": ["debate", "evaluator_optimizer", "adversarial_review"],                 "light": ["evaluator_optimizer"] },
+      "plan":        { "full": ["consensus", "adversarial_review"],                                     "light": ["evaluator_optimizer"] },
+      "development": { "full": ["evaluator_optimizer", "decision_ownership"],                           "light": ["evaluator_optimizer"] },
+      "uat":         { "full": ["multi_perspective_review_board"],                                      "light": ["evaluator_optimizer"] }
+    },
+    "FEATURE": {
+      "idea":        { "full": [],                                                                      "light": [] },
+      "refine":      { "full": ["evaluator_optimizer"],                                                 "light": ["evaluator_optimizer"] },
+      "design":      { "full": [],                                                                      "light": [] },
+      "architect":   { "full": ["evaluator_optimizer"],                                                 "light": ["evaluator_optimizer"] },
+      "plan":        { "full": [],                                                                      "light": [] },
+      "development": { "full": ["evaluator_optimizer"],                                                 "light": ["evaluator_optimizer"] },
+      "uat":         { "full": [],                                                                      "light": [] }
+    },
+    "BUG_FIX": {
+      "idea":        { "full": [],                                                                      "light": [] },
+      "refine":      { "full": ["evaluator_optimizer", "adversarial_review"],                           "light": ["evaluator_optimizer"] },
+      "design":      { "full": ["multi_perspective_review_board"],                                      "light": [] },
+      "architect":   { "full": ["evaluator_optimizer"],                                                 "light": [] },
+      "plan":        { "full": [],                                                                      "light": [] },
+      "development": { "full": ["evaluator_optimizer", "decision_ownership"],                           "light": ["evaluator_optimizer"] },
+      "uat":         { "full": ["multi_perspective_review_board"],                                      "light": ["evaluator_optimizer"] }
+    },
+    "GAME_DEV": {
+      "idea":        { "full": [],                                                                      "light": [] },
+      "refine":      { "full": ["evaluator_optimizer", "adversarial_review"],                           "light": ["evaluator_optimizer"] },
+      "design":      { "full": ["multi_perspective_review_board", "adversarial_review"],                "light": ["evaluator_optimizer"] },
+      "architect":   { "full": ["debate", "evaluator_optimizer", "adversarial_review", "multi_perspective_review_board"], "light": ["evaluator_optimizer"] },
+      "plan":        { "full": ["consensus", "adversarial_review"],                                     "light": ["evaluator_optimizer"] },
+      "development": { "full": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],     "light": ["evaluator_optimizer"] },
+      "uat":         { "full": ["multi_perspective_review_board", "adversarial_review"],                "light": ["evaluator_optimizer"] }
+    },
+    "SPIKE": {
+      "idea":        { "full": [],                                                                      "light": [] },
+      "refine":      { "full": [],                                                                      "light": [] },
+      "design":      { "full": [],                                                                      "light": [] },
+      "architect":   { "full": [],                                                                      "light": [] },
+      "plan":        { "full": [],                                                                      "light": [] },
+      "development": { "full": ["evaluator_optimizer", "decision_ownership"],                           "light": ["evaluator_optimizer"] },
+      "uat":         { "full": ["multi_perspective_review_board"],                                      "light": [] }
+    },
+    "DOCS_ONLY": {
+      "idea":        { "full": [],                                                                      "light": [] },
+      "refine":      { "full": ["evaluator_optimizer"],                                                 "light": ["evaluator_optimizer"] },
+      "design":      { "full": [],                                                                      "light": [] },
+      "architect":   { "full": [],                                                                      "light": [] },
+      "plan":        { "full": [],                                                                      "light": [] },
+      "development": { "full": ["evaluator_optimizer", "decision_ownership"],                           "light": ["evaluator_optimizer"] },
+      "uat":         { "full": ["multi_perspective_review_board"],                                      "light": [] }
+    }
+  },
+
+  "strict_preset_additions": {
+    "description": "When preset=strict, these additional patterns are injected into stages that already have patterns. Stages with empty pattern lists are not affected.",
+    "inject_if_non_empty": ["adversarial_review"],
+    "rationale": "Strict mode ensures adversarial review runs at every stage that has any collaboration, to catch issues earlier."
+  },
+
+  "resolution_protocol": {
+    "description": "How pattern lists are resolved across layers.",
+    "layer_1": "Plugin defaults from defaults_by_project_type in this file",
+    "layer_2": "Preset overlay may inject additional patterns (strict_preset_additions) or remove patterns (solo skip_conditions)",
+    "layer_3": "Config override via pipeline.collaboration_patterns in .delivery/config.yml replaces the pattern list for the specified stage",
+    "layer_4": "Runtime override (disabled in strict mode)",
+    "merge_semantics": "Pattern lists use last-writer-wins (higher layer replaces entire list for a stage). Use _merge: extend at Layer 3/4 to append instead of replace.",
+    "determinism_guarantee": "Given identical project_type, stage, depth, preset, and config overrides, the resolved pattern list is byte-identical across evaluations."
+  }
+}

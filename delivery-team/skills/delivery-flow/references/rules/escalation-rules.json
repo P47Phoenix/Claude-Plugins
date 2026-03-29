@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Escalation Trigger Rules -- deterministic escalation decisions for self-correction loops, repeated failures, and deadlocks. Three sensitivity profiles (relaxed, balanced, aggressive) control thresholds. Each trigger maps to an action: escalate_to_human, retry_with_feedback, or abort.",
+  "traces_to": ["PRD FR-08", "US-10"],
+
+  "sensitivity_profiles": {
+    "relaxed": {
+      "description": "Higher tolerance for iteration. Suitable for exploratory or low-risk work.",
+      "max_iterations": 5,
+      "repeated_failure_threshold": 3,
+      "deadlock_timeout_minutes": 10,
+      "adversarial_confidence_floor": 2,
+      "no_progress_threshold": 4,
+      "decision_deadlock_threshold": 4
+    },
+    "balanced": {
+      "description": "Default profile. Balances thoroughness with forward momentum.",
+      "max_iterations": 3,
+      "repeated_failure_threshold": 2,
+      "deadlock_timeout_minutes": 5,
+      "adversarial_confidence_floor": 3,
+      "no_progress_threshold": 3,
+      "decision_deadlock_threshold": 3
+    },
+    "aggressive": {
+      "description": "Low tolerance for iteration. Suitable for time-sensitive or high-confidence work.",
+      "max_iterations": 2,
+      "repeated_failure_threshold": 1,
+      "deadlock_timeout_minutes": 3,
+      "adversarial_confidence_floor": 4,
+      "no_progress_threshold": 2,
+      "decision_deadlock_threshold": 2
+    }
+  },
+
+  "per_stage_overrides": {
+    "idea": {
+      "max_iterations_override": null,
+      "note": "Uses profile default. Idea stage is quick validation."
+    },
+    "refine": {
+      "max_iterations_override": null,
+      "note": "Uses profile default. PRD quality requires iteration."
+    },
+    "design": {
+      "max_iterations_override": null,
+      "note": "Uses profile default."
+    },
+    "architect": {
+      "max_iterations_override": null,
+      "note": "Uses profile default. Architecture decisions are consequential."
+    },
+    "plan": {
+      "max_iterations_override": null,
+      "note": "Uses profile default. Plan readiness is straightforward."
+    },
+    "development": {
+      "max_iterations_override": null,
+      "note": "Uses profile default. Code iteration may need more cycles."
+    },
+    "uat": {
+      "max_iterations_override": null,
+      "note": "Uses profile default. UAT is final gate."
+    }
+  },
+
+  "triggers": [
+    {
+      "trigger_id": "ESC-01",
+      "name": "max_iterations_reached",
+      "description": "Self-correction loop has reached the configured maximum iteration count for the active sensitivity profile.",
+      "determinism_category": "a",
+      "condition": {
+        "operator": ">=",
+        "field": "run.iteration_count",
+        "value_field": "resolved.max_iterations"
+      },
+      "context_fields": [
+        "run.iteration_count",
+        "config.rules.escalation_sensitivity",
+        "stage.name"
+      ],
+      "action": "escalate_to_human",
+      "action_metadata": {
+        "reason_template": "max iterations reached: {run.iteration_count} of {resolved.max_iterations}",
+        "options": ["provide_guidance", "increase_limit", "abort"]
+      }
+    },
+    {
+      "trigger_id": "ESC-02",
+      "name": "repeated_validator_failure",
+      "description": "The same validator has failed consecutively N times, where N meets or exceeds the repeated_failure_threshold for the active sensitivity profile.",
+      "determinism_category": "a",
+      "condition": {
+        "operator": ">=",
+        "field": "run.repeated_failures.max_consecutive",
+        "value_field": "resolved.repeated_failure_threshold"
+      },
+      "context_fields": [
+        "run.repeated_failures",
+        "run.failure_history",
+        "config.rules.escalation_sensitivity"
+      ],
+      "action": "escalate_to_human",
+      "action_metadata": {
+        "reason_template": "repeated validator failure: {run.repeated_failures.validator_name} failed {run.repeated_failures.max_consecutive} consecutive evaluations",
+        "options": ["provide_guidance", "skip_validator", "abort"]
+      }
+    },
+    {
+      "trigger_id": "ESC-03",
+      "name": "adversarial_confidence_below_floor",
+      "description": "Adversarial review confidence score is below the configured floor for the active sensitivity profile. Indicates the work product has not met the minimum quality bar after adversarial challenge.",
+      "determinism_category": "b",
+      "condition": {
+        "operator": "<",
+        "field": "run.adversarial_confidence",
+        "value_field": "resolved.adversarial_confidence_floor"
+      },
+      "context_fields": [
+        "run.adversarial_confidence",
+        "config.rules.escalation_sensitivity"
+      ],
+      "action": "retry_with_feedback",
+      "action_metadata": {
+        "reason_template": "adversarial confidence {run.adversarial_confidence} below floor {resolved.adversarial_confidence_floor}",
+        "feedback_type": "adversarial_findings",
+        "max_retries_before_escalate": 2
+      }
+    },
+    {
+      "trigger_id": "ESC-04",
+      "name": "no_progress_detected",
+      "description": "Consecutive iterations have produced identical or substantively unchanged outputs, indicating the loop is stuck without making forward progress.",
+      "determinism_category": "a",
+      "condition": {
+        "operator": ">=",
+        "field": "run.identical_failure_count",
+        "value_field": "resolved.no_progress_threshold"
+      },
+      "context_fields": [
+        "run.identical_failure_count",
+        "run.failure_history",
+        "config.rules.escalation_sensitivity"
+      ],
+      "action": "escalate_to_human",
+      "action_metadata": {
+        "reason_template": "no progress: {run.identical_failure_count} consecutive identical failures (threshold: {resolved.no_progress_threshold})",
+        "options": ["reframe_approach", "provide_guidance", "abort"]
+      }
+    },
+    {
+      "trigger_id": "ESC-05",
+      "name": "decision_deadlock",
+      "description": "Multiple collaboration patterns (debate, consensus) have failed to reach agreement within the configured threshold of rounds.",
+      "determinism_category": "a",
+      "condition": {
+        "operator": ">=",
+        "field": "run.deadlock_rounds",
+        "value_field": "resolved.decision_deadlock_threshold"
+      },
+      "context_fields": [
+        "run.deadlock_rounds",
+        "run.collaboration_pattern",
+        "config.rules.escalation_sensitivity"
+      ],
+      "action": "escalate_to_human",
+      "action_metadata": {
+        "reason_template": "decision deadlock: {run.collaboration_pattern} failed to converge after {run.deadlock_rounds} rounds (threshold: {resolved.decision_deadlock_threshold})",
+        "options": ["break_tie", "override_decision", "abort"]
+      }
+    },
+    {
+      "trigger_id": "ESC-06",
+      "name": "critical_gate_failure_strict_mode",
+      "description": "A blocking gate criterion has failed and strict_mode is enabled. No retry is permitted -- immediate escalation to human.",
+      "determinism_category": "a",
+      "condition": {
+        "all_of": [
+          {
+            "operator": "==",
+            "field": "config.rules.strict_mode",
+            "value": true
+          },
+          {
+            "operator": "==",
+            "field": "run.gate_result.has_critical_failure",
+            "value": true
+          }
+        ]
+      },
+      "context_fields": [
+        "config.rules.strict_mode",
+        "run.gate_result"
+      ],
+      "action": "abort",
+      "action_metadata": {
+        "reason_template": "strict mode: critical gate failure in {run.gate_result.gate_id}, no retry permitted",
+        "exit_code": 2
+      }
+    }
+  ],
+
+  "evaluation_order": [
+    "ESC-06",
+    "ESC-01",
+    "ESC-04",
+    "ESC-02",
+    "ESC-05",
+    "ESC-03"
+  ],
+  "evaluation_order_rationale": "Strict mode abort checked first (hard stop). Then max iterations (cheapest check). Then no-progress (stall detection). Then repeated failure (per-validator). Then deadlock (multi-agent). Then adversarial confidence (may trigger retry rather than escalate).",
+
+  "actions": {
+    "escalate_to_human": {
+      "description": "Halt the current loop and present the situation to the human operator with options.",
+      "pipeline_state": "CHECKPOINT",
+      "requires_human_input": true
+    },
+    "retry_with_feedback": {
+      "description": "Re-enter the self-correction loop with specific feedback from the trigger evaluation. Tracks retry count; escalates to human after max_retries_before_escalate.",
+      "pipeline_state": "ITERATING",
+      "requires_human_input": false
+    },
+    "abort": {
+      "description": "Halt the pipeline entirely. Used in strict mode or unrecoverable situations.",
+      "pipeline_state": "HALTED",
+      "requires_human_input": false
+    }
+  },
+
+  "resolution_protocol": {
+    "description": "How thresholds are resolved across layers.",
+    "layer_1": "Plugin defaults from this file (sensitivity_profiles.balanced)",
+    "layer_2": "Preset overlay (solo/standard/strict) may adjust thresholds",
+    "layer_3": "Config override via rules.escalation_sensitivity in .delivery/config.yml",
+    "layer_4": "Runtime override (disabled in strict mode)",
+    "merge_semantics": "Scalars: last-writer-wins. Per-stage overrides: shallow-merge with profile defaults."
+  }
+}

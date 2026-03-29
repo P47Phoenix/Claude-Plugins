@@ -1,0 +1,574 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "DoD Gate Rules — per-stage gate criteria with severity, validator role, and determinism category. Encodes quality-gates.md as structured JSON for the rules engine. Each criterion has a unique ID, description, severity level, assigned validator, and determinism category (a=fully deterministic structural check, b=hybrid, c=AI-driven).",
+  "traces_to": ["PRD FR-04", "US-09"],
+
+  "default_pass_threshold": 80,
+
+  "gates": {
+    "idea": {
+      "gate_id": "idea_dod",
+      "stage_number": 1,
+      "stage_name": "Idea Brief",
+      "max_self_correction": 2,
+      "pass_threshold": 80,
+      "criteria": [
+        {
+          "id": "IDEA-01",
+          "description": "Problem statement present and specific (not vague or generic)",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "IDEA-02",
+          "description": "At least 1 target user persona identified with context (who they are, what they need)",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "IDEA-03",
+          "description": "At least 1 measurable goal stated (quantified success condition)",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "IDEA-04",
+          "description": "Constraints or known limitations listed (technical, timeline, budget, regulatory)",
+          "severity": "warning",
+          "validator": "architect",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "IDEA-05",
+          "description": "Initial scope boundaries sketched (what is explicitly out of scope)",
+          "severity": "suggestion",
+          "validator": "product_owner",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        }
+      ]
+    },
+
+    "refine": {
+      "gate_id": "refine_dod",
+      "stage_number": 2,
+      "stage_name": "PRD Quality",
+      "max_self_correction": 3,
+      "pass_threshold": 80,
+      "criteria": [
+        {
+          "id": "REFINE-01",
+          "description": "All functional requirements have acceptance criteria with testable conditions",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "REFINE-02",
+          "description": "Non-functional requirements are quantified with specific targets (not 'fast' but 'p99 < 200ms')",
+          "severity": "blocking",
+          "validator": "architect",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "REFINE-03",
+          "description": "Out-of-scope section is present and non-empty",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "REFINE-04",
+          "description": "Success metrics are measurable with numeric targets and measurement method",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "REFINE-05",
+          "description": "No blocking open questions remain (all questions either answered or deferred with rationale)",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "REFINE-06",
+          "description": "User personas are specific with goals, pain points, and context (not generic 'user')",
+          "severity": "warning",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "REFINE-07",
+          "description": "Dependencies identified with status (confirmed, pending, at-risk)",
+          "severity": "warning",
+          "validator": "architect",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "REFINE-08",
+          "description": "Risks identified with likelihood, impact, and mitigation strategy",
+          "severity": "warning",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "REFINE-09",
+          "description": "Assumptions listed explicitly",
+          "severity": "suggestion",
+          "validator": "product_owner",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        }
+      ]
+    },
+
+    "design": {
+      "gate_id": "design_dod",
+      "stage_number": 3,
+      "stage_name": "Design Completeness",
+      "max_self_correction": 3,
+      "pass_threshold": 80,
+      "criteria": [
+        {
+          "id": "DESIGN-01",
+          "description": "User flows cover happy path plus at least 1 error path per flow",
+          "severity": "blocking",
+          "validator": "ux_designer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DESIGN-02",
+          "description": "Edge cases addressed: empty states, max content, first-time use, error recovery",
+          "severity": "blocking",
+          "validator": "ux_designer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DESIGN-03",
+          "description": "Design aligns with PRD requirements (every user story has a corresponding design element)",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DESIGN-04",
+          "description": "Accessibility considerations documented (color contrast, keyboard navigation, screen reader support, or N/A with justification)",
+          "severity": "warning",
+          "validator": "ux_designer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "DESIGN-05",
+          "description": "Multi-device and responsive behavior specified (breakpoints, layout shifts, or N/A with justification)",
+          "severity": "warning",
+          "validator": "ux_designer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "DESIGN-06",
+          "description": "Interaction patterns defined (loading states, transitions, feedback for user actions)",
+          "severity": "warning",
+          "validator": "ux_designer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DESIGN-07",
+          "description": "Content strategy addressed (placeholder vs real content, copy requirements)",
+          "severity": "suggestion",
+          "validator": "product_owner",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        }
+      ]
+    },
+
+    "architect": {
+      "gate_id": "architect_dod",
+      "stage_number": 4,
+      "stage_name": "Architecture Soundness",
+      "max_self_correction": 2,
+      "pass_threshold": 80,
+      "criteria": [
+        {
+          "id": "ARCH-01",
+          "description": "Trade-offs documented for every major technical decision (what was chosen, what was rejected, why)",
+          "severity": "blocking",
+          "validator": "architect",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "ARCH-02",
+          "description": "NFRs quantified with measurable targets and validation approach",
+          "severity": "blocking",
+          "validator": "architect",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "ARCH-03",
+          "description": "Failure modes addressed for each component (what happens when it fails, how it recovers)",
+          "severity": "blocking",
+          "validator": "architect",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "ARCH-04",
+          "description": "Data flows described with format, protocol, error handling, and validation",
+          "severity": "blocking",
+          "validator": "architect",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "ARCH-05",
+          "description": "Security addressed: authentication, authorization, data protection, input validation",
+          "severity": "blocking",
+          "validator": "security",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "ARCH-06",
+          "description": "ADRs written for contested or consequential decisions",
+          "severity": "warning",
+          "validator": "architect",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "ARCH-07",
+          "description": "Performance budgets set with specific numbers",
+          "severity": "warning",
+          "validator": "devops",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "ARCH-08",
+          "description": "GAME_DEV: frame time budget, memory budget, network bandwidth budget",
+          "severity": "warning",
+          "validator": "architect",
+          "determinism_category": "b",
+          "check_type": "content_quality",
+          "applicable_project_types": ["GAME_DEV"]
+        },
+        {
+          "id": "ARCH-09",
+          "description": "Dependency inventory with version constraints and update strategy",
+          "severity": "suggestion",
+          "validator": "devops",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "ARCH-10",
+          "description": "Observability strategy: logging, metrics, tracing, alerting",
+          "severity": "suggestion",
+          "validator": "devops",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        }
+      ]
+    },
+
+    "plan": {
+      "gate_id": "plan_dod",
+      "stage_number": 5,
+      "stage_name": "Plan Readiness",
+      "max_self_correction": 2,
+      "pass_threshold": 80,
+      "criteria": [
+        {
+          "id": "PLAN-01",
+          "description": "Sprint goal is a single sentence expressing business value delivered",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "PLAN-02",
+          "description": "Every committed story has acceptance criteria",
+          "severity": "blocking",
+          "validator": "scrum_bag",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "PLAN-03",
+          "description": "Dependencies between stories identified and sequenced",
+          "severity": "blocking",
+          "validator": "scrum_bag",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "PLAN-04",
+          "description": "Commitment does not exceed 80% of available capacity",
+          "severity": "blocking",
+          "validator": "scrum_bag",
+          "determinism_category": "a",
+          "check_type": "numeric_threshold",
+          "threshold": {
+            "field": "plan.capacity_utilization_percent",
+            "operator": "<=",
+            "value": 80
+          }
+        },
+        {
+          "id": "PLAN-05",
+          "description": "Capacity accounts for ceremonies, PTO, and known interruptions",
+          "severity": "warning",
+          "validator": "scrum_bag",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "PLAN-06",
+          "description": "Test approach referenced (which stories need what kind of testing)",
+          "severity": "warning",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "PLAN-07",
+          "description": "Deployment approach referenced (how and when completed work ships)",
+          "severity": "warning",
+          "validator": "devops",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "PLAN-08",
+          "description": "Risk items flagged with contingency (what if a story takes longer than estimated)",
+          "severity": "suggestion",
+          "validator": "scrum_bag",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        }
+      ]
+    },
+
+    "development": {
+      "gate_id": "development_dod",
+      "stage_number": 6,
+      "stage_name": "Development Quality",
+      "max_self_correction": 3,
+      "pass_threshold": 80,
+      "status_options": ["DONE", "CODE_COMPLETE", "NOT_DONE"],
+      "code_complete_behavior": "Story advances to Stage 7 (UAT) with pending empirical validations carried forward as mandatory test cases.",
+      "criteria": [
+        {
+          "id": "DEV-01",
+          "description": "Code implements all acceptance criteria for the story",
+          "severity": "blocking",
+          "validator": "developer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DEV-02",
+          "description": "Tests written and passing (unit tests at minimum; integration tests for cross-boundary logic)",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "test_execution"
+        },
+        {
+          "id": "DEV-03",
+          "description": "No critical issues from QA review",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DEV-04",
+          "description": "Code follows established language and framework best practices",
+          "severity": "warning",
+          "validator": "developer",
+          "determinism_category": "c",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DEV-05",
+          "description": "Inline documentation for non-obvious logic (why, not what)",
+          "severity": "warning",
+          "validator": "technical_writer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DEV-06",
+          "description": "No hardcoded secrets, credentials, or environment-specific values",
+          "severity": "blocking",
+          "validator": "security",
+          "determinism_category": "a",
+          "check_type": "pattern_scan"
+        },
+        {
+          "id": "DEV-07",
+          "description": "Error handling covers expected failure modes",
+          "severity": "warning",
+          "validator": "developer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "DEV-08",
+          "description": "GAME_DEV: frame budget validated, no physics or rendering regressions",
+          "severity": "warning",
+          "validator": "developer",
+          "determinism_category": "a",
+          "check_type": "performance_benchmark",
+          "applicable_project_types": ["GAME_DEV"]
+        },
+        {
+          "id": "DEV-09",
+          "description": "Empirical validation requirements identified: if any acceptance criteria require runtime verification, they are flagged in the Verification Status and story status is CODE_COMPLETE rather than DONE",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "empirical_classification"
+        }
+      ]
+    },
+
+    "uat": {
+      "gate_id": "uat_dod",
+      "stage_number": 7,
+      "stage_name": "UAT Acceptance",
+      "max_self_correction": 2,
+      "pass_threshold": 80,
+      "criteria": [
+        {
+          "id": "UAT-01",
+          "description": "All test cases executed (no skipped tests without documented justification)",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "test_execution"
+        },
+        {
+          "id": "UAT-02",
+          "description": "All pending empirical validations from Stage 6 included as mandatory UAT test cases",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "UAT-03",
+          "description": "Pass rate meets threshold: 100% of critical tests, 90% overall",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "numeric_threshold",
+          "threshold": {
+            "critical_pass_rate": { "operator": "==", "value": 100 },
+            "overall_pass_rate": { "operator": ">=", "value": 90 }
+          }
+        },
+        {
+          "id": "UAT-04",
+          "description": "Documentation complete: release notes, user guides if applicable, API docs if applicable",
+          "severity": "blocking",
+          "validator": "technical_writer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "UAT-05",
+          "description": "Rollback plan documented with specific steps and validation criteria",
+          "severity": "blocking",
+          "validator": "devops",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "UAT-06",
+          "description": "Go/no-go criteria evaluated by review board",
+          "severity": "blocking",
+          "validator": "product_owner",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        },
+        {
+          "id": "UAT-07",
+          "description": "Known issues documented with severity and workaround if applicable",
+          "severity": "warning",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "UAT-08",
+          "description": "Performance test results within budget (p99 latency, throughput, error rate)",
+          "severity": "warning",
+          "validator": "devops",
+          "determinism_category": "a",
+          "check_type": "performance_benchmark"
+        },
+        {
+          "id": "UAT-09",
+          "description": "GAME_DEV: playtest feedback addressed, performance budgets met on target hardware",
+          "severity": "warning",
+          "validator": "qa_engineer",
+          "determinism_category": "b",
+          "check_type": "content_quality",
+          "applicable_project_types": ["GAME_DEV"]
+        },
+        {
+          "id": "UAT-10",
+          "description": "Exploratory testing session completed with observations logged (cross-story interactions tested, GAME_DEV gets 2 sessions)",
+          "severity": "warning",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "UAT-11",
+          "description": "All defects found during UAT logged to .delivery/defects/ with severity, category, and root cause",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "a",
+          "check_type": "artifact_presence"
+        },
+        {
+          "id": "UAT-12",
+          "description": "Dogfooding: changes were validated by actually USING them as a real user would, not just code review",
+          "severity": "blocking",
+          "validator": "qa_engineer",
+          "determinism_category": "b",
+          "check_type": "content_quality"
+        }
+      ]
+    }
+  }
+}

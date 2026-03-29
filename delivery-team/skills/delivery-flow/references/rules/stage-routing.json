@@ -1,0 +1,1035 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Routing Decision Specification — normative source of truth for all pipeline routing decisions. Encodes the complete routing matrix: 6 project types × 7 stages × 3 risk tolerances = 126 cells. Each cell defines stage depth, DoD validators, collaboration patterns, and max iterations. Approved by PO (Gandalf) on 2026-03-28.",
+  "traces_to": ["PRD FR-03", "PRD FR-15", "PRD FR-18", "US-02", "US-05"],
+  "depth_definitions": {
+    "full": "All agents invoked, all collaboration patterns run, full quality gate with all severity levels, full team DoD validation.",
+    "light": "Primary agent only, blocking criteria only, reduced DoD (primary + 1 reviewer). No adversarial review or debate.",
+    "skip": "Stage does not execute. Pipeline advances to next active stage. Downstream stages receive whatever upstream artifacts are available.",
+    "full+game": "Everything in full, plus game-specific augmentations (game UI review at Design, game architecture roles at Architect, engine skill at Dev, playtest scenarios at UAT)."
+  },
+  "risk_tolerance_definitions": {
+    "standard": "Default risk profile. Matches the SKILL.md Stage Routing Matrix baseline. Balanced between thoroughness and velocity.",
+    "solo": "Prototype/solo developer profile. Fewer validators, fewer collaboration patterns, faster iteration. Warnings are non-blocking.",
+    "strict": "Enterprise/compliance profile. More validators, more collaboration patterns, warnings become blocking. No Layer 4 runtime overrides."
+  },
+  "stages": [
+    {"number": 1, "name": "Idea", "id": "idea"},
+    {"number": 2, "name": "Refine", "id": "refine"},
+    {"number": 3, "name": "Design", "id": "design"},
+    {"number": 4, "name": "Architect", "id": "architect"},
+    {"number": 5, "name": "Plan", "id": "plan"},
+    {"number": 6, "name": "Development", "id": "development"},
+    {"number": 7, "name": "UAT", "id": "uat"}
+  ],
+  "project_types": ["GREENFIELD", "FEATURE", "BUG_FIX", "GAME_DEV", "SPIKE", "DOCS_ONLY"],
+  "risk_tolerances": ["standard", "solo", "strict"],
+  "routing": {
+    "GREENFIELD": {
+      "standard": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "design": {
+          "depth": "full",
+          "dod_validators": ["ux_designer", "product_owner", "qa_engineer", "architect"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "architect": {
+          "depth": "full",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "plan": {
+          "depth": "full",
+          "dod_validators": ["scrum_bag", "product_owner", "qa_engineer", "devops"],
+          "collaboration_patterns": ["consensus", "adversarial_review"],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      },
+      "solo": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "design": {
+          "depth": "light",
+          "dod_validators": ["ux_designer", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Core user flows and primary screen wireframes only. Skip component specs and design system. Accessibility review limited to critical paths."
+        },
+        "architect": {
+          "depth": "light",
+          "dod_validators": ["architect", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "High-level system design and key ADRs only. Skip detailed C4 diagrams beyond context level. Security review limited to authentication and data protection."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["scrum_bag", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Story list with acceptance criteria and rough sequencing. Skip formal sprint capacity planning and deployment strategy."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Acceptance criteria validation and critical path testing only. Skip formal release plan and rollback procedure. Release notes reduced to changelog."
+        }
+      },
+      "strict": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect", "qa_engineer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "design": {
+          "depth": "full",
+          "dod_validators": ["ux_designer", "product_owner", "qa_engineer", "architect", "security"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "architect": {
+          "depth": "full",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security", "compliance"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review", "multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "plan": {
+          "depth": "full",
+          "dod_validators": ["scrum_bag", "product_owner", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["consensus", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer", "security", "compliance"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      }
+    },
+    "FEATURE": {
+      "standard": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "design": {
+          "depth": "full",
+          "dod_validators": ["ux_designer", "product_owner", "qa_engineer", "architect"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "architect": {
+          "depth": "light",
+          "dod_validators": ["architect", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Apply full if feature involves new APIs, new data models, external integrations, security-sensitive changes, or touches more than 3 modules. Apply skip if UI-only, single module, no new data models, no security implications, no new external dependencies.",
+          "conditional_depth": {
+            "full_when": {
+              "any_of": [
+                {"field": "project.involves_new_apis", "operator": "==", "value": true},
+                {"field": "project.involves_new_data_models", "operator": "==", "value": true},
+                {"field": "project.has_external_integrations", "operator": "==", "value": true},
+                {"field": "project.is_security_sensitive", "operator": "==", "value": true},
+                {"field": "project.modules_touched", "operator": ">", "value": 3}
+              ]
+            },
+            "skip_when": {
+              "all_of": [
+                {"field": "project.is_ui_only", "operator": "==", "value": true},
+                {"field": "project.modules_touched", "operator": "<=", "value": 1},
+                {"field": "project.involves_new_data_models", "operator": "==", "value": false},
+                {"field": "project.is_security_sensitive", "operator": "==", "value": false},
+                {"field": "project.has_external_integrations", "operator": "==", "value": false}
+              ]
+            },
+            "default": "light"
+          }
+        },
+        "plan": {
+          "depth": "full",
+          "dod_validators": ["scrum_bag", "product_owner", "qa_engineer", "devops"],
+          "collaboration_patterns": ["consensus", "adversarial_review"],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      },
+      "solo": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "light",
+          "dod_validators": ["product_owner", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "PRD reduced to feature brief: problem, solution, acceptance criteria. Skip formal metrics definition and stakeholder analysis."
+        },
+        "design": {
+          "depth": "light",
+          "dod_validators": ["ux_designer", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Primary user flow only. Skip wireframes for secondary flows. No component spec or design system updates."
+        },
+        "architect": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Skipped for solo feature work. Architecture concerns handled inline during development."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 1,
+          "scope_constraint": "Single story with acceptance criteria. No sprint plan or capacity analysis."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Acceptance criteria validation only. Skip formal release plan and rollback procedure."
+        }
+      },
+      "strict": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect", "qa_engineer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "design": {
+          "depth": "full",
+          "dod_validators": ["ux_designer", "product_owner", "qa_engineer", "architect", "security"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "architect": {
+          "depth": "full",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": "In strict mode, FEATURE always gets full architecture review regardless of scope. No conditional skip."
+        },
+        "plan": {
+          "depth": "full",
+          "dod_validators": ["scrum_bag", "product_owner", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["consensus", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer", "security"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      }
+    },
+    "BUG_FIX": {
+      "standard": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip refinement. The bug report is the requirement."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip design. No UX changes expected for a fix."
+        },
+        "architect": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip architecture. Fix should not alter system architecture."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["scrum_bag", "qa_engineer"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Single story for the fix. Minimal plan: root cause, fix approach, test approach. Skip consensus protocol and adversarial review."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      },
+      "solo": {
+        "idea": {
+          "depth": "light",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 1,
+          "scope_constraint": "Minimal bug brief: observed behavior, expected behavior, reproduction steps. Skip feasibility analysis."
+        },
+        "refine": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip refinement."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip design."
+        },
+        "architect": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip architecture."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer"],
+          "collaboration_patterns": [],
+          "max_iterations": 1,
+          "scope_constraint": "Single story with fix approach. No sprint plan."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Regression test on the fixed behavior and directly adjacent functionality. Skip formal release plan."
+        }
+      },
+      "strict": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "light",
+          "dod_validators": ["product_owner", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Root cause analysis document with impact assessment. Verify fix does not mask a deeper systemic issue."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Bug fixes skip design even in strict mode unless the bug is UX-related."
+        },
+        "architect": {
+          "depth": "light",
+          "dod_validators": ["architect", "security"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Impact analysis: verify fix does not introduce architectural regression or security vulnerability. Review blast radius."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["scrum_bag", "qa_engineer", "security"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Fix story with root cause, fix approach, regression test plan. Security review of fix approach if security-adjacent."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer", "security"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      }
+    },
+    "GAME_DEV": {
+      "standard": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "UX Designer reviews for game UX patterns. Game-specific NFRs added (FPS targets, input latency, platform requirements)."
+        },
+        "design": {
+          "depth": "full+game",
+          "dod_validators": ["ux_designer", "product_owner", "qa_engineer", "architect", "game_ui_designer"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Game UI Designer invoked for HUD, menu, inventory UI patterns. Game-specific accessibility review (colorblind modes, subtitle systems, input remapping)."
+        },
+        "architect": {
+          "depth": "full+game",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 2,
+          "scope_constraint": null,
+          "game_additions": "Game architecture roles: Game Systems Architect (ECS, state machines, game loop), Level/World Designer (scene structure, streaming, persistence), Network/Multiplayer Architect (if multiplayer), Graphics/Rendering Specialist (if graphically intensive). Performance budgets required (frame time, memory, bandwidth)."
+        },
+        "plan": {
+          "depth": "full",
+          "dod_validators": ["scrum_bag", "product_owner", "qa_engineer", "devops"],
+          "collaboration_patterns": ["consensus", "adversarial_review"],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "development": {
+          "depth": "full+game",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "defect_prevention_gate"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Godot/engine skill invoked alongside Developer. Headless validation after each story. Empirical AC classification. Performance profiling against frame budgets. Playtest scenarios. Milestone playtest checkpoint after each sprint."
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Playtest scenarios for game feel, difficulty curve, progression balance, player experience."
+        }
+      },
+      "solo": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "light",
+          "dod_validators": ["product_owner", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Game design brief: core mechanic, target feel, platform constraints. Skip formal PRD and metrics definition."
+        },
+        "design": {
+          "depth": "light",
+          "dod_validators": ["ux_designer", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Core game UI flow only (main menu, HUD, pause). Skip detailed component specs and design system. Accessibility review limited to critical input remapping.",
+          "game_additions": "Game UI Designer provides lightweight HUD and menu guidance."
+        },
+        "architect": {
+          "depth": "light",
+          "dod_validators": ["architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Scene tree structure, core systems architecture (state machine, input, game loop). Skip detailed C4, security review, and multiplayer architecture unless explicitly needed.",
+          "game_additions": "Game Systems Architect provides lightweight architecture guidance."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 1,
+          "scope_constraint": "Feature list with priority order. No formal sprint plan or capacity analysis."
+        },
+        "development": {
+          "depth": "full+game",
+          "dod_validators": ["developer", "qa_engineer", "defect_prevention_gate"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Godot/engine skill invoked. Headless validation. Empirical AC classification."
+        },
+        "uat": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer", "product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Playtest-focused: core mechanic feel, critical bugs, performance check. Skip formal release plan and rollback procedure.",
+          "game_additions": "Lightweight playtest session for game feel and critical bugs."
+        }
+      },
+      "strict": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect", "qa_engineer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "UX Designer reviews for game UX patterns. Full game-specific NFRs with compliance requirements (age ratings, content policies, platform certification)."
+        },
+        "design": {
+          "depth": "full+game",
+          "dod_validators": ["ux_designer", "product_owner", "qa_engineer", "architect", "security", "game_ui_designer"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Full game UI review with accessibility compliance. Platform certification requirements review."
+        },
+        "architect": {
+          "depth": "full+game",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security", "compliance"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review", "multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "All game architecture roles invoked. Network security review for multiplayer. Performance budgets with compliance thresholds."
+        },
+        "plan": {
+          "depth": "full",
+          "dod_validators": ["scrum_bag", "product_owner", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["consensus", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "development": {
+          "depth": "full+game",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "security", "defect_prevention_gate"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Full game dev pipeline with security review. Headless validation mandatory. Performance profiling against strict budgets."
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer", "security", "compliance"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null,
+          "game_additions": "Full playtest suite. Platform certification checklist. Compliance verification."
+        }
+      }
+    },
+    "SPIKE": {
+      "standard": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip refinement. The research question is defined in the idea brief."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip design. Exploration does not require UX work."
+        },
+        "architect": {
+          "depth": "full",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "plan": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip planning. Time-boxed execution from the idea brief."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip UAT. Output is a findings report, not a shippable artifact."
+        }
+      },
+      "solo": {
+        "idea": {
+          "depth": "light",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 1,
+          "scope_constraint": "Research question and success criteria only. Skip feasibility analysis."
+        },
+        "refine": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip refinement."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip design."
+        },
+        "architect": {
+          "depth": "light",
+          "dod_validators": ["architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Lightweight technical exploration plan. Key questions to answer and approaches to evaluate. Skip formal ADRs."
+        },
+        "plan": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip planning."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip UAT."
+        }
+      },
+      "strict": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "light",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Scope boundary document: what the spike will and will not explore. Risk assessment for the exploration approach."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Spikes skip design even in strict mode."
+        },
+        "architect": {
+          "depth": "full",
+          "dod_validators": ["architect", "qa_engineer", "devops", "security"],
+          "collaboration_patterns": ["debate", "evaluator_optimizer", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["scrum_bag", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Time-box definition with explicit exit criteria. Findings report template defined upfront."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "security"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Findings review: were research questions answered? Are recommendations actionable? Document knowledge gaps for follow-up."
+        }
+      }
+    },
+    "DOCS_ONLY": {
+      "standard": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip refinement. Scope is defined in the idea brief."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip design."
+        },
+        "architect": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip architecture."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["scrum_bag", "qa_engineer"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Single story for the documentation task. Outline of sections to write/update. Skip sprint plan and deployment strategy."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer"],
+          "collaboration_patterns": ["multi_perspective_review_board"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      },
+      "solo": {
+        "idea": {
+          "depth": "light",
+          "dod_validators": ["product_owner"],
+          "collaboration_patterns": [],
+          "max_iterations": 1,
+          "scope_constraint": "Brief description of what needs documenting and why. Skip feasibility analysis."
+        },
+        "refine": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip refinement."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip design."
+        },
+        "architect": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip architecture."
+        },
+        "plan": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Solo docs skip planning. Write directly from the idea brief."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "light",
+          "dod_validators": ["qa_engineer"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Documentation accuracy check and readability review. Skip formal release plan."
+        }
+      },
+      "strict": {
+        "idea": {
+          "depth": "full",
+          "dod_validators": ["product_owner", "architect"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": null
+        },
+        "refine": {
+          "depth": "light",
+          "dod_validators": ["product_owner", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Documentation requirements: audience, scope, accuracy standards, review process. Content outline with section owners."
+        },
+        "design": {
+          "depth": "skip",
+          "dod_validators": [],
+          "collaboration_patterns": [],
+          "max_iterations": 0,
+          "scope_constraint": "Documentation tasks skip design even in strict mode."
+        },
+        "architect": {
+          "depth": "light",
+          "dod_validators": ["architect", "technical_writer"],
+          "collaboration_patterns": ["evaluator_optimizer"],
+          "max_iterations": 2,
+          "scope_constraint": "Technical accuracy review: verify documented architecture matches actual system. Identify documentation gaps in existing architecture docs."
+        },
+        "plan": {
+          "depth": "light",
+          "dod_validators": ["scrum_bag", "qa_engineer", "technical_writer"],
+          "collaboration_patterns": [],
+          "max_iterations": 2,
+          "scope_constraint": "Documentation story with review workflow. Style guide compliance requirements. Section-level review assignments."
+        },
+        "development": {
+          "depth": "full",
+          "dod_validators": ["developer", "qa_engineer", "architect", "technical_writer", "compliance"],
+          "collaboration_patterns": ["evaluator_optimizer", "decision_ownership", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        },
+        "uat": {
+          "depth": "full",
+          "dod_validators": ["qa_engineer", "devops", "product_owner", "technical_writer", "compliance"],
+          "collaboration_patterns": ["multi_perspective_review_board", "adversarial_review"],
+          "max_iterations": 3,
+          "scope_constraint": null
+        }
+      }
+    }
+  },
+  "collaboration_pattern_definitions": {
+    "evaluator_optimizer": {
+      "description": "Baseline quality pass. One agent produces, another evaluates, feedback loops until pass or max iterations.",
+      "execution_order": 1
+    },
+    "adversarial_review": {
+      "description": "Stress-test assumptions. Challenger questions decisions, identifies missing edge cases, rates confidence 1-5. If confidence <= 2, escalate to human.",
+      "execution_order": 2
+    },
+    "debate": {
+      "description": "Resolve contested decisions. PRO and CON agents argue options, JUDGE decides with documented rationale. Produces an ADR. If DEADLOCK, escalate to human.",
+      "execution_order": 3
+    },
+    "multi_perspective_review_board": {
+      "description": "Multi-domain assessment. Multiple reviewers evaluate from different perspectives (technical, business, risk). Any BLOCK must be resolved via decision_ownership before advancing.",
+      "execution_order": 4
+    },
+    "consensus": {
+      "description": "Cross-team alignment. Multiple roles independently analyze, share positions, respond to disagreements, and converge. 2-3 rounds.",
+      "execution_order": 5
+    },
+    "decision_ownership": {
+      "description": "Routing mechanism (not sequenced). Routes domain-specific questions to the appropriate owner: scope -> PO, technical -> Architect, quality -> QA. Can trigger at ANY point.",
+      "execution_order": null
+    }
+  },
+  "validator_definitions": {
+    "product_owner": {"skill": "product-delivery", "role": "product_owner"},
+    "architect": {"skill": "architect", "role": "solution"},
+    "qa_engineer": {"skill": "quality", "role": "qa_engineer"},
+    "ux_designer": {"skill": "ui", "role": "ux_designer"},
+    "game_ui_designer": {"skill": "ui", "role": "game_ui_designer"},
+    "developer": {"skill": "developer", "role": "developer"},
+    "devops": {"skill": "operations", "role": "devops"},
+    "technical_writer": {"skill": "operations", "role": "technical_writer"},
+    "scrum_bag": {"skill": "product-delivery", "role": "scrum_bag"},
+    "security": {"skill": "architect", "role": "security"},
+    "compliance": {"skill": "architect", "role": "compliance"},
+    "defect_prevention_gate": {"skill": "godot", "role": "defect_prevention"}
+  }
+}

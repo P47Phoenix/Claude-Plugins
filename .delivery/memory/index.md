@@ -1,25 +1,25 @@
 # Memory Index
 
-**Last updated**: 2026-03-28
-**Total runs**: 2
+**Last updated**: 2026-03-29
+**Total runs**: 3
 
-## Stage Health (from last 2 runs)
+## Stage Health (from last 3 runs)
 
 | Stage | First-Try Pass Rate | Notes |
 |-------|-------------------|-------|
-| Idea | 100% | Clean pass both runs |
-| Refine | 100% | 1 run (FEATURE), skipped for BUG_FIX |
-| Design | 50% | 1 run — PO found 5 FR traceability gaps |
-| Architect | 100% | 1 run (light depth) |
-| Plan | 75% | Run 1: SM capacity + QA gaps. Run 2: clean pass (light) |
-| Development | 75% | Run 1: stale schema.json. Run 2: clean pass |
-| UAT | 50% | Run 1: dogfooding deferred + review scope. Run 2: clean pass |
+| Idea | 67% | Run 3: Architect found phantom ref (round 2 pass) |
+| Refine | 100% | Run 3: clean after adversarial fixes applied pre-DoD |
+| Design | 50% | Run 2: FR traceability gaps. Run 3: filename + positioning errors |
+| Architect | 100% | Run 3: light depth, clean pass |
+| Plan | 83% | Run 1: SM capacity + QA gaps. Run 2+3: clean |
+| Development | 83% | Run 1: stale schema.json. Run 2+3: clean (CODE_COMPLETE) |
+| UAT | 67% | Run 1: dogfooding deferred. Run 3: DEFECT-001 filename mismatch |
 
 ## Hot Lessons (top 5 by impact)
 
 1. ALL work routes through delivery-flow pipeline — never implement directly → topics/human-preferences.md
 2. Dogfooding is a P0 UAT gate, not a follow-up — execute before DoD submission → stages/uat.md
-3. Derived artifacts (schema.json) must be regenerated after source changes → stages/development.md
+3. Verify file references in idea briefs/architecture docs — Architect catches phantom refs → topics/gate-patterns.md
 4. Design/Plan must trace to ALL PRD FRs — validators check FR-by-FR → topics/gate-patterns.md
 5. Use plugin-dev skills when modifying plugin components → topics/human-preferences.md
 

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "preset_id": "standard",
+  "display_name": "Standard — Balanced Defaults",
+  "description": "Default risk profile. Matches the SKILL.md Stage Routing Matrix baseline. Balanced between thoroughness and velocity. Mostly inherits Layer 1 plugin defaults with light overrides for collaboration patterns and escalation.",
+  "traces_to": ["PRD FR-07", "PRD DD2", "US-08"],
+
+  "strict_mode": false,
+
+  "collaboration_patterns": [
+    "evaluator_optimizer",
+    "adversarial_review",
+    "decision_ownership"
+  ],
+
+  "severity_overrides": {},
+
+  "escalation": {
+    "sensitivity": "balanced",
+    "repeated_failure_count": 3,
+    "adversarial_confidence_floor": 2,
+    "deadlock_timeout_minutes": 5
+  },
+
+  "retrospective": {
+    "frequency": "end-of-pipeline",
+    "skip_allowed": false
+  },
+
+  "pass_thresholds": {
+    "idea": 80,
+    "refine": 80,
+    "design": 80,
+    "architect": 80,
+    "plan": 80,
+    "development": 80,
+    "uat": 80
+  }
+}
