@@ -150,6 +150,7 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] User flows cover happy path plus at least 1 error path per flow [blocking]
 - [ ] Edge cases addressed: empty states, max content, first-time use, error recovery [blocking]
 - [ ] Design aligns with PRD requirements (every user story has a corresponding design element) [blocking]
+- [ ] File path references in Design artifacts verified: any file path cited in Design artifacts that does not exist on disk and is not annotated with `[PLANNED]` generates a WARNING finding. The WARNING is logged, surfaced to the author, and carried forward to downstream stages, but does NOT block stage completion. File paths annotated with `[PLANNED]` are exempt from phantom detection at this stage. [warning] <!-- retro k4m9 -->
 - [ ] Accessibility considerations documented (color contrast, keyboard navigation, screen reader support, or N/A with justification) [warning]
 - [ ] Multi-device and responsive behavior specified (breakpoints, layout shifts, or N/A with justification) [warning]
 - [ ] Interaction patterns defined (loading states, transitions, feedback for user actions) [warning]
@@ -177,7 +178,10 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] Sprint goal is a single sentence expressing business value delivered [blocking]
 - [ ] Every committed story has acceptance criteria [blocking]
 - [ ] Dependencies between stories identified and sequenced [blocking]
-- [ ] Commitment does not exceed 80% of available capacity [blocking]
+- [ ] Sprint capacity threshold (two-tier model) <!-- retros c8f2, k4m9 -->:
+  - **>80% and <=100% utilization**: WARNING -- emits a warning stating the utilization percentage. Plan can pass DoD only after the warning is acknowledged with brief justification recorded in the sprint plan.
+  - **>100% utilization**: BLOCKING -- plan cannot pass DoD until allocation is reduced to <=100% OR the PO provides explicit sign-off with justification recorded in the sprint plan.
+  - **Light Mode**: Applies to all project types -- even single-story plans can be overscoped.
 - [ ] Capacity accounts for ceremonies, PTO, and known interruptions [warning]
 - [ ] Test approach referenced (which stories need what kind of testing) [warning]
 - [ ] Deployment approach referenced (how and when completed work ships) [warning]
@@ -196,6 +200,7 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 - [ ] Error handling covers expected failure modes [warning]
 - [ ] GAME_DEV: frame budget validated, no physics or rendering regressions [warning, if applicable]
 - [ ] Empirical validation requirements identified: if any acceptance criteria require runtime verification (visual output, user interaction, API responses, runtime behavior), they are flagged in the Verification Status and story status is CODE_COMPLETE rather than DONE [blocking]
+- [ ] Derived artifacts regenerated: if any modified source files have derived artifacts (generated docs, compiled schemas, transformed configs), all derived artifacts have been regenerated from current sources and the regeneration is documented in the story's DoD review [blocking] <!-- retro c8f2 -->
 - **DoD validators**: Developer (code quality, best practices), QA Engineer (tests pass, coverage adequate, empirical criteria flagged), Architect (design conformance, no architectural drift), Technical Writer (inline docs, API docs if applicable)
 - **DoD status options**: DONE (all criteria verified), CODE_COMPLETE (code passes but empirical validation pending), NOT_DONE (structural issues remain)
 - **CODE_COMPLETE behavior**: story advances to Stage 7 (UAT) with pending empirical validations carried forward as mandatory test cases
@@ -205,6 +210,7 @@ Each gate lists its evaluation criteria, DoD validators, and maximum self-correc
 
 - [ ] All test cases executed (no skipped tests without documented justification) [blocking]
 - [ ] All pending empirical validations from Stage 6 included as mandatory UAT test cases [blocking]
+- [ ] Empirical-items classification section present in UAT test plan: every PRD acceptance criterion classified as "structural" or "empirical" with justification, and empirical items have documented validation method [blocking] <!-- retro k4m9 -->
 - [ ] Pass rate meets threshold: 100% of critical tests, 90% overall [blocking]
 - [ ] Documentation complete: release notes, user guides if applicable, API docs if applicable [blocking]
 - [ ] Rollback plan documented with specific steps and validation criteria [blocking]

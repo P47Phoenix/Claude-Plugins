@@ -1,334 +1,204 @@
-# Deployment Strategy: Rules Engine Integration
+# Deployment Strategy: Stage Health Hardening
 
 **Version**: 1.0
-**Date**: 2026-03-28
-**Author**: Samwise Gamgee, DevOps (delivery-team)
+**Author**: Samwise Gamgee (DevOps)
+**Date**: 2026-03-29
 **Status**: Draft
-**Inputs**: Architecture v1.0, config-schema.md v2.3, SKILL.md, marketplace.json
+**Inputs**: Sprint Plan v1.0 (Aragorn/SM)
 
 > *"I can't deploy the feature for you, Mr. Frodo, but I can carry the pipeline."*
 
 ---
 
-## 1. Distribution Model
+## 1. Deployment Approach
 
-This plugin is distributed via git clone/pull. There is no package registry, no build step, no compiled artifacts. Users get new features by pulling the latest from `main`.
+This is a plugin marketplace repository. There are no containers, no cloud services, no runtime deployments. "Deploying" means commits merged to `main` on GitHub. Changes take effect the next time a user loads the delivery-flow skill.
 
-**What this means for deployment**:
-- "Deploying" = merging to `main` and users running `git pull`
-- New Python scripts (C1-C4) land in `delivery-team/scripts/` — immediately available after pull
-- New JSON rule files (C5-C11) land in `delivery-team/skills/delivery-flow/references/rules/` — immediately available after pull
-- Modified files (SKILL.md, config-schema.md, etc.) update in place
-- No install step, no migration runner, no database schema changes
-- Python scripts use only stdlib (no `pip install` required)
+**Branch strategy**:
+- Create feature branch `feat/stage-health-hardening` from `main`
+- All 5 stories developed on this single branch
+- Single PR to `main` containing all 5 story commits
+- PR description references PRD v1.1 and retro sources c8f2, k4m9
+- Squash merge is NOT used -- preserve individual story commits for granular revert capability
 
----
+**What ships**: Markdown-only edits to 5 existing reference/skill files. No new files created, no scripts, no schema changes, no config key additions.
 
-## 2. Config Migration: v2.3 to v2.4
-
-### 2.1 Migration Path
-
-The config schema bumps from v2.3 to v2.4. Existing users have a `.delivery/config.yml` with `version: "2.3"` (or no version field).
-
-**Forward compatibility**: v2.3 configs work with the v2.4 codebase unchanged. The rules engine has sensible defaults for every `rules.*` key:
-
-| Key | Default if absent |
-|-----|-------------------|
-| `rules.preset` | `"standard"` |
-| `rules.strict_mode` | `false` |
-| `rules.escalation_sensitivity` | `"balanced"` |
-| `rules.pass_threshold` | `{}` (use preset defaults) |
-| `rules.routing_overrides` | `{}` (use preset defaults) |
-| `rules.required_validators` | `{}` (use preset defaults) |
-| `rules.custom` | `[]` (no custom rules) |
-
-**This means**: A user who does nothing after `git pull` gets the standard preset with all defaults. The pipeline behaves the same as before — routing decisions that were previously made by AI judgment will now be made deterministically using the same routing table the AI was following from prose.
-
-### 2.2 Migration Triggers
-
-The `check_config.py` hook (SessionStart) is modified in Phase 2 to:
-
-1. Detect `version: "2.3"` (or missing version)
-2. Print an informational message (not blocking): `"Config v2.3 detected. Rules engine defaults apply. Run the setup wizard to configure rules.* options (questions W-15 through W-17)."`
-3. NOT block the session — the pipeline runs fine without explicit rules config
-4. If the user runs the setup wizard, the wizard appends the `rules.*` section and bumps the version to `"2.4"`
-
-### 2.3 Manual Migration (for users who skip the wizard)
-
-Add to `.delivery/config.yml`:
-
-```yaml
-version: "2.4"
-
-# --- Rules Engine Configuration ---
-rules:
-  preset: standard          # solo | standard | strict
-  strict_mode: false
-  escalation_sensitivity: balanced  # relaxed | balanced | aggressive
-```
-
-That is the minimal migration. All other `rules.*` keys are optional.
+| Target File | Modified By |
+|-------------|-------------|
+| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | US-01, US-03, US-04, US-05 |
+| `delivery-team/skills/delivery-flow/references/quality-gates.md` | US-02, US-03, US-04, US-05 |
+| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | US-02 |
+| `delivery-team/skills/delivery-flow/references/project-templates.md` | US-04 |
+| `delivery-team/skills/quality/SKILL.md` | US-01 |
 
 ---
 
-## 3. Feature Flagging and Rollback
+## 2. Commit Strategy
 
-### 3.1 Feature Flag: `rules.enabled`
+One conventional commit per completed story, in implementation order. Each commit is atomic and independently revertable.
 
-The architecture does not include a top-level kill switch. We add one:
+| Order | Commit Message | Story | Milestone |
+|-------|---------------|-------|-----------|
+| 1 | `feat: add phantom reference detection and filename reconciliation (US-03)` | US-03 | M2 |
+| 2 | `feat: add plan stage capacity and coverage guardrails (US-04)` | US-04 | M3 |
+| 3 | `feat: add shared-module review at UAT stage (US-01)` | US-01 | M1 |
+| 4 | `feat: add empirical-items tracking at UAT stage (US-02)` | US-02 | M1 |
+| 5 | `feat: add derived artifact regeneration at dev DoD (US-05)` | US-05 | M4 |
+| 6 | `chore: bump version to 2.12.0` | -- | -- |
 
-| Key | Type | Default | Purpose |
-|-----|------|---------|---------|
-| `rules.enabled` | boolean | `true` | Master switch for the rules engine |
+**Commit rules**:
+- Each commit includes ONLY the files listed for that story in the sprint plan
+- No cross-story file changes in a single commit (even when stories touch the same file, each commit captures only that story's edits)
+- Commit body includes: story ID, milestone, retro source(s), and list of modified files
+- All commits use lowercase prefix per conventional commits spec
 
-**Behavior when `rules.enabled: false`**:
-
-- `evaluate_rules.py` exits immediately with exit code 0 and a passthrough response:
-  ```json
-  {
-    "decision_type": "routing",
-    "bypassed": true,
-    "reason": "Rules engine disabled via config (rules.enabled: false)"
-  }
-  ```
-- SKILL.md orchestrator protocol includes a check: if the response contains `"bypassed": true`, the orchestrator falls back to the pre-rules-engine behavior (AI-interpreted prose decisions)
-- This flag is checked BEFORE any rule loading, context validation, or evaluation — zero overhead when disabled
-
-**Why this matters**: If the rules engine produces unexpected routing or gate decisions, the user can disable it with a one-line config change and immediately return to the previous AI-driven behavior. No git revert needed. No branch switching. One line.
-
-### 3.2 Rollback Procedure
-
-**Level 1 — Disable via config** (seconds, no git changes):
-```yaml
-rules:
-  enabled: false
+**Example commit body**:
 ```
-Pipeline reverts to AI-interpreted decisions. All rules engine code remains on disk but is never invoked. This is the fastest rollback.
+feat: add phantom reference detection and filename reconciliation (US-03)
 
-**Level 2 — Revert to pre-rules SKILL.md** (minutes, git revert):
-If the modified SKILL.md itself causes issues (not just rule outcomes), revert the SKILL.md changes:
+Story: US-03 (Milestone M2)
+Retro source: k4m9
+Files modified:
+- delivery-team/skills/delivery-flow/references/quality-gates.md
+- delivery-team/skills/delivery-flow/references/pipeline-stages.md
+```
+
+---
+
+## 3. Rollback Procedure
+
+Now, if something goes sideways -- and I have seen the Dead Marshes, so I know things go sideways -- here is how we come back safe.
+
+### 3.1 Per-Story Revert
+
+Because each story is a single commit, any story can be reverted independently:
+
 ```bash
-git log --oneline delivery-team/skills/delivery-flow/SKILL.md
-# Find the commit before Phase 3 SKILL.md changes
-git checkout <pre-phase-3-commit> -- delivery-team/skills/delivery-flow/SKILL.md
-```
-The Python scripts and JSON rules remain on disk but are never called because the orchestrator prompt no longer references them.
+# Identify the commit to revert
+git log --oneline --grep="US-03"
 
-**Level 3 — Full revert** (minutes, git revert):
+# Revert that specific commit
+git revert <commit-sha>
+```
+
+**Revert order matters**: If reverting US-02, check whether US-01 (its dependency) also needs reverting. The dependency chain is:
+
+```
+US-03 (independent)
+US-04 (independent)
+US-01 (independent)
+US-02 (depends on US-01 -- shares UAT stage context)
+US-05 (independent)
+```
+
+Only US-02 has a dependency. All others can be reverted in isolation.
+
+### 3.2 Full Feature Revert
+
+If the entire feature must be rolled back:
+
 ```bash
-# Revert the merge commit(s) for rules engine phases
-git revert <phase-3-merge> <phase-2-merge> <phase-1-merge> <phase-0-merge>
+# Revert all 5 story commits in reverse order (exclude version bump)
+git revert <US-05-sha> <US-02-sha> <US-01-sha> <US-04-sha> <US-03-sha>
 ```
-This removes all rules engine code. The config.yml `rules.*` section becomes dead config (ignored by v2.3 check_config).
 
-### 3.3 Rollback Decision Matrix
+This creates 5 revert commits preserving full history. Do NOT use `git reset --hard` on `main`.
 
-| Symptom | Rollback Level | Action |
-|---------|---------------|--------|
-| Wrong routing (stages too light/heavy) | 1 | Set `rules.enabled: false` or adjust `rules.routing_overrides` |
-| Gate too strict/lenient | 1 | Adjust `rules.pass_threshold.<stage>` or set `rules.enabled: false` |
-| evaluate_rules.py crashes (exit code 1) | 1 | Set `rules.enabled: false`, file bug |
-| SKILL.md orchestrator loop (infinite context assembly) | 2 | Revert SKILL.md to pre-Phase-3 |
-| Fundamental design flaw discovered | 3 | Full revert of all phase PRs |
+### 3.3 Revert Triggers
+
+Initiate rollback if any of the following occur post-merge:
+- A pipeline run fails at a hardened gate due to a defect in the new gate criteria (not a legitimate quality failure)
+- Step renumbering errors cause downstream stage references to break
+- Token budget breach (NFR-04: >500 tokens added to any single stage) causes context window issues
+- False positive rate on phantom reference detection exceeds 10% over 3 pipeline runs
+
+### 3.4 Revert Window
+
+- **Immediate** (within same session): Revert on `main` directly
+- **After subsequent commits**: Create a revert PR following the same branch/PR workflow
 
 ---
 
-## 4. Branch Strategy
+## 4. Version Bump Plan
 
-### 4.1 Branch Layout
+Current version: **2.11.0**
 
-The implementation has 4 phases with clear dependency ordering. Each phase gets its own feature branch off `main`:
+This feature adds new gate criteria and stage sub-steps to existing pipeline stages. It is additive, non-breaking, and backward-compatible. Per semver:
 
-```
-main
- ├── feature/rules-engine-phase-0    (C1 extraction + routing spec)
- ├── feature/rules-engine-phase-1    (C2-C4 + C5, C9-C11: adapter, CLI, routing rules, presets)
- ├── feature/rules-engine-phase-2    (C6-C8 + config v2.4 + hook updates + audit trail)
- └── feature/rules-engine-phase-3    (SKILL.md integration + wizard + dogfooding)
-```
+| Component | Bump | Rationale |
+|-----------|------|-----------|
+| Major | No | No breaking changes to config schema or skill interfaces |
+| Minor | Yes | New pipeline capabilities (5 new guardrails across 4 stages) |
+| Patch | No | This is not a bug fix |
 
-### 4.2 Dependency Chain
+**Target version**: **2.12.0**
 
-```
-Phase 0 ──merge──> main
-                     |
-Phase 1 (branch from post-Phase-0 main) ──merge──> main
-                                                      |
-Phase 2 (branch from post-Phase-1 main) ──merge──> main
-                                                      |
-Phase 3 (branch from post-Phase-2 main) ──merge──> main
-```
-
-Each phase branches from `main` AFTER the previous phase is merged. No long-lived feature branches. No rebasing across phases.
-
-### 4.3 Why Sequential, Not Parallel
-
-Phases 1-3 each depend on the prior phase's merged code:
-- Phase 1 imports from `condition_evaluator.py` (Phase 0)
-- Phase 2 uses `delivery_rules_adapter.py` (Phase 1) for gate/escalation rules
-- Phase 3 invokes `evaluate_rules.py` (Phase 1) from SKILL.md and references config schema v2.4 (Phase 2)
-
-Parallel branches would require cross-branch imports or duplicated code. Sequential is cleaner for a 4-person-week feature.
+**Bump procedure**:
+1. After all 5 story commits pass dogfooding, create a 6th commit:
+   ```
+   chore: bump version to 2.12.0
+   ```
+2. Update version in `.claude-plugin/marketplace.json`
+3. This commit goes on the feature branch, included in the PR
+4. No config migration needed -- no new config keys, no schema version change
 
 ---
 
-## 5. PR Strategy
+## 5. Post-Deployment Verification
 
-### 5.1 One PR Per Phase
+After the PR merges to `main`, we do not just walk away from the campfire. We make sure the Shire is safe.
 
-| PR | Branch | Content | Size Estimate |
-|----|--------|---------|---------------|
-| PR-1 | `feature/rules-engine-phase-0` | `condition_evaluator.py` + `routing-decision-spec.md` | ~400 lines new Python + 1 reference doc |
-| PR-2 | `feature/rules-engine-phase-1` | `delivery_rules_adapter.py` + `yaml_to_rules.py` + `evaluate_rules.py` + `routing.json` + 3 preset JSONs | ~800 lines new Python + ~300 lines JSON |
-| PR-3 | `feature/rules-engine-phase-2` | `dod-gates.json` + `escalation.json` + `collaboration.json` + config-schema v2.4 + `check_config.py` mod + audit trail | ~200 lines Python changes + ~500 lines JSON |
-| PR-4 | `feature/rules-engine-phase-3` | SKILL.md changes + setup-wizard.md + quality-gates.md + dogfooding results | ~200 lines prompt changes + validation report |
+### 5.1 Immediate Verification (same session)
 
-### 5.2 Why Not One Large PR
+- [ ] PR merged without conflicts
+- [ ] All 6 commits present on `main` (5 stories + version bump)
+- [ ] `marketplace.json` shows version `2.12.0`
+- [ ] Git log confirms correct commit order and conventional commit format
 
-- The architecture defines 11 components across 4 phases with explicit exit criteria per phase
-- One large PR would be ~2000+ lines touching scripts, JSON data, markdown prompts, and hooks — unreviewable
-- Sequential PRs let each phase be validated independently (Phase 0's exit criteria: "All BRE condition tests pass against extracted module")
-- If Phase 2 reveals a design issue, we haven't yet modified SKILL.md (Phase 3) — easier to course-correct
+### 5.2 Structural Verification
 
-### 5.3 PR Review Checklist (All Phases)
+- [ ] Load `delivery-team:delivery-flow` skill -- confirm it loads without errors
+- [ ] Spot-check each modified file is readable and well-formed:
+  - `pipeline-stages.md`: Step numbering is sequential in Stages 5, 6, and 7
+  - `quality-gates.md`: Gates 3, 5, 6, 7 have new criteria in correct positions
+  - `artifact-contracts.md`: Stage 6->7 contract table has new row
+  - `project-templates.md`: Sprint Plan Mandatory Sections present at end
+  - `quality/SKILL.md`: Shared-Module Review Protocol in correct section order
 
-Each PR must include:
+### 5.3 Functional Verification (first pipeline run post-merge)
 
-- [ ] All new Python scripts run without errors: `python <script> --help` (or `--dry-run`)
-- [ ] No external dependencies added (stdlib only)
-- [ ] JSON files are valid: `python -m json.tool <file>.json`
-- [ ] Exit criteria from architecture Section 8 are met
-- [ ] `rules.enabled: false` bypass path tested (PR-2 onward)
+On the first pipeline run after merge, observe:
+- [ ] Phantom reference WARNING fires at Design stage (Gate 3)
+- [ ] Filename reconciliation gate checked at Dev entry (Stage 6)
+- [ ] Matrix validation step executes at Plan stage (Stage 5)
+- [ ] Shared-module review checkpoint present at UAT (Stage 7)
+- [ ] Empirical-items classification required at UAT (Gate 7)
+- [ ] Derived artifact regeneration step present at Dev DoD (Stage 6)
+- [ ] No regressions in Idea, Refine, or Architect stages
 
----
+### 5.4 Monitoring (3-sprint window)
 
-## 6. JSON Rules Versioning
+Track over the next 3 pipeline runs:
+- First-try pass rate at Design, Plan, Dev, and UAT gates (target: measurable improvement over pre-hardening baseline)
+- False positive rate on phantom reference detection (target: <10%)
+- Pipeline throughput (target: no significant increase in stage duration)
 
-### 6.1 Version Field
-
-Each JSON rule file includes a `"version": "1.0"` field at the top level. This is a documentation version, not a runtime-enforced schema version.
-
-### 6.2 Update Strategy
-
-Rule files are plugin code, not user data. They update when users pull from `main`. There is no merge conflict risk because users never edit these files — user customization goes in `.delivery/config.yml` (Layer 3) which is git-ignored per project.
-
-**Version bump policy**:
-- Patch (1.0 -> 1.1): Adding new rules, adjusting weights/thresholds
-- Minor (1.0 -> 2.0): Changing rule IDs, removing rules, changing condition structure
-- Breaking changes require a migration note in the PR description and a `check_config.py` warning
-
-### 6.3 Preset Stability
-
-Presets (`solo.json`, `standard.json`, `strict.json`) define the user-facing behavior contract. Changes to presets are user-visible behavior changes and must be:
-
-1. Documented in the PR description with before/after `--dry-run --compare` output
-2. Called out in release notes (version bump changelog)
-3. Announced with a `check_config.py` informational message on first session after update
+If pass rates do not improve after 3 runs, revisit gate severity levels per PRD risk table.
 
 ---
 
-## 7. Deployment Sequence (The Road There and Back Again)
+## 6. Pre-Merge Checklist
 
-### 7.1 Phase 0 — The Foundation Stone
+Before the PR is approved for merge:
 
-```
-1. Create branch: feature/rules-engine-phase-0
-2. Implement condition_evaluator.py (extracted from BRE)
-3. Author routing-decision-spec.md (PO deliverable)
-4. Validate: python condition_evaluator.py (unit-level verification)
-5. PR-1 -> main, merge after review
-```
-
-**Rollback**: Delete the file. Nothing depends on it yet.
-
-### 7.2 Phase 1 — The Main Road
-
-```
-1. Create branch: feature/rules-engine-phase-1 (from post-Phase-0 main)
-2. Implement C2 (adapter), C3 (yaml_to_rules), C4 (evaluate_rules CLI)
-3. Author routing.json + 3 preset JSONs
-4. Add rules.enabled feature flag to evaluate_rules.py
-5. Validate:
-   - python evaluate_rules.py --dry-run --context test-context.json --rules-dir rules/
-   - 10 identical runs produce byte-identical output (determinism check)
-   - rules.enabled: false produces bypassed response
-6. PR-2 -> main, merge after review
-```
-
-**Rollback**: `rules.enabled: false` or delete scripts + JSON directory.
-
-### 7.3 Phase 2 — The Deep Places
-
-```
-1. Create branch: feature/rules-engine-phase-2 (from post-Phase-1 main)
-2. Author dod-gates.json, escalation.json, collaboration.json
-3. Bump config-schema.md to v2.4, add rules.* keys
-4. Update check_config.py for v2.3->v2.4 migration messaging
-5. Implement audit trail in evaluate_rules.py
-6. Regenerate JSON schema via generate-schema.py
-7. Validate:
-   - Gate evaluations return correct decisions
-   - Escalation rules trigger at correct thresholds
-   - check_config.py prints migration message for v2.3 configs
-   - Audit JSONL written correctly
-8. PR-3 -> main, merge after review
-```
-
-**Rollback**: `rules.enabled: false`. Config v2.4 is backward-compatible; v2.3 configs still work.
-
-### 7.4 Phase 3 — There and Back Again
-
-```
-1. Create branch: feature/rules-engine-phase-3 (from post-Phase-2 main)
-2. Update SKILL.md with Rules Engine Invocation Protocol
-3. Extend setup-wizard.md with W-15, W-16, W-17
-4. Update quality-gates.md preamble
-5. DOGFOODING: Run a real pipeline through delivery-flow using the rules engine
-6. Capture dogfooding results as validation evidence
-7. Validate:
-   - Full pipeline run completes with rules engine active
-   - rules.enabled: false reverts to pre-rules behavior
-   - Setup wizard writes correct rules.* config
-8. PR-4 -> main, merge after review
-9. Bump version (2.10.1 -> 2.11.0 — this is a feature, not a patch)
-```
-
-**Rollback**: Level 1 (config flag) or Level 2 (revert SKILL.md).
+- [ ] All 5 stories implemented (Steps 2-6 of sprint plan)
+- [ ] Cross-story verification pass complete (Step 7)
+- [ ] Dogfooding BUG_FIX pipeline passed (Step 8 -- P0 gate)
+- [ ] `plugin-dev:skill-development` was loaded before file edits
+- [ ] Version bumped to 2.12.0
+- [ ] PR references PRD v1.1 and retros c8f2, k4m9
+- [ ] No files outside the 5 target files were modified (besides marketplace.json for version bump)
 
 ---
 
-## 8. Post-Deployment Monitoring
-
-There is no telemetry, no logging service, no uptime monitor. This is a local plugin. "Monitoring" means:
-
-1. **Audit trail review**: After each pipeline run, check `.delivery/audit/audit-<id>.jsonl` for unexpected decisions
-2. **Determinism check**: Periodically run `evaluate_rules.py --dry-run` and diff against previous output
-3. **User feedback**: GitHub issues on the plugin repo
-4. **Self-improvement loop**: The delivery-flow pipeline already has a defect tracking system that triggers plugin self-improvement PRs — rules engine bugs flow through this existing mechanism
-
----
-
-## 9. Version Bump Plan
-
-| Merge Event | Version | Rationale |
-|------------|---------|-----------|
-| PR-1 (Phase 0) | No bump | Internal extraction, no user-facing change |
-| PR-2 (Phase 1) | No bump | New scripts exist but nothing invokes them yet |
-| PR-3 (Phase 2) | No bump | Config schema updated but backward-compatible |
-| PR-4 (Phase 3) | 2.11.0 | User-facing behavior change: rules engine active in pipeline |
-
-Single version bump at the end. Users who pull mid-implementation get inert files that do nothing until Phase 3 lands.
-
----
-
-## 10. Summary
-
-The road is long, but we take it one step at a time. The key decisions:
-
-1. **Zero-friction migration**: v2.3 configs work unchanged. Defaults match current behavior.
-2. **One-line rollback**: `rules.enabled: false` disables everything instantly.
-3. **Sequential PRs**: 4 PRs matching 4 architecture phases. Each independently reviewable and revertable.
-4. **No build step**: Python stdlib only. `git pull` is the deployment.
-5. **Presets are the UX**: Solo developers write 2 lines of config. Power users get 4 layers of customization.
-
-Now, Mr. Frodo, the road goes ever on — but at least we know where it leads.
+*"There's some good in this world, Mr. Frodo, and it's worth fighting for." These gates protect the good work this team does. Five stories, five commits, one clean merge to main. Steady as she goes -- that is how we carry the pipeline home.*

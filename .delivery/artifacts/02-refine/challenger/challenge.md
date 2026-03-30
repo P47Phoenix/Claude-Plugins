@@ -1,193 +1,148 @@
-# Adversarial Review: Rules Engine Integration PRD v2.0
+# Adversarial Challenge: Stage Health Hardening PRD
 
-**Reviewer**: Challenger
-**Date**: 2026-03-28
-**PRD Version**: 2.0
-**Previous Review**: v1.0 (3 critical, 8 high/medium -- all resolved or addressed in v2.0)
-**Status**: Complete
-
----
-
-## Prior Challenge Resolution Assessment
-
-Before stress-testing new content, confirming the v1.0 critical findings are genuinely resolved:
-
-| v1.0 Challenge | Status | How Resolved |
-|----------------|--------|-------------|
-| Challenge 1: BRE coupling deeper than admitted | **Resolved.** | FR-01 now calls for line-by-line audit. FR-02 explicitly states "partial rewrite, not a thin wrapper." Phase 0 added for extraction. Dependencies table is honest about what is reusable vs. must rebuild. |
-| Challenge 2: Untestable "match current behavior" | **Resolved.** | FR-18 introduces the Routing Decision Specification as the normative reference. NFR-04 says defaults match the specification, not observed AI behavior. PO sign-off required before implementation. |
-| Challenge 3: Undefined determinism boundary | **Resolved.** | Section 5 (Determinism Boundary) classifies every decision point into categories (a)/(b)/(c). Honest about hybrid decisions. Strict mode eliminates category (c) for routing. Audit trail tags every decision with its category. |
-| Challenge 5: Skip vs. light contradiction | **Resolved.** | US-06 AC-4 now says "no stages are executed at depth less than light." FR-15 says "Light means reduced depth, never skipped." No more skip language. |
-
-All three critical and the high-severity contradiction are resolved. The PRD v2.0 is substantively stronger. The remaining v1.0 medium/low challenges (tamper-evidence, rule versioning, unmeasurable metrics, dry-run mode, AI fallback in default mode) are partially addressed or acknowledged as open questions.
+**Challenger**: QA Engineer (Devil's Advocate)
+**Date**: 2026-03-29
+**PRD**: Stage Health Hardening v1.0
+**Confidence Rating**: 3 / 5
 
 ---
 
-## Challenge 1: 4-Layer Resolution -- The Layer 4 Parsing Trap
+## Challenge 1: The 50% to 80% Design Target Relies on a Single Mechanism
 
-**Target**: DD2 (4-layer resolution), OQ-3 (Layer 4 parsing)
+**Claim challenged**: G1 assumes Design first-try pass rate jumps from 50% to >=80% by elevating phantom references to blocking severity (FR-05) and adding a Dev-entry reconciliation gate (FR-06).
 
-**Challenge**: Layer 4 (per-run natural language override) is the weakest link in an otherwise sound resolution system. The PRD acknowledges this in OQ-3 ("inherently an AI task") and wisely disables it in strict mode. But in default and solo modes, Layer 4 is active, and the parsing is best-effort AI interpretation.
+**Problem**: The PRD's own evidence says the Design stage has a 50% pass rate with a sample size of 6 attempts across 3 runs. That is extremely thin data. A single additional pass or fail swings the rate by ~17 percentage points. The baseline is statistically unreliable.
 
-The edge case: a user says "run this lighter" and the AI maps it to `rules.preset: solo` -- overriding their carefully configured Layer 3 per-repo rules. Layer 4 is last-writer-wins, meaning a vague natural language command can silently replace specific, deliberate Layer 3 configuration. The user set `rules.pass_threshold.development: 95` in their config (Layer 3), then casually says "keep it light" and the AI wipes their development threshold by applying the solo preset at Layer 4. The audit trail logs the override, but the damage is done.
+More critically, FR-05 elevates phantom references to blocking -- but phantom references are only *one* root cause of Design failures. The PRD does not demonstrate that phantom references account for enough of the failures to close the 30pp gap. If even one Design failure in those 6 attempts was caused by something other than phantom references (e.g., incomplete user flows, missing edge cases -- which are existing Gate 3 blocking criteria), FR-05 alone cannot reach 80%.
 
-Worse: Layer 4 overrides are transient and not persisted, so there is no config diff to review. The user may not even realize their Layer 3 rules were overridden until they inspect the audit log after a gate passed that should not have.
+FR-06 is a *Dev-entry* gate, not a Design gate. It catches phantom references that survive past Design into Development. It does not improve Design's own first-try pass rate -- it prevents downstream damage. The PRD conflates "catching phantoms at Dev entry" with "Design passing on first try."
 
-**Risk**: Solo and default mode users -- the majority segment -- get surprising layer interactions that undermine trust in the very configurability the system promises.
+**Verdict**: The target is aspirational but undersupported. The causal chain from FR-05/FR-06 to a 30pp improvement is not established.
 
-**Severity**: High
-
-**Recommendation**: Layer 4 should apply granular overrides only, never preset-level overrides. If the AI parses "run this lighter," it should adjust specific thresholds, not swap the entire preset. Alternatively, Layer 4 should only be additive (can tighten rules, not relax them) unless the user uses explicit syntax. Add a confirmation prompt when Layer 4 would override Layer 3 values: "This override will replace your configured development pass threshold (95) with the solo default (80). Proceed?"
+**Recommendation**: Either (a) reduce the target to >=70% for the first validation period and re-evaluate after 5 runs, or (b) add explicit evidence from retrospectives showing that phantom references were the root cause in at least 2 of the 3 Design failures, not merely a contributing factor.
 
 ---
 
-## Challenge 2: Translation Layer -- The Silent Corruption Vector
+## Challenge 2: OQ-1 (Planned vs. Phantom Files) Is Higher Risk Than Rated
 
-**Target**: DD1 (hybrid format), FR-10, US-13
+**Claim challenged**: The QA evaluation rates OQ-1 as non-blocking, with a default of "treat all missing files as phantom."
 
-**Challenge**: The YAML-to-JSON translation layer (`yaml_to_rules.py`) is a new, critical-path component with a dangerous failure mode: silent data corruption. The PRD correctly identifies YAML type coercion as a risk (US-13 AC-4 logs warnings), but the mitigation is insufficient for three reasons:
+**Problem**: This default is actively harmful. In a GREENFIELD or FEATURE project, the Design stage *routinely* references files that do not yet exist -- they are planned artifacts to be created in Development. Under the "treat all missing as phantom" default:
 
-1. **The translation layer cannot parse YAML itself.** NFR-07 prohibits `pyyaml`. The PRD says the orchestrator parses YAML and passes structured data to the translation layer. But how does the orchestrator parse YAML? It is an AI agent reading a YAML file. The AI's YAML parsing is itself non-deterministic -- it might or might not notice that `3.10` becomes `3.1` or that `no` becomes `false`. The type coercion detection in US-13 AC-4 assumes the translation layer receives both the raw string and the coerced value, but if the AI already coerced it during parsing, the translation layer has no raw value to compare against.
+- FR-05 would block Design completion on every GREENFIELD project that references files to be created.
+- FR-06 would block Dev entry on every project where Design and Architect stages plan new files.
 
-2. **Warning is not sufficient for gate rules.** If YAML coercion silently changes a pass threshold from `3.10` to `3.1` (or a validator name from `no` to `false`), a warning logged after the fact does not prevent a wrong gate decision. Priya specifically flagged this: "coerced value in a gate rule is a compliance incident." The persona validation report recommends promoting warnings to errors in strict mode -- the PRD does not yet incorporate this.
+This is not an edge case. It is the common case for the two most frequent project types. The PRD acknowledges this risk in Section 7 (Risk: "phantom reference elevation blocks stages on false positives"), rates it Low likelihood, and claims FR-06 "runs at Dev entry, giving teams Design+Architect stages to establish file paths." But FR-05 runs at *Design DoD* -- before Architect even starts. Planned files will not exist yet at that point.
 
-3. **No round-trip verification.** The PRD does not require that the translation layer verify its output against the original intent. A simple round-trip test (translate YAML to JSON, then back, check equivalence) would catch coercion errors before they reach the engine. This is absent.
+**Verdict**: OQ-1 should be resolved before leaving Refine. The "treat all as phantom" default will cause false-positive blocking on the majority of pipeline runs.
 
-**Risk**: The translation layer becomes the single point of failure for configuration correctness. A subtle type coercion bug in the translation layer produces wrong gate decisions with full confidence and a clean audit trail -- the worst kind of failure because it looks correct.
-
-**Severity**: Critical
-
-**Recommendation**: Three actions. (1) Add FR or AC requiring strict mode to promote YAML coercion warnings to hard errors (per Priya's feedback in persona validation). (2) Define explicitly how the orchestrator reads YAML without `pyyaml` -- if it is AI-parsed, acknowledge that the YAML-to-structured-data step is category (c) non-deterministic and add it to the Determinism Boundary table. (3) Add a validation step to the translation layer that checks all rule values against expected types defined in the rule schema (e.g., pass thresholds must be numeric, validator names must be strings matching a known set).
+**Recommendation**: FR-05 needs a mechanism to distinguish planned files from phantom files. Options: (a) require Design artifacts to annotate planned-but-not-yet-existing paths with a marker (e.g., `[PLANNED]`), (b) only flag phantom references for *existing* files that have been renamed or moved, or (c) limit FR-05 severity to WARNING and reserve BLOCKING for FR-06 at Dev entry where files should actually exist. Option (c) is simplest and avoids Design-stage false positives entirely.
 
 ---
 
-## Challenge 3: Preset Coverage Gap -- The "Standard" Trap
+## Challenge 3: Shared-Module Definition Ambiguity (OQ-2) Creates Enforcement Gaps
 
-**Target**: DD2 (preset profiles), FR-07, persona validation
+**Claim challenged**: FR-01 defines shared modules as "a file imported by 2+ other modules" but OQ-2 asks whether this should be directory-based instead.
 
-**Challenge**: Three presets (solo/standard/strict) map to three archetypes (Sarah/Marcus/Priya+Chen). But the persona interviews reveal that Marcus actually lives between standard and strict. He wants `standard` defaults but with `rules.pass_threshold.development: 95` for his API repo and security validator on the payments module. Priya wants strict but with custom compliance validators added. Jake does not map to any preset -- he wants solo + GAME_DEV routing, which the PRD handles through project type, not preset.
+**Problem**: The "imported by 2+ other modules" definition requires the QA sub-agent to perform cross-file import analysis at UAT time. This is:
 
-The real gap is Marcus's team. Standard is too loose for their core API. Strict is too heavy for their internal tools. Marcus will use standard + heavy Layer 3 customization, which means the "standard" preset provides almost no value to him -- it is just a starting point he immediately overrides. The preset system promises "one setting, predictable behavior" (Sarah's magic wand) but delivers "one setting + 15 lines of YAML overrides" for the team lead segment.
+1. **Language-dependent** -- import syntax varies across the 14 supported languages. Python uses `import/from`, TypeScript uses `import/require`, Go uses package paths, Rust uses `use/mod`. The QA agent would need language-aware static analysis.
+2. **Fragile for markdown-only repos** -- this repository (Claude-Plugins) is almost entirely markdown. The concept of "imported by 2+ modules" does not map cleanly to markdown files that reference each other via file paths rather than language-level imports.
+3. **Not enforceable via markdown changes alone** -- NFR-01 says "no new Python scripts or external dependencies." But reliably detecting shared modules requires tooling, not just a checklist item.
 
-This is not a blocking issue, but it reveals that "standard" is trying to be the default for too many segments. The gap between standard and strict is wider than the gap between solo and standard.
+The PRD's own scope is markdown-only changes (NFR-01), yet FR-01's acceptance criteria assume the QA agent can determine import graphs. This is a scope/feasibility tension.
 
-**Risk**: The team lead segment -- the highest-pain, highest-enthusiasm adopter (Marcus, 5/5 priority) -- gets the least value from presets and the most configuration burden. If Marcus's experience is "I set standard and then override everything," the preset promise rings hollow.
+**Verdict**: The shared-module definition needs to be concrete and enforceable within the markdown-only constraint.
 
-**Severity**: Medium
-
-**Recommendation**: Consider whether a 4th preset (e.g., "team" positioned between standard and strict -- adds security validator to critical stages, raises thresholds for core services, but does not require full ceremony on all stages) would reduce Layer 3 burden for the team lead segment. Alternatively, acknowledge in the PRD that standard is a starting point for team leads, not a complete configuration, and provide documented example configs for common team patterns (e.g., "standard + elevated API quality" example in config-schema.md v2.4).
-
----
-
-## Challenge 4: Wizard Integration -- The 13-Question Threshold
-
-**Target**: DD3, FR-17, persona validation
-
-**Challenge**: The existing wizard has 10 questions. Adding 3 makes 13. Sarah said "three questions is fine." Jake said "three questions is fine." But both are reacting to the 3 new questions in isolation, not the cumulative 13-question experience. No persona was asked: "How do you feel about a 13-question setup wizard?"
-
-The conditional display on W-12 (hidden unless the user selects "customize" or confidence is low) mitigates this somewhat -- in the best case, solo users answer 12 questions (W-12 hidden). But Priya said her team would never use the wizard for production setup. Marcus did not raise concerns about wizard length because his team lead workflow is config-template-based.
-
-The risk is not that 13 questions is objectively too many -- it is that the wizard's value proposition degrades with length. The first 10 questions configure the pipeline. The next 3 configure the rules engine. A new user does not know what a "rule profile" or "escalation sensitivity" is at setup time. They have not used the pipeline yet. They are making configuration decisions without context.
-
-**Risk**: New users pick defaults on W-11/W-12/W-13 without understanding the implications, then later discover their rule configuration is wrong and have to manually edit config.yml anyway -- defeating the wizard's purpose.
-
-**Severity**: Low
-
-**Recommendation**: This is acceptable as-is with one enhancement: W-11 auto-detection from Q3 (already specified) combined with a "skip rules setup (use recommended defaults)" meta-option at W-11 that bypasses W-11/W-12/W-13 entirely. Users who want to get started fast can defer rules configuration to when they understand the system better. The wizard writes `rules.preset: {auto-detected}` silently. This reduces the worst-case to 10 questions for first-time users.
+**Recommendation**: Define "shared module" as: a file that is explicitly referenced (by path or name) in 2+ stage artifacts across the current pipeline run. This makes it artifact-traceable rather than code-dependency-traceable, and the QA agent can verify it using Glob/Read on the artifact directory.
 
 ---
 
-## Challenge 5: Dry-Run Mode -- The Highest-Severity User Gap
+## Challenge 4: Regression Risk in Gate 5 (Plan Readiness) -- Contradictory Capacity Thresholds
 
-**Target**: Persona validation synthesis, FR-11
+**Claim challenged**: FR-10 adds a >100% allocation warning to the Plan stage.
 
-**Challenge**: The persona validation report identifies dry-run mode as the highest-severity gap, raised independently by Sarah (preview before committing) and Chen (CI/CD validation). The PRD mentions `--compare` in the risks section for migration purposes but does not include a general-purpose `--dry-run` flag in FR-11 or any user story.
+**Problem**: Gate 5 already has a blocking criterion: "Commitment does not exceed 80% of available capacity [blocking]." This is in the current `quality-gates.md` (line 180 in pipeline-stages.md). FR-10 adds a *warning* at >100% allocation.
 
-This is not a nice-to-have. Chen needs `--dry-run` for CI/CD pre-merge validation -- a use case that is explicitly enabled by this PRD (Section 9 item 6 acknowledges CI/CD integration as a fast-follow). If `--dry-run` ships as a fast-follow rather than with the initial release, Chen's CI/CD integration is blocked until the follow-up, which defeats the purpose of making the rules engine the foundation for CI/CD.
+These two criteria are contradictory:
+- Existing Gate 5: >80% is BLOCKING (hard stop).
+- FR-10: >100% is WARNING (acknowledged override allowed).
 
-Sarah needs dry-run to build trust. She switched from 3/5 to 4/5 priority precisely because deterministic routing lets her predict behavior. But prediction requires a preview mechanism. Without `--dry-run`, Sarah's only option is to run the full pipeline and hope -- which is her current frustration.
+If the existing 80% blocking criterion stays, FR-10's 100% warning is unreachable -- you cannot be at >100% if you are already blocked at >80%. If the intent is to *replace* the 80% criterion with the softer 100% warning, that is a regression in an existing gate.
 
-**Risk**: The two personas who increased priority (Sarah 3->4, Jake 3->4) did so based on predictability. Dry-run is the predictability interface. Without it, the rules engine delivers determinism that users cannot easily observe before committing to a run.
+The PRD does not address this conflict. Neither does the QA evaluation.
 
-**Severity**: High
+**Verdict**: This is a specification conflict that will cause implementation confusion or a silent regression in Plan stage rigor.
 
-**Recommendation**: Add `--dry-run` to FR-11 as a Must Have. The evaluation script already outputs JSON to stdout -- `--dry-run` simply skips pipeline execution after outputting the routing/gate decision. Minimal additional implementation effort (it is a flag that prevents side effects after evaluation). Add a user story: "As a developer, I want to preview what the rules engine would decide for my project before running the pipeline, so that I can validate my configuration and predict pipeline duration." This is low-effort, high-impact, and directly addresses the top user gap from persona validation.
-
----
-
-## Challenge 6: Scope Realism -- 18 FRs, 15 Stories, 4 Phases
-
-**Target**: Section 11 (Timeline), Sections 6-7
-
-**Challenge**: The PRD specifies 18 functional requirements, 15 user stories, 8 non-functional requirements, and 4 open questions, organized across 4 phases (0 through 3). This is a substantial scope. Let me stress-test the phase boundaries:
-
-**Phase 0** (FR-01, FR-18) is well-scoped -- extraction and specification. Low risk.
-
-**Phase 1** (FR-02, FR-03, FR-05, FR-10, FR-11, FR-15) is the heaviest phase: adapter layer, routing rules for all 126 combinations (6 types x 7 stages x 3 risk tolerances), context serialization, translation layer, evaluation script, and depth selection. FR-03 alone (encoding 126 routing combinations as JSON rules) is a significant authoring effort. FR-10 (translation layer) is a new, critical-path component with the coercion risks identified in Challenge 2. Phase 1 has 6 FRs and is the foundation for everything else.
-
-**Phase 2** (FR-04, FR-08, FR-09, FR-12, FR-14, FR-16) is also 6 FRs, including DoD gate rules for all 7 pipeline stages with per-validator granularity (FR-04) and config schema extension (FR-12).
-
-**Phase 3** (FR-06, FR-07, FR-13, FR-17) looks lighter but includes SKILL.md integration (FR-13) -- which is arguably the highest-risk FR because it changes how the orchestrator itself operates -- and the dogfooding run (US-10), which is a full pipeline execution that may surface integration issues.
-
-The concern is not that any single FR is unreasonable, but that:
-- Phase 1 and Phase 2 each carry 6 FRs with no explicit prioritization within the phase.
-- FR-13 (SKILL.md integration) in Phase 3 is the actual "make it work end-to-end" FR. If Phases 1-2 slip, Phase 3 (where the system actually becomes usable) gets compressed.
-- The 4 open questions (OQ-1 through OQ-4) all need resolution by Phase 1 or Phase 2 start. If decisions stall, phases stall.
-
-**Risk**: Phase 1 takes longer than expected (FR-03's 126-combination matrix, FR-10's coercion edge cases), Phase 2 gets compressed, Phase 3 (where users actually see value) is rushed, and the dogfooding run (US-10) becomes a checkbox rather than genuine validation.
-
-**Severity**: Medium
-
-**Recommendation**: The scope is achievable but has no slack. Three mitigations: (1) Resolve OQ-1 through OQ-4 before Phase 0 ends, not at Phase 1/2 start. (2) Within Phase 1, identify FR-03 (126 routing combinations) as the long pole and consider whether the Routing Decision Specification (FR-18 in Phase 0) can pre-generate the JSON rule structure to reduce Phase 1 authoring effort. (3) Add an explicit "integration checkpoint" between Phase 2 and Phase 3 where FR-11 (evaluation script) is tested end-to-end with FR-02 (adapter), FR-03 (routing), and FR-04 (DoD gates) before SKILL.md integration begins -- catching integration issues early rather than during the dogfooding run.
+**Recommendation**: Explicitly state the relationship between the existing 80% blocking criterion and the new 100% warning. Options: (a) keep the 80% block and remove FR-10 as redundant, (b) replace the 80% block with the 100% warning (and document this as a deliberate relaxation with rationale), or (c) layer them: 80% emits a warning, 100% blocks. The PRD must choose.
 
 ---
 
-## Challenges Not Raised (Considered but Not Escalated)
+## Challenge 5: NFR-04 Token Budget Claim Is Unverifiable at PRD Time
 
-| Topic | Why Not Escalated |
-|-------|-------------------|
-| Audit log tamper-evidence (v1.0 Challenge 6) | Still absent from the PRD, but Priya's persona validation does not re-raise it as blocking. Acceptable as a fast-follow for enterprise hardening. |
-| Rule definition versioning (v1.0 Challenge 7) | Still absent. Rules are version-controlled via git, which provides implicit versioning. Formal rule versioning is a real concern but acceptable for v1. |
-| AI fallback option in default mode (v1.0 Challenge 10) | US-11 AC-3 still offers "Skip this gate (AI evaluation)" in non-strict mode. Chen warned against it. However, it is user-initiated and logged, which is an acceptable compromise for non-strict mode. |
-| Sub-200ms routing performance target | Jake requested sub-200ms. NFR-01 says sub-500ms. The risks section mentions sub-200ms as a target for routing specifically. Not escalated because the risks section already acknowledges it and the benchmark requirement in Phase 1 will surface issues early. |
-| Audit log JSON Schema definition | Priya requested it. Not in the PRD. Low effort to add but not blocking -- the field list in FR-06 is sufficient for implementation. Schema can be derived from implementation. |
+**Claim challenged**: NFR-04 says added content should not increase per-stage context load by more than 500 tokens.
 
----
+**Problem**: The PRD modifies 5 files across 4 stages. Each file gets additions from multiple FRs. The token impact depends on how much markdown is actually added -- which is an implementation-time concern, not a PRD-time concern. There is no way to verify NFR-04 at the Refine stage. It is also unclear whether the 500-token budget is per-file, per-stage, or per-pipeline-run.
 
-## Overall Assessment
+This NFR is well-intentioned but unenforceable without implementation, making it a toothless gate criterion.
 
-### What PRD v2.0 Gets Right That v1.0 Did Not
+**Verdict**: Minor concern. The NFR should clarify "per-stage" vs. "per-file" and be validated at Dev/UAT, not treated as a Refine-stage constraint.
 
-1. **Determinism Boundary (Section 5)** is the standout improvement. Honest, detailed, and auditor-friendly. The category (a)/(b)/(c) classification is exactly what was missing.
-2. **Phase 0 extraction** (FR-01 + FR-18) front-loads the two highest-risk activities. Smart phasing.
-3. **Routing Decision Specification** (FR-18) replaces the untestable "match current behavior" with a normative reference. This was the most important fix.
-4. **BRE reuse honesty** -- FR-02 now says "partial rewrite, not a thin wrapper." The dependencies table quantifies what is reusable vs. what must rebuild. No more hidden effort.
-5. **Persona validation** is thorough. 5 personas, 2 rounds, concern resolution tracking. The PRD is grounded in real user needs.
-
-### What Needs Work Before Design
-
-1. **Translation layer YAML parsing chain** (Challenge 2) -- the orchestrator's AI-based YAML parsing is a category (c) non-deterministic step not acknowledged in the Determinism Boundary. Strict mode needs coercion-as-error.
-2. **Dry-run mode** (Challenge 5) -- highest-severity gap from persona validation, low implementation cost, should be promoted to Must Have in FR-11.
-3. **Layer 4 override scope** (Challenge 1) -- transient natural language overrides that silently replace deliberate Layer 3 config are a trust risk.
-
-### What Is Acceptable As-Is
-
-- Preset coverage gap (Challenge 3) -- solvable with documented example configs, does not need a 4th preset.
-- Wizard length (Challenge 4) -- 13 questions is fine with the auto-detection and conditional display already specified.
-- Scope realism (Challenge 6) -- achievable with the mitigations recommended. No single FR is unreasonable.
+**Recommendation**: Clarify that NFR-04 means "per-stage" (total new content loaded for any single stage does not exceed 500 tokens). Validation deferred to Dev stage DoD where actual line counts can be measured.
 
 ---
 
-## Confidence Rating: 4 / 5
+## Challenge 6: Missing Edge Case -- Light Mode Stages
 
-**PRD is strong with targeted gaps to close before design.**
+**Claim challenged**: The PRD addresses standard pipeline flow but does not account for Light Mode.
 
-PRD v2.0 is a significant improvement over v1.0. The three critical findings from v1.0 are all resolved. The Determinism Boundary, Routing Decision Specification, and honest BRE sizing give the team a solid foundation for implementation.
+**Problem**: Pipeline-stages.md defines Light Mode for BUG_FIX and DOCS_ONLY project types (visible in Stage 5 Light Mode section). Light Mode skips consensus protocol and adversarial review, and reduces Plan to a minimal plan. The PRD's FR-07/FR-08/FR-09/FR-10 (capacity matrix, coverage matrix) apply to Plan stage -- but in Light Mode, the SM produces a "minimal plan" not a full sprint plan.
 
-One new critical finding (Challenge 2: translation layer parsing chain) and two high findings (Challenge 1: Layer 4 override scope, Challenge 5: dry-run mode) need resolution. All three are addressable within a PRD revision without architectural changes:
+Should Light Mode plans still require capacity and coverage matrices? If yes, the "minimal plan" is no longer minimal. If no, there is a bypass path that lets overcommitted plans through on BUG_FIX projects.
 
-- Challenge 2 requires adding the YAML parsing step to the Determinism Boundary and promoting coercion warnings to errors in strict mode (2-3 AC additions).
-- Challenge 5 requires adding `--dry-run` to FR-11 and one new user story (minimal spec work).
-- Challenge 1 requires scoping Layer 4 override behavior to prevent preset-level overrides (one AC addition to US-11 or DD2).
+Similarly, FR-01 (shared-module review at UAT) -- does this apply to BUG_FIX UAT? Bug fixes are arguably *more* likely to touch shared modules (fixing a bug in a shared utility) yet Light Mode may not invoke the full UAT flow.
 
-**No escalation to human required.** The PRD can proceed to design after these targeted revisions.
+**Verdict**: Light Mode exemptions are a meaningful gap in the FRs.
+
+**Recommendation**: Add a sentence per FR or a dedicated section clarifying Light Mode behavior. At minimum: FR-01 (shared-module review) should apply regardless of mode since shared-module bugs are high-risk. FR-07/FR-08 can be waived for BUG_FIX/DOCS_ONLY. FR-10 should still apply even in Light Mode since a single-story bug fix can still be overscoped.
+
+---
+
+## Challenge 7: Dogfooding Validation Creates a Circular Dependency
+
+**Claim challenged**: Section 2 states dogfooding is a P0 UAT gate -- "the hardened stages must be validated by running an actual pipeline through them."
+
+**Problem**: The dogfooding pipeline run will exercise the *modified* reference files. But the modifications are the deliverables of *this* pipeline. This means:
+
+1. Implement changes in Dev stage (Stage 6).
+2. UAT (Stage 7) requires running a pipeline with the changes.
+3. That pipeline run uses the modified gates, which may themselves have issues.
+4. If the dogfooding pipeline fails, is it a bug in the changes or a legitimate gate failure in the dogfooding project?
+
+This is not a showstopper -- it is the nature of self-referential improvement. But the PRD should acknowledge the risk of confounding and define what "dogfooding success" looks like: does the dogfooding pipeline need to complete all 7 stages, or just exercise the modified stages (Design, Plan, Dev, UAT)?
+
+**Verdict**: Minor gap. The dogfooding criterion needs a specific definition of success.
+
+**Recommendation**: Define dogfooding as: "Run a BUG_FIX pipeline that exercises at least Design, Plan, and UAT stages. The pipeline must reach completion without regressions caused by the gate changes. Failures unrelated to the gate changes (e.g., unrelated DoD findings) do not count as dogfooding failures."
+
+---
+
+## Summary of Findings
+
+| # | Area | Severity | Action Required |
+|---|------|----------|-----------------|
+| C1 | Design 50%->80% target | HIGH | Substantiate causal link or reduce target |
+| C2 | OQ-1 planned vs. phantom files | HIGH | Resolve before leaving Refine -- false-positive risk on common project types |
+| C3 | Shared-module definition | MEDIUM | Clarify definition within markdown-only constraint |
+| C4 | Gate 5 capacity contradiction | HIGH | Resolve 80% blocking vs. 100% warning conflict |
+| C5 | NFR-04 token budget | LOW | Clarify scope, defer validation to Dev |
+| C6 | Light Mode gap | MEDIUM | Specify Light Mode behavior per FR |
+| C7 | Dogfooding success criteria | LOW | Define what constitutes a successful dogfooding run |
+
+---
+
+## Confidence Rating: 3 / 5
+
+**Rationale**: The PRD is well-structured, evidence-grounded, and thoroughly traced to retrospective items. The QA evaluation caught the right things at its level. However, three issues -- the planned-vs-phantom file false positive risk (C2), the capacity threshold contradiction (C4), and the unsubstantiated Design target (C1) -- represent specification-level problems that will surface during implementation. C2 and C4 in particular could cause regressions in currently-passing stages if implemented as written.
+
+Confidence is not low enough to warrant immediate human escalation (that threshold is <=2), but the PO should address C2 and C4 before the PRD leaves Refine. C1 can be resolved by adjusting the target or providing evidence.

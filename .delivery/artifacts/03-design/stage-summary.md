@@ -1,24 +1,31 @@
-# Stage 3: Design — Summary
+## Stage 3: Design — Summary
 
-**Pipeline**: run-2026-03-28-k4m9
+**Pipeline**: run-2026-03-29-h3k7
 **Date**: 2026-03-29
 **Depth**: full
+**DoD Rounds**: 1 (first-try pass)
 
-## Agents Invoked
-
+### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
-| Galadriel (UX Designer) | Primary — UX design | DONE | 03-design/ux/ux-design.md |
+| UX Designer (Galadriel) | Primary — design specs | DONE | 03-design/ux/user-flows.md |
 
-## DoD Validation
+### Collaboration Patterns
+| Pattern | Result |
+|---------|--------|
+| Review Board (Architect) | APPROVE_WITH_NOTES — 5 minor notes, no blocks |
+| Review Board (QA) | APPROVE_WITH_NOTES — 4 low-risk notes, no blocks |
 
-| Round | Galadriel (UX) | Gandalf (PO) | Legolas (QA) | Celebrimbor (Architect) | Result |
-|-------|----------------|--------------|--------------|------------------------|--------|
-| 1 | DONE | DONE | DONE | NOT_DONE (2 blocking: state.json, wizard positioning) | FAIL |
-| 2 | — | DONE (regression) | — | DONE (fixes verified) | PASS |
+### DoD Validators
+| Validator | Status | Review |
+|-----------|--------|--------|
+| UX (Galadriel) | DONE | 03-design/dod/ux-review.md |
+| PO (Gandalf) | DONE | 03-design/dod/po-review.md |
+| QA (Legolas) | DONE | 03-design/dod/qa-review.md |
+| Architect (Celebrimbor) | DONE | 03-design/dod/architect-review.md |
 
-## Key Findings
-- Celebrimbor caught state.json→state.md filename error and wizard positioning after Q14
-- Legolas noted minor doc redundancy in audit field naming (non-blocking)
-- Gandalf noted Q5-vs-Q3 auto-detection source discrepancy with PRD (non-blocking, to reconcile)
-- Full FR traceability: 18/18 mapped (12 user-facing, 6 internal)
+### Notes
+- Design specs for all 12 FRs across 5 target files
+- 3 open questions resolved (phantom file def, shared-module def, empirical tracking format)
+- First-try pass (up from 50% historical — gate-patterns lessons applied)
+- No wireframes/component-specs needed (pipeline markdown changes, not UI)

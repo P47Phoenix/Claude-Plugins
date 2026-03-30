@@ -311,6 +311,51 @@ When returning CODE_COMPLETE, include:
 
 ---
 
+## Shared-Module Review Protocol
+
+When performing UAT validation on pipeline runs where Development modified shared modules, the QA Engineer must perform a shared-module review. This protocol applies to all project types including Light Mode (BUG_FIX, DOCS_ONLY).
+
+### Definition
+
+A **shared module** is a file that is explicitly referenced (by path or name) in 2+ stage artifacts across the current pipeline run. This is an artifact-traceable definition -- it does not require language-level import analysis.
+
+### Identification Steps
+
+1. **Scan artifacts**: Use Glob to list all files in `.delivery/artifacts/` across all stages (01 through 07).
+2. **Extract file references**: Read each artifact and collect all file paths mentioned (absolute or relative paths, including paths in code blocks, lists, and tables).
+3. **Cross-reference**: For each referenced file, count how many distinct stage directories (01-idea, 02-refine, etc.) contain artifacts that reference it.
+4. **Flag shared modules**: Any file referenced in artifacts from 2+ different stages is a shared module.
+5. **Filter to modified**: From the flagged shared modules, identify which ones were modified during the Development stage (check git diff or dev-notes artifacts).
+
+### Review Checklist
+
+For each modified shared module:
+
+- [ ] **Consuming contexts listed**: All stages/artifacts that reference this module are identified
+- [ ] **Test coverage verified**: Each consuming context has test coverage that exercises the modified module's behavior
+- [ ] **Integration impact assessed**: Changes to the shared module do not break assumptions made by consuming contexts
+- [ ] **Cross-context regression tested**: If exploratory testing sessions were run, shared-module interactions were included in the cross-story interaction charter
+
+### Output Format
+
+Document the shared-module review as a section in the UAT test plan:
+
+```
+### Shared-Module Review <!-- retro c8f2 -->
+
+**Shared modules identified**: [count]
+
+| Module Path | Stages Referencing | Modified in Dev | Test Coverage | Status |
+|---|---|---|---|---|
+| [path] | [stage list] | Yes/No | [coverage description] | PASS/FAIL/N/A |
+
+**Findings**: [any gaps or risks identified]
+```
+
+If no shared modules were modified during Development, document: "No shared modules modified -- review not applicable."
+
+---
+
 ## Sub-Agent Interface
 
 ### Input (from Product-Owner or user)

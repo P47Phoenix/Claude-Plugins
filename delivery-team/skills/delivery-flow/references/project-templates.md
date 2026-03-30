@@ -149,3 +149,42 @@ nfrs:
   - "Zero-downtime deployments"
 dod_validators: [developer, qa, architect, devops, security]
 ```
+
+---
+
+## Sprint Plan Mandatory Sections <!-- retros c8f2, k4m9 -->
+
+The following sections are mandatory in every sprint plan artifact (`.delivery/artifacts/05-plan/sm/sprint-plan.md`), regardless of project template. These extend the base sprint plan format.
+
+### Capacity Matrix Template
+
+Every sprint plan must include a capacity matrix. The SM agent populates this during Plan stage execution.
+
+```
+### Capacity Matrix <!-- retro c8f2 -->
+
+| Team Member | Role | Available Hours | Allocated Hours | Utilization % |
+|---|---|---|---|---|
+| [name/role] | [role] | [hours] | [hours] | [calculated] |
+| **Total** | -- | [sum] | [sum] | [total %] |
+
+**Utilization notes**: [any adjustments for ceremonies, PTO, known interruptions]
+```
+
+**Light Mode (BUG_FIX, DOCS_ONLY)**: Capacity matrix is WAIVED. Minimal plans for single-story fixes do not benefit from full matrix overhead.
+
+### Coverage Matrix Template
+
+Every sprint plan must include a coverage matrix mapping PRD FRs to planned tasks. The SM agent populates this during Plan stage execution.
+
+```
+### Coverage Matrix <!-- retro c8f2 -->
+
+| PRD FR-ID | FR Description (summary) | Planned Task(s) | Story ID(s) | Status |
+|---|---|---|---|---|
+| FR-01 | [brief summary] | [task description] | [US-xxx] | Mapped / Unmapped |
+
+**Unmapped FRs**: [list any FRs not covered, with justification]
+```
+
+**Light Mode (BUG_FIX, DOCS_ONLY)**: Coverage matrix is WAIVED. Minimal plans for single-story fixes do not benefit from full matrix overhead.

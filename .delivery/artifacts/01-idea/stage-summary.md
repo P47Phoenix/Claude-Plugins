@@ -1,29 +1,22 @@
-# Stage 1: Idea — Summary
+## Stage 1: Idea — Summary
 
-**Pipeline**: run-2026-03-28-k4m9
-**Date**: 2026-03-28
+**Pipeline**: run-2026-03-29-h3k7
+**Date**: 2026-03-29
 **Depth**: full
+**DoD Rounds**: 1 (first-try pass)
 
-## Agents Invoked
-
+### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
-| Product Owner | Primary — idea brief with design decisions | DONE | 01-idea/idea-brief.md |
+| PO (Gandalf) | Primary — idea brief | DONE | 01-idea/po/idea-brief.md |
 
-## DoD Validation
+### DoD Validators
+| Validator | Status | Review |
+|-----------|--------|--------|
+| PO (Gandalf) | DONE | 01-idea/dod/po-review.md |
+| Architect (Celebrimbor) | DONE | 01-idea/dod/architect-review.md |
 
-| Round | PO | Architect | Result |
-|-------|-----|-----------|--------|
-| 1 | DONE | DONE | PASS (clean) |
-
-## Design Decisions Incorporated
-
-- DD1: Hybrid JSON/YAML (JSON engine internals, YAML user config)
-- DD2: 4-layer rule resolution (plugin defaults → presets → per-repo → per-run)
-- DD3: Setup wizard +3 questions (rule profile, customizations, escalation sensitivity)
-- DD4: User requirement confirmation (defaults + per-repo customization + wizard walkthrough)
-
-## Upstream Artifacts Available
-
-- Team brainstorm: .delivery/artifacts/01a-brainstorm-features.md
-- User interviews: .delivery/artifacts/01c-user-interviews-rules-engine.md
+### Notes
+- Bundles M1-M4 retro actions: 7 changes across 6 files
+- All file references verified by Architect
+- First-try pass (improving from 67% historical)

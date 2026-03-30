@@ -1,50 +1,43 @@
-# Stage 6: Development — Summary
+## Stage 6: Development — Summary
 
-**Pipeline**: run-2026-03-28-k4m9
-**Date**: 2026-03-29
+**Pipeline**: run-2026-03-29-h3k7
+**Date**: 2026-03-30
 **Depth**: full
-**Status**: CODE_COMPLETE (structural verification passes, runtime dogfooding deferred to UAT)
+**DoD Rounds**: 1 (first-try CODE_COMPLETE)
 
-## Files Created (all net-new, no existing files modified)
+### Stories Implemented
+| Story | Size | Status | Dev Notes |
+|-------|------|--------|-----------|
+| US-01: UAT Shared-Module Review + Empirical Tracking | M | DONE | us-01-notes.md |
+| US-02: Design Phantom Ref + Filename Reconciliation | M | DONE | us-02-notes.md |
+| US-03: Design Phantom Ref Severity Elevation | S | CODE_COMPLETE | us-03-notes.md |
+| US-04: Plan Capacity + Coverage Guardrails | M | CODE_COMPLETE | us-04-notes.md |
+| US-05: Dev Derived Artifacts DoD | S | CODE_COMPLETE | us-05-notes.md |
 
-### Python Scripts (delivery-team/scripts/)
-| File | Lines | Purpose |
-|------|-------|---------|
-| condition_evaluator.py | ~200 | Pure condition evaluation logic extracted from BRE |
-| delivery_rules_adapter.py | ~350 | 4-layer resolution, routing + gate evaluation |
-| yaml_to_rules.py | ~250 | YAML→JSON translation with coercion detection |
-| evaluate_rules.py | ~300 | CLI entry point (route/gate/resolve actions) |
+### Files Modified
+- `delivery-team/skills/delivery-flow/references/quality-gates.md` — Gates 3, 5, 6, 7
+- `delivery-team/skills/delivery-flow/references/pipeline-stages.md` — Stages 6, 7
+- `delivery-team/skills/delivery-flow/SKILL.md` — Empirical tracking reference
+- `delivery-team/skills/delivery-flow/references/artifact-contracts.md` — Empirical template
+- `delivery-team/skills/delivery-flow/references/project-templates.md` — Capacity/coverage templates
+- `delivery-team/skills/quality/SKILL.md` — Shared-module review protocol
 
-### Rule Definitions (delivery-team/skills/delivery-flow/references/rules/)
-| File | Purpose |
-|------|---------|
-| stage-routing.json | 126-cell routing decision spec (6 types × 7 stages × 3 tolerances) |
-| dod-gates.json | 55 gate criteria across 7 stages |
-| escalation-rules.json | 6 triggers, 3 sensitivity profiles |
-| collaboration-patterns.json | Per-stage pattern rules |
-| presets/solo.json | Minimal ceremony preset |
-| presets/standard.json | Balanced preset |
-| presets/strict.json | Full ceremony preset |
+### DoD Validators
+| Validator | Status | Review |
+|-----------|--------|--------|
+| Developer (Gimli) | CODE_COMPLETE | 06-dev/dod/developer-review.md |
+| QA (Legolas) | CODE_COMPLETE | 06-dev/dod/qa-review.md |
+| Architect (Celebrimbor) | DONE | 06-dev/dod/architect-review.md |
+| Tech Writer (Bilbo) | DONE | 06-dev/dod/techwriter-review.md |
 
-### Design Artifacts (.delivery/artifacts/06-dev/)
-| File | Purpose |
-|------|---------|
-| dev-notes-rules-engine.md | Implementation summary |
-| config-schema-v2.4-additions.md | 12 new config keys for merge |
-| wizard-extension.md | 3 new wizard questions (W-15/16/17) |
-| skill-integration-spec.md | SKILL.md change specification |
+### Empirical Items → UAT (10 items)
+- US-03: phantom ref detection firing in live pipeline, severity level in DoD output
+- US-04: capacity threshold warning in Plan stage output, coverage matrix validation
+- US-05: derived artifact regeneration step executing, gate criterion in DoD output
+- Cross-story: no regressions in non-modified stages
 
-## Verification Status
-- condition_evaluator: smoke test PASS
-- delivery_rules_adapter: resolve + routing PASS (FEATURE/architect→light correct)
-- evaluate_rules.py: syntax check PASS
-
-## CODE_COMPLETE Items (for UAT)
-1. SKILL.md integration (needs plugin-dev skills to apply)
-2. Full pipeline dogfooding
-3. Config schema merge into config-schema.md
-4. Wizard extension merge into setup-wizard.md
-5. Preset coverage validation (all 126 routing cells)
-6. Escalation trigger validation
-7. YAML coercion detection edge cases
-8. Error handling UX (strict vs default mode)
+### Notes
+- 32 structural ACs verified by inspection
+- 0 deviations from design spec
+- All retro source annotations (c8f2, k4m9) present
+- plugin-dev:skill-development loaded before edits

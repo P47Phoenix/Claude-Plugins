@@ -135,6 +135,7 @@ Current contract version: matches `config_version` in `.delivery/config.yml`.
 | Section | Required for Next Stage | Description |
 |---------|:-----------------------:|-------------|
 | CODE_COMPLETE Items | YES | List of all items marked CODE_COMPLETE with file references |
+| Empirical Items Classification | YES | Classification of each AC as structural or empirical with justification |
 | Implementation Notes | No | Design decisions made during development, deviations from plan |
 | Known Issues | No | Issues discovered but not resolved, with severity |
 | Test Results | No | Summary of tests run and their outcomes |
@@ -186,3 +187,39 @@ The user chooses how to proceed. If they choose option 2, log the bypass in the 
 | 4 to 5 | `04-architect/solution/architecture.md` | System Design (1+ component), ADRs (1+) |
 | 5 to 6 | `05-plan/sm/sprint-plan.md` | Stories with ACs + test cases (1+) |
 | 6 to 7 | `06-dev/developer/dev-notes.md` + code | CODE_COMPLETE Items (1+) |
+
+---
+
+## Empirical-Items Tracking Template <!-- retros c8f2, k4m9 -->
+
+The empirical-items tracking is a mandatory section within the UAT test plan (`.delivery/artifacts/07-uat/qa/test-plan.md`). The QA agent populates this section during UAT execution, classifying each acceptance criterion from the PRD as either structural (verifiable by inspection/static analysis) or empirical (requires runtime validation).
+
+### Template
+
+```
+### Empirical-Items Classification <!-- retro k4m9 -->
+
+| FR/AC ID | Acceptance Criterion (summary) | Classification | Justification | Validation Method |
+|---|---|---|---|---|
+| FR-01/AC-1 | [brief summary] | structural / empirical | [why this classification] | [how to validate: inspection, test, runtime] |
+
+**Summary**:
+- Total ACs: [count]
+- Structural: [count] ([percentage]%)
+- Empirical: [count] ([percentage]%)
+
+**Empirical items requiring runtime validation**:
+1. [AC ID]: [description] -- [recommended validation approach]
+```
+
+### Classification Rules
+
+- **Structural**: Can be verified by reading code, inspecting artifacts, checking file existence, or static analysis. Examples: "section X exists in file Y", "table has columns A, B, C", "no hardcoded secrets".
+- **Empirical**: Requires running the application, executing a pipeline, observing runtime behavior, or measuring performance. Examples: "API responds in < 200ms", "UI renders correctly on mobile", "pipeline completes without error".
+
+### Integration with Pipeline
+
+- The QA agent produces this classification during UAT Step 1 (test plan creation).
+- Empirical items from Stage 6 CODE_COMPLETE carry forward as mandatory entries.
+- The UAT DoD validator checks for the presence and completeness of this section (see quality-gates.md Gate 7).
+- **Light Mode**: Applies to all project types including BUG_FIX and DOCS_ONLY.

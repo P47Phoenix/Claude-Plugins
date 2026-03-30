@@ -259,18 +259,23 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
      - SKILL: `delivery-team:operations`, TASK_TYPE: `deployment-strategy`, ROLE: `devops`
      - Input artifacts: `.delivery/artifacts/04-architect/solution/architecture.md`
      - Output: `.delivery/artifacts/05-plan/devops/deploy-plan.md`
-4. **Consensus Protocol** [PARALLEL per round, SEQUENTIAL between rounds] [required]: SM, PO, QA, DevOps independently estimate and identify risks (R1 parallel), then share and respond (R2 parallel), and converge (R3 parallel if needed). 2-3 rounds.
+4. **Matrix validation** [SEQUENTIAL after step 3] [required]: Verify the sprint plan includes both mandatory matrices:
+   - **Capacity matrix**: must be present with all team members listed, available hours > 0, utilization % calculated
+   - **Coverage matrix**: must be present with every PRD FR-ID mapped to at least one planned task; any unmapped FR causes a BLOCKING finding
+   - **Light Mode (BUG_FIX, DOCS_ONLY)**: Both matrices are WAIVED -- skip this step
+   <!-- retros c8f2, k4m9 -->
+5. **Consensus Protocol** [PARALLEL per round, SEQUENTIAL between rounds] [required]: SM, PO, QA, DevOps independently estimate and identify risks (R1 parallel), then share and respond (R2 parallel), and converge (R3 parallel if needed). 2-3 rounds.
    - R1 writes to: `.delivery/artifacts/05-plan/consensus/r1/{role}-position.md`
    - R2 writes to: `.delivery/artifacts/05-plan/consensus/r2/{role}-response.md`
    - R3 writes to: `.delivery/artifacts/05-plan/consensus/r3/{role}-final.md` (if needed)
-5. **Adversarial Review** [SEQUENTIAL after consensus] [required]: Challenger questions estimates and risk assessments
+6. **Adversarial Review** [SEQUENTIAL after consensus] [required]: Challenger questions estimates and risk assessments
    - Challenger writes to: `.delivery/artifacts/05-plan/challenger/challenge.md`
-6. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: SM (process), PO (scope), QA (coverage), DevOps (readiness)
-7. **Git branch creation** [SEQUENTIAL] (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
-8. **Human Checkpoint 3** [SEQUENTIAL]: Present sprint plan for approval
+7. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: SM (process), PO (scope), QA (coverage), DevOps (readiness)
+8. **Git branch creation** [SEQUENTIAL] (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
+9. **Human Checkpoint 3** [SEQUENTIAL]: Present sprint plan for approval
 
 ### DoD Validators [PARALLEL] -- dispatch all in a single message
-- Scrum Bag [required]: process is sound, capacity realistic
+- Scrum Bag [required]: process is sound, capacity realistic, capacity matrix present with utilization calculated, coverage matrix present with all PRD FRs mapped to at least one task. Capacity threshold enforcement: >80% utilization emits WARNING requiring acknowledgment; >100% utilization is BLOCKING <!-- retros c8f2, k4m9 -->
   - Writes to: `.delivery/artifacts/05-plan/dod/sm-review.md`
 - Product Owner [required]: scope is correct, stories are valuable
   - Writes to: `.delivery/artifacts/05-plan/dod/po-review.md`
@@ -301,6 +306,18 @@ Implement the code, write tests, and produce development documentation.
 ### Entry Conditions
 - `05-sprint-plan.md` exists if Plan stage ran
 - At minimum: user stories with acceptance criteria must exist
+- **Filename reconciliation gate** <!-- retro k4m9 -->: Before Development begins, all file paths referenced in Design (Stage 3) and Architect (Stage 4) artifacts are checked:
+  1. Use Glob/Read to extract all file paths from `.delivery/artifacts/03-design/` and `.delivery/artifacts/04-architect/` artifacts
+  2. For each referenced file path, check existence on disk using Glob
+  3. **Pass criteria**:
+     - Path exists on disk: PASS
+     - Path appears in the sprint plan's task list as a planned deliverable: PASS
+     - Path is annotated `[PLANNED]` in Design artifacts but does NOT appear in the sprint plan: FAIL
+     - Path does not exist and is not in the sprint plan: FAIL
+  4. **Any FAIL blocks Dev entry** with a list of non-existent references and their source artifacts
+  5. Resolution: either create the missing files, add them to the sprint plan as planned deliverables, or remove the references from upstream artifacts
+  - **Light Mode**: Applies to all project types including BUG_FIX and DOCS_ONLY
+  - **Note**: `[PLANNED]` annotations from Design (FR-05) are NOT accepted as exemptions at Dev entry. This is the enforcement point where all referenced files must be accounted for.
 
 ### Sub-Flow
 For each story in the sprint plan:
@@ -321,12 +338,19 @@ For each story in the sprint plan:
    - SKILL: `delivery-team:operations`, TASK_TYPE: `api-docs`, ROLE: `tech-writer`
    - Input artifacts: `.delivery/artifacts/06-dev/developer/{story-id}.md`
    - Output: `.delivery/artifacts/06-dev/tech-writer/docs.md`
-5. **Commit suggestion** [SEQUENTIAL] (if `git.commit_convention` is "conventional"): Suggest a conventional commit message based on the story type. Format: `<type>(<scope>): <description>`. Do NOT auto-commit -- present the suggestion for the user to review and execute. See `references/git-integration.md`.
-6. **Team DoD Validation per story** [PARALLEL] -- dispatch all validators in a single message: Developer (quality), QA (tests), Architect (conformance), Tech Writer (docs)
+5. **Regenerate derived artifacts** [SEQUENTIAL per story] [required]: Before Dev DoD, check if any modified source files have derived artifacts. If so:
+   1. Identify all derived artifacts (generated docs, compiled schemas, transformed configs, etc.)
+   2. Regenerate each derived artifact from its current source
+   3. Verify the regenerated artifact matches expectations (no unexpected diffs)
+   4. Document the regeneration in the story's implementation notes
+   - **Light Mode**: Applies to all project types <!-- retro c8f2 -->
+6. **Commit suggestion** [SEQUENTIAL] (if `git.commit_convention` is "conventional"): Suggest a conventional commit message based on the story type. Format: `<type>(<scope>): <description>`. Do NOT auto-commit -- present the suggestion for the user to review and execute. See `references/git-integration.md`.
+7. **Team DoD Validation per story** [PARALLEL] -- dispatch all validators in a single message: Developer (quality), QA (tests), Architect (conformance), Tech Writer (docs)
 
 ### DoD Validators (per story) [PARALLEL] -- dispatch all in a single message
-- Developer [required]: code is clean, follows language best practices
+- Developer [required]: code is clean, follows language best practices, derived artifacts regenerated from current sources <!-- retro c8f2 -->
   - Writes to: `.delivery/artifacts/06-dev/dod/{story-id}-developer-review.md`
+  - **Derived artifact check**: If the story modifies source files that have derived artifacts (e.g., generated docs, compiled schemas, transformed configs, built outputs), the developer must confirm all derived artifacts have been regenerated from current sources before marking the story complete. The DoD review must include a "Derived Artifacts" section listing: each derived artifact path, its source file(s), and regeneration status (regenerated / not applicable).
 - QA Engineer [required]: tests pass, coverage adequate
   - Writes to: `.delivery/artifacts/06-dev/dod/{story-id}-qa-review.md`
 - Architect [required]: implementation conforms to architecture decisions
@@ -385,7 +409,16 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
    - Each session has a charter, is time-boxed, and produces observation notes (not pass/fail)
    - Any bugs found are logged to `.delivery/defects/` immediately
    - See the quality skill's `references/exploratory-testing.md` for session format and heuristics
-5. **Invoke Supporting Agents** [PARALLEL] -- dispatch DevOps + Tech Writer in a single message:
+5. **Shared-module review** [SEQUENTIAL after step 4] [required] (quality skill, task_type: test-plan)
+   - **Definition**: A shared module is a file referenced by path or name in 2+ stage artifacts across the current pipeline run.
+   - **Identification**: QA agent scans `.delivery/artifacts/` using Glob/Read to collect all file path references across all stage artifacts. Any file path appearing in artifacts from 2+ different stages is flagged as a shared module.
+   - **Review**: For each shared module modified during Development, the QA agent must:
+     1. List all consuming contexts (stages/artifacts that reference the module)
+     2. Verify test coverage exists for each consuming context
+     3. Document the shared-module review results in the UAT test plan
+   - Output: Shared-module review section within `.delivery/artifacts/07-uat/qa/test-plan.md`
+   - **Light Mode**: Applies to all project types including BUG_FIX and DOCS_ONLY <!-- retro c8f2 -->
+6. **Invoke Supporting Agents** [PARALLEL] -- dispatch DevOps + Tech Writer in a single message:
    - **DevOps** [required] (operations skill, task_type: release-plan + rollback-procedure)
      - SKILL: `delivery-team:operations`, TASK_TYPE: `release-plan`, ROLE: `devops`
      - Input artifacts: `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/05-plan/devops/deploy-plan.md`
@@ -394,15 +427,15 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
      - SKILL: `delivery-team:operations`, TASK_TYPE: `release-notes`, ROLE: `tech-writer`
      - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/06-dev/developer/` (all story files)
      - Output: `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `.delivery/artifacts/07-uat/tech-writer/user-guide.md`
-6. **Working tree validation** [SEQUENTIAL] (if `git.clean_tree_check` is true): Run `git status --porcelain`. If not clean, list uncommitted changes and warn: "Working tree has uncommitted changes. Commit or stash before UAT acceptance." Do not block -- present the warning and let the user decide. See `references/git-integration.md`.
-7. **PR creation** [SEQUENTIAL] (if `github.create_pr` is true): Create a pull request using `gh pr create` with: title from sprint goal, body with change summary + stories implemented (with "Closes #N" for each linked issue) + test results from UAT report + release notes. Label by project type. Record the PR URL in the UAT report artifact. See `references/github-integration.md`.
-8. **Multi-Perspective Review Board** [PARALLEL] [required]: QA (tests) + DevOps (release readiness) + Tech Writer (docs). ALL reviewers dispatched in parallel. Go/no-go recommendation.
+7. **Working tree validation** [SEQUENTIAL] (if `git.clean_tree_check` is true): Run `git status --porcelain`. If not clean, list uncommitted changes and warn: "Working tree has uncommitted changes. Commit or stash before UAT acceptance." Do not block -- present the warning and let the user decide. See `references/git-integration.md`.
+8. **PR creation** [SEQUENTIAL] (if `github.create_pr` is true): Create a pull request using `gh pr create` with: title from sprint goal, body with change summary + stories implemented (with "Closes #N" for each linked issue) + test results from UAT report + release notes. Label by project type. Record the PR URL in the UAT report artifact. See `references/github-integration.md`.
+9. **Multi-Perspective Review Board** [PARALLEL] [required]: QA (tests) + DevOps (release readiness) + Tech Writer (docs). ALL reviewers dispatched in parallel. Go/no-go recommendation.
    - Each reviewer writes to: `.delivery/artifacts/07-uat/review-board/{role}-review.md`
-9. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
-10. **Human Checkpoint 4** [SEQUENTIAL]: Present UAT results for accept/reject
+10. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: QA (tests pass), DevOps (rollback ready), PO (acceptance), Tech Writer (docs complete)
+11. **Human Checkpoint 4** [SEQUENTIAL]: Present UAT results for accept/reject
 
 ### DoD Validators [PARALLEL] -- dispatch all in a single message
-- QA Engineer [required]: all tests pass, no critical defects
+- QA Engineer [required]: all tests pass, no critical defects, shared-module review complete (if shared modules were modified)
   - Writes to: `.delivery/artifacts/07-uat/dod/qa-review.md`
 - DevOps [required]: deployment plan complete, rollback tested/documented
   - Writes to: `.delivery/artifacts/07-uat/dod/devops-review.md`

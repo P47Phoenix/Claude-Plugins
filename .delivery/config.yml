@@ -18,7 +18,7 @@ architecture:
   style_overrides: {}
   decomposition: volatility
   decision_matrix_inputs:
-    team_size: 4
+    team_size: 1
     deploy_independence: low
     domain_complexity: high
     change_rate: high
@@ -27,13 +27,13 @@ enforcement:
   retro_frequency: every-run
   retro_skip_allowed: false
 team:
-  size: 4
+  size: 1
   composition: [po, architect, developer, qa, operations, ui, user-feedback, presentation]
 deployment:
   environment: local
   containerized: false
 timeline:
-  risk_tolerance: standard
+  risk_tolerance: mission-critical
   deadline: null
 compliance:
   frameworks: []
@@ -41,7 +41,7 @@ pipeline:
   scope: all
   scope_include: []
   scope_exclude: [".delivery/", ".git/", "node_modules/", "__pycache__/"]
-  checkpoints: [refine, uat]
+  checkpoints: [refine, architect, plan, uat]
   collaboration_patterns: [evaluator-optimizer, adversarial, review-board, debate, consensus, decision-routing]
   max_self_correction: 3
   max_dod_rounds: 3
@@ -56,10 +56,10 @@ pipeline:
   required_agent_retry_max: 2
 dod_validators:
   idea: [po, architect]
-  refine: [po, architect, qa]
-  design: [ux, po, qa, architect]
-  architect: [architect, qa, devops, security]
-  plan: [sm, po, qa, devops]
+  refine: [po, architect, developer, qa]
+  design: [ux, po, qa, developer, architect]
+  architect: [architect, qa, developer, devops, security]
+  plan: [sm, po, qa, developer, devops]
   development: [developer, qa, architect, tech-writer]
   uat: [qa, devops, po, tech-writer]
 personas:
@@ -96,4 +96,4 @@ presentation:
   marp_theme: default
   staleness_warning_days: 7
   vocabulary_overrides: {}
-wizard_completed: 2026-03-25
+wizard_completed: 2026-03-29

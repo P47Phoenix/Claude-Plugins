@@ -1,42 +1,32 @@
-# Stage 2: Refine — Summary
+## Stage 2: Refine — Summary
 
-**Pipeline**: run-2026-03-28-k4m9
-**Date**: 2026-03-28
+**Pipeline**: run-2026-03-29-h3k7
+**Date**: 2026-03-29
 **Depth**: full
+**DoD Rounds**: 1 (first-try pass after eval-opt + adversarial)
 
-## Agents Invoked
-
+### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
-| Product Owner | Primary — PRD v2.1 | DONE | 02-refine/po/prd.md |
-| Data Analyst | Supporting — metrics | DONE | 02-refine/data-analyst/metrics.md |
-| User Feedback (5 personas) | Supporting — concept validation | DONE | 02-refine/user-feedback/persona-validation.md |
+| PO (Gandalf) | Primary — PRD | DONE | 02-refine/po/prd.md (v1.1) |
+| Data Analyst (Elrond) | Metrics definition | DONE | 02-refine/data-analyst/metrics.md |
 
-## Collaboration Patterns
-
+### Collaboration Patterns
 | Pattern | Result |
 |---------|--------|
-| Evaluator-Optimizer (QA) | PASS 5/5 confidence |
-| Adversarial Review | 4/5 confidence, 3 findings (all resolved in v2.1) |
+| Evaluator-Optimizer (QA) | PASS — 0 blocking, 2 warnings, 1 suggestion |
+| Adversarial Review | Confidence 3/5 — 3 HIGH, 2 MEDIUM, 2 LOW findings |
+| PO Revision | All findings addressed in v1.1 |
 
-## DoD Validation
+### DoD Validators
+| Validator | Status | Review |
+|-----------|--------|--------|
+| PO (Gandalf) | DONE | 02-refine/dod/po-review.md |
+| Architect (Celebrimbor) | DONE | 02-refine/dod/architect-review.md |
+| QA (Legolas) | DONE | 02-refine/dod/qa-review.md |
 
-| Round | PO | Architect | QA | Result |
-|-------|-----|-----------|-----|--------|
-| 1 | DONE | DONE | DONE | PASS (clean) |
-
-## Key Signals
-
-- PRD v2.0 → v2.1: 3 adversarial findings addressed (parsing chain, L4 scope, dry-run)
-- User feedback priority: 4.6/5 (up from 4.4 in round 1)
-- 16 user stories, 18 FRs, 28 metrics
-- 4 design decisions fully reflected in requirements
-- Determinism boundary: 4 fully deterministic, 4 hybrid, 2 AI-driven decision points
-
-## Artifacts Produced
-
-- `.delivery/artifacts/02-refine/po/prd.md` — PRD v2.1
-- `.delivery/artifacts/02-refine/data-analyst/metrics.md` — 28 metrics
-- `.delivery/artifacts/02-refine/user-feedback/persona-validation.md` — 5 persona validations
-- `.delivery/artifacts/02-refine/challenger/challenge.md` — Adversarial review
-- `.delivery/artifacts/02-refine/qa-evaluator/evaluation-round-1.md` — QA evaluation
+### Notes
+- 12 FRs covering all 7 M1-M4 retro action items
+- 11 success metrics defined with baselines and targets
+- Challenger findings drove target adjustments (Design goal: 50%→70% instead of 80%)
+- First-try DoD pass (maintaining 100% Refine stage health)

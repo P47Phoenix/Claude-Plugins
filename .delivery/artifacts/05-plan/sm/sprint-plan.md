@@ -1,274 +1,322 @@
-# Sprint Plan: Deterministic Rules Engine Integration
+# Sprint Plan: Stage Health Hardening
 
-**Version**: 1.0
+**Version**: 2.0
 **Author**: Aragorn (Scrum Master)
-**Date**: 2026-03-28
+**Date**: 2026-03-29
 **Status**: Committed
-**Inputs**: Stories v1.0 (Gandalf/PO), Architecture v1.0 (Celebrimbor/Architect)
+**Inputs**: User Stories v1.0 (Gandalf/PO), PRD v1.1, SM Review v1.0
+**Project Type**: FEATURE
+**Revision Note**: v2.0 addresses capacity overcommitment finding from SM Review. Stories re-estimated to reflect markdown-only edit complexity. No scope removed; all 5 stories and 12 FRs retained.
 
 > *"I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall."*
 
 ---
 
-## Capacity Model
+## 1. Sprint Goal
+
+Harden the Design, Plan, UAT, and Dev pipeline stages with guardrails that catch phantom references, missing capacity planning, untracked empirical items, shared-module gaps, and derived artifact drift -- raising first-try pass rates and eliminating avoidable rework loops traced to retros c8f2 and k4m9.
+
+---
+
+## 2. Capacity Declaration
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| Team size | 1 developer | Single contributor model |
-| Velocity | ~40 SP/sprint | Plugin-level work: Python scripts, JSON rule files, YAML config, markdown specs |
-| Commitment cap | 80% of capacity = **32 SP** | Reserve 20% for unknowns, code review rework, and integration friction |
-| Sprint count | 4 sprints | Maps 1:1 to PRD Phases 0-3 |
+| Team size | 1 contributor (all roles) | Solo contributor model; sub-agents handle role specialization |
+| Velocity baseline | 2-3 stories/sprint (L-sized) | Based on prior FEATURE sprints in this repo |
+| 80% ceiling | 2.4L equivalent | 80% of 3L baseline |
+| Committed this sprint | 5 stories (3M + 2S = 2.0L equivalent) | Within 80% ceiling |
+| Utilization | ~83% of 80% ceiling (~67% of baseline) | Comfortable margin |
+| Ceremony/interruption budget | None (solo contributor, no PTO) | Explicitly stated per SM Review advisory |
 
-**Total backlog**: 98 story points across 19 stories.
+### Re-estimation Rationale (v2.0)
 
----
+The v1.0 plan sized stories using general FEATURE velocity assumptions. However, NFR-01 constrains ALL work in this sprint to additive markdown edits in existing reference files. No new scripts, no schema changes, no external dependencies, no new files. Each story's implementation is inserting defined text blocks at specified locations in existing documents.
 
-## Sprint 1 -- Phase 0: Foundation Extraction
+The re-estimation applies a **markdown-edit calibration**: stories whose implementation is purely additive text insertion into existing files with well-defined placement instructions are sized one tier lower than stories requiring code, schema changes, or new file creation.
 
-**Sprint Goal**: Extract the proven BRE condition evaluation logic into a standalone module and produce a PO-approved routing decision specification that serves as the single source of truth for all 126 routing cells.
+| Story | v1.0 Size | v2.0 Size | Justification |
+|-------|-----------|-----------|---------------|
+| US-01 | L | M | 3 sub-tasks, all additive text sections with exact placement (after X, before Y). No logic, no code, no file creation. |
+| US-02 | L | M | 1 table row insertion, 1 template section, 1 gate criterion. All have precise insertion points defined in ACs. Depends on US-01 context but does not increase complexity. |
+| US-03 | M | S | 2 targeted insertions: 1 warning criterion in Gate 3, 1 entry condition block in Stage 6. Both have exact placement and content defined in ACs. |
+| US-04 | L | M | Most sub-tasks (4), but all are template creation (copy-paste structure) and single-line gate criteria. Templates are tables with defined columns -- structured fill-in, not creative authoring. |
+| US-05 | S | S | Smallest story, unchanged. 2 sub-tasks: 1 validator update, 1 sub-flow step insertion, 1 gate criterion. |
 
-### Committed Stories
+**v1.0 total**: 3L + 1M + 1S = ~3.5L equivalent (117% of ceiling -- FAILED)
+**v2.0 total**: 3M + 2S = 1.5L + 0.5L = **2.0L equivalent (83% of ceiling -- PASS)**
 
-| Order | Story | Points | Rationale for Sequence |
-|-------|-------|--------|------------------------|
-| 1 | US-01: BRE Condition Evaluator Extraction | 5 | Zero dependencies. Must land first -- every Phase 1+ story depends on C1. |
-| 2 | US-02: Routing Decision Specification | 8 | No code dependency, but requires focused PO collaboration for 126-cell sign-off. Can begin in parallel with US-01 but sequenced second because US-01 is the harder technical risk to retire early. |
-
-### Capacity
-
-| Metric | Value |
-|--------|-------|
-| Committed points | 13 |
-| Capacity (80%) | 32 |
-| Utilization | 41% |
-| Buffer | 19 SP |
-
-**Why the low utilization is intentional**: Phase 0 is foundation. The condition evaluator must be proven byte-equivalent to the original BRE across all 17 test cases before anything else proceeds. The routing specification requires PO review of 126 cells with scope constraints for every "light" entry. Rushing either artifact propagates defects into all downstream phases. The buffer absorbs: (a) discovery of edge cases in the original BRE logic, (b) PO iteration cycles on the routing spec, (c) any original BRE behavior that is ambiguous and needs clarification.
-
-### Risks
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| BRE extraction reveals undocumented edge cases in condition evaluation | Medium | High -- blocks all downstream | Start US-01 first; run all 17 test cases against the original BRE *before* extracting to establish baseline |
-| PO routing spec (126 cells) requires multiple review cycles | Medium | Medium -- delays Phase 1 start | Draft the table with sensible defaults from PRD constraints; PO reviews deltas, not blank cells |
-| Original BRE behavior is inconsistent (bug in source) | Low | High -- must decide: match bug or fix | Treat original behavior as canonical per AC-6 (parallel module, not refactor). Document discrepancies for future cleanup. |
-
-### Exit Criteria
-
-- [ ] `condition_evaluator.py` passes all 17 test cases with identical results to original BRE
-- [ ] Zero SQLite imports in `condition_evaluator.py`
-- [ ] Routing Decision Specification has 126 cells, all "full" or "light", all "light" cells have scope constraints
-- [ ] PO sign-off recorded on routing spec
+The fellowship no longer carries more than it promised. The weight of the pack is honest.
 
 ---
 
-## Sprint 2 -- Phase 1: Stage Routing Rules and Core Engine
+## 3. Committed Stories (Dependency + Priority Order)
 
-**Sprint Goal**: Build the core rules engine infrastructure -- adapter, context builder, translation layer, CLI entry point, routing rules, and preset profiles -- so that routing decisions are fully deterministic and code-executed by sprint end.
+| Order | ID | Title | Points | Milestone | Target Files |
+|-------|----|-------|--------|-----------|--------------|
+| 1 | US-03 | Phantom Reference Detection and Filename Reconciliation | S | M2 | `quality-gates.md`, `pipeline-stages.md` |
+| 2 | US-04 | Plan Stage Capacity and Coverage Guardrails | M | M3 | `project-templates.md`, `pipeline-stages.md`, `quality-gates.md` |
+| 3 | US-01 | Shared-Module Review at UAT | M | M1 | `pipeline-stages.md`, `quality/SKILL.md` |
+| 4 | US-02 | Empirical-Items Tracking at UAT | M | M1 | `artifact-contracts.md`, `quality-gates.md` |
+| 5 | US-05 | Derived Artifact Regeneration at Dev DoD | S | M4 | `pipeline-stages.md`, `quality-gates.md` |
 
-### Committed Stories
-
-| Order | Story | Points | Rationale for Sequence |
-|-------|-------|--------|------------------------|
-| 1 | US-04: Pipeline Context Builder | 5 | Zero Phase 1 dependencies (utility module). Start here to unblock US-07. |
-| 2 | US-06: YAML-to-JSON Translation Layer | 5 | Depends only on US-01 (done). Start in parallel with US-04. |
-| 3 | US-03: Delivery Rules Adapter | 8 | Depends on US-01 (done). Core adapter -- US-07 and all Phase 2 stories need this. |
-| 4 | US-05: Stage Routing Rules (JSON) | 5 | Depends on US-01 + US-02 (both done). Can begin in parallel with US-03. |
-| 5 | US-08: Preset Profile Rule Sets | 5 | Depends on US-05. Must follow routing rules. |
-| 6 | US-07: Evaluation Script (CLI Entry Point) | 8 | Depends on US-01, US-03, US-04, US-05, US-06. Integration point -- must be last. |
-
-### Capacity
-
-| Metric | Value |
-|--------|-------|
-| Committed points | 36 |
-| Capacity (80%) | 32 |
-| Utilization | **113% -- OVER CAPACITY** |
-
-**Overcommitment resolution**: Phase 1 is 36 SP against a 32 SP cap. Three options:
-
-1. **Recommended**: Accept the overcommitment. Sprint 1 used only 41% capacity, leaving substantial runway. If Sprint 1 finishes early (likely given the 19 SP buffer), the developer can pull US-04 and US-06 forward into Sprint 1 as stretch goals, dropping Sprint 2 effective load to 26 SP. This is the fellowship's plan.
-2. Alternative A: Defer US-08 (Presets, 5 SP) to Sprint 3. Risk: Sprint 3 is already 29 SP and presets are needed for Phase 2 override testing.
-3. Alternative B: Defer US-07 (Eval Script, 8 SP) to Sprint 3. Risk: Unacceptable -- the CLI entry point is the integration proof for Phase 1.
-
-**Adopted strategy**: Plan for Sprint 1 stretch. If stretch does not materialize, US-04 (5 SP) and US-06 (5 SP) can begin early in Sprint 2 while US-03 design is being finalized, exploiting the parallelism in the dependency graph.
-
-### Parallel Execution Lanes
-
-```
-Week 1:  US-04 (Context Builder) ─────┐
-         US-06 (Translation Layer) ────┤
-         US-03 (Adapter) begins ───────┤
-         US-05 (Routing Rules) ────────┘
-                                       │
-Week 2:  US-03 (Adapter) completes ────┤
-         US-08 (Presets) ──────────────┤
-         US-07 (Eval Script) ──────────┘
-```
-
-### Risks
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Adapter complexity exceeds estimate (8 SP) | Medium | High -- cascading delay to US-07 | Time-box adapter to 10 SP equivalent. If layer merge logic is complex, implement scalar-only merge first, add list/map merge semantics in US-14 (Phase 2). |
-| Routing rules JSON does not match routing spec 1:1 | Low | Medium -- rework | Auto-generate routing.json from routing spec as a translation step, then validate both directions |
-| Eval script integration surfaces interface mismatches | Medium | Medium | Define stdout/stderr contract (architecture Section 2.4) as the handshake protocol. Write contract tests before integration. |
-| Overcommitment causes quality shortcuts | Medium | High | If behind by mid-sprint, defer US-08 (Presets) to Sprint 3 rather than cutting test coverage |
-
-### Exit Criteria
-
-- [ ] `evaluate_rules.py --decision-type routing` produces deterministic routing for all 6 project types
-- [ ] 10 identical routing evaluations for the same input (byte-identical JSON)
-- [ ] All 3 preset profiles (solo, standard, strict) load and apply correctly
-- [ ] CLI exit codes: 0 (success), 1 (input error), 2 (evaluation error)
-- [ ] Layer 1 + Layer 2 merge produces correct resolved rules
+**Ordering rationale**: The PO recommended M2 first so Design-stage fixes cascade early into downstream stages. M3 follows because it is independent and touches Plan stage. M1 stories (US-01 then US-02) are sequenced by their internal dependency -- US-02 depends on US-01's shared UAT stage context. M4 (US-05) is last as the smallest and fully independent.
 
 ---
 
-## Sprint 3 -- Phase 2: DoD Gates, Config Extension, and Escalation
+## 4. Implementation Sequence
 
-**Sprint Goal**: Extend the rules engine to cover all remaining flow-control decisions -- DoD gates, escalation triggers, collaboration pattern selection -- and extend the config schema to v2.4 with full error handling, so that zero flow-control decisions remain AI-interpreted.
+The road is long, but the path is clear. Each step builds on the last -- we do not scatter the fellowship.
 
-### Committed Stories
+### Step 1: Load plugin-dev skill (prerequisite for ALL steps)
 
-| Order | Story | Points | Rationale for Sequence |
-|-------|-------|--------|------------------------|
-| 1 | US-12: Config Schema Extension (v2.4) | 5 | No code dependency on other Phase 2 stories. Unblocks US-13 and US-14. Config-first approach. |
-| 2 | US-09: DoD Gate Rules | 8 | Depends on US-01, US-03 (done). Largest Phase 2 story -- start early. |
-| 3 | US-10: Escalation Trigger Rules | 5 | Depends on US-01, US-03 (done). Can run in parallel with US-09. |
-| 4 | US-11: Collaboration Pattern Selection Rules | 3 | Depends on US-03, US-05 (done). Smallest story -- fits in parallel. |
-| 5 | US-14: Rule Override Mechanism (L3 over L2 over L1) | 3 | Depends on US-03, US-08 (done). Merge semantics -- pairs with US-12 config work. |
-| 6 | US-13: Error Handling and Fallback Behavior | 5 | Depends on US-03, US-07 (done). Must be last -- validates all error paths across gate, routing, and escalation. |
+Load `plugin-dev:skill-development` before modifying any SKILL.md or reference files. These are plugin component modifications; the skill-development conventions must be active throughout.
 
-### Capacity
+**Dependency**: None. This is the gate before all work begins.
 
-| Metric | Value |
-|--------|-------|
-| Committed points | 29 |
-| Capacity (80%) | 32 |
-| Utilization | 91% |
-| Buffer | 3 SP |
+### Step 2: US-03 -- Phantom Reference Detection (M2)
 
-### Parallel Execution Lanes
+**Files**: `quality-gates.md`, `pipeline-stages.md`
 
-```
-Week 1:  US-12 (Config Schema) ────────┐
-         US-09 (DoD Gate Rules) ───────┤
-         US-10 (Escalation Rules) ─────┤
-         US-11 (Collab Patterns) ──────┘
-                                       │
-Week 2:  US-09 (DoD Gate Rules) cont. ─┤
-         US-14 (Rule Overrides) ───────┤
-         US-13 (Error Handling) ───────┘
-```
+2a. Add phantom reference WARNING criterion to Gate 3 in `quality-gates.md`:
+- Place after "Design aligns with PRD requirements"
+- Severity: `[warning]` (does not block)
+- Include `[PLANNED]` annotation exemption language
+- Add `<!-- retro k4m9 -->` annotation
 
-### Risks
+2b. Add filename reconciliation blocking gate to Stage 6 entry conditions in `pipeline-stages.md`:
+- 5-step reconciliation process (extract paths from Design + Architect artifacts, check disk, cross-reference sprint plan, report)
+- `[PLANNED]` is NOT an exemption at Dev entry
+- Pass/fail criteria with blocking behavior
+- Resolution guidance (create files, add to sprint plan, or remove references)
+- Light Mode applicability note
+- Add `<!-- retro k4m9 -->` annotation
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| DoD gate rules (7 stages x N validators) are more complex than estimated | Medium | High -- 8 SP may not suffice | Start with 3 critical stages (Design, Development, UAT). If under pressure, the remaining 4 lighter stages can use simplified rule sets initially. |
-| Config schema v2.4 migration path creates backward compatibility issues | Low | Medium | Implement migration detection (AC-4) early. Validate against 3 sample configs: empty rules, partial rules, full rules. |
-| Error handling three-option UX (US-13) is hard to test without real pipeline context | Medium | Low | Test error paths with synthetic errors injected into evaluate_rules.py. Dogfooding in Sprint 4 will validate the real UX. |
-| Tight buffer (3 SP) leaves no room for surprises | Medium | Medium | US-11 (3 SP) and US-14 (3 SP) are low-risk. If US-09 overruns, defer US-14 merge semantics to Sprint 4 (it has no Phase 3 dependents except US-19 dogfooding). |
+**Dependency**: None.
 
-### Exit Criteria
+### Step 3: US-04 -- Plan Stage Guardrails (M3)
 
-- [ ] DoD gates evaluate all 7 stages with weighted scoring and critical-rule override
-- [ ] Escalation rules produce correct ESCALATE/CONTINUE decisions for all 3 sensitivity profiles
-- [ ] Collaboration pattern rules return deterministic patterns for all project type + stage combinations
-- [ ] Config schema v2.4 documented with `rules.*` section, migration path from v2.3
-- [ ] Error handling: strict mode halts, default mode presents 3 options
-- [ ] Layer 1/2/3 override cascade works with per-key granularity, list replace, and list extend
+**Files**: `project-templates.md`, `pipeline-stages.md`, `quality-gates.md`
+
+3a. Add "Sprint Plan Mandatory Sections" section at end of `project-templates.md`:
+- Capacity matrix template (Team Member, Role, Available Hours, Allocated Hours, Utilization %, Total row)
+- Coverage matrix template (PRD FR-ID, FR Description, Planned Task(s), Story ID(s), Status, Unmapped FRs area)
+- Light Mode waiver for BUG_FIX and DOCS_ONLY on both matrices
+- Add `<!-- retro c8f2 -->` annotation
+
+3b. Add step 4 "Matrix validation" to Stage 5 Sub-Flow in `pipeline-stages.md`:
+- Insert after step 3 (Invoke Supporting Agents)
+- Validate capacity matrix presence + completeness
+- Validate coverage matrix with all FRs mapped (unmapped FR = BLOCKING)
+- Light Mode waiver for BUG_FIX/DOCS_ONLY
+- Renumber subsequent steps
+
+3c. Update Scrum Bag validator in Stage 5 DoD Validators in `pipeline-stages.md`:
+- Add matrix requirements: capacity matrix present with utilization calculated, coverage matrix with all FRs mapped
+- Add threshold language: >80% WARNING requiring acknowledgment, >100% BLOCKING
+
+3d. Replace Gate 5 capacity criterion in `quality-gates.md`:
+- Remove old "Commitment does not exceed 80% of available capacity [blocking]"
+- Add two-tier model: >80% WARNING with acknowledgment, >100% BLOCKING with reduction or PO sign-off
+- Light Mode applicability note
+- Add `<!-- retros c8f2, k4m9 -->` annotation
+
+**Dependency**: None (independent of Step 2).
+
+### Step 4: US-01 -- Shared-Module Review at UAT (M1)
+
+**Files**: `pipeline-stages.md`, `quality/SKILL.md`
+
+4a. Insert step 5 "Shared-module review" into Stage 7 Sub-Flow in `pipeline-stages.md`:
+- Place after step 4 (Exploratory testing sessions), before current step 5 (Invoke Supporting Agents)
+- SEQUENTIAL tag, required marker
+- Include shared-module definition, identification method, review requirements, output location
+- Light Mode applicability note
+- Renumber subsequent steps
+
+4b. Update QA Engineer validator in Stage 7 DoD Validators in `pipeline-stages.md`:
+- Add "shared-module review complete (if shared modules were modified)"
+
+4c. Add "Shared-Module Review Protocol" section to `quality/SKILL.md`:
+- Place after "Empirical Validation and CODE_COMPLETE Status" section, before "Sub-Agent Interface" section
+- Definition of shared module (file referenced in 2+ stage artifacts)
+- 5-step identification process using Glob/Read
+- 4-item review checklist
+- Output format template
+
+**Dependency**: None (independent of Steps 2-3, but sequenced here per milestone ordering).
+
+### Step 5: US-02 -- Empirical-Items Tracking (M1)
+
+**Files**: `artifact-contracts.md`, `quality-gates.md`
+
+5a. Add "Empirical Items Classification" row to Stage 6->7 contract table in `artifact-contracts.md`:
+- Place after "CODE_COMPLETE Items" row
+- Required = YES
+
+5b. Add "Empirical-Items Tracking Template" section to `artifact-contracts.md`:
+- Place after "Contract Summary Matrix" section
+- Template with table columns: FR/AC ID, AC Summary, Classification, Justification, Validation Method
+- Summary statistics block
+- Classification rules (structural vs. empirical definitions with 2+ examples each)
+- Integration notes with Light Mode applicability
+- Add `<!-- retros c8f2, k4m9 -->` annotation
+
+5c. Add blocking criterion to Gate 7 in `quality-gates.md`:
+- Require empirical-items classification section in UAT test plan
+- Every PRD AC classified; empirical items have documented validation methods
+- Place after "All pending empirical validations from Stage 6..." item
+- Severity: `[blocking]`
+
+**Dependency**: US-01 (shares UAT stage context).
+
+### Step 6: US-05 -- Derived Artifact Regeneration (M4)
+
+**Files**: `pipeline-stages.md`, `quality-gates.md`
+
+6a. Update Developer validator in Stage 6 DoD Validators in `pipeline-stages.md`:
+- Add "derived artifacts regenerated from current sources"
+- Require "Derived Artifacts" section in DoD review (columns: derived artifact path, source file(s), regeneration status)
+
+6b. Insert step 5 "Regenerate derived artifacts" into Stage 6 Sub-Flow in `pipeline-stages.md`:
+- Place after step 4 (Technical Writer), before current step 5 (Commit suggestion)
+- 4-substep process: identify, regenerate, verify (no unexpected diffs), document
+- Light Mode applicability note
+- Add `<!-- retro c8f2 -->` annotation
+- Renumber subsequent steps
+
+6c. Add blocking criterion to Gate 6 in `quality-gates.md`:
+- Require derived artifact regeneration confirmation and documentation
+- Place after "Empirical validation requirements identified..." item
+- Severity: `[blocking]`
+- Add `<!-- retro c8f2 -->` annotation
+
+**Dependency**: None (independent of Steps 2-5, but sequenced last per milestone ordering).
+
+### Step 7: Cross-story verification pass
+
+Walk every test case from all 5 stories (TC-01a-1 through TC-12b-2) by inspecting the modified files. This is the structural verification gate -- every AC must be traceable to its target file location.
+
+**Dependency**: Steps 2-6 complete.
+
+### Step 8: Dogfooding validation (P0 UAT gate)
+
+Run a BUG_FIX pipeline through the hardened stages (Design, Plan, UAT minimum) per PRD Section 2 dogfooding criteria. Verify:
+
+- Phantom reference WARNING fires at Design DoD when non-existent paths are cited without `[PLANNED]`
+- Dev entry gate blocks when phantom references remain unresolved
+- Capacity matrix and coverage matrix are validated at Plan stage
+- Shared-module review checkpoint fires at UAT
+- Empirical-items classification is required at UAT
+- Derived artifact regeneration is checked at Dev DoD
+- No regressions in non-modified stages
+
+**This is a P0 gate. The hardened stages do not ship without dogfooding.**
+
+**Dependency**: Step 7 complete.
 
 ---
 
-## Sprint 4 -- Phase 3: Audit Trail, Integration, Wizard, and Dogfooding
+## 5. Coverage Matrix
 
-**Sprint Goal**: Complete the rules engine integration by adding the audit trail, updating SKILL.md to defer all flow-control to the engine, extending the setup wizard, enabling dry-run preview, and validating the entire system through a dogfooding pipeline run.
+| PRD FR-ID | FR Description | Planned Task(s) | Story ID(s) | Status |
+|-----------|---------------|------------------|-------------|--------|
+| FR-01 | Shared-module review checkpoint in UAT stage | Step 4a, 4b | US-01 | Planned |
+| FR-02 | Shared-module review guidance in QA SKILL.md | Step 4c | US-01 | Planned |
+| FR-03 | Empirical-items tracking template in artifact-contracts | Step 5a, 5b | US-02 | Planned |
+| FR-04 | Empirical-items tracking in UAT DoD validator | Step 5c | US-02 | Planned |
+| FR-05 | Phantom reference WARNING at Design DoD | Step 2a | US-03 | Planned |
+| FR-06 | Filename reconciliation BLOCK at Dev entry | Step 2b | US-03 | Planned |
+| FR-07 | Capacity matrix in Plan template | Step 3a | US-04 | Planned |
+| FR-08 | Coverage matrix in Plan template | Step 3a | US-04 | Planned |
+| FR-09 | Mandatory matrix validation in Plan stage | Step 3b, 3c | US-04 | Planned |
+| FR-10 | Two-tier capacity threshold (80% warn, 100% block) | Step 3c, 3d | US-04 | Planned |
+| FR-11 | Derived artifact regeneration checklist at Dev DoD | Step 6a, 6b | US-05 | Planned |
+| FR-12 | Derived artifact regeneration validator criterion | Step 6c | US-05 | Planned |
 
-### Committed Stories
-
-| Order | Story | Points | Rationale for Sequence |
-|-------|-------|--------|------------------------|
-| 1 | US-15: Structured Audit Trail | 5 | No Phase 3 internal dependencies. Foundation for dogfooding evidence. |
-| 2 | US-18: Dry-Run Preview | 2 | Depends on US-07 (done). Small, quick win. Useful for validating before dogfooding. |
-| 3 | US-17: Setup Wizard Extension | 3 | Depends on US-12 (done). Straightforward -- 3 new wizard questions. |
-| 4 | US-16: SKILL.md Orchestrator Integration | 5 | Depends on all Phase 1+2 (done). This is the keystone -- rewrites how the orchestrator makes decisions. Must precede dogfooding. |
-| 5 | US-19: Dogfooding Validation | 5 | Depends on everything. Final validation. Must be last. |
-
-### Capacity
-
-| Metric | Value |
-|--------|-------|
-| Committed points | 20 |
-| Capacity (80%) | 32 |
-| Utilization | 63% |
-| Buffer | 12 SP |
-
-**Why the buffer is appropriate**: Sprint 4 includes dogfooding (US-19), which is inherently unpredictable. The dogfooding run will surface integration issues, edge cases, and rework needs from Phases 0-2. The 12 SP buffer absorbs defect fixes discovered during dogfooding without requiring a Sprint 5.
-
-### Parallel Execution Lanes
-
-```
-Week 1:  US-15 (Audit Trail) ──────────┐
-         US-18 (Dry-Run Preview) ──────┤
-         US-17 (Setup Wizard) ─────────┘
-                                       │
-Week 2:  US-16 (SKILL.md Integration) ─┤
-         US-19 (Dogfooding Validation) ┘
-```
-
-### Risks
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| SKILL.md rewrite (US-16) introduces regressions in existing pipeline behavior | High | High -- breaks production pipeline | Diff-review every SKILL.md change against current behavior. Test with dry-run before dogfooding. Keep original SKILL.md sections in a backup branch. |
-| Dogfooding reveals rules engine defects requiring rework | High | Medium -- 12 SP buffer absorbs this | Budget 5 SP of the 12 SP buffer explicitly for dogfooding rework. If rework exceeds 5 SP, descope US-17 (wizard) to a follow-up. |
-| Audit trail JSONL format does not capture sufficient detail for reproducibility proof | Low | Medium | Define the JSONL schema before implementation. Include full `input_context` snapshot per AC-1. |
-| Dogfooding run takes longer than budgeted due to pipeline complexity | Medium | Low -- the run itself is the deliverable | Time-box dogfooding to the equivalent of 5 SP. Document any incomplete validation as follow-up items in the retrospective. |
-
-### Exit Criteria
-
-- [ ] Audit trail written as JSONL with all required fields per US-15 AC-1
-- [ ] Dry-run preview matches actual pipeline routing decisions
-- [ ] Setup wizard writes correct `rules.*` config keys
-- [ ] SKILL.md defers all routing, gating, and escalation to `evaluate_rules.py`
-- [ ] Dogfooding run: zero category (c) flow-control decisions in audit log
-- [ ] Dogfooding run: 10 replayed routing evaluations produce byte-identical results
-- [ ] Retrospective produced with lessons learned
+**Unmapped FRs**: None. All 12 FRs mapped to at least one planned task.
 
 ---
 
-## Cross-Sprint Summary
+## 6. Deployment Approach
 
-| Sprint | Phase | Stories | Points | Cap (80%) | Utilization | Goal |
-|--------|-------|---------|--------|-----------|-------------|------|
-| 1 | 0 | US-01, US-02 | 13 | 32 | 41% | Extract BRE core + routing spec |
-| 2 | 1 | US-03 - US-08 | 36 | 32 | 113%* | Core engine + deterministic routing |
-| 3 | 2 | US-09 - US-14 | 29 | 32 | 91% | Gates, escalation, config, error handling |
-| 4 | 3 | US-15 - US-19 | 20 | 32 | 63% | Audit, integration, dogfooding |
-| **Total** | | **19 stories** | **98** | **128** | **77%** | |
-
-*Sprint 2 overcommitment mitigated by Sprint 1 stretch goal strategy (pull US-04 + US-06 forward).
-
-### Cumulative Burndown Target
-
-```
-Sprint 1 end:  13 SP done  (13 of 98  = 13%)
-Sprint 2 end:  49 SP done  (49 of 98  = 50%)
-Sprint 3 end:  78 SP done  (78 of 98  = 80%)
-Sprint 4 end:  98 SP done  (98 of 98  = 100%)
-```
-
-### Critical Path
-
-```
-US-01 -> US-03 -> US-07 -> US-13 -> US-16 -> US-19
-  5       8        8        5        5        5    = 36 SP on critical path
-```
-
-The critical path runs through the condition evaluator, adapter, CLI script, error handling, SKILL.md integration, and dogfooding. Any delay on these stories cascades to the final delivery. The Scrum Master will track these six stories with daily attention.
+- **Branching**: Feature branch `feat/stage-health-hardening` from `main`
+- **Commit strategy**: One conventional commit per story (5 commits total), enabling clean revert if any story causes regression
+  - `feat: Add phantom reference detection and filename reconciliation (US-03)`
+  - `feat: Add plan stage capacity and coverage guardrails (US-04)`
+  - `feat: Add shared-module review at UAT stage (US-01)`
+  - `feat: Add empirical-items tracking at UAT stage (US-02)`
+  - `feat: Add derived artifact regeneration at dev DoD (US-05)`
+- **PR**: Single PR with all 5 commits, referencing the PRD and retro sources c8f2 and k4m9
+- **Post-merge**: No schema changes, no config migration needed. Changes take effect on next pipeline run.
 
 ---
 
-*"There is always hope." But hope is not a strategy. This plan has buffers, parallel lanes, and fallback options. The fellowship will hold.*
+## 7. Risks and Contingencies
+
+| Risk | Likelihood | Impact | Contingency |
+|------|-----------|--------|-------------|
+| Step renumbering in pipeline-stages.md introduces inconsistencies across stories that modify the same file | Medium | High | US-03 and US-04 modify different stages (Stage 6 entry vs Stage 5 sub-flow); US-01 modifies Stage 7; US-05 modifies Stage 6 sub-flow. Execute US-03 before US-05 since both touch Stage 6 but different sections. Verify numbering after each story. |
+| Added gate criteria slow pipeline execution without proportionate quality gain | Medium | Medium | Monitor first-try pass rates over 3 pipeline runs post-deployment. If pass rates do not improve, revisit gate severity per PRD risk table. |
+| Token budget breach -- NFR-04 limits per-stage context growth to 500 tokens | Medium | Medium | Measure line counts after each story. If any stage exceeds budget, compress wording. Imperative numbered steps are token-efficient by design. |
+| Concurrent edits to target files from other work | Low | High | All work goes through the delivery pipeline on a feature branch. No concurrent feature branches should touch these reference files. |
+| Dogfooding BUG_FIX pipeline reveals gate change defects | Medium | Medium | Per PRD, fix defect and re-run dogfooding. Budget time for one defect cycle. |
+| Capacity matrix template adds overhead that teams shortcut with placeholders | Medium | Low | FR-10 threshold validation catches the worst case (>100% allocation). Reasonableness checks deferred to future iteration per PRD assumptions. |
+
+---
+
+## 8. Dogfooding Plan
+
+**What**: Run a BUG_FIX pipeline through the hardened delivery-flow stages on this repo.
+
+**Why**: PRD Section 2 declares dogfooding as a P0 UAT gate. The hardened stages must be validated by running an actual pipeline through them.
+
+**Pipeline to run**: BUG_FIX project type exercising at minimum: Design, Plan, and UAT stages.
+
+**What to verify**:
+
+- [ ] Design stage: Phantom reference WARNING fires for non-existent paths without `[PLANNED]` annotation
+- [ ] Design stage: `[PLANNED]` annotated paths are exempt from phantom detection
+- [ ] Plan stage: Capacity matrix and coverage matrix are required (or waived for BUG_FIX per FR-07/08)
+- [ ] Plan stage: Capacity threshold validation functions (>80% warn, >100% block)
+- [ ] Dev entry: Filename reconciliation gate blocks on unresolved phantom references
+- [ ] Dev stage: Derived artifact regeneration step is present and Developer validator enforces it
+- [ ] UAT stage: Shared-module review checkpoint fires
+- [ ] UAT stage: Empirical-items classification is required in test plan
+- [ ] No regressions in non-targeted stages (Idea, Architect, Development flow)
+
+**Success criteria** (per PRD): Pipeline reaches completion without regressions caused by the gate changes. Failures unrelated to gate changes do not count. If the pipeline fails due to a gate change defect, fix and re-run.
+
+---
+
+## 9. Plugin-Dev Skill Loading Requirement
+
+**Mandatory**: Load `plugin-dev:skill-development` before any file modifications begin.
+
+Files modified in this sprint include:
+- `delivery-team/skills/delivery-flow/references/pipeline-stages.md` (US-01, US-03, US-04, US-05)
+- `delivery-team/skills/delivery-flow/references/quality-gates.md` (US-02, US-03, US-04, US-05)
+- `delivery-team/skills/delivery-flow/references/artifact-contracts.md` (US-02)
+- `delivery-team/skills/delivery-flow/references/project-templates.md` (US-04)
+- `delivery-team/skills/quality/SKILL.md` (US-01)
+
+All are plugin components. The plugin-dev skill provides conventions for reference file structure, section ordering, and annotation format that must be followed.
+
+---
+
+## Sprint Summary
+
+| Item | Detail |
+|------|--------|
+| Sprint goal | Harden Design, Plan, UAT, and Dev stages to raise first-try pass rates and eliminate rework from retros c8f2/k4m9 |
+| Stories committed | 5 (US-01 M, US-02 M, US-03 S, US-04 M, US-05 S) |
+| Capacity | 2.0L equivalent -- 83% of 80% ceiling, within bounds |
+| Files modified | 5 existing reference/skill files (markdown-only, NFR-01 compliant) |
+| Key constraint | No new scripts, no schema changes, no config keys -- additive markdown edits only |
+| Validation gate | Dogfooding (P0) -- BUG_FIX pipeline through hardened stages |
+| Plugin-dev skill required | `plugin-dev:skill-development` (must load before any file edits) |
+| Deployment | Feature branch, 5 conventional commits (one per story), single PR to main |
+
+---
+
+*"The way is shut. It was made by those who are Dead, and the Dead keep it." But these gates -- these we open ourselves, with clear criteria and honest measurement. The fellowship carries 12 functional requirements across 5 stages, and not one shall be left behind. The pack is balanced now, and we march at dawn.*

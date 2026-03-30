@@ -1,6 +1,6 @@
 # Human Preferences
 
-**Entries**: 9 | **Last updated**: 2026-03-25
+**Entries**: 10 | **Last updated**: 2026-03-29
 
 ## Process Enforcement
 
@@ -32,6 +32,10 @@
 ## Plugin Development
 
 - Always use plugin-dev skills (hook-development, skill-development, etc.) when creating or modifying plugin components in this repo. (validated: 1)
+
+## Bug Triage
+
+- PO must check git history before prioritizing bugs. Bug #50 was already fixed but wasn't detected until pipeline started. Always run `git log --oneline` for relevant files before accepting a bug into the pipeline. (validated: 1, last: run-2026-03-29-h3k7)
 
 ## Self-Improvement
 
