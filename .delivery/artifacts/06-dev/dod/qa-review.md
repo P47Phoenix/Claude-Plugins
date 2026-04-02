@@ -1,163 +1,104 @@
 # QA Engineer DoD Review -- Stage 6 (Development)
 
 **Reviewer**: Legolas (QA Engineer)
-**Date**: 2026-03-30
-**Sprint**: prd-quality-gate-flow Refactoring (Issues #51, #52, #53)
-**Stories**: US-01 through US-11 (11 stories, 34 SP)
+**Date**: 2026-04-01
+**Sprint**: Pipeline Integrity Fixes (#54, IA-1, IA-4)
+**Story**: US-01 -- Enforce Pipeline Integrity Rules for Branch Strategy, Confidence Scoring, and Architect Routing
 
-> "My eye misses nothing. Each line stands where it should."
-
----
-
-## Blocking Criteria
-
-### [PASS] Behavioral baselines match (15 nodes, 20 rules, distribution [4,4,3,1,4,3,1]) [blocking]
-
-Verified by reading all source definitions and tracing the pipeline sequence.
-
-| Check | Expected | Actual | Method |
-|-------|----------|--------|--------|
-| Node count | 15 | 1 root + 14 `PIPELINE_SEQUENCE` entries = 15 | Counted `PIPELINE_SEQUENCE` in `prd_flow_builder.py:51-66` |
-| Rule count | 20 | 4+4+3+1+4+3+1 = 20 | Counted rules arrays in `gate_definitions.py` |
-| Gate count | 7 | 7 entries in `GATE_DEFINITIONS` | `gate_definitions.py:20-393` |
-| Rule distribution | [4,4,3,1,4,3,1] | [4,4,3,1,4,3,1] | Per-gate rule array lengths |
-
-Node name and type ordering verified against the dev-notes Section 2 baseline:
-
-```
-prd_root[root]
-stage1_prd_creator[agent]
-gate1_completeness[gate]
-stage2_technical_reviewer[agent]
-gate2_technical_feasibility[gate]
-stage3_stakeholder_orchestrator[control_flow]
-gate3_business_value[gate]
-gate4_executive_approval[gate]
-stage4_implementation_planner[agent]
-gate5_resource_feasibility[gate]
-stage5_task_flow_generator[agent]
-stage6_prd_evaluator[agent]
-gate6_success_criteria[gate]
-gate7_uat[gate]
-stage7_retrospective[agent]
-```
-
-Confirmed `PIPELINE_SEQUENCE` handles the two irregularities:
-- Gates 3 and 4 consecutive (lines 57-58)
-- Stages 5 and 6 consecutive (lines 60-61)
-- Stage 3 uses `control_flow` node type (line 56)
-
-**Verdict**: PASS.
+> "Thirteen acceptance criteria. Thirteen arrows loosed. Thirteen targets struck. That bug still only counts as one."
 
 ---
 
-### [PASS] All PRD acceptance criteria addressable from the code [blocking]
+## Gate 6 QA Criteria
 
-Verified all 11 user stories against the implementation:
+### [PASS] All 13 acceptance criteria from US-01 are verifiable in the modified files [blocking]
 
-| Story | SP | Verification | Evidence |
-|-------|---:|-------------|----------|
-| US-01 | 2 | `shared.py` exports `DB_PATH`, `generate_timestamp_id()`, `ensure_utf8_output()`, `get_connection()` | 61 lines, all 4 symbols present |
-| US-02 | 3 | `schema.py` has `ensure_schema()` with 9 `CREATE TABLE IF NOT EXISTS` + 7 `CREATE INDEX IF NOT EXISTS` | 174 lines, idempotent |
-| US-03 | 1 | `get_connection()` calls `ensure_schema()` before returning | `shared.py:56-59` |
-| US-04 | 5 | `stage_definitions.py` has 7 stage dicts with load-time validation | 269 lines, `REQUIRED_STAGE_FIELDS` + `REQUIRED_CONFIG_FIELDS` |
-| US-05 | 5 | `gate_definitions.py` has 7 gate dicts, 20 rules, load-time validation | 411 lines, `REQUIRED_GATE_FIELDS` + `REQUIRED_RULE_FIELDS` |
-| US-06 | 8 | `prd_flow_builder.py` class body is 162 lines, imports from `shared`, `schema`, `stage_definitions`, `gate_definitions` | 259 lines total, data-driven via `PIPELINE_SEQUENCE` |
-| US-07 | 3 | `prd_execute.py` imports `DB_PATH` from `shared`, calls `ensure_utf8_output()` | Lines 11, 193 |
-| US-08 | 3 | `fix_and_run.py` has 5 named functions + `main()` guard, uses `get_connection()` for cleanup | 290 lines, latent bug fixed |
-| US-09 | 2 | `check_db.py` has 3 functions + `main()` guard, graceful error on missing DB | Lines 52-55: `os.path.exists()` check |
-| US-10 | 1 | `run_execute.py` and `run_builder.py` deleted | Glob returns no `run_*.py` files, grep shows 0 references in `.py` files |
-| US-11 | 1 | `CLAUDE.md` lists only 4 canonical scripts, no deleted file references | Dev notes confirm no changes needed |
+Every AC verified by reading the actual deployed file and confirming the specified text exists at the correct location.
 
-**Verdict**: PASS. All 11 stories structurally addressable.
+| AC | File | Evidence | Result |
+|----|------|----------|--------|
+| AC-1.1 | `SKILL.md` L719-723 | Stage 5 "Branch creation" directive present. Conditions: `git.branch_strategy` not `none` AND `git.auto_branch: true`. References `references/git-integration.md` by name. Blocking error on failure. | **PASS** |
+| AC-1.2 | `SKILL.md` L749-753 | Stage 6 "Branch enforcement" directive present. States commits MUST target feature branch, not base branch (`main` or `develop`). References `references/git-integration.md` by name. Missing branch when `auto_branch: true` is blocking error. | **PASS** |
+| AC-1.3 | `SKILL.md` L888-892 | Stage 7 "PR creation" step present. When `github.create_pr: true`, creates PR from feature branch to base branch. Body includes sprint goal, stories with "Closes #N", UAT results. References `references/git-integration.md` by name. | **PASS** |
+| AC-1.4 | `git-integration.md` L133-136 | ENFORCEMENT blockquote in Stage 5 section. States branch creation is MANDATORY. Failure is blocking error that halts pipeline. Orchestrator MUST NOT proceed to Stage 6 without recorded branch. | **PASS** |
+| AC-1.5 | `git-integration.md` L138-149 | "Stage 6 (Development) -- Branch Enforcement" subsection exists. All commits must target feature branch. Missing branch when `git.auto_branch` was `true` is blocking error. Halt and escalate directive present. | **PASS** |
+| AC-1.6 | `git-integration.md` L178-201 | "Stage 7 (UAT) -- PR Creation" subsection exists. PR from feature to base branch. Body template includes sprint goal, stories with "Closes #N", UAT results. State recording (`pr: <pr-number>`) included. | **PASS** |
+| AC-2.1 | `quality-gates.md` L214 | Gate 7 blocking criterion: confidence capped at 4/5 when empirical validation cannot be performed. 5/5 requires empirical evidence (test execution, runtime verification, or observable behavior confirmation). | **PASS** |
+| AC-2.2 | `quality-gates.md` L215 | Gate 7 blocking criterion: "Empirical Validation Limitation" section required in DoD documenting (a) unvalidated criteria, (b) what prevented validation, (c) residual risk. | **PASS** |
+| AC-2.3 | `quality-gates.md` L213 | Original "Empirical-items classification" criterion unchanged at its original position with `<!-- retro k4m9 -->` tag. New criteria follow it (L214-215), supplementing not replacing. | **PASS** |
+| AC-3.1 | `project-types.md` L20 | FEATURE section contains "Sub-type -- refactoring" with all 8 specified signals: "refactor", "decompose", "extract module", "split class", "restructure", "reorganize modules", "break apart", "modularize". | **PASS** |
+| AC-3.2 | `project-types.md` L132 | "Apply Light" list includes bullet: "Module decomposition, boundary changes, or architectural restructuring (refactoring sub-type)". | **PASS** |
+| AC-3.3 | `project-types.md` L137 | "Apply Skip" condition "Contained within a single service or module" now includes qualifier: "AND does not involve module decomposition, boundary changes, or architectural restructuring". | **PASS** |
+| AC-3.4 | `project-types.md` L17-20, L125-140 | All existing non-refactoring FEATURE detection signals unchanged (L17-19). All existing Skip conditions preserved -- none removed, only narrowed by qualifier on L137. | **PASS** |
 
----
-
-### [PASS] No regressions -- builder.build_prd_flow() and export_flow_diagram() work [blocking]
-
-**build_prd_flow()** (`prd_flow_builder.py:113-182`):
-- Creates flow via `create_flow()` (line 116)
-- Creates root node (line 131)
-- Walks `PIPELINE_SEQUENCE` in a single loop (lines 140-174)
-- For stages: reads from `STAGE_DEFINITIONS`, resolves `NodeType` from dict (line 143)
-- For gates: reads from `GATE_DEFINITIONS`, creates gate node + iterates rules (lines 153-173)
-- Chains `parent_id` correctly through the loop
-- Returns `flow_id`
-
-**export_flow_diagram()** (`prd_flow_builder.py:200-216`):
-- Queries nodes ordered by `created_at`
-- Builds text diagram with indentation from `_get_node_depth()`
-- Includes rule counts per gate node
-- Returns string
-
-**__main__ block** (`prd_flow_builder.py:231-259`):
-- Calls `build_prd_flow()`, `export_flow_diagram()`, writes to file
-- Wrapped in `try/finally` for connection cleanup
-
-**Core modules untouched**: `git diff` on `business_rules_engine.py` (569 lines) and `flow_orchestrator.py` (598 lines) shows zero diff.
-
-**Verdict**: PASS. No structural regressions detected.
+**Result**: 13/13 ACs pass.
 
 ---
 
-### [PASS] DB_PATH appears only in shared.py [blocking]
+### [PASS] Test cases TC-1 through TC-4 pass when checked against actual files [blocking]
 
-Grep for the literal string `prd_flows.db` across all `.py` files returns exactly one match:
+#### TC-1: Branch Enforcement in SKILL.md (AC-1.1, AC-1.2, AC-1.3)
 
-```
-prd-quality-gate-flow/shared.py:15:DB_PATH = "prd_flows.db"
-```
+| Step | Expected | Actual | Result |
+|------|----------|--------|--------|
+| 1. Stage 5 branch creation directive | Step exists directing feature branch creation when `git.auto_branch: true` and strategy not `none`. References `references/git-integration.md`. | L719-723: "Branch creation" block with exact conditions and reference. | **PASS** |
+| 2. Stage 6 branch enforcement directive | Directive stating commits MUST target feature branch, not base branch. References `references/git-integration.md`. | L749-753: "Branch enforcement" block with MUST language, base branch exclusion, and reference. | **PASS** |
+| 3. Stage 7 PR creation step | Step directing PR creation from feature to base when `github.create_pr: true`. References `references/git-integration.md`. | L888-892: "PR creation" block with PR body requirements and reference. | **PASS** |
 
-All other `.py` files import `DB_PATH` from `shared`:
-- `prd_flow_builder.py:20`: `from shared import DB_PATH, generate_timestamp_id`
-- `prd_execute.py:11`: `from shared import DB_PATH, ensure_utf8_output`
-- `fix_and_run.py:10`: `from shared import DB_PATH, ensure_utf8_output, get_connection`
-- `check_db.py:10`: `from shared import DB_PATH`
+#### TC-2: Branch Enforcement in git-integration.md (AC-1.4, AC-1.5, AC-1.6)
 
-No raw `sqlite3.connect("prd_flows.db")` calls exist outside `shared.py`. The `sqlite3.connect(db_path)` calls in `prd_flow_builder.py:74` and `flow_orchestrator.py:56` use the parameter variable, not a hardcoded string.
+| Step | Expected | Actual | Result |
+|------|----------|--------|--------|
+| 1. Stage 5 enforcement note | MANDATORY branch creation, blocking error on failure. | L133-136: ENFORCEMENT blockquote with MANDATORY language and blocking error halt. | **PASS** |
+| 2. Stage 6 branch enforcement subsection | "Stage 6 (Development) -- Branch Enforcement" subsection. Commits target feature branch. Missing branch is blocking error. | L138-149: Subsection with exact heading. Commit targeting, blocking error on missing branch, halt-and-escalate. | **PASS** |
+| 3. Stage 7 PR creation directives | PR from feature to base. Body includes sprint goal, "Closes #N", UAT results. | L178-201: Full subsection with PR body template containing all three required elements. State recording included. | **PASS** |
 
-**Verdict**: PASS.
+#### TC-3: Confidence Cap in quality-gates.md (AC-2.1, AC-2.2, AC-2.3)
+
+| Step | Expected | Actual | Result |
+|------|----------|--------|--------|
+| 1. Confidence cap criterion | Blocking criterion capping confidence at 4/5 without empirical validation. 5/5 requires empirical evidence. | L214: Blocking criterion with exact 4/5 cap, 5/5 empirical requirement, and examples of empirical evidence. | **PASS** |
+| 2. Limitation documentation criterion | Blocking criterion requiring "Empirical Validation Limitation" section documenting (a) unvalidated criteria, (b) prevention cause, (c) residual risk. | L215: Blocking criterion with all three documentation requirements (a), (b), (c). | **PASS** |
+| 3. Existing empirical-items criterion preserved | "Empirical-items classification" criterion still present and unmodified. | L213: Original criterion intact with `<!-- retro k4m9 -->` tag. New criteria on L214-215 follow it. | **PASS** |
+
+#### TC-4: Refactoring Sub-Type in project-types.md (AC-3.1, AC-3.2, AC-3.3, AC-3.4)
+
+| Step | Expected | Actual | Result |
+|------|----------|--------|--------|
+| 1. Refactoring sub-type with signals | "refactoring" sub-type with "refactor", "decompose", "extract module", "restructure" among signals. | L20: Sub-type with all 8 signals listed. | **PASS** |
+| 2. Apply Light includes module decomposition | Bullet for module decomposition, boundary changes, or architectural restructuring. | L132: Bullet present with "(refactoring sub-type)" annotation. | **PASS** |
+| 3. Apply Skip narrowed with qualifier | "Contained within a single service or module" has "AND does not involve..." qualifier. | L137: Exact qualifier present. | **PASS** |
+| 4. No existing content removed | All non-refactoring signals and routing unchanged. No Skip conditions removed. | L17-19 signals unchanged. L134-140 all original Skip conditions present. Only L137 narrowed. | **PASS** |
+
+**Result**: 4/4 test cases pass (all 13 steps pass).
 
 ---
 
-### [OBSERVATION] Stale references in markdown documentation
+### [PASS] No regressions -- existing content in modified files is preserved [blocking]
 
-`IMPLEMENTATION_SUMMARY.md` still references `run_builder.py` (lines 19, 197, 325). `DEMONSTRATION_RESULTS.md` references `run_builder.py` (line 312). These are documentation files, not code, and do not affect runtime behavior. However, they are stale and should be cleaned up.
+Verified by confirming:
 
-**Severity**: LOW (not blocking).
+- **SKILL.md**: All stage definitions (1-7) retain their original structure. Branch directives were added as new blocks, not edits to existing steps. Stage descriptions, agent lists, upstream artifacts, output lists, and DoD references are all untouched.
+- **git-integration.md**: Branching Strategies, Branch Naming Convention, Conventional Commits sections untouched. Pipeline Integration Points retains original Stage 5 steps (1-6), Stage 6 Commit Suggestions section, and Stage 7 Working Tree Validation section. New subsections inserted between existing ones without modification.
+- **quality-gates.md**: All 7 gates retain original criteria. Gate 7 has new criteria at L214-215 inserted after the existing empirical-items criterion (L213). No existing criteria modified, reordered, or removed. DoD validators and max self-correction values unchanged.
+- **project-types.md**: Detection Matrix retains all 6 project types with original signals. Disambiguation Rules unchanged. Stage Routing Matrix unchanged. Stage Depth Definitions unchanged. Light-or-Skip section has additions (L132) and narrowing (L137) but no removals.
 
----
-
-### [OBSERVATION] EXAMPLE_PRODUCT_IDEAS isolation confirmed
-
-`EXAMPLE_PRODUCT_IDEAS` appears only in `prd_execute.py` (lines 152, 201, 202, 206, 210). No other `.py` file references it. PASS.
-
----
-
-## CODE_COMPLETE Items (Empirical Verification Pending)
-
-These items require runtime execution and cannot be verified structurally:
-
-| Item | Story | What Needs Validating | Risk |
-|------|-------|-----------------------|------|
-| `python prd_flow_builder.py` end-to-end | US-06 | Full CLI run creates flow, prints diagram, exit 0 | LOW -- structure is sound |
-| `python fix_and_run.py` end-to-end | US-08 | Cleanup + BRE demo + gate overview | LOW -- `get_connection()` path is correct |
-| `python check_db.py` with missing DB | US-09 | Graceful error message, no stack trace | LOW -- `os.path.exists()` guard present |
-| `python check_db.py` with existing DB | US-09 | Correct counts output | LOW -- queries are straightforward |
-| `python prd_execute.py` import test | US-07 | Module imports cleanly | LOW -- all imports are from local modules |
+**Result**: No regressions detected.
 
 ---
 
 ## Summary
 
-| Criterion | Result |
-|-----------|--------|
-| Behavioral baselines match (15/20/[4,4,3,1,4,3,1]) | **PASS** |
-| All PRD acceptance criteria addressable | **PASS** (11/11 stories) |
-| No regressions (build_prd_flow, export_flow_diagram) | **PASS** |
-| DB_PATH only in shared.py | **PASS** |
-| Core modules untouched | **PASS** (zero git diff) |
-| Deleted files gone, zero references in .py | **PASS** |
-| Runtime execution verified | **PENDING** (5 items, all LOW risk) |
+| Gate 6 QA Criterion | Result |
+|----------------------|--------|
+| All 13 ACs verifiable in modified files | **PASS** (13/13) |
+| TC-1 through TC-4 pass against actual files | **PASS** (4/4 TCs, 13/13 steps) |
+| No regressions -- existing content preserved | **PASS** |
 
-**Recommendation**: CODE_COMPLETE. All 4 blocking criteria pass structurally. 5 empirical items require runtime execution at UAT. No high-risk items identified.
+---
+
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/06-dev/dod/qa-review.md
+SUMMARY: All 13 ACs verified, all 4 TCs pass (13/13 steps), no regressions — DONE
+```

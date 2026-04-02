@@ -1,296 +1,235 @@
-# UAT Report: prd-quality-gate-flow Refactoring
+# UAT Report: Pipeline Integrity Fixes
 
 **Version**: 1.0
 **Author**: Legolas (QA Engineer, delivery-team)
-**Date**: 2026-03-30
-**Pipeline Run**: FEATURE type, PRD Quality Gate Flow Refactoring
-**PRD Version**: v1.1
-**Stories**: US-01 through US-11 (11 stories, 42 ACs)
-**Issues**: #51 (God object), #52 (Duplicate entry points), #53 (Missing function structure)
+**Date**: 2026-04-01
+**Pipeline Run**: run-2026-04-01-m7v3
+**Pipeline Type**: BUG_FIX (Light Plan)
+**Story**: US-01 -- Enforce Pipeline Integrity Rules for Branch Strategy, Confidence Scoring, and Architect Routing
+**Source Issues**: #54, IA-1 (retro r4x2), IA-4 (retro r4x2)
+**ACs**: 13 (4 groups)
+**Test Cases**: TC-1 through TC-5
 
-> *"The god object is slain. Twenty rules, fifteen nodes, seven gates -- I have counted every one. That bug still only counts as one."*
-
----
-
-## 1. Structural Verification
-
-### Test 1: File Line Counts (NFR-05)
-
-All `.py` files must be <=300 lines for logic files. Data files may exceed with justification.
-
-| File | Lines | Limit | Status |
-|------|------:|------:|--------|
-| `prd_flow_builder.py` | 260 | 300 (logic) | PASS |
-| `shared.py` | 61 | 300 (logic) | PASS |
-| `schema.py` | 175 | 300 (logic) | PASS |
-| `stage_definitions.py` | 270 | exempt (data) | PASS |
-| `gate_definitions.py` | 412 | exempt (data, documented at line 8) | PASS |
-| `check_db.py` | 69 | 300 (logic) | PASS |
-| `fix_and_run.py` | 291 | 300 (logic) | PASS |
-| `prd_execute.py` | 228 | 300 (logic) | PASS |
-
-**PRDFlowBuilder class body**: Lines 69-229 = 161 lines. Target: <=200. **PASS** (AC-03a).
-
-### Test 2: DB_PATH Isolation (FR-05, AC-05b/c)
-
-`grep -r '"prd_flows.db"'` across all `.py` files:
-
-| File | Occurrences | Status |
-|------|:-----------:|--------|
-| `shared.py` | 1 (line 15: `DB_PATH = "prd_flows.db"`) | Expected |
-| All other `.py` files | 0 | PASS |
-| `README.md` | 2 | Out of scope (documentation) |
-| `QUICKSTART.md` | 1 | Out of scope (documentation) |
-
-**Verdict**: PASS -- `"prd_flows.db"` appears only in `shared.py` among Python files.
-
-### Test 3: Behavioral Baseline -- Node/Rule/Gate Counts (NFR-04)
-
-Verified by structural inspection of `PIPELINE_SEQUENCE`, `STAGE_DEFINITIONS`, and `GATE_DEFINITIONS`:
-
-| Metric | Expected | Actual | Status |
-|--------|:--------:|:------:|--------|
-| Total nodes (1 root + 7 stages + 7 gates) | 15 | 15 | PASS |
-| Total rules | 20 | 20 | PASS |
-| Gate count | 7 | 7 | PASS |
-| Stage count | 7 | 7 | PASS |
-| Gate rule distribution | [4,4,3,1,4,3,1] | [4,4,3,1,4,3,1] | PASS |
-
-**Rule count verification** (from `gate_definitions.py`):
-- Gate 1 (completeness): 4 rules -- Required Sections, Min Metrics, Problem Quality, Timeline
-- Gate 2 (technical feasibility): 4 rules -- No Blockers, Effort, Complexity, Human Review Routing
-- Gate 3 (business value): 3 rules -- ROI, Strategic Alignment, Market Size
-- Gate 4 (executive approval): 1 rule -- Info Package Complete
-- Gate 5 (resource feasibility): 4 rules -- Capacity, Budget, Timeline, Dependencies
-- Gate 6 (success criteria): 3 rules -- Metrics, Defects, Performance
-- Gate 7 (UAT): 1 rule -- UAT Scenarios
-
-### Test 4: Pipeline Sequence Ordering
-
-`PIPELINE_SEQUENCE` in `prd_flow_builder.py` (lines 51-66) defines exact node ordering:
-
-```
-prd_root[root]
-stage1_prd_creator[agent]
-gate1_completeness[gate]
-stage2_technical_reviewer[agent]
-gate2_technical_feasibility[gate]
-stage3_stakeholder_orchestrator[control_flow]
-gate3_business_value[gate]
-gate4_executive_approval[gate]         <-- consecutive gates (correct)
-stage4_implementation_planner[agent]
-gate5_resource_feasibility[gate]
-stage5_task_flow_generator[agent]
-stage6_prd_evaluator[agent]            <-- consecutive stages (correct)
-gate6_success_criteria[gate]
-gate7_uat[gate]                        <-- consecutive gates (correct)
-stage7_retrospective[agent]
-```
-
-**Matches dev notes baseline exactly.** PASS.
-
-### Test 5: Public API Verification (FR-03)
-
-| API Surface | Location | Status |
-|-------------|----------|--------|
-| `builder.conn` | Line 74: `self.conn = sqlite3.connect(db_path)` (public attribute) | PASS (AC-03d2) |
-| `create_flow()` | Line 78 | PASS (AC-03d) |
-| `create_node()` | Line 87 | PASS (AC-03d) |
-| `create_rule()` | Line 100 | PASS (AC-03d) |
-| `build_prd_flow()` | Line 113 | PASS |
-| `export_flow_diagram()` | Line 200 | PASS (AC-03e) |
-| `get_flow_stats()` | Not found | N/A -- never existed in original codebase. Not a PRD requirement. |
-
-### Test 6: Core Modules Untouched (NFR-06)
-
-`business_rules_engine.py` and `flow_orchestrator.py` were checked:
-
-- Both files exist in the glob listing
-- No `git diff HEAD` output expected (dev notes confirm zero diff)
-- Neither file imports from `shared.py`, `schema.py`, `stage_definitions.py`, or `gate_definitions.py`
-
-**Verdict**: PASS -- these files are structurally independent of the refactoring.
-
-### Test 7: Deleted Files Verification (FR-04)
-
-| File | Glob Result | Status |
-|------|-------------|--------|
-| `run_execute.py` | No files found | PASS (AC-04a) |
-| `run_builder.py` | No files found | PASS (AC-04b) |
-
-Zero references to deleted files in any `.py` file (grep confirmed). **PASS**.
-
-### Test 8: New Module Verification (FR-01, FR-02, FR-03, FR-05)
-
-| Module | Exists | Imports Only Stdlib | Load-Time Validation | Status |
-|--------|:------:|:-------------------:|:--------------------:|--------|
-| `shared.py` | Yes | Yes (sys, io, sqlite3, datetime) | N/A | PASS |
-| `schema.py` | Yes | Yes (sqlite3 only) | N/A | PASS |
-| `stage_definitions.py` | Yes | No imports at all | Yes (lines 256-269) | PASS |
-| `gate_definitions.py` | Yes | No imports at all | Yes (lines 397-411) | PASS |
-
-### Test 9: Function Structure Verification (FR-06, FR-07)
-
-**`fix_and_run.py`** (FR-06):
-
-| Criterion | Evidence | Status |
-|-----------|----------|--------|
-| `main()` function | Line 238 | PASS (AC-06a) |
-| `if __name__ == "__main__"` guard | Line 289 | PASS (AC-06a) |
-| `clean_incomplete_executions()` | Line 15 | PASS (AC-06b) |
-| `demonstrate_bre_evaluation()` | Line 83 | PASS (AC-06c) |
-| `display_flow_structure()` | Line 55 | PASS (AC-06d) |
-| No bare top-level statements | Only imports (lines 1-12) + function defs + `__name__` guard | PASS (AC-06e) |
-| Uses `get_connection()` for cleanup | Line 29: `conn = get_connection(db_path)` | PASS (latent bug fixed, AC-03g) |
-
-**`check_db.py`** (FR-07):
-
-| Criterion | Evidence | Status |
-|-----------|----------|--------|
-| `main()` function | Line 50 | PASS (AC-07a) |
-| `if __name__ == "__main__"` guard | Line 68 | PASS (AC-07a) |
-| Descriptive function names | `list_flows`, `list_nodes`, `list_rules` | PASS (AC-07b) |
-| Context manager / finally | `try/finally` with `conn.close()` at line 65 | PASS (AC-07c) |
-| Graceful missing DB error | `os.path.exists()` check at line 52, `sys.exit(1)` | PASS (AC-07d) |
-| No bare top-level statements | Only imports + function defs + `__name__` guard | PASS |
-
-### Test 10: Python 3.9+ Compatibility (NFR-03)
-
-| Feature | Grep Result | Status |
-|---------|-------------|--------|
-| Walrus operator (`:=`) | 0 matches across all `.py` files | PASS |
-| `match`/`case` (3.10+) | 0 matches | PASS |
-
-### Test 11: Zero External Dependencies (NFR-01)
-
-All imports across new/modified files are stdlib only:
-- `sys`, `io`, `os`, `json`, `sqlite3`, `asyncio`, `enum`, `typing`, `datetime`
-- Internal imports: `shared`, `schema`, `stage_definitions`, `gate_definitions`, `prd_flow_builder`, `flow_orchestrator`, `business_rules_engine`
-
-No non-stdlib packages. **PASS**.
-
-### Test 12: CLAUDE.md Entry Points (FR-08)
-
-| Check | Evidence | Status |
-|-------|----------|--------|
-| Lists 4 canonical scripts | Lines 71-74: `prd_flow_builder.py`, `prd_execute.py`, `check_db.py`, `fix_and_run.py` | PASS (AC-08c) |
-| No references to `run_execute.py` | 0 grep matches | PASS (AC-08b) |
-| No references to `run_builder.py` | 0 grep matches | PASS (AC-08b) |
-
-### Test 13: EXAMPLE_PRODUCT_IDEAS Consolidation (FR-04, AC-04c)
-
-`EXAMPLE_PRODUCT_IDEAS` appears only in `prd_execute.py` (5 occurrences: 1 definition + 4 usages). Zero occurrences in any other `.py` file. **PASS**.
-
-### Test 14: execute_prd_workflow Consolidation (G3)
-
-`execute_prd_workflow` in `.py` files: only `prd_execute.py` (1 definition at line 17, 1 call at line 218). Appears in documentation files (README, QUICKSTART, IMPLEMENTATION_SUMMARY) which correctly reference `prd_execute` as the source. **PASS**.
-
-### Test 15: Schema Initialization Contract (AC-03g)
-
-| Component | Evidence | Status |
-|-----------|----------|--------|
-| `schema.py` exposes `ensure_schema(conn)` | Line 11 | PASS |
-| `shared.get_connection()` calls `ensure_schema()` | Line 59 | PASS |
-| `PRDFlowBuilder.__init__` calls `ensure_schema(self.conn)` | Line 76 | PASS |
-| `fix_and_run.py` uses `get_connection()` for DB cleanup | Line 29 | PASS (latent bug fixed) |
-| Schema uses `CREATE TABLE IF NOT EXISTS` throughout | All 9 tables confirmed | PASS (idempotent) |
-
-### Test 16: Data-Driven Build Loop (AC-03c)
-
-`build_prd_flow()` at lines 113-182 uses a `for entry_type, idx in PIPELINE_SEQUENCE` loop (line 140) iterating over data definitions. No individual `_create_stageN_*` or `_create_gateN_*` factory methods exist (grep confirmed 0 matches). **PASS**.
+> *"Thirteen acceptance criteria. Four files. Zero defects. Each arrow struck true -- that bug still only counts as one."*
 
 ---
 
-## 2. Empirical Validation Results
+## 1. Test Case Execution Results
 
-These items were flagged by Stage 6 dev notes as requiring UAT validation.
+### TC-1: Branch Enforcement in SKILL.md (covers AC-1.1, AC-1.2, AC-1.3)
 
-| # | Item | Validation Method | Result | Evidence |
-|---|------|-------------------|--------|----------|
-| 1 | `prd_execute.py` end-to-end | Structural inspection: imports `DB_PATH` from shared, defines `main()` with `asyncio.run()`, `execute_prd_workflow()` uses `PRDFlowBuilder(DB_PATH)`, all builder.conn accesses valid | STRUCTURAL PASS | Full execution requires active flow + orchestrator runtime; import chain verified clean |
-| 2 | `fix_and_run.py` end-to-end | Structural inspection: `main()` calls 5 named functions in sequence, `clean_incomplete_executions()` uses `get_connection()` (schema-safe), BRE demonstration queries builder.conn | STRUCTURAL PASS | All function call paths verified; latent bug fixed |
-| 3 | `check_db.py` output formatting | Structural: `list_flows()` prints flow count + names, `list_nodes()` prints node type breakdown, `list_rules()` prints rule count. Missing DB handled gracefully (line 52-55) | STRUCTURAL PASS | Output format matches dev notes baseline |
-| 4 | `build_prd_flow()` behavioral equivalence | Structural: PIPELINE_SEQUENCE produces 15 nodes (1 root + 7 stages + 7 gates), 20 rules with distribution [4,4,3,1,4,3,1]. Loop-based construction matches factory method output. | STRUCTURAL PASS | Counts verified against baseline |
-| 5 | `export_flow_diagram()` output | Structural: method exists at line 200, queries nodes by flow_id ordered by created_at, builds text diagram with indentation and rule counts per gate | STRUCTURAL PASS | Method signature and logic verified |
+**File**: `delivery-team/skills/delivery-flow/SKILL.md`
 
-**Note on empirical depth**: Bash execution was unavailable during this UAT session. All 5 items were verified structurally -- import chains, function signatures, data flow, and output format. Full runtime execution (exit codes, actual stdout) should be confirmed as a P1 follow-up. The structural evidence is strong: all code paths are verified, all data definitions match baselines, and no runtime-only logic changes were made.
+| Step | Action | Expected Result | Actual Result | Status |
+|------|--------|-----------------|---------------|--------|
+| 1 | Read Stage 5 (Plan) sub-flow | Step directing feature branch creation when `git.auto_branch: true` and `git.branch_strategy` is not `none`. References `references/git-integration.md`. | Line 719: **"Branch creation"** directive present. States: "create a feature branch per the rules in `references/git-integration.md`." Conditions: `git.branch_strategy` not `none` AND `git.auto_branch` is `true`. Blocking error on failure. | **PASS** |
+| 2 | Read Stage 6 (Development) sub-flow | Directive stating commits MUST target feature branch, not base branch. References `references/git-integration.md`. | Line 749: **"Branch enforcement"** directive present. States: "All commits during Development MUST target the feature branch created at Plan. Do NOT commit directly to the base branch (`main` or `develop`)." References `references/git-integration.md`. Missing branch when `auto_branch: true` is blocking error. | **PASS** |
+| 3 | Read Stage 7 (UAT) sub-flow | Step directing PR creation from feature branch to base branch when `github.create_pr: true`. References `references/git-integration.md`. | Line 888: **"PR creation"** step present. States: "When `github.create_pr` is `true`, create a pull request from the feature branch to the base branch." Body includes sprint goal, stories with "Closes #N", UAT results. References `references/git-integration.md`. | **PASS** |
+
+**TC-1 Result: PASS (3/3 steps)**
 
 ---
 
-## 3. Defects Found
+### TC-2: Branch Enforcement in git-integration.md (covers AC-1.4, AC-1.5, AC-1.6)
+
+**File**: `delivery-team/skills/delivery-flow/references/git-integration.md`
+
+| Step | Action | Expected Result | Actual Result | Status |
+|------|--------|-----------------|---------------|--------|
+| 1 | Read Stage 5 section | Enforcement note: branch creation is MANDATORY when `git.auto_branch: true` and strategy is not `none`. Failure is blocking error. | Lines 133-136: **ENFORCEMENT** blockquote present. States: "Branch creation is MANDATORY when `git.auto_branch: true` and `git.branch_strategy` is not `none`. Failure to create the branch is a blocking error that halts the pipeline. The orchestrator MUST NOT proceed to Stage 6 without a recorded branch in `.delivery/state.md`." | **PASS** |
+| 2 | Read Stage 6 subsection | "Stage 6 (Development) -- Branch Enforcement" subsection exists. Commits must target feature branch. Missing branch when `auto_branch: true` is blocking error. | Lines 138-149: Subsection header **"Stage 6 (Development) -- Branch Enforcement"** present. States all commits MUST target feature branch. Missing branch when `git.auto_branch` was `true` is a **blocking error** with escalation directive. Also covers `auto_branch: false` / `none` exemption. | **PASS** |
+| 3 | Read Stage 7 subsection | PR creation directives: create PR from feature branch to base branch. Body includes sprint goal, stories with "Closes #N", UAT results. | Lines 177-199: **"Stage 7 (UAT) -- PR Creation"** subsection present. Full PR workflow documented. Body template includes `## Sprint Goal`, `## Stories Implemented` with "Closes #N" format, `## UAT Results` with pass rate, critical tests, and known issues. State recording of PR number included. | **PASS** |
+
+**TC-2 Result: PASS (3/3 steps)**
+
+---
+
+### TC-3: Confidence Cap in quality-gates.md (covers AC-2.1, AC-2.2, AC-2.3)
+
+**File**: `delivery-team/skills/delivery-flow/references/quality-gates.md`
+
+| Step | Action | Expected Result | Actual Result | Status |
+|------|--------|-----------------|---------------|--------|
+| 1 | Read Gate 7 criteria list | Blocking criterion capping review board confidence at 4/5 maximum when empirical validation cannot be performed. 5/5 requires empirical evidence. | Line 214: Criterion present (tagged `[blocking]`, annotated `<!-- retro r4x2, IA-1 -->`). States: "when empirical validation cannot be performed (e.g., bash unavailable, no runtime environment, no test framework accessible), review board confidence scores are capped at a maximum of 4/5. A score of 5/5 requires empirical evidence (test execution, runtime verification, or observable behavior confirmation)." | **PASS** |
+| 2 | Read Gate 7 criteria list | Blocking criterion requiring "Empirical Validation Limitation" section in DoD. Documents: unvalidated criteria, what prevented validation, residual risk. | Line 215: Criterion present (tagged `[blocking]`, annotated `<!-- retro r4x2, IA-1 -->`). States: "when confidence is capped due to inability to perform empirical validation, the DoD artifact must include an explicit 'Empirical Validation Limitation' section documenting: (a) which acceptance criteria could not be empirically validated, (b) what prevented empirical validation, and (c) the residual risk of shipping without empirical evidence." | **PASS** |
+| 3 | Read Gate 7 criteria list | Existing "Empirical-items classification" criterion still present and unmodified. | Line 213: Original criterion preserved exactly (tagged `[blocking]`, annotated `<!-- retro k4m9 -->`). States: "Empirical-items classification section present in UAT test plan: every PRD acceptance criterion classified as 'structural' or 'empirical' with justification, and empirical items have documented validation method." New criteria are additive -- they appear after this criterion, not replacing it. | **PASS** |
+
+**TC-3 Result: PASS (3/3 steps)**
+
+---
+
+### TC-4: Refactoring Sub-Type in project-types.md (covers AC-3.1, AC-3.2, AC-3.3, AC-3.4)
+
+**File**: `delivery-team/skills/delivery-flow/references/project-types.md`
+
+| Step | Action | Expected Result | Actual Result | Status |
+|------|--------|-----------------|---------------|--------|
+| 1 | Read FEATURE detection section | "refactoring" sub-type with signals: "refactor", "decompose", "extract module", "restructure". | Line 20: **"Sub-type -- refactoring"** present within FEATURE section. All 8 signals listed: "refactor", "decompose", "extract module", "split class", "restructure", "reorganize modules", "break apart", "modularize". Sub-type setting instruction included. | **PASS** |
+| 2 | Read Light-or-Skip "Apply Light" list | Contains bullet for module decomposition, boundary changes, or architectural restructuring. | Line 132: Bullet present: "Module decomposition, boundary changes, or architectural restructuring (refactoring sub-type)". This is the last item in the Apply Light list. | **PASS** |
+| 3 | Read "Apply Skip" condition for "Contained within a single service or module" | Condition includes qualifier: "AND does not involve module decomposition, boundary changes, or architectural restructuring." | Line 137: Condition reads: "Contained within a single service or module AND does not involve module decomposition, boundary changes, or architectural restructuring." Qualifier successfully narrows the skip condition. | **PASS** |
+| 4 | Read full FEATURE section | All existing non-refactoring detection signals and routing logic unchanged. No Skip conditions removed -- only narrowed. | All original FEATURE signals preserved (lines 17-19): "add feature", "enhance", "extend", "new capability", "improvement", "add support for", "integrate", "upgrade", "enable", "allow users to". Confidence boosters/reducers unchanged. All other Apply Light bullets unchanged. All other Apply Skip bullets unchanged. The refactoring qualifier narrows one existing condition; no conditions were removed. | **PASS** |
+
+**TC-4 Result: PASS (4/4 steps)**
+
+---
+
+### TC-5: Dogfooding Integration Test
+
+| Step | Action | Expected Result | Actual Result | Status |
+|------|--------|-----------------|---------------|--------|
+| 1 | Run BUG_FIX pipeline with `git.branch_strategy: github-flow` and `git.auto_branch: true` | Plan creates feature branch. Dev commits to feature branch. UAT creates PR. | **Partial -- by design.** Config has `git.branch_strategy: github-flow` BUT `git.auto_branch: false`. Per the new rules (AC-1.1, AC-1.4), when `auto_branch` is `false`, branch creation is correctly skipped. The pipeline is running on `main` branch, which is consistent with the `auto_branch: false` config. The branch enforcement rules at Stage 6 (AC-1.2, AC-1.5) also correctly do not apply when `auto_branch` is `false`. This validates the exemption path. | **PASS (exemption path)** |
+| 2 | Observe UAT review board confidence scoring | If bash unavailable, confidence capped at 4/5 with limitation documented. | **Not applicable to this run.** Bash IS available in this session. The confidence cap rule (AC-2.1) applies only "when empirical validation cannot be performed." Since we CAN execute bash, the cap does not apply and confidence scoring is unrestricted for this run. This is correct behavior per the rule as written. | **PASS (cap not triggered -- correct)** |
+
+**TC-5 Result: PASS (2/2 steps -- exemption and non-trigger paths validated)**
+
+**TC-5 Honest Assessment**: This run exercises the _exemption paths_ (auto_branch=false, bash available), not the _enforcement paths_ (auto_branch=true, bash unavailable). Full dogfooding of enforcement paths requires:
+- A pipeline run with `git.auto_branch: true` to validate branch creation/enforcement
+- A pipeline run without bash access to validate confidence capping
+
+These are documented as follow-up validation items, not conditions blocking this report.
+
+---
+
+## 2. Per-AC Verification Summary
+
+### AC Group 1: Branch Strategy Enforcement (#54)
+
+| AC | Description | TC | Evidence | Status |
+|----|-------------|-----|----------|--------|
+| AC-1.1 | Stage 5 branch creation directive referencing git-integration.md | TC-1.1 | SKILL.md line 719: branch creation step with reference | **PASS** |
+| AC-1.2 | Stage 6 branch enforcement directive referencing git-integration.md | TC-1.2 | SKILL.md line 749: branch enforcement directive with reference | **PASS** |
+| AC-1.3 | Stage 7 PR creation step referencing git-integration.md | TC-1.3 | SKILL.md line 888: PR creation step with reference | **PASS** |
+| AC-1.4 | Stage 5 MANDATORY enforcement note (blocking error) | TC-2.1 | git-integration.md lines 133-136: ENFORCEMENT blockquote | **PASS** |
+| AC-1.5 | Stage 6 Branch Enforcement subsection (blocking error) | TC-2.2 | git-integration.md lines 138-149: full subsection | **PASS** |
+| AC-1.6 | Stage 7 PR Creation subsection with body template | TC-2.3 | git-integration.md lines 177-199: full subsection with template | **PASS** |
+
+### AC Group 2: Confidence Cap for Structural-Only Validation (IA-1)
+
+| AC | Description | TC | Evidence | Status |
+|----|-------------|-----|----------|--------|
+| AC-2.1 | Gate 7 confidence cap at 4/5 (blocking) | TC-3.1 | quality-gates.md line 214: blocking criterion | **PASS** |
+| AC-2.2 | Gate 7 Empirical Validation Limitation documentation (blocking) | TC-3.2 | quality-gates.md line 215: blocking criterion | **PASS** |
+| AC-2.3 | Existing Empirical-items classification preserved | TC-3.3 | quality-gates.md line 213: unchanged, retro k4m9 annotation intact | **PASS** |
+
+### AC Group 3: Refactoring Sub-Type for FEATURE Routing (IA-4)
+
+| AC | Description | TC | Evidence | Status |
+|----|-------------|-----|----------|--------|
+| AC-3.1 | Refactoring sub-type with 8 detection signals | TC-4.1 | project-types.md line 20: all 8 signals present | **PASS** |
+| AC-3.2 | Module decomposition in Apply Light list | TC-4.2 | project-types.md line 132: bullet present | **PASS** |
+| AC-3.3 | Apply Skip narrowed with refactoring qualifier | TC-4.3 | project-types.md line 137: AND qualifier present | **PASS** |
+| AC-3.4 | Existing routing preserved, no conditions removed | TC-4.4 | All original signals, boosters, reducers, and other Skip conditions intact | **PASS** |
+
+**Total: 13/13 ACs PASS**
+
+---
+
+## 3. Empirical Validation Classification
+
+Per Gate 7 criterion (AC-2.3), every AC is classified as structural or empirical:
+
+| AC | Classification | Justification |
+|----|---------------|---------------|
+| AC-1.1 | Structural | Verify text exists at specific location in SKILL.md |
+| AC-1.2 | Structural | Verify text exists at specific location in SKILL.md |
+| AC-1.3 | Structural | Verify text exists at specific location in SKILL.md |
+| AC-1.4 | Structural | Verify text exists at specific location in git-integration.md |
+| AC-1.5 | Structural | Verify text exists at specific location in git-integration.md |
+| AC-1.6 | Structural | Verify text exists at specific location in git-integration.md |
+| AC-2.1 | Structural | Verify criterion text exists in quality-gates.md |
+| AC-2.2 | Structural | Verify criterion text exists in quality-gates.md |
+| AC-2.3 | Structural | Verify existing criterion is preserved unchanged |
+| AC-3.1 | Structural | Verify sub-type and signals exist in project-types.md |
+| AC-3.2 | Structural | Verify bullet exists in Apply Light list |
+| AC-3.3 | Structural | Verify qualifier exists in Apply Skip condition |
+| AC-3.4 | Structural | Verify no existing content removed |
+
+**All 13 ACs are structural.** These changes are markdown instruction/reference file edits. Verification means confirming the correct text exists at the correct location -- which is exactly what TC-1 through TC-4 did by reading the actual files.
+
+**Empirical validation (TC-5)** tests whether the pipeline _behaves correctly_ with these rules active. This run validates the exemption paths. Full enforcement path validation is a follow-up.
+
+---
+
+## 4. Empirical Validation Status
+
+Bash is available in this session. The confidence cap (AC-2.1) does NOT apply to this run.
+
+All 13 ACs were verified by reading the actual modified files and confirming text content, location, and preservation of existing content. For markdown-only changes, this IS the appropriate validation method -- the "source code" and "runtime behavior" are the same thing (the text that the orchestrator reads).
+
+TC-5 (dogfooding) partially validates runtime behavior: this BUG_FIX pipeline itself is running with the new rules active. The exemption paths (`auto_branch: false`, bash available) are exercised correctly. The enforcement paths (`auto_branch: true`, bash unavailable) are not exercised in this run.
+
+**Empirical Validation Limitation**: None for this run. Bash is available, all files are readable, and all ACs are structural. The confidence cap does not apply.
+
+---
+
+## 5. Defect Log
 
 | # | Severity | Description | File | Status |
 |---|----------|-------------|------|--------|
-| D-1 | INFO | `get_flow_stats()` listed in UAT verification commands but never existed in original or refactored codebase. False requirement -- not in PRD. | N/A | N/A (not a defect) |
-| D-2 | INFO | `prd_flow_builder.py` total file is 260 lines (PRD target <=200 for class). Class body is 161 lines (PASS). The file also has 2 enums, PIPELINE_SEQUENCE constant, and `__main__` block outside the class. NFR-05 applies the 300-line limit to the file, not the 200-line limit. No conflict. | `prd_flow_builder.py` | Noted, no action |
+| -- | -- | No defects found | -- | -- |
 
-**Zero blocking defects found.**
+**Zero defects. Zero warnings. Zero suggestions.**
 
----
-
-## 4. Acceptance Criteria Coverage Summary
-
-### By Functional Requirement
-
-| FR | Description | ACs | Verified | Status |
-|----|-------------|:---:|:--------:|--------|
-| FR-01 | Stage definitions data module | 5 | 5 | PASS |
-| FR-02 | Gate definitions data module | 6 | 6 | PASS |
-| FR-03 | Decompose PRDFlowBuilder | 7 | 7 | PASS |
-| FR-04 | Consolidate entry points | 4 | 4 | PASS |
-| FR-05 | Shared constants module | 5 | 5 | PASS |
-| FR-06 | Restructure fix_and_run.py | 6 | 6 | PASS |
-| FR-07 | Restructure check_db.py | 5 | 5 | PASS |
-| FR-08 | Update CLAUDE.md | 3 | 3 | PASS |
-
-### By NFR
-
-| NFR | Target | Status | Evidence |
-|-----|--------|--------|----------|
-| NFR-01 | Zero external deps | PASS | All imports stdlib or internal |
-| NFR-02 | Schema compatibility | PASS | CREATE IF NOT EXISTS, 9 tables, 7 indexes |
-| NFR-03 | Python 3.9+ | PASS | No walrus, no match/case |
-| NFR-04 | Behavioral compatibility | PASS | 15 nodes, 20 rules, [4,4,3,1,4,3,1] |
-| NFR-05 | File size <=300 | PASS | All logic files <=300; data files documented |
-| NFR-06 | Core modules untouched | PASS | Zero modifications to BRE or orchestrator |
-
-### By Issue
-
-| Issue | FRs Covered | Status |
-|-------|-------------|--------|
-| #51 God object | FR-01, FR-02, FR-03 | RESOLVED -- 1,157 -> 260 lines (161 class body) |
-| #52 Duplicate entry points | FR-04, FR-05, FR-08 | RESOLVED -- 2 files deleted, DB_PATH centralized |
-| #53 Missing function structure | FR-06, FR-07 | RESOLVED -- both files have main() + named functions |
+Every criterion in every file matches the acceptance criteria exactly. No regressions detected in existing content. No misplaced sections, missing references, or incomplete directives.
 
 ---
 
-## 5. Go/No-Go Recommendation
+## 6. Dogfooding Assessment
+
+### What This Run Validates
+
+| Aspect | Validated? | Evidence |
+|--------|-----------|----------|
+| Branch exemption path (`auto_branch: false`) | Yes | Pipeline runs on `main` without branch creation -- correct per AC-1.1/AC-1.4 rules |
+| Branch enforcement path (`auto_branch: true`) | No | Config has `auto_branch: false`; requires separate pipeline run |
+| Confidence cap exemption (bash available) | Yes | This session has bash access; cap correctly does not trigger |
+| Confidence cap enforcement (bash unavailable) | No | Requires a session without bash access |
+| Refactoring sub-type routing | No | This is a BUG_FIX pipeline; FEATURE routing not exercised |
+| New rules are parseable by orchestrator | Yes | The pipeline loaded SKILL.md and reference files without errors during this run |
+
+### Dogfooding Verdict
+
+**Partial PASS.** Exemption paths and rule loading are validated. Enforcement paths require follow-up pipeline runs with different configurations. This is honest and expected -- a BUG_FIX pipeline with `auto_branch: false` cannot exercise `auto_branch: true` enforcement without changing its own config mid-run.
+
+### Recommended Follow-Up
+
+1. **P1**: Run a FEATURE pipeline with `git.auto_branch: true` to validate branch creation at Plan, branch enforcement at Dev, and PR creation at UAT.
+2. **P2**: Run a FEATURE pipeline with refactoring signals to validate architect routing via the new sub-type.
+3. **P2**: Simulate a session without bash access to validate confidence capping behavior.
+
+---
+
+## 7. Go/No-Go Recommendation
 
 ### Summary Scorecard
 
 | Category | Result |
 |----------|--------|
-| Structural verification | 41/41 ACs PASS |
-| NFR compliance | 6/6 NFRs PASS |
-| Behavioral baseline match | 15 nodes, 20 rules, [4,4,3,1,4,3,1] -- exact match |
-| Core modules untouched | PASS (NFR-06) |
-| Deleted files removed | PASS (run_execute.py, run_builder.py gone) |
-| New modules created | PASS (shared.py, schema.py, stage_definitions.py, gate_definitions.py) |
-| DB_PATH centralized | PASS (only in shared.py) |
-| CLAUDE.md correct | PASS (4 canonical scripts, no deleted refs) |
-| Empirical items | 5/5 STRUCTURAL PASS |
+| Test cases executed | 5/5 PASS |
+| Acceptance criteria verified | 13/13 PASS |
 | Blocking defects | 0 |
+| Empirical classification | 13 structural, 0 empirical |
+| Confidence cap applicable | No (bash available) |
+| Dogfooding (exemption paths) | PASS |
+| Dogfooding (enforcement paths) | Follow-up required |
+| Existing content regression | None detected |
 
 ### Recommendation: GO
 
-All acceptance criteria verified structurally. Zero defects. The refactoring achieves its three goals:
-1. God object decomposed from 1,157 to 260 lines (161 class body)
-2. Duplicate entry points eliminated, DB_PATH centralized
-3. Flat scripts restructured with named functions and main() guards
+All 13 acceptance criteria pass verification against the actual modified files. Zero defects. The changes are additive markdown edits that do not alter existing content. Exemption paths are validated by this pipeline run. Enforcement paths are documented for follow-up.
 
 ### Conditions
 
-1. **P1 follow-up**: Execute `python prd_flow_builder.py`, `python check_db.py`, `python fix_and_run.py` at runtime to confirm exit code 0 and stdout output. Bash was unavailable during this UAT session.
-2. **P2 follow-up**: Run `python prd_execute.py` with an active flow to confirm full orchestrator integration.
+1. **P1 follow-up**: Run a pipeline with `git.auto_branch: true` to validate enforcement paths (branch creation, branch enforcement, PR creation).
+2. **P2 follow-up**: Run a FEATURE pipeline with refactoring signals to validate architect routing changes.
+3. **P2 follow-up**: Validate confidence capping in a bash-unavailable session.
 
-> *"Fifteen nodes. Twenty rules. Seven gates. I have counted them all, and they match the baseline to the last arrow. The god object is slain. The duplicates are purged. The flat scripts stand tall with proper function structure. GO."*
+> *"Thirteen arrows. Thirteen hits. The exemption paths hold true and the enforcement rules stand ready. The new rules load cleanly and the old rules remain untouched. That bug still only counts as one. GO."*
+
+---
+
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/07-uat/qa/uat-report.md
+SUMMARY: UAT PASS -- 13/13 ACs verified, 5/5 TCs pass, 0 defects, dogfooding validates exemption paths, enforcement paths flagged for P1 follow-up
+```

@@ -1,9 +1,22 @@
-# DevOps DoD Review — Gate 7
+# DevOps DoD Review -- Gate 7
 
 **Reviewer**: Samwise Gamgee (DevOps)
-**Date**: 2026-03-30
-**Artifact reviewed**: `.delivery/artifacts/07-uat/devops/release-plan.md` v1.0
-**Cross-reference**: `.delivery/artifacts/05-plan/devops/deployment-strategy.md` v1.0
+**Date**: 2026-04-01
+**Artifact reviewed**: `.delivery/artifacts/07-uat/devops/release-plan.md` (v2.12.1, BUG_FIX run-2026-04-01-m7v3)
+**Issue**: #54
+
+---
+
+## Review Board Assessment
+
+**RECOMMENDATION**: GO
+**CONFIDENCE**: 4/5
+
+Now, I have read every word of this release plan the way you check every knot before crossing a bridge, and I will tell you plainly -- it holds. The plan is tight, the rollback is clear, and the scope is narrow. Four markdown files, one commit, one issue. That is the kind of journey where you can see the whole road from start to finish.
+
+Why confidence 4 and not 5? Because these are markdown-only changes to delivery-flow reference documents, and while the structural verification is thorough (13/13 ACs confirmed), the changes alter pipeline *behavior directives* -- branch enforcement, confidence scoring, and architect routing. Those directives will only be truly validated when a delivery-flow session exercises them. The release plan acknowledges this correctly with its P0 dogfooding gate (Section 4, final checkbox), which is the right posture. Until that gate clears post-merge, confidence stays at 4.
+
+No empirical runtime validation has occurred, and per our quality gates, confidence cannot reach 5 without it. That is not a deficiency in the plan -- it is an honest accounting of where we stand.
 
 ---
 
@@ -11,72 +24,50 @@
 
 ### [PASS] Deployment plan complete [blocking]
 
-Now, I have been over every line of this release plan like a gardener checking the soil before planting, and I can tell you -- it is solid ground all the way through.
+I have gone over this plan like a gardener inspecting every row before the first frost, and nothing has been left unplanted.
 
-**Pre-Release Checklist (Section 1):**
-- Code completeness verification with all 11 user stories at CODE_COMPLETE or DONE (Section 1.1)
-- Behavioral baselines explicitly enumerated: 15 nodes, 20 rules, 7 gates, distribution [4,4,3,1,4,3,1] (Section 1.1)
-- All 6 NFRs verified with specific pass criteria (NFR-01 through NFR-06)
-- File inventory with exact action per file -- 4 new, 4 modified, 2 deleted, 2 unchanged (Section 1.2)
-- Deletion safety grep commands to confirm no dangling references (Section 1.3)
-- Hardcoded path elimination verified -- `"prd_flows.db"` only in `shared.py` (Section 1.4)
-- Circular import check command provided (Section 1.5)
+**Commit Strategy (Section 1):**
+- Single commit, conventional format (`fix:` prefix, `Closes #54` footer)
+- Four files explicitly listed with change descriptions per file
+- All files are markdown -- no code, no config, no schema changes
 
-**Commit Strategy (Section 2):**
-- Single commit message fully written out with conventional commit format (`refactor:` prefix)
-- Commit body includes issue references (Closes #51, #52, #53)
-- Behavioral compatibility table in the commit message itself -- good practice for traceability
+**Pre-Commit Verification (Section 2):**
+- Eight verification checks covering AC confirmation, file count, file type, config stability, dependency check, commit format, and additive-only change verification
+- The `git diff --stat` check ensuring exactly 4 `.md` files is a good guardrail against scope creep
 
-**Post-Merge Verification (Section 3):**
-- Five tiers of post-merge checks: immediate (3.1), CLAUDE.md (3.2), structural (3.3), dogfooding smoke test (3.4), dependency constraints (3.5)
-- The dogfooding gate (Section 3.4) is labeled P0 and explicitly states: if these four scripts do not run clean on a fresh database, the refactoring has failed and we revert. That is exactly the right posture.
-- Dependency constraint verification includes zero-diff checks on core modules and non-stdlib import scan
+**Post-Merge Verification (Section 4):**
+- Five checks: commit format, file count, clean status, issue closure, and the P0 dogfooding gate
+- The dogfooding gate explicitly requires exercising at least one of the three fix areas (branch enforcement, confidence cap, or refactoring sub-type routing) -- this is essential and correctly prioritized as P0
 
-**Issue Closure (Section 4):**
-- `gh issue close` commands with descriptive comments prepared
-- Auto-close via `Closes #51, #52, #53` footer as primary mechanism
-- Traceability matrix mapping issues to FRs to verification evidence
+**Scope discipline:**
+- No new files created, no config schema changes, no new dependencies
+- Changes are additive insertions only into existing documents
+- This is as low-risk a deployment as you can find on any road, and the plan treats it with appropriate care without over-engineering
 
-**PR Template (Section 6):**
-- Before/after behavioral compatibility table included
-- Test plan checklist with 9 items all marked complete
-- References PRD v1.1 and all three issues
+PASS. The deployment plan covers every step from pre-commit through post-merge with appropriate verification at each stage.
 
-**Alignment with Deployment Strategy:**
-- The release plan notes the team agreed to a single commit rather than the 11-commit sequence in the deployment strategy. This is a reasonable adaptation -- the deployment strategy itself preserved granular revert as the rationale for multiple commits, but the release plan's rollback procedure (Section 5) addresses this by using `git revert <merge-commit-sha> -m 1` for the single-commit case. The deviation is documented and the safety net is adjusted accordingly. Acceptable.
+### [PASS] Rollback procedure documented with specific steps [blocking]
 
-No gaps in the deployment plan. Every step from pre-release through post-merge is covered. PASS.
+This is where you prove you packed the rope, and Mr. Frodo, the rope is packed proper.
 
-### [PASS] Rollback procedure documented and validated [blocking]
+**Single-Commit Revert (Section 3.1):**
+- Clear two-command sequence: `git log --oneline -3` to identify, `git revert <commit-sha>` to roll back
+- Explicit revert commit message template with reason field and issue reopening note
+- Correctly warns against `git reset --hard` -- "That road leads to Mordor and we are not going there today." Quite right.
 
-This is where you prove you have thought about what happens when the road gets dark. And they have, Mr. Frodo -- every path home is marked.
+**Revert Triggers (Section 3.2):**
+- Four concrete trigger conditions with specific actions:
+  - SKILL.md parse failure: full revert
+  - Branch enforcement fires when `git.branch_strategy: none`: full revert
+  - Non-refactoring FEATURE misrouted: full revert
+  - Confidence scoring applied outside Gate 7: fix-forward if isolated, else full revert
+- The fix-forward option for the confidence scoring case is a reasonable judgment call -- if only one rule misbehaves and the root cause is clear, a targeted fix is faster than a full revert
 
-**Release Plan Rollback (Section 5):**
-- **Primary path** (Section 5.1): Single-commit revert via `git revert <merge-commit-sha> -m 1`. Correct use of `-m 1` for merge commits. Explicitly warns against `git reset --hard` on main. Good.
-- **Revert triggers** (Section 5.2): Seven concrete conditions with severity ratings (Critical/High/Medium/Low) and specific actions (full revert vs. fix-forward). Covers node count failures, import crashes, fresh DB failures, NFR violations, and CLAUDE.md reference errors.
-- **Revert window** (Section 5.3): Three scenarios defined -- pre-merge (git reset on branch), post-merge same session (direct revert on main), post-merge after subsequent commits (revert PR).
-- **Post-revert cleanup** (Section 5.4): Four-step procedure including reopening issues, filing regression issue, verifying restored files, and confirming CLAUDE.md state.
+**Post-Revert Cleanup (Section 3.3):**
+- Three-step procedure: reopen #54, file new root cause issue, confirm file restoration
+- The issue trail ensures nothing falls through the cracks
 
-**Deployment Strategy Rollback (Section 5):**
-- **Granular revert** (Section 5.1): Per-step revert with dependency chain documented. Identifies safe individual reverts (Steps 4, 5, 9, 11) vs. cascade reverts (Step 1 requires reverting 3, 6, 7, 8, 9, 10).
-- **Full revert** (Section 5.2): Reverse-order revert of all 11 commits with explicit command sequence.
-- **Revert triggers** (Section 5.3): Seven conditions matching the release plan's triggers with appropriate severity and actions.
-- **Revert window** (Section 5.4): Matches release plan's three-scenario model.
-
-**Cross-document consistency:**
-- The deployment strategy was written for the 11-commit approach; the release plan adapts for the single-commit approach. Both documents maintain the same revert triggers and severity classifications. The release plan's rollback is simpler (one commit to revert) but the deployment strategy's granular approach remains available if the team reverts to the multi-commit strategy. No contradictions.
-
-Rollback is documented, validated against both deployment scenarios, and includes post-revert recovery steps. PASS.
-
-### [PASS] Release readiness confirmed [warning]
-
-- **No version bump needed**: Explicitly stated in both documents (release plan Section 7, deployment strategy Section 3 Rule 5). This is a structural refactoring with no new capabilities -- semver does not change. Correct decision.
-- **No build step**: Repository has no build pipeline, no containers, no cloud services. "Deploying" means merging to main. The release plan accounts for this correctly.
-- **No migration required**: No new config keys, no schema version change, no database migration. The refactoring is behavioral-compatible by design.
-- **CLAUDE.md verified clean**: Release plan confirms the Running Scripts section already lists only the 4 canonical scripts and never referenced the deleted files. No documentation changes needed.
-- **All three issues (#51, #52, #53) have clear closure criteria** with traceability to FRs and verification commands.
-
-Release is ready to proceed. PASS.
+The rollback is simple because the change is simple -- one commit to revert, four files restored, one issue reopened. That is exactly how it should be. No unnecessary complexity. PASS.
 
 ---
 
@@ -84,10 +75,11 @@ Release is ready to proceed. PASS.
 
 | Criterion | Status | Severity |
 |-----------|--------|----------|
-| Deployment plan complete | PASS | blocking |
-| Rollback procedure documented and validated | PASS | blocking |
-| Release readiness confirmed | PASS | warning |
+| Deployment plan complete | **PASS** | blocking |
+| Rollback procedure documented with specific steps | **PASS** | blocking |
 
-All blocking criteria satisfied. No issues found. Both the release plan and deployment strategy are thorough, consistent with each other, and provide clear paths forward and back.
+**Overall: DONE**
 
-*"Well, I'm back." And so will the codebase be, if anything goes sideways. The road home is clear, the packs are checked twice, and we have not left the rope behind. Carry on to main.*
+Both blocking criteria are satisfied. The release plan is complete, the rollback is documented with specific steps and triggers, and the scope is well-controlled. The P0 dogfooding gate in post-merge verification is the final safety net that will confirm behavioral correctness.
+
+*"These fixes are like good taters in the pack -- they do not weigh much, but you will be glad they are there when you need them. Four files, one commit, one road forward and one road back. The pipeline holds."*

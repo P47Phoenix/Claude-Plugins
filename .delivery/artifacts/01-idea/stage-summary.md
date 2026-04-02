@@ -1,14 +1,14 @@
-## Stage 1: Idea — Summary
+## Stage 1: Idea -- Summary
 
-**Pipeline**: run-2026-03-30-r4x2
-**Date**: 2026-03-30
+**Pipeline**: run-2026-04-01-m7v3
+**Date**: 2026-04-01
 **Depth**: full
 **DoD Rounds**: 1 (first-try pass)
 
 ### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
-| PO (Gandalf) | Idea brief (direct format) | DONE | 01-idea/po/idea-brief.md |
+| PO (Gandalf) | Idea brief | DONE | 01-idea/po/idea-brief.md |
 
 ### DoD Validators
 | Validator | Status | Review |
@@ -17,6 +17,6 @@
 | Architect (Celebrimbor) | DONE | 01-idea/dod/architect-review.md |
 
 ### Notes
-- Source: GitHub issues #51, #52, #53
-- Architect risk: YAML data files would need pyyaml — use JSON or Python dicts instead
-- First-try pass
+- BUG_FIX bundling 3 items: #54, IA-1, IA-4
+- All markdown-only changes, no source code
+- Architect noted confidence cap should generalize beyond Gate 7 (downstream consideration)

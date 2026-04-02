@@ -1,7 +1,7 @@
 # Product Owner Review -- Idea Brief (Gate 1)
 
 **Reviewer**: Product Owner (Gandalf)
-**Date**: 2026-03-30
+**Date**: 2026-04-01
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
 **Verdict**: DONE
 
@@ -10,43 +10,40 @@
 ## Criteria Evaluation
 
 ### [PASS] [blocking] Problem statement present and specific
-The problem statement is precise and evidence-grounded. Three GitHub issues (#51, #52, #53) are cited, each with concrete measurements: a god object at ~1120 lines (5x the 200-line clean code signal), duplicate entry points with hardcoded strings in 5+ files (shotgun surgery), and flat procedural scripts with meaningless names (`p()`, `pp()`). This is not a vague complaint about code quality -- it is a specific, measurable diagnosis rooted in dogfooding. Even the Balrog could not hide behind such clarity.
+Three integrity gaps, each grounded in named pipeline runs and traceable to issue numbers. Run `f7a2` shows branch strategy configured but never enforced -- commits landed on master despite `feature-branch` config. Run `r4x2` shows 5/5 confidence awarded on structural evidence alone, and a god object decomposed without architect involvement despite module boundary changes. The common thread -- rules exist but lack enforcement teeth -- is identified explicitly. This is not a vague lament about "process gaps." Every claim has a run ID, a config key, or a line count behind it. Even the Enemy's gate would not fall to such well-documented evidence.
 
-### [PASS] [blocking] At least 1 target user persona identified with context
-Two personas identified:
-1. **Plugin developers** -- maintainers who extend or modify the PRD quality gate flow. Their pain: navigating and changing a 1120-line god object.
-2. **Pipeline users** -- users who run PRD workflows and need reliable, understandable tooling. Their pain: duplicate entry points and confusing script structure.
+### [PASS] [blocking] Target users identified
+Three user groups named, each mapped to the specific problem that affects them:
+1. **Pipeline users** -- harmed by lack of branch isolation (incomplete work on master).
+2. **Architects** -- bypassed on structural decisions they exist to govern.
+3. **POs and QA** -- misled by confidence scores that overstate validation depth.
 
-Both personas are relevant and their friction points connect directly to the problems described. The fellowship knows who it serves.
+Each persona's pain connects directly to a bundled work item. The fellowship knows who it fights for.
 
-### [PASS] [blocking] At least 1 measurable goal stated
-Five goals stated, four of which are measurable:
-1. Reduce `PRDFlowBuilder` from ~1120 lines to ~200 lines -- quantified target.
-2. Eliminate duplicate entry points -- binary (duplicates exist or they do not).
-3. Extract shared constants into a shared module -- structural and verifiable.
-4. Restructure flat scripts into named functions with proper error handling -- verifiable by inspection.
-5. 100% behavioral compatibility -- identical results from existing workflows.
+### [PASS] [blocking] Goals present and measurable
+Four goals stated, three of which are binary and verifiable:
+1. Branch enforcement -- feature branch created at Plan, used during Dev, PR at UAT. Pass/fail by observation.
+2. Confidence cap -- review board score capped at 4/5 without empirical validation, limitation documented. Pass/fail by inspection of DoD artifact.
+3. Architect routing -- FEATURE projects with module decomposition route to Architect-light. Pass/fail by testing routing logic.
+4. Dogfooding validation -- fixes exercised in a live pipeline run at UAT. This is not a hope; it is a gate.
 
-Goal 1 alone satisfies the criterion with a clear before/after metric. Goal 5 provides the critical safety constraint. A wizard's goals are measured by outcomes, not intentions, and these are measured well.
+Goal 4 is particularly wise -- it uses the pipeline's own standards to validate fixes to the pipeline's own standards. Recursive integrity. A wizard approves.
 
-### [PASS] [warning] Constraints or known limitations listed
-Four constraints documented:
-1. Python-only changes, no new dependencies.
-2. Preserve existing SQLite database schema and data compatibility.
-3. All existing CLI entry points in CLAUDE.md must continue to work (or consolidate with clear migration).
-4. No changes to business rules engine or flow orchestrator -- structural refactoring only.
+### [PASS] [warning] Scope clear -- IN and OUT
+**In-scope**: Three work items with priorities (P1, P2, P2), specific fix locations down to file and section, and a constraints section that bounds the change surface to markdown/YAML modifications of existing files only. No new files, no config schema changes, no scripts.
 
-These are practical and well-scoped. Constraint 3 wisely allows consolidation with migration path rather than demanding frozen interfaces. Constraint 4 draws a sharp boundary around what is and is not touched.
+**Out-of-scope**: Four explicit exclusions -- hooks/scripts/plugin structure, config schema changes, retrospective process changes, and new git integration features beyond enforcement.
 
-### [PASS] [suggestion] Initial scope boundaries sketched
-In-scope: 5 existing files to refactor, 1 new shared module, and new data files for stage/gate definitions. Each file is named explicitly with its intended transformation.
+The bundled work items table is crisp -- each row names the item, its priority, its scope, and its fix location. Downstream stages will know exactly where to cut.
 
-Out-of-scope: 4 explicit exclusions -- `database.py`, `business_rules_engine.py`, `flow_orchestrator.py`, `agent_registry.py` -- plus no new features, no schema changes, and no test framework setup. The boundary is sharp and justified.
-
-One suggestion: the brief could benefit from noting the expected number of new data files (YAML vs JSON decision) to give downstream stages clearer scope. This is non-blocking -- Design stage can resolve it.
+One observation (non-blocking): the bundle rationale is sound -- all three items address pipeline integrity enforcement. Bundling avoids three separate pipeline runs for tightly related fixes that share the same validation strategy (dogfooding a pipeline session). Well-reasoned.
 
 ---
 
 ## Summary
 
-This brief arrives rooted in dogfooding evidence with three linked GitHub issues, quantified baselines (~1120 lines, 5+ hardcoded paths, 80+ line functions), five measurable goals, and a well-bounded scope that names every file to be touched and every file explicitly excluded. The road goes ever on, but this refactoring journey has a clear map. The brief shall pass.
+This brief arrives battle-tested -- sourced from a filed issue and two retrospective improvement actions, with evidence from named runs rather than speculation. The problem is specific, the users are identified, the goals are measurable and binary, and the scope is bounded with surgical precision. The bundling rationale is justified and the constraints prevent scope creep before it begins.
+
+The self-referential quality of Goal 4 deserves note: a brief about pipeline enforcement gaps demands that its own fixes be validated through the pipeline's enforcement mechanisms. The pipeline that governs our craft must itself be governed -- and this brief ensures it shall be.
+
+The road is clear. The brief shall pass.

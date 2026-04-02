@@ -1,8 +1,9 @@
 # Tech Writer DoD Review -- Stage 6 Development
 
 **Reviewer**: Bilbo (Technical Writer)
-**Date**: 2026-03-30
-**Artifact Scope**: prd-quality-gate-flow refactoring (shared.py, schema.py, stage_definitions.py, gate_definitions.py, plus modified prd_flow_builder.py, prd_execute.py, fix_and_run.py, check_db.py, deleted run_execute.py/run_builder.py)
+**Date**: 2026-04-01
+**Artifact Scope**: US-01 Pipeline Integrity Fixes -- git-integration.md (new subsections), quality-gates.md (new criteria)
+**Dev Notes**: `.delivery/artifacts/06-dev/developer/dev-notes.md`
 
 > "I think I'm quite ready for another documentation adventure."
 
@@ -10,84 +11,78 @@
 
 ## Gate 6 Tech Writer Criteria
 
-### 1. CLAUDE.md entry points are accurate (no references to deleted files) [BLOCKING]
+### 1. New content is clearly written and follows the document's existing tone [BLOCKING]
 
 **Result: PASS**
 
-CLAUDE.md lines 69-74 list exactly four canonical scripts under "Running Scripts":
+**git-integration.md** -- The three new subsections (Stage 5 ENFORCEMENT blockquote at line 133, Stage 6 Branch Enforcement at line 138, Stage 7 PR Creation at line 176) match the established tone of the surrounding content precisely. Observations:
 
-```
-python prd-quality-gate-flow/prd_flow_builder.py
-python prd-quality-gate-flow/prd_execute.py
-python prd-quality-gate-flow/check_db.py
-python prd-quality-gate-flow/fix_and_run.py
-```
+| New Section | Tone Match | Clarity |
+|-------------|-----------|---------|
+| ENFORCEMENT blockquote (L133-136) | Uses the same imperative, uppercase-keyword style (`MANDATORY`, `MUST NOT`) seen in existing rules throughout the document. Consistent with the directive voice of the Pipeline Integration Points section. | Clear: states the condition, the consequence, and the state requirement in three sentences. No ambiguity. |
+| Stage 6 Branch Enforcement (L138-149) | Mirrors the structure of the existing Stage 6 Commit Suggestions subsection -- condition check, bullet list of rules, fallback for disabled configs. Parallel construction. | Clear: the three bullet points cover verify-current-branch, missing-branch-is-error, and opt-out conditions. Each is a single actionable instruction. |
+| Stage 7 PR Creation (L176-201) | Follows the same numbered-step pattern used by the existing Stage 5 Branch Creation and Stage 7 Working Tree Validation subsections. PR body template uses fenced code block, consistent with the commit message examples earlier in the file. | Clear: the PR body template is concrete with placeholder labels (`<sprint goal>`, `<story title>`) that map directly to pipeline artifacts. The "Closes #N" pattern matches Conventional Commits footer conventions documented earlier in the same file. |
 
-All four files exist on disk. No references to the deleted `run_execute.py` or `run_builder.py` appear anywhere in CLAUDE.md. The "Agentic flow core components" section (lines 107-111) lists `database.py`, `business_rules_engine.py`, `flow_orchestrator.py`, and `agent_registry.py` as shared components -- these are accurate for the agentic-flow-builder side and do not claim membership in prd-quality-gate-flow's file list.
+**quality-gates.md** -- The two new criteria at lines 214-215 (Confidence cap, Empirical Validation Limitation) follow the established pattern for Gate 7 criteria:
 
-Verified: `grep -r "run_execute\|run_builder" CLAUDE.md` returns zero matches.
+| Aspect | Existing Pattern | New Content |
+|--------|-----------------|-------------|
+| Format | `- [ ] <criterion description> [severity] <!-- retro ref -->` | Both new criteria use this exact format, including `[blocking]` tag and `<!-- retro r4x2, IA-1 -->` provenance comments. |
+| Length | Gate 7 criteria range from single-sentence to multi-clause with parenthetical examples | Both new criteria are multi-clause with parenthetical examples -- consistent with the longer criteria like "Empirical-items classification" (line 213) and "Dogfooding" (lines 225-229). |
+| Voice | Declarative, third-person ("review board confidence scores are capped"), imperative where action is required ("DoD artifact must include") | Matches. |
+| Specificity | Existing criteria provide concrete thresholds (e.g., "100% of critical tests, 90% overall") | New criteria provide concrete thresholds: "4/5 maximum", "5/5 requires empirical evidence", and a three-part enumeration (a, b, c) for documentation requirements. |
 
-### 2. Non-obvious logic has inline comments [WARNING]
+No tonal drift detected. The new content reads as though it was always part of the documents.
 
-**Result: PASS**
-
-All four new files contain inline comments that explain *why*, not just *what*:
-
-| File | Non-obvious Logic | Comment Present |
-|------|------------------|-----------------|
-| `shared.py` line 14 | `DB_PATH` as single source of truth | `# Database file path -- single source of truth` |
-| `shared.py` lines 29-32 | Flow IDs use seconds, node/rule IDs use microseconds | Docstring explains collision avoidance rationale |
-| `shared.py` line 56 | Deferred import of `ensure_schema` inside `get_connection()` | Not commented -- see finding W-01 below |
-| `schema.py` lines 22-173 | Each CREATE TABLE block | Section comments (`# Flows table`, `# Nodes table`, etc.) |
-| `stage_definitions.py` lines 10-11 | Required field sets used for load-time validation | Descriptive comment on each constant |
-| `stage_definitions.py` lines 255-269 | Load-time validation loop | Pattern is self-documenting with clear error messages |
-| `gate_definitions.py` lines 8 | Rule distribution `[4, 4, 3, 1, 4, 3, 1]` | Documented in module docstring -- critical for baseline verification |
-| `gate_definitions.py` lines 396-411 | Nested load-time validation (gates + rules) | Pattern is self-documenting with clear error messages |
-
-**Finding W-01 (WARNING)**: `shared.py` line 56 uses a deferred import (`from schema import ensure_schema` inside `get_connection()`). This is a deliberate circular-import avoidance pattern -- `schema.py` imports nothing from `shared.py`, but a future maintainer might not realize why the import is deferred. A one-line comment explaining the reason (e.g., `# Deferred to avoid circular import if schema ever imports shared`) would be helpful.
-
-### 3. Module-level docstrings present in new files [WARNING]
+### 2. Cross-references are valid (file names, section names) [BLOCKING]
 
 **Result: PASS**
 
-All four new files have module-level docstrings:
+Cross-references verified:
 
-| File | Docstring | Quality |
-|------|-----------|---------|
-| `shared.py` | Lines 1-6: Purpose, what it centralizes, why | Good -- explains the "single definition" rationale |
-| `schema.py` | Lines 1-6: Origin (extracted from which method), scope (9 tables, 7 indexes) | Good -- traces provenance to original code |
-| `stage_definitions.py` | Lines 1-8: Pure data module, 7 stages, extraction source, no-internal-imports note, validation note | Excellent -- the "No internal imports" statement is load-order documentation |
-| `gate_definitions.py` | Lines 1-11: Pure data module, 7 gates, 20 rules, distribution array, extraction source, no-internal-imports note, validation note | Excellent -- the rule distribution in the docstring serves as a contract |
+| Source | Reference | Target | Valid |
+|--------|-----------|--------|-------|
+| SKILL.md L722 | `references/git-integration.md` (branch creation) | File exists, Stage 5 section present at L114 | Yes |
+| SKILL.md L751 | `references/git-integration.md` (enforcement rules) | File exists, Stage 6 Branch Enforcement at L138 | Yes |
+| SKILL.md L892 | `references/git-integration.md` (PR body format) | File exists, Stage 7 PR Creation at L176 with body template | Yes |
+| git-integration.md L129 | `.delivery/state.md` (branch recording) | Runtime artifact, not a static file -- consistent with existing references to `.delivery/state.md` elsewhere in the pipeline docs | Yes (pattern-consistent) |
+| git-integration.md L199 | `.delivery/state.md` (PR recording) | Same as above | Yes (pattern-consistent) |
+| quality-gates.md L214 | `<!-- retro r4x2, IA-1 -->` | Provenance comment referencing retrospective and impact analysis -- these are traceability markers, not file references | N/A (metadata) |
+| quality-gates.md L215 | `<!-- retro r4x2, IA-1 -->` | Same as above | N/A (metadata) |
+| pipeline-stages.md L274 | `references/git-integration.md` | File exists | Yes |
+| dev-notes.md AC-1.4 through AC-1.6 | Section names in git-integration.md | All three subsection titles confirmed present | Yes |
+| dev-notes.md AC-2.1, AC-2.2 | Criterion descriptions in quality-gates.md | Both criteria confirmed at lines 214-215 | Yes |
 
-All function-level docstrings are also present with Args/Returns documentation where applicable (shared.py functions, schema.py's ensure_schema).
+All cross-references resolve.
+
+### 3. No orphaned references to non-existent sections or files [WARNING]
+
+**Result: PASS**
+
+Checked for orphaned references:
+- No references to sections that were removed or renamed.
+- The new Stage 6 Branch Enforcement subsection sits between the existing Stage 5 Branch Creation and Stage 6 Commit Suggestions -- the ordering is logical (creation, then enforcement, then commit suggestions).
+- The new Stage 7 PR Creation subsection sits between Commit Suggestions and Working Tree Validation -- logical flow (commits, then PR, then clean-tree check).
+- The two new quality-gates criteria sit after the existing "Empirical-items classification" criterion (line 213) and before "Pass rate meets threshold" (line 216) -- this groups all empirical-validation-related criteria together. Good placement.
+
+No orphaned references found.
 
 ---
 
-## Additional Findings
+## Dev Notes Quality
 
-### W-02 (WARNING): Stale references to deleted files in auxiliary markdown
-
-Two markdown files within `prd-quality-gate-flow/` still reference the deleted `run_builder.py`:
-
-- `IMPLEMENTATION_SUMMARY.md` lines 19, 197, 325: Lists `run_builder.py` as a current file, includes it in a run command, and shows it in the directory tree.
-- `DEMONSTRATION_RESULTS.md` line 312: Shows `python run_builder.py` as a re-run command.
-
-These are **not** in CLAUDE.md (which is the BLOCKING criterion), so this is a WARNING, not a blocker. However, a user following these auxiliary docs would hit a "file not found" error. Recommend updating both files to reference `python prd_flow_builder.py` instead.
-
-### Observation: Dev notes quality
-
-The `dev-notes.md` at `.delivery/artifacts/06-dev/developer/dev-notes.md` is thorough -- 149 lines covering implementation summary, behavioral baseline verification (18 checks, all PASS), NFR compliance matrix, latent bug fix documentation, per-story status table, deviations log, and pending empirical validations. The provenance trail from design spec to implementation is clear. Well done, Gimli.
+The dev-notes at `.delivery/artifacts/06-dev/developer/dev-notes.md` are well-structured: 13 acceptance criteria mapped to 4 files with clear per-AC verification table, deviation log (none), and an honest empirical-vs-structural coverage split (13/13 structural, 0/13 empirical). The distinction between structural and empirical validation is explicitly called out with a pointer to the dogfooding memory lesson. Thorough work, Gimli -- the dwarves do fine masonry when they set their minds to it.
 
 ---
 
 ## Verdict
 
-All BLOCKING criteria pass. CLAUDE.md accurately reflects the current file structure with no dangling references to deleted scripts. All new files have module-level docstrings and inline comments on non-obvious logic.
+All BLOCKING criteria pass. The new subsections in git-integration.md and the new criteria in quality-gates.md are clearly written, tonally consistent with their surrounding content, and all cross-references resolve correctly. No orphaned references detected.
 
-Two WARNING-level findings:
-- **W-01**: Deferred import in `shared.py:get_connection()` would benefit from a one-line comment.
-- **W-02**: `IMPLEMENTATION_SUMMARY.md` and `DEMONSTRATION_RESULTS.md` still reference the deleted `run_builder.py`.
+No WARNING or SUGGESTION findings for this review.
 
-Neither finding blocks acceptance.
-
-**STATUS**: DONE
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/06-dev/dod/techwriter-review.md
+SUMMARY: New git-integration subsections and quality-gates criteria pass all Tech Writer gate criteria -- tone, cross-refs, and placement are sound.
+```

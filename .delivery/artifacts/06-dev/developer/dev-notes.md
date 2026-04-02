@@ -1,148 +1,103 @@
-# Dev Notes: prd-quality-gate-flow Refactoring
+# Dev Notes: Pipeline Integrity Fixes (US-01)
 
 **Developer**: Gimli
-**Date**: 2026-03-30
-**Status**: CODE_COMPLETE
-**Stories**: US-01 through US-11 (all 11 implemented)
-**Sprint Plan**: v1.1 (3 sprints, 34 SP total)
-**Issues**: #51 (God object), #52 (Duplicate entry points), #53 (Missing function structure)
+**Date**: 2026-04-01
+**Status**: DONE
+**Story**: US-01 — Enforce Pipeline Integrity Rules for Branch Strategy, Confidence Scoring, and Architect Routing
+**Sprint Plan**: BUG_FIX (Light Plan), 2 SP
+**Source Issues**: #54, IA-1 (retro r4x2), IA-4 (retro r4x2)
 
-> "That module was built by dwarf-craft. It will hold."
-
----
-
-## 1. Implementation Summary
-
-All 11 user stories implemented following the safe refactoring sequence from the design spec. The god object has been slain -- 1,157 lines reduced to 259 (162 lines class body). And my code!
-
-### Files Created (Sprint 1: US-01 through US-04)
-| File | Lines | Purpose |
-|------|------:|---------|
-| `shared.py` | 60 | DB_PATH, generate_timestamp_id(), ensure_utf8_output(), get_connection() |
-| `schema.py` | 174 | ensure_schema(conn) -- 9 tables, 7 indexes, idempotent |
-| `stage_definitions.py` | 269 | 7 stage dicts with load-time validation |
-| `gate_definitions.py` | 411 | 7 gate dicts, 20 business rules, load-time validation |
-
-### Files Modified (Sprint 2: US-05 through US-07, Sprint 3: US-08 through US-09)
-| File | Before | After | Delta | Story |
-|------|-------:|------:|------:|-------|
-| `prd_flow_builder.py` | 1,157 | 259 | -898 | US-06 |
-| `prd_execute.py` | 227 | 228 | +1 | US-07 |
-| `fix_and_run.py` | 214 | 290 | +76 | US-08 |
-| `check_db.py` | 27 | 69 | +42 | US-09 |
-
-### Files Deleted (Sprint 3: US-10)
-- `run_execute.py` (210 lines) -- duplicate of prd_execute.py
-- `run_builder.py` (44 lines) -- duplicate of prd_flow_builder.py __main__
-
-### Documentation Updated (Sprint 3: US-11)
-- `CLAUDE.md` -- already listed 4 canonical scripts, no references to deleted files. No changes needed.
-
-### Files Untouched (NFR-06 verified via git diff)
-- `business_rules_engine.py` (569 lines) -- zero diff
-- `flow_orchestrator.py` (598 lines) -- zero diff
+> "The foundation was sound, but the mortar had gaps. Now it holds. And my code!"
 
 ---
 
-## 2. Behavioral Baseline Verification
+## 1. Summary of Changes Per File
 
-All critical baselines confirmed post-refactoring:
+### File 1: `delivery-flow/SKILL.md`
+Three surgical additions to stage definitions, no existing content altered:
 
-| Check | Expected | Actual | Status |
-|-------|----------|--------|--------|
-| Node count | 15 | 15 | PASS |
-| Rule count | 20 | 20 | PASS |
-| Gate count | 7 | 7 | PASS |
-| Gate rule distribution | [4,4,3,1,4,3,1] | [4,4,3,1,4,3,1] | PASS |
-| Node names/types | 15 exact names | All match | PASS |
-| builder.conn accessible | public attribute | accessible | PASS |
-| export_flow_diagram() | returns diagram | works | PASS |
-| create_flow() | on class | present | PASS |
-| create_node() | on class | present | PASS |
-| create_rule() | on class | present | PASS |
-| Factory methods removed | 0 occurrences | 0 | PASS |
-| Hardcoded DB path | only shared.py | only shared.py | PASS |
-| EXAMPLE_PRODUCT_IDEAS | only prd_execute.py | only prd_execute.py | PASS |
-| Core modules unchanged | zero diff | zero diff | PASS |
-| Class body lines | <=200 | 162 | PASS |
-| Deleted scripts gone | no files on disk | confirmed | PASS |
-| No refs to deleted scripts | 0 in *.py | 0 | PASS |
-| CLAUDE.md clean | no run_execute/run_builder | 0 matches | PASS |
+| Location | Change | AC |
+|----------|--------|----|
+| Stage 5 (Plan), before Light mode | Added **Branch creation** directive: when `git.branch_strategy` is not `none` AND `git.auto_branch` is `true`, create feature branch per `references/git-integration.md`. Blocking error on failure. | AC-1.1 |
+| Stage 6 (Development), before Execution | Added **Branch enforcement** directive: all commits MUST target feature branch, not base branch. References `references/git-integration.md`. Missing branch when `auto_branch: true` is blocking error. | AC-1.2 |
+| Stage 7 (UAT), before Post-acceptance | Added **PR creation** step: when `github.create_pr` is `true`, create PR from feature branch to base branch. Body includes sprint goal, stories with "Closes #N", UAT results. References `references/git-integration.md`. | AC-1.3 |
 
-### Node Order Verification (exact)
+### File 2: `delivery-flow/references/git-integration.md`
+Three additions to the Pipeline Integration Points section:
+
+| Location | Change | AC |
+|----------|--------|----|
+| Stage 5, after skip-branch paragraph | Added **ENFORCEMENT** blockquote: branch creation is MANDATORY when conditions met. Failure is blocking error. Pipeline MUST NOT proceed without branch in state. | AC-1.4 |
+| New subsection before Commit Suggestions | Added **Stage 6 (Development) -- Branch Enforcement** subsection: commits must target feature branch, missing branch when `auto_branch: true` is blocking error with escalation. | AC-1.5 |
+| New subsection before Working Tree Validation | Added **Stage 7 (UAT) -- PR Creation** subsection: full PR workflow with body template (sprint goal, stories with "Closes #N", UAT results), state recording. | AC-1.6 |
+
+### File 3: `delivery-flow/references/quality-gates.md`
+Two new blocking criteria added to Gate 7 (UAT Acceptance), inserted after the existing Empirical-items classification criterion:
+
+| Criterion | AC |
+|-----------|----|
+| **Confidence cap**: review board confidence capped at 4/5 maximum when empirical validation cannot be performed. 5/5 requires empirical evidence. | AC-2.1 |
+| **Empirical Validation Limitation documentation**: DoD must include explicit section documenting (a) unvalidated criteria, (b) what prevented validation, (c) residual risk. | AC-2.2 |
+
+The existing Empirical-items classification criterion was preserved unchanged (AC-2.3).
+
+### File 4: `delivery-flow/references/project-types.md`
+Three changes to FEATURE detection and routing:
+
+| Location | Change | AC |
+|----------|--------|----|
+| FEATURE detection section | Added **Sub-type -- refactoring** with 8 detection signals: "refactor", "decompose", "extract module", "split class", "restructure", "reorganize modules", "break apart", "modularize". | AC-3.1 |
+| Light-or-Skip "Apply Light" list | Added bullet: "Module decomposition, boundary changes, or architectural restructuring (refactoring sub-type)". | AC-3.2 |
+| Light-or-Skip "Apply Skip" list | Narrowed "Contained within a single service or module" with qualifier: "AND does not involve module decomposition, boundary changes, or architectural restructuring." | AC-3.3 |
+
+All existing non-refactoring FEATURE detection signals and routing logic remain unchanged. No Skip conditions removed -- only narrowed (AC-3.4).
+
+---
+
+## 2. Per-AC Verification
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| AC-1.1 | PASS | SKILL.md Stage 5 contains branch creation directive referencing `references/git-integration.md` by name. |
+| AC-1.2 | PASS | SKILL.md Stage 6 contains branch enforcement directive referencing `references/git-integration.md` by name. |
+| AC-1.3 | PASS | SKILL.md Stage 7 contains PR creation step referencing `references/git-integration.md` by name. |
+| AC-1.4 | PASS | git-integration.md Stage 5 contains ENFORCEMENT blockquote: MANDATORY branch creation, blocking error on failure. |
+| AC-1.5 | PASS | git-integration.md contains "Stage 6 (Development) -- Branch Enforcement" subsection with blocking error for missing branch. |
+| AC-1.6 | PASS | git-integration.md contains "Stage 7 (UAT) -- PR Creation" subsection with PR body template including sprint goal, "Closes #N", UAT results. |
+| AC-2.1 | PASS | quality-gates.md Gate 7 contains blocking criterion capping confidence at 4/5 without empirical validation. |
+| AC-2.2 | PASS | quality-gates.md Gate 7 contains blocking criterion requiring "Empirical Validation Limitation" section in DoD. |
+| AC-2.3 | PASS | Existing "Empirical-items classification" criterion remains unchanged at its original position. |
+| AC-3.1 | PASS | project-types.md FEATURE section contains "refactoring" sub-type with all 8 specified signals. |
+| AC-3.2 | PASS | project-types.md "Apply Light" list includes module decomposition/boundary changes/restructuring bullet. |
+| AC-3.3 | PASS | project-types.md "Apply Skip" single-module condition includes "AND does not involve..." qualifier. |
+| AC-3.4 | PASS | All existing non-refactoring FEATURE signals and routing unchanged. No Skip conditions removed. |
+
+**Result**: 13/13 ACs pass structural verification.
+
+---
+
+## 3. Deviations from Story
+
+None. All changes are exactly as specified in the acceptance criteria. No new files created. No config keys added. No existing content removed or modified.
+
+---
+
+## 4. Verification Status
+
+| Type | Coverage | Notes |
+|------|----------|-------|
+| **Structural** | 13/13 ACs | All criteria verified by reading modified files and confirming text changes exist at correct locations. |
+| **Empirical** | 0/13 ACs | These are markdown instruction files -- empirical validation means running a pipeline session that exercises each fix (TC-5 dogfooding). This is a UAT gate item per IA-1 and per memory lesson `feedback_dogfooding.md`. |
+
+### Derived Artifacts Check
+- `config-schema.json` exists in the delivery-flow references directory.
+- No config schema changes were made (all config keys already existed in v2.3).
+- No derived artifact regeneration required.
+
+---
+
 ```
-prd_root[root]
-stage1_prd_creator[agent]
-gate1_completeness[gate]
-stage2_technical_reviewer[agent]
-gate2_technical_feasibility[gate]
-stage3_stakeholder_orchestrator[control_flow]
-gate3_business_value[gate]
-gate4_executive_approval[gate]
-stage4_implementation_planner[agent]
-gate5_resource_feasibility[gate]
-stage5_task_flow_generator[agent]
-stage6_prd_evaluator[agent]
-gate6_success_criteria[gate]
-gate7_uat[gate]
-stage7_retrospective[agent]
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/06-dev/developer/dev-notes.md
+SUMMARY: US-01 implemented: 13/13 ACs pass structural verification across 4 files (SKILL.md, git-integration, quality-gates, project-types)
 ```
-
----
-
-## 3. NFR Compliance
-
-| NFR | Target | Status | Evidence |
-|-----|--------|--------|----------|
-| NFR-01 | Zero external deps | PASS | All imports are stdlib only |
-| NFR-02 | Schema compatibility | PASS | ensure_schema() uses CREATE IF NOT EXISTS, 9 tables, 7 indexes |
-| NFR-03 | Python 3.9+ | PASS | No walrus operators, no 3.10+ features used |
-| NFR-04 | Behavioral compatibility | PASS | 15 nodes, 20 rules, [4,4,3,1,4,3,1], all names match |
-| NFR-05 | File size <=300 (logic) | PASS | All logic files <=300; gate_definitions.py (411) is declarative data |
-| NFR-06 | Core modules untouched | PASS | git diff shows zero diff on both files |
-
----
-
-## 4. Latent Bug Fix
-
-US-08 fixes the latent ordering bug in `fix_and_run.py` (documented in PRD AC-03g): previously, raw `sqlite3.connect("prd_flows.db")` was called before the builder was imported, meaning DELETE queries would fail on a fresh database with no tables. Now `clean_incomplete_executions()` uses `shared.get_connection()` which calls `ensure_schema()` first.
-
----
-
-## 5. Per-Story Status
-
-| Story | SP | Sprint | Status | Verification Type | Notes |
-|-------|---:|--------|--------|-------------------|-------|
-| US-01 | 2 | S1 | DONE | Structural | shared.py created with all exports |
-| US-02 | 3 | S1 | DONE | Structural | schema.py: 9 tables, 7 indexes, idempotent |
-| US-03 | 1 | S1 | DONE | Structural | get_connection() wired with ensure_schema() |
-| US-04 | 5 | S1 | DONE | Structural | 7 stage dicts, load-time validation |
-| US-05 | 5 | S2 | DONE | Structural | 7 gates, 20 rules, [4,4,3,1,4,3,1] |
-| US-06 | 8 | S2 | DONE | Structural + Empirical | 162-line class body, 15/20 baseline match |
-| US-07 | 3 | S2 | DONE | Structural | DB_PATH imported, ensure_utf8_output() called |
-| US-08 | 3 | S3 | DONE | Structural | 5 named functions, main() guard, latent bug fixed |
-| US-09 | 2 | S3 | DONE | Structural | 3 descriptive functions, graceful error handling |
-| US-10 | 1 | S3 | DONE | Structural | Both files deleted, zero references |
-| US-11 | 1 | S3 | DONE | Structural | CLAUDE.md already correct, verified clean |
-
-See individual `us-{NN}-notes.md` files for per-story acceptance criteria verification.
-
----
-
-## 6. Deviations from Design Spec
-
-1. **fix_and_run.py line count**: Design spec estimated ~210 lines; actual is 290. The increase is due to properly extracting the test_context dict into `demonstrate_bre_evaluation()` and adding docstrings to all functions. Still under NFR-05's 300-line limit.
-
-2. **CLAUDE.md (US-11)**: No changes were needed -- the file already listed exactly the 4 canonical scripts and had no references to deleted files. The prior refactoring work (US-01 through US-07) had already been done in a previous session.
-
----
-
-## 7. Empirical Validations Pending (UAT)
-
-| Item | Story | What Needs Validating |
-|------|-------|-----------------------|
-| `python prd_flow_builder.py` end-to-end | US-06 | Full CLI run creates flow, prints diagram, exit 0 |
-| `python fix_and_run.py` end-to-end | US-08 | Full CLI run with cleanup + BRE demo + gate overview |
-| `python check_db.py` with missing DB | US-09 | Graceful error message, no stack trace |
-| `python check_db.py` with existing DB | US-09 | Correct counts output |
-| `python prd_execute.py` import test | US-07 | Module imports cleanly (full execution requires DB state) |

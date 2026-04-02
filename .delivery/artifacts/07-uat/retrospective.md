@@ -1,12 +1,12 @@
-# Retrospective: run-2026-03-30-r4x2
+# Retrospective: run-2026-04-01-m7v3
 
 **Scrum Master**: Aragorn
 **Date**: 2026-04-01
-**Pipeline**: run-2026-03-30-r4x2
-**Type**: FEATURE (prd-quality-gate-flow Refactoring)
-**Issues**: #51 (God object), #52 (Duplicate entry points), #53 (Missing function structure)
+**Pipeline**: run-2026-04-01-m7v3
+**Type**: BUG_FIX (Pipeline Integrity Fixes)
+**Issues**: #54, IA-1, IA-4
 
-> *"The road has been long, my friends. Three sessions, three sprints, and a god object that would have made Sauron proud. But the fellowship held. I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall -- and it did not."*
+> *"A single session, a single sprint, and every gate held on first approach. The mortar Gimli spoke of -- it holds now. I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall. Today, it did not even wobble."*
 
 ---
 
@@ -14,145 +14,104 @@
 
 | Item | Value |
 |------|-------|
-| Pipeline ID | run-2026-03-30-r4x2 |
-| Type | FEATURE |
-| Started | 2026-03-30 |
+| Pipeline ID | run-2026-04-01-m7v3 |
+| Type | BUG_FIX |
+| Started | 2026-04-01 |
 | Completed | 2026-04-01 |
-| Sessions | 3 (session loss occurred; pipeline resumed without rework) |
-| Stages Executed | Idea, Refine, Design, Plan, Dev, UAT (6 of 7; Architect skipped per FEATURE routing) |
-| Total Stories | 11 |
-| Total ACs | 42 |
-| Total SP | 34 |
-| Sprints Planned | 3 |
-| Sprint Breakdown | S1: 11 SP (69% ceiling) / S2: 16 SP (100%) / S3: 7 SP (44%) |
+| Sessions | 1 (no session loss) |
+| Stages Executed | Idea (full), Plan (light), Dev (full), UAT (full) -- 4 of 7; Refine/Design/Architect skipped per BUG_FIX routing |
+| Total Stories | 1 (US-01) |
+| Total ACs | 13 |
+| Total SP | 2 |
+| Sprints | 1 |
+| Sprint Capacity Used | 33% (2 SP / 6 SP ceiling) |
 
 ---
 
 ## 2. What Went Well
 
-### 2.1 Perfect DoD First-Try Pass Rate (6/6 stages)
+### 2.1 Perfect DoD First-Try Pass Rate Sustained (4/4 stages)
 
-Every stage passed DoD on the first attempt. This is the first pipeline run with a 100% first-try pass rate across all stages. Historical baselines were significantly lower -- Design was at 67%, Plan at 50%, UAT at 50%. Gate-patterns memory injection continues to correlate with this improvement.
+This is the second consecutive pipeline with 100% first-try DoD passes. The gate-patterns memory injection hypothesis is now reinforced across two different project types (FEATURE and BUG_FIX) and two different stage counts (6 and 4). The pattern holds regardless of pipeline shape.
 
-**Evidence**: All 6 stage summaries report "DoD Rounds: 1 (first-try pass)."
+**Evidence**: All 4 stage summaries report "DoD Rounds: 1 (first-try pass)."
 
-### 2.2 Collaboration Patterns Caught Real Issues Early
+### 2.2 IA-1 and IA-4 from Previous Retro Were Delivered as Fixes
 
-The evaluator-optimizer and adversarial review patterns earned their keep. Refine's eval-opt caught 3 ambiguous "either...or" ACs before they could cause downstream confusion. The challenger caught `builder.conn` as an undeclared public API (added to scope), phantom file references in NFR-06, and Sprint 1 overloading at 100% ceiling (moved US-05 to Sprint 2).
+The improvement actions from run-2026-03-30-r4x2 -- confidence cap for structural-only validation (IA-1) and FEATURE refactoring sub-type routing (IA-4) -- were implemented as actual pipeline rule changes rather than just process notes. AC-2.1 caps confidence at 4/5 without empirical evidence. AC-3.1 through AC-3.4 add refactoring sub-type detection with 8 signals and adjusted skip conditions. The retro-to-fix loop closed in a single session.
 
-**Evidence**: Refine stage summary (eval-opt round 1 NOT_DONE, 8 adversarial findings addressed); Plan stage summary (7 challenges, 5 accepted, Sprint 1 reduced from 100% to 69% ceiling).
+**Evidence**: Dev notes: AC-2.1 (confidence cap in quality-gates.md), AC-3.1-3.4 (refactoring sub-type in project-types.md).
 
-### 2.3 Zero Blocking Defects at UAT
+### 2.3 Single-Session Completion with Zero Session Loss
 
-42/42 ACs passed. Unanimous GO from the review board at 5/5 confidence from all three reviewers (QA, DevOps, Tech Writer). Only 2 INFO-level observations, neither requiring action. The behavioral baseline -- 15 nodes, 20 rules, gate distribution [4,4,3,1,4,3,1] -- was preserved exactly.
+The entire pipeline -- Idea through UAT including retrospective -- completed in one session. This eliminates the calendar spread and momentum loss flagged as a problem in the previous retrospective (section 3.2). For a 2 SP BUG_FIX, this is the expected throughput.
 
-**Evidence**: UAT stage summary, UAT report section 3 (defects), review board votes.
-
-### 2.4 Session Loss Recovery Was Seamless
-
-The pipeline spanned 3 sessions due to session loss. When the pipeline resumed, no rework was needed -- artifacts persisted correctly and the team picked up where it left off. This validates the pipeline state persistence mechanism.
-
-**Evidence**: UAT stage summary note: "Pipeline resumed from session loss -- no rework needed."
-
-### 2.5 Self-Correction in Plan Stage Was Decisive
-
-The PO initially proposed cramming all 11 stories into 2 sprints (Sprint 1 at 169% ceiling). The SM rejected and re-planned to 3 sprints. The challenger then caught Sprint 1 still at 100% ceiling, and US-05 was moved to Sprint 2. The result: a realistic plan that was delivered exactly as planned.
-
-**Evidence**: Plan stage summary self-correction section; all 34 SP delivered across 3 sprints matching the plan.
+**Evidence**: All stage dates are 2026-04-01. Session count: 1.
 
 ---
 
 ## 3. What Didn't Go Well
 
-### 3.1 Empirical Validation Depth Was Limited
+### 3.1 Tech Writer False Negative at UAT
 
-5 empirical items were flagged for UAT, but bash execution was unavailable during the UAT session. All 5 were validated structurally rather than at runtime. While the structural evidence was strong, this means we have a P1 follow-up to actually execute the scripts and confirm exit codes and stdout. We cannot claim full empirical validation.
+The Tech Writer (Bilbo) initially returned a false negative during UAT DoD -- searching the repo source files instead of the installed plugin files. This required a re-validation pass. While the final outcome was correct (GO), the false negative added friction and could have cascaded into an unnecessary NOT_DONE round in a less attentive review.
 
-**Evidence**: UAT report section 2 -- all 5 items marked "STRUCTURAL PASS" with a note about bash unavailability.
+**Evidence**: UAT stage summary: "Tech Writer false negative corrected on re-validation."
 
-### 3.2 Session Loss Created Calendar Spread
+### 3.2 Enforcement Path Coverage Gap Remains
 
-What should have been a 1-session pipeline became a 3-session, 3-day effort (March 30 -- April 1). While no rework was needed, the context switches and calendar spread are non-ideal. The team lost momentum between sessions even if no artifacts were lost.
+Dogfooding validated the exemption paths (`auto_branch: false`, bash available), but the enforcement path (`auto_branch: true`, branch creation mandatory) was not exercised in a live pipeline. This is a known gap carried forward as a P1 follow-up. The fixes are structurally verified but not empirically proven for the primary enforcement scenario.
 
-**Evidence**: Stage dates span 3 days (Idea/Refine: Mar 30, Design/Plan/Dev: Mar 31, UAT: Apr 1).
-
-### 3.3 fix_and_run.py Exceeded Design Estimate
-
-The design spec estimated ~210 lines for `fix_and_run.py`; actual was 290 lines. The increase came from properly extracting functions and adding docstrings -- good engineering decisions, but the estimate was off by 38%. This stayed under NFR-05's 300-line limit, but the margin was thin.
-
-**Evidence**: Dev notes section 6 (deviations from design spec).
-
-### 3.4 Architect Stage Skipped Without Explicit Justification
-
-The pipeline used FEATURE routing which skips Architect. For a refactoring effort that decomposed a 1,157-line god object into 4 new modules, the design decisions around module boundaries, import graphs, and data-vs-logic separation could have benefited from a lightweight architect review. The Design stage's review board partially covered this (architect was on the board), but it's worth flagging.
-
-**Evidence**: No `04-architect/` artifacts exist. Architect participated in DoD and review boards at other stages.
+**Evidence**: UAT stage summary: "P1 follow-up: enforcement path validation (auto_branch: true scenario)."
 
 ---
 
-## 4. Improvement Actions
-
-| # | Action | Owner | Target |
-|---|--------|-------|--------|
-| IA-1 | When bash is unavailable during UAT, explicitly block the GO decision or downgrade confidence to reflect the gap. Do not allow unanimous 5/5 confidence with structural-only validation. | QA (Legolas) | Next pipeline |
-| IA-2 | Add session-loss impact tracking to stage summaries -- record which sessions were lost, at what stage, and whether rework was needed. This makes the cost visible. | SM (Aragorn) | Next pipeline |
-| IA-3 | Calibrate line-count estimates for refactoring stories where "extract functions + add docstrings" is in scope. Design estimates should account for the documentation overhead, not just logic lines. | Designer (Galadriel) + Developer (Gimli) | Next refactoring pipeline |
-| IA-4 | For FEATURE-type refactoring pipelines affecting module boundaries, consider running Architect stage as "light" instead of skipping. The architect's input on module decomposition is higher-value than for typical feature work. | PO (Gandalf) | Next pipeline with refactoring scope |
-| IA-5 | Execute the P1 runtime validations (`python prd_flow_builder.py`, `python fix_and_run.py`, `python check_db.py`) and document results. | Developer (Gimli) | Before next pipeline |
-
----
-
-## 5. Lessons Learned
+## 4. Lessons Learned
 
 | # | Lesson | Evidence |
 |---|--------|----------|
-| L-1 | **100% first-try DoD pass rate is achievable when gate-patterns memory is injected.** This run achieved 6/6 first-try passes, up from historical baselines of 50-67% on Design, Plan, and UAT. The memory injection from previous retrospectives is paying compound returns. | All 6 stage summaries: DoD Rounds 1 |
-| L-2 | **Session loss is a delivery risk, not just a technical inconvenience.** Even when artifacts persist correctly (no rework), the calendar spread and context switching degrade team momentum. Track session loss as a delivery metric. | 3 sessions over 3 days for a pipeline that could have completed in 1 |
-| L-3 | **Structural-only validation should cap review board confidence.** When empirical validation cannot be performed (e.g., bash unavailable), the GO decision should carry a caveat and confidence should reflect the gap. 5/5 confidence with structural-only evidence overstates certainty. | UAT report: 5 items validated structurally only; review board still gave 5/5 |
-| L-4 | **Adversarial review at Plan stage prevents sprint overloading.** The challenger caught Sprint 1 at 100% ceiling after the SM had already corrected the PO's original 169% proposal. Two rounds of correction produced a realistic plan that was delivered exactly. | Plan stage summary: PO -> SM correction -> Challenger correction -> final plan delivered as-is |
-| L-5 | **FEATURE routing should consider "refactoring" as a sub-type that benefits from Architect stage.** Pure feature additions may not need architect review, but refactoring that changes module boundaries, import graphs, and data structures carries architectural risk. | No Architect stage artifacts; architect participated informally via DoD/review boards |
+| L-1 | **Retro improvement actions are highest-value BUG_FIX candidates.** Bundling IA-1 and IA-4 from the previous retro with issue #54 created a coherent, focused pipeline that closed the feedback loop in one session. Retro findings should be triaged as backlog items immediately. | IA-1 became AC-2.1/2.2; IA-4 became AC-3.1-3.4; all delivered same day. |
+| L-2 | **Tech Writer validator needs scoping guidance for plugin repos.** The false negative occurred because the validator searched repo source instead of installed plugin files. For plugin development, the "installed" artifact IS the source file -- this distinction should be clarified in the validator's instructions. | UAT stage summary: false negative on first Tech Writer pass. |
+| L-3 | **BUG_FIX routing (4 stages) is well-calibrated for markdown-only changes.** Skipping Refine/Design/Architect was appropriate -- no requirements ambiguity, no design decisions, no architectural changes. The 33% sprint capacity usage confirms the sizing was right. Light Plan was sufficient. | 4 stages, 2 SP, 1 session, 0 defects, all first-try passes. |
 
 ---
 
-## 6. Stage Health
+## 5. Stage Health
 
-| Stage | DoD Round | First-Try Pass | Historical Baseline | Trend |
-|-------|:---------:|:--------------:|:-------------------:|:-----:|
-| Idea | 1 | Yes | ~100% | Stable |
-| Refine | 1 | Yes | ~100% | Stable |
-| Design | 1 | Yes | 67% (2/3) | Improving |
-| Plan | 1 | Yes | 50% | Improving |
-| Dev | 1 | Yes | N/A (first tracked) | New |
-| UAT | 1 | Yes | 50% | Improving |
+| Stage | Depth | DoD Round | First-Try Pass | Cumulative Baseline | Trend |
+|-------|-------|:---------:|:--------------:|:-------------------:|:-----:|
+| Idea | Full | 1 | Yes | 100% (all runs) | Stable |
+| Plan | Light | 1 | Yes | 67% (2/3 runs) | Improving |
+| Dev | Full | 1 | Yes | 100% (2/2 tracked) | Stable |
+| UAT | Full | 1 | Yes | 67% (2/3 runs) | Improving |
 
-**Overall first-try pass rate this run**: 100% (6/6 stages)
-**Previous best**: ~67% (estimated across prior runs)
+**Overall first-try pass rate this run**: 100% (4/4 stages)
+**Consecutive 100% runs**: 2
 
 ---
 
-## 7. Metrics
+## 6. Metrics
 
 | Metric | Value |
 |--------|-------|
-| **Velocity** | 34 SP delivered / 3 sprints = 11.3 SP/sprint |
-| **Stories completed** | 11/11 (100%) |
-| **ACs verified** | 42/42 (100%) |
-| **DoD first-try pass rate** | 100% (6/6 stages) |
+| **Velocity** | 2 SP / 1 sprint |
+| **Stories completed** | 1/1 (100%) |
+| **ACs verified** | 13/13 (100%) |
+| **Test cases passed** | 5/5 (100%) |
+| **DoD first-try pass rate** | 100% (4/4 stages) |
 | **Blocking defects** | 0 |
-| **INFO-level observations** | 2 (no action needed) |
-| **Session count** | 3 (2 session losses) |
-| **Calendar days** | 3 (March 30 -- April 1) |
-| **Collaboration pattern interventions** | 3 (eval-opt at Refine, adversarial at Refine + Plan) |
-| **Self-corrections** | 2 (sprint plan overloading, ambiguous ACs) |
-| **Empirical validation depth** | Structural only (P1 follow-up required) |
-| **God object reduction** | 1,157 -> 259 lines (78% reduction, 162-line class body) |
-| **Files created** | 4 new modules |
-| **Files deleted** | 2 duplicate entry points |
+| **INFO-level observations** | 0 |
+| **Session count** | 1 (0 session losses) |
+| **Calendar days** | 1 |
+| **Files modified** | 4 (SKILL.md, git-integration.md, quality-gates.md, project-types.md) |
+| **Review board decision** | Unanimous GO (QA 5/5, DevOps 4/5, Tech Writer 4/5) |
+| **Retro IAs closed** | 2 (IA-1, IA-4 from run-2026-03-30-r4x2) |
+| **P1 follow-ups** | 1 (enforcement path validation) |
 
 ---
 
-> *"The god object lies broken upon the floor of Mordor. The fellowship delivered 34 story points across three sprints without a single DoD failure. But let us not grow proud -- Legolas counted every node, every rule, every gate, and we still owe the runtime validation its due. Rest now, for the next pipeline will come soon enough. For Frodo."*
+> *"Two pipelines now, and not a single DoD has fallen on first contact. The lessons of the last road sharpened our blades for this one -- Legolas's confidence cap, the refactoring sub-type, the branch enforcement Gimli forged into the gates. One session, one sprint, one story, thirteen criteria met. The fellowship rests tonight, but we carry forward one task still undone: the enforcement path must be walked, not merely mapped. Until then, friends. The backlog waits."*
 
 ---
 
-**Retrospective complete.** Pipeline run-2026-03-30-r4x2 is closed.
+**Retrospective complete.** Pipeline run-2026-04-01-m7v3 is closed.

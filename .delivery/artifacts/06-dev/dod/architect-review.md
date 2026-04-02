@@ -1,169 +1,94 @@
 # Architect DoD Review -- Stage 6 Development
 
 **Reviewer**: Celebrimbor (Architect)
-**Date**: 2026-03-30
-**Sprint**: prd-quality-gate-flow Decomposition (v1.1, 3 sprints, 34 SP)
-**Stories**: US-01 through US-11
-**Design Spec**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
+**Date**: 2026-04-01
+**Sprint**: Pipeline Integrity Fixes (BUG_FIX, Light Plan, 2 SP)
+**Story**: US-01 -- Enforce Pipeline Integrity Rules for Branch Strategy, Confidence Scoring, and Architect Routing
+**Source Issues**: #54, IA-1 (retro r4x2), IA-4 (retro r4x2)
 **Dev Notes**: `.delivery/artifacts/06-dev/developer/dev-notes.md`
+
+> "Let us forge something that will endure beyond the ages."
 
 ---
 
 ## Gate 6 Architect Criteria
 
-### 1. Implementation conforms to design spec (module structure, dependency graph) [BLOCKING]
+### 1. Changes are consistent with delivery-flow architecture (orchestrator pattern, context isolation, delegation) [BLOCKING]
 
 **Status**: PASS
 
-#### 1a. File inventory matches target state (design spec section 2.1)
+All four modified files are reference/instruction documents within the delivery-flow skill. The changes reinforce -- rather than subvert -- the orchestrator pattern:
 
-| File | Spec Status | Actual Status | Match |
-|------|-------------|---------------|:-----:|
-| `shared.py` | NEW ~40 lines | NEW 61 lines | YES |
-| `schema.py` | NEW ~170 lines | NEW 174 lines | YES |
-| `stage_definitions.py` | NEW ~230 lines | NEW 269 lines | YES |
-| `gate_definitions.py` | NEW ~280 lines | NEW 411 lines | YES (declarative data, NFR-05 exemption for data files) |
-| `prd_flow_builder.py` | MOD ~180 lines | MOD 260 lines (159-line class body) | YES (class body 159 <= 200 target) |
-| `prd_execute.py` | MOD ~220 lines | MOD 228 lines | YES |
-| `fix_and_run.py` | MOD ~210 lines | MOD 291 lines | YES (deviation documented in dev notes -- function extraction + docstrings) |
-| `check_db.py` | MOD ~50 lines | MOD 69 lines | YES |
-| `business_rules_engine.py` | UNCHANGED | UNCHANGED | YES |
-| `flow_orchestrator.py` | UNCHANGED | UNCHANGED | YES |
-| `run_execute.py` | DELETED | ABSENT | YES |
-| `run_builder.py` | DELETED | ABSENT | YES |
+| File | Architectural Consistency | Verdict |
+|------|---------------------------|:-------:|
+| `SKILL.md` (Stage 5, 6, 7) | Three surgical additions to existing stage definitions. Each directive follows the established pattern: conditional check against config values, action, reference to detailed documentation, blocking error semantics. The orchestrator issues directives; it does not execute git commands itself -- it delegates per `references/git-integration.md`. | PASS |
+| `references/git-integration.md` | Enforcement rules, branch enforcement subsection, and PR creation subsection all live in the reference document where implementation detail belongs. The SKILL.md directives point here, maintaining the two-tier separation (orchestrator directives vs. reference detail). | PASS |
+| `references/quality-gates.md` | Two new blocking criteria added to Gate 7. Gate criteria are the mechanism by which the orchestrator validates stage completion -- adding criteria here is the correct architectural location. The confidence cap (4/5 without empirical evidence) enforces epistemic honesty within the existing review board pattern. | PASS |
+| `references/project-types.md` | Refactoring sub-type detection and routing narrowing operate within the existing auto-detect and Light-or-Skip decision framework. No new routing mechanism introduced -- the existing Apply Light / Apply Skip logic is refined. | PASS |
 
-All 12 file dispositions match the design spec.
+**Context isolation**: No worker skill boundaries are crossed. All changes live within `delivery-flow/` and affect only orchestrator-level directives and reference documents.
 
-#### 1b. Dependency graph matches spec (design spec section 3.1-3.2)
+**Delegation preserved**: The SKILL.md Stage 5 branch creation says "create a feature branch per the rules in `references/git-integration.md`" -- it delegates the how. Stage 6 branch enforcement says "See `references/git-integration.md` for enforcement rules." Stage 7 PR creation says "See `references/git-integration.md` for PR body format and workflow details." The orchestrator specifies what and when; the reference specifies how.
 
-| Module | Spec Imports | Actual Imports | Match |
-|--------|-------------|----------------|:-----:|
-| `shared.py` | stdlib only (deferred `schema` in `get_connection`) | `sys, io, sqlite3, datetime` + deferred `from schema import ensure_schema` | YES |
-| `schema.py` | `sqlite3` only | `sqlite3` only | YES |
-| `stage_definitions.py` | none | none | YES |
-| `gate_definitions.py` | none | none | YES |
-| `prd_flow_builder.py` | `shared, schema, stage_definitions, gate_definitions` | exactly those 4 | YES |
-| `prd_execute.py` | `shared, prd_flow_builder, flow_orchestrator, business_rules_engine` | exactly those 4 | YES |
-| `fix_and_run.py` | `shared, prd_flow_builder, business_rules_engine` | exactly those 3 | YES |
-| `check_db.py` | `shared` only | `shared` (top-level `DB_PATH`, deferred `get_connection`) | YES |
-
-All import relationships conform exactly to design spec section 3.2.
-
-#### 1c. PIPELINE_SEQUENCE matches spec (design spec section 7)
-
-The `PIPELINE_SEQUENCE` constant in `prd_flow_builder.py` (lines 51-66) matches the 14-entry sequence defined in design spec section 7 exactly:
-
-```
-("stage",0), ("gate",0), ("stage",1), ("gate",1),
-("stage",2), ("gate",2), ("gate",3), ("stage",3),
-("gate",4), ("stage",4), ("stage",5), ("gate",5),
-("gate",6), ("stage",6)
-```
-
-Consecutive gate pairs (gates 3-4, gates 6-7) and consecutive stage pair (stages 5-6) are correctly represented.
-
-#### 1d. Public API preserved (AC-03d, AC-03d2, AC-03e)
-
-- `create_flow()`, `create_node()`, `create_rule()` remain on `PRDFlowBuilder`: CONFIRMED
-- `builder.conn` is a public attribute: CONFIRMED (line 74)
-- `export_flow_diagram()` remains on `PRDFlowBuilder`: CONFIRMED
-- `_get_node_depth()`, `_count_nodes()`, `_count_rules()`, `close()`: CONFIRMED
-
-#### 1e. Data modules include load-time validation (AC-01e, AC-02f)
-
-- `stage_definitions.py`: `REQUIRED_STAGE_FIELDS` + `REQUIRED_CONFIG_FIELDS` validation loop at module load (line 256+)
-- `gate_definitions.py`: `REQUIRED_GATE_FIELDS` + `REQUIRED_RULE_FIELDS` validation loop at module load (line 397+)
-
-### 2. No architectural drift -- modules depend only on what design spec allows [BLOCKING]
+### 2. No architectural drift -- new directives fit within existing pipeline execution protocol [BLOCKING]
 
 **Status**: PASS
 
-Verified all 5 dependency rules from design spec section 3.3:
+Each addition was examined for drift from the established pipeline execution protocol:
 
-| Rule | Constraint | Verified |
-|------|-----------|:--------:|
-| Rule 1 | `shared.py`, `schema.py`, `stage_definitions.py`, `gate_definitions.py` have zero module-level internal imports | PASS (`shared.py` uses deferred import per Step 3 mitigation) |
-| Rule 2 | `prd_flow_builder.py` imports from 4 new modules only, never from consumer scripts | PASS |
-| Rule 3 | Consumer scripts never import from each other | PASS (zero cross-consumer imports found) |
-| Rule 4 | `business_rules_engine.py` and `flow_orchestrator.py` have zero diff | PASS (dev notes confirm; only pre-existing `flow_orchestrator -> business_rules_engine` import exists) |
-| Rule 5 | No circular dependencies in target graph | PASS (verified below) |
+| Addition | Protocol Conformance | Drift Risk |
+|----------|---------------------|:----------:|
+| **Branch creation at Stage 5** | Placed after sprint plan finalization, before Light mode section. This follows the stage's existing pattern: primary agent work first, then infrastructure actions, then mode variants. The conditional (`git.branch_strategy` not `none` AND `git.auto_branch` is `true`) uses existing config keys from v2.3 schema -- no new keys introduced. | NONE |
+| **Branch enforcement at Stage 6** | Placed before Execution section. Pre-conditions before execution is the established pattern (see Stage 6's existing "Upstream artifacts" block). The "blocking error" semantics match the pipeline's existing error escalation model. | NONE |
+| **PR creation at Stage 7** | Placed after human checkpoint acceptance, before memory update. This is architecturally correct: the human has accepted, so automated downstream actions (PR, memory) follow. The conditional (`github.create_pr` is `true`) uses an existing config key. | NONE |
+| **Confidence cap (quality-gates.md)** | Added to Gate 7's existing blocking criteria list. Uses the same checkbox format and blocking annotation as all other criteria. The 4/5 cap is a constraint on the review board collaboration pattern -- it does not alter the pattern itself, only bounds its output. | NONE |
+| **Empirical Validation Limitation doc** | Added alongside the confidence cap. Requires documentation in the DoD artifact -- this is consistent with the existing "DoD must include X" pattern used throughout quality-gates.md. | NONE |
+| **Refactoring sub-type (project-types.md)** | Sub-types are a refinement within the existing FEATURE type. Detection signals follow the same keyword-matching pattern as all other type detections. The Light-or-Skip narrowing adds a condition rather than removing one -- existing routing is preserved. | NONE |
 
-Additional drift checks:
-- `"prd_flows.db"` hardcoded string appears in exactly 1 location: `shared.py` line 15. All consumers use `DB_PATH`. PASS.
-- `EXAMPLE_PRODUCT_IDEAS` appears only in `prd_execute.py` per OQ-4 decision. PASS.
-- No new YAML files introduced (AC-01d). PASS.
-- No new config keys added to `.delivery/config.yml` schema. PASS.
+**Config schema impact**: Zero new config keys. All referenced keys (`git.branch_strategy`, `git.auto_branch`, `github.create_pr`) exist in config-schema.md v2.3. No schema migration required.
 
-### 3. No circular dependencies [BLOCKING]
+**No files created or deleted**: All changes are modifications to existing files. No new reference documents, no new scripts, no new config entries.
 
-**Status**: PASS
-
-Dependency DAG (verified via import analysis):
-
-```
-Layer 0 (leaves):  schema.py, stage_definitions.py, gate_definitions.py
-Layer 0.5:         shared.py  (deferred runtime dep on schema.py, no module-level cycle)
-Layer 1:           prd_flow_builder.py -> {shared, schema, stage_definitions, gate_definitions}
-Layer 2:           prd_execute.py -> {shared, prd_flow_builder, flow_orchestrator, business_rules_engine}
-                   fix_and_run.py -> {shared, prd_flow_builder, business_rules_engine}
-                   check_db.py -> {shared}
-Unchanged:         flow_orchestrator.py -> {business_rules_engine}
-                   business_rules_engine.py -> {stdlib only}
-```
-
-No back-edges exist. The graph is a strict DAG. The `shared.py -> schema.py` dependency is deferred (inside `get_connection()` function body), which prevents any import-time circular dependency -- this matches the explicit mitigation documented in design spec Step 3.
-
-### 4. Core modules untouched [BLOCKING]
+### 3. Cross-references between files are correct [WARNING]
 
 **Status**: PASS
 
-- `business_rules_engine.py` (569 lines): Zero diff per dev notes NFR-06 verification. File timestamp `Mar 21 17:38` predates all refactoring work (Mar 31).
-- `flow_orchestrator.py` (598 lines): Zero diff per dev notes NFR-06 verification. File timestamp `Mar 21 17:38` predates all refactoring work (Mar 31).
+| Source | Reference | Target Exists | Target Contains Expected Content |
+|--------|-----------|:-------------:|:--------------------------------:|
+| SKILL.md Stage 5 | `references/git-integration.md` | YES | Stage 5 ENFORCEMENT blockquote present |
+| SKILL.md Stage 6 | `references/git-integration.md` | YES | "Stage 6 (Development) -- Branch Enforcement" subsection present |
+| SKILL.md Stage 7 | `references/git-integration.md` | YES | "Stage 7 (UAT) -- PR Creation" subsection present |
+| SKILL.md Stage 5 | `.delivery/state.md` (runtime) | N/A | Runtime artifact, created by pipeline -- correct reference |
+| SKILL.md Stage 6 | `.delivery/state.md` (runtime) | N/A | Runtime artifact -- correct reference |
+| git-integration.md Stage 6 | `.delivery/state.md` (runtime) | N/A | Runtime artifact -- correct reference |
+| quality-gates.md | Retro references `r4x2, IA-1` | N/A | Traceability comments, not file refs |
+| project-types.md | "Light-or-Skip Decision Logic" | YES | Section exists within same file |
 
-### 5. File organization matches target state [WARNING]
-
-**Status**: PASS
-
-All files present in `prd-quality-gate-flow/` directory match design spec section 2.1 target state. No unexpected files introduced (only pre-existing documentation files: `README.md`, `QUICKSTART.md`, `IMPLEMENTATION_SUMMARY.md`, `DEMONSTRATION_RESULTS.md`, `prd_flow_diagram.txt`, `.gitignore`, `__pycache__/`).
-
-Deleted files (`run_execute.py`, `run_builder.py`) confirmed absent from disk. Zero references to deleted files found in any `.py` file.
+All cross-references resolve correctly. No dangling references detected.
 
 ---
 
-## Behavioral Baseline (from dev notes)
+## Architectural Assessment
 
-| Metric | Expected | Actual | Status |
-|--------|----------|--------|:------:|
-| Node count | 15 | 15 | PASS |
-| Rule count | 20 | 20 | PASS |
-| Gate count | 7 | 7 | PASS |
-| Rule distribution | [4,4,3,1,4,3,1] | [4,4,3,1,4,3,1] | PASS |
-| Class body lines | <=200 | 159 | PASS |
+The changes are minimal, precise, and well-placed. Each addition addresses a specific gap identified through retrospective analysis (retro r4x2) and impact assessment (IA-1, IA-4). The developer exercised appropriate restraint -- no speculative additions, no structural reorganization, no config schema changes.
 
----
+The branch creation/enforcement/PR creation triad completes the git integration story across the pipeline lifecycle (Plan creates, Dev enforces, UAT closes). This is a natural completion of the existing `references/git-integration.md` architecture, not a new architectural direction.
 
-## NFR Compliance (architect-relevant)
+The confidence cap and empirical validation documentation requirements address a real epistemic gap: the pipeline could previously claim 5/5 confidence without runtime evidence. The cap is a principled constraint that maintains honesty in the quality gates.
 
-| NFR | Target | Status |
-|-----|--------|:------:|
-| NFR-01 | Zero external dependencies | PASS -- all imports are stdlib |
-| NFR-05 | File size <=300 lines (logic files) | PASS -- `gate_definitions.py` (411) is declarative data, exempt |
-| NFR-06 | Core modules untouched | PASS -- zero diff on both files |
-
----
-
-## Deviations Acknowledged
-
-1. **`fix_and_run.py`**: 291 lines vs spec estimate of ~210. Documented in dev notes section 6.1. Increase from function extraction + docstrings. Still under NFR-05 300-line limit. Acceptable.
-2. **`gate_definitions.py`**: 411 lines vs spec estimate of ~280. Declarative data module (rule condition dicts are verbose). NFR-05 explicitly exempts data files. Acceptable.
-3. **`shared.py`**: 61 lines vs spec estimate of ~40. Increase from docstrings on all functions. Acceptable.
-
-None of these deviations constitute architectural drift.
+The refactoring sub-type detection fills a routing gap where architectural restructuring work could be incorrectly classified as a simple feature and skip the Architect stage. The narrowing of Skip conditions is conservative and correct.
 
 ---
 
 ## Verdict
 
-**All 4 BLOCKING criteria PASS. 1 WARNING criterion PASS.**
+**All 2 BLOCKING criteria PASS. 1 WARNING criterion PASS.**
 
-The implementation is a faithful rendering of the design specification. The module structure, dependency graph, pipeline sequence, and public API all conform exactly to what was specified. Core modules remain untouched. No circular dependencies. No architectural drift. The codebase has been decomposed from a 1,157-line god object into 6 focused modules with clean layered dependencies.
+The implementation is architecturally sound. All changes conform to the orchestrator pattern, maintain context isolation, use existing config keys, and reference correct targets. No architectural drift detected. The pipeline execution protocol is strengthened, not altered.
+
+```
+STATUS: DONE
+REVIEWER: Celebrimbor (Architect)
+CRITERIA: 2/2 blocking PASS, 1/1 warning PASS
+SUMMARY: US-01 changes across 4 files are architecturally consistent -- orchestrator pattern preserved, no drift, all cross-references valid, no new config keys, no new files
+```

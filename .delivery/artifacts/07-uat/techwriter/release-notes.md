@@ -1,189 +1,106 @@
-# Release Notes: PRD Quality Gate Flow Refactoring
+# Release Notes: Pipeline Integrity Fixes
 
-**Version**: 2.12.0
-**Date**: 2026-03-30
+**Version**: 2.13.0
+**Date**: 2026-04-01
+**Pipeline Run**: BUG_FIX run-2026-04-01-m7v3
 **Author**: Bilbo (Technical Writer)
-**Source Issues**: #51, #52, #53
+**Source Issues**: #54, IA-1 (retro r4x2), IA-4 (retro r4x2)
 
-> "I think I'm quite ready for another documentation adventure." This is the tale of slaying a god object -- a beast of 1,157 lines, lurking in the depths of `prd_flow_builder.py`, hoarding stage definitions, gate logic, schema creation, and shared constants all in one dreadful class. It has been dismantled, and the Shire is safer for it.
+> "I think I'm quite ready for another documentation adventure." Three quiet defects had crept into the pipeline's rulebook -- gaps in the mortar, as Gimli might say. This release seals them all, ensuring branches stay where they ought to, confidence scores tell the honest truth, and refactoring work gets the architect's eye it deserves.
 
 ---
 
 ## Summary
 
-This is a **pure structural refactoring** of the `prd-quality-gate-flow/` plugin. No new features were added. No behavioral changes were introduced. The god object `PRDFlowBuilder` (1,157 lines) has been decomposed into focused modules, duplicate entry points have been deleted, and flat procedural scripts have been restructured with proper function boundaries.
+Three pipeline integrity fixes bundled into a single BUG_FIX run. All changes are **markdown-only** edits to delivery-flow skill reference files. No source code, no scripts, no hooks, no new config keys. No breaking changes.
 
-### By the Numbers
-
-| Metric | Before | After |
-|--------|-------:|------:|
-| `PRDFlowBuilder` class lines | 1,157 | 259 (162 class body) |
-| Hardcoded `"prd_flows.db"` occurrences | 5 files | 1 (`shared.py`) |
-| Duplicate entry point scripts | 2 | 0 |
-| Scripts without `main()` guard | 2 | 0 |
-| Modules in plugin | 7 | 9 (4 new, 2 deleted) |
-| Node count | 15 | 15 |
-| Rule count | 20 | 20 |
-| Gate count | 7 | 7 |
-
-All behavioral baselines pass: node counts, rule counts, gate counts, gate-rule distribution `[4,4,3,1,4,3,1]`, node names/types, and exit codes are identical before and after.
+| Fix | Issue | One-liner |
+|-----|-------|-----------|
+| Branch strategy enforcement | #54 | Pipeline now enforces feature branch creation, commit targeting, and PR creation across Plan/Dev/UAT stages |
+| Confidence score cap | IA-1 | Review board confidence capped at 4/5 when empirical validation cannot be performed |
+| Refactoring sub-type routing | IA-4 | FEATURE projects involving refactoring now route through Architect (light) instead of potentially skipping it |
 
 ---
 
-## What Changed
+## What's Fixed
 
-### God Object Decomposition (Issue #51)
+### Fix 1: Branch Strategy Enforcement (#54)
 
-The monolithic `PRDFlowBuilder` class has been split into four focused modules:
+The pipeline documented a git branching strategy in `references/git-integration.md`, but the stage instructions in `SKILL.md` never referenced or enforced it. Commits could silently land on `main` even when `git.branch_strategy` was configured for feature branching.
 
-- **`shared.py`** (60 lines) -- Centralized constants (`DB_PATH`), utility functions (`generate_timestamp_id()`, `ensure_utf8_output()`), and a `get_connection()` helper that ensures the schema exists before returning a database connection.
-- **`schema.py`** (174 lines) -- Database schema creation extracted into a standalone `ensure_schema(conn)` function. Covers 9 tables, 7 indexes, fully idempotent via `CREATE TABLE IF NOT EXISTS`.
-- **`stage_definitions.py`** (269 lines) -- All 7 stage definitions as Python dicts with load-time validation. Each stage dict includes `name`, `description`, `node_type`, and full `config` block.
-- **`gate_definitions.py`** (411 lines) -- All 7 gate definitions and 20 business rules as Python dicts with load-time validation. Gate-to-stage ordering is explicit in the data structure.
+**Now enforced across three stages:**
 
-`PRDFlowBuilder` is now a thin orchestrator: `build_prd_flow()` iterates over data definitions instead of calling 12+ individual factory methods.
+- **Stage 5 (Plan)**: When `git.branch_strategy` is not `none` AND `git.auto_branch` is `true`, the pipeline creates a feature branch. Failure is a blocking error.
+- **Stage 6 (Development)**: All commits must target the feature branch. Committing to the base branch when `auto_branch: true` is a blocking error.
+- **Stage 7 (UAT)**: When `github.create_pr` is `true`, the pipeline creates a PR from the feature branch to the base branch. PR body includes sprint goal, stories with "Closes #N" references, and UAT results.
 
-### Duplicate Entry Points Eliminated (Issue #52)
+Both `SKILL.md` (stage step instructions) and `git-integration.md` (detailed enforcement rules) were updated in lockstep.
 
-- **`run_execute.py` deleted** -- Was a near-copy of `prd_execute.py` (identical `EXAMPLE_PRODUCT_IDEAS`, identical `execute_prd_workflow()`, identical `main()`).
-- **`run_builder.py` deleted** -- Duplicated the `__main__` block of `prd_flow_builder.py`.
-- `EXAMPLE_PRODUCT_IDEAS` now exists in exactly one file (`prd_execute.py`).
-- UTF-8 encoding setup consolidated into `shared.ensure_utf8_output()`.
+### Fix 2: Confidence Score Cap (IA-1)
 
-### Flat Scripts Restructured (Issue #53)
+The review board could previously award 5/5 confidence even when no empirical validation was performed (e.g., markdown-only changes where no tests can run). This overstated the evidence basis for approval.
 
-- **`fix_and_run.py`** -- Extracted into 5 named functions with a `main()` guard. No bare top-level statements remain (except imports and `if __name__`). Also fixes a latent bug where raw `sqlite3.connect()` was called before schema creation, which would fail on a fresh database.
-- **`check_db.py`** -- Restructured with 3 descriptive functions, a `main()` guard, context-managed database connections, and graceful error handling when the database file does not exist.
+**Two new blocking criteria added to Gate 7 (UAT Acceptance):**
 
-### Shared Constants Centralized
+- Review board confidence is capped at **4/5 maximum** when empirical validation cannot be performed. A score of 5/5 requires empirical evidence (test execution, runtime verification, or observable behavior confirmation).
+- When confidence is capped, the DoD must include an explicit **Empirical Validation Limitation** section documenting: (a) which criteria could not be empirically validated, (b) what prevented validation, and (c) residual risk.
 
-All `.py` files in the plugin now import `DB_PATH` from `shared.py`. The string `"prd_flows.db"` appears in exactly one location.
+The existing "Empirical-items classification" criterion remains unchanged.
 
----
+### Fix 3: Refactoring Sub-Type for FEATURE Routing (IA-4)
 
-## Breaking Changes
+FEATURE projects involving module decomposition, boundary changes, or architectural restructuring could previously hit the Architect-skip path if they were "contained within a single service or module." This meant refactoring work could bypass architect review entirely.
 
-### Deleted Files
+**Three changes to FEATURE detection and routing:**
 
-| File | Replacement |
-|------|-------------|
-| `run_execute.py` | Use `python prd_execute.py` instead |
-| `run_builder.py` | Use `python prd_flow_builder.py` instead |
+- New **refactoring sub-type** added to FEATURE detection with 8 signals: "refactor", "decompose", "extract module", "split class", "restructure", "reorganize modules", "break apart", "modularize".
+- Refactoring work explicitly routes to **Architect-light** (not skip).
+- The existing "contained within a single service or module" skip condition now includes a qualifier: "AND does not involve module decomposition, boundary changes, or architectural restructuring."
 
-If you have scripts, aliases, or automation that invoke `run_execute.py` or `run_builder.py`, update them to use the canonical entry points listed above. Both deleted files are preserved in git history if rollback is needed.
-
-### No Other Breaking Changes
-
-- The SQLite schema is unchanged. Existing `prd_flows.db` files work without migration.
-- The public API surface of `PRDFlowBuilder` is preserved: `create_flow()`, `create_node()`, `create_rule()`, `export_flow_diagram()`, and `builder.conn` all remain accessible.
-- All 4 canonical CLI commands produce structurally equivalent output.
-- Core modules `business_rules_engine.py` and `flow_orchestrator.py` have zero diff.
+No existing skip conditions were removed -- only narrowed.
 
 ---
 
-## Migration Guide
+## Files Modified
 
-### If you used `run_execute.py`
+All files are within `delivery-team/skills/delivery-flow/`:
 
-```bash
-# Before
-python prd-quality-gate-flow/run_execute.py
+| File | Changes |
+|------|---------|
+| `SKILL.md` | Added branch creation directive (Stage 5), branch enforcement directive (Stage 6), PR creation step (Stage 7). All three reference `references/git-integration.md`. |
+| `references/git-integration.md` | Added ENFORCEMENT blockquote (Stage 5), new "Stage 6 -- Branch Enforcement" subsection, PR creation directives with body template (Stage 7). |
+| `references/quality-gates.md` | Added 2 blocking criteria to Gate 7: confidence cap at 4/5 without empirical validation, mandatory Empirical Validation Limitation section in DoD. |
+| `references/project-types.md` | Added refactoring sub-type with 8 detection signals, added module decomposition to "Apply Light" list, narrowed "Apply Skip" single-module condition. |
 
-# After
-python prd-quality-gate-flow/prd_execute.py
-```
-
-The functionality is identical. `prd_execute.py` was always the canonical executor; `run_execute.py` was an accidental duplicate.
-
-### If you used `run_builder.py`
-
-```bash
-# Before
-python prd-quality-gate-flow/run_builder.py
-
-# After
-python prd-quality-gate-flow/prd_flow_builder.py
-```
-
-The `__main__` block of `prd_flow_builder.py` provides the same functionality.
-
-### If you imported from `prd_flow_builder.py` directly
-
-The `PRDFlowBuilder` class remains in `prd_flow_builder.py` with the same public API. No import changes needed. Internal factory methods (`_create_stage1_creation`, etc.) have been removed -- if you were calling those directly, use the data definitions in `stage_definitions.py` and `gate_definitions.py` instead.
+**No files added. No files deleted.**
 
 ---
 
-## Canonical Entry Points
+## Migration Notes
 
-After this release, the plugin has exactly 4 CLI entry points (unchanged from prior CLAUDE.md documentation):
+None required. These are purely additive changes to pipeline instruction files:
 
-```bash
-python prd-quality-gate-flow/prd_flow_builder.py   # Build PRD flow
-python prd-quality-gate-flow/prd_execute.py         # Execute PRD workflow
-python prd-quality-gate-flow/check_db.py            # Inspect SQLite DB state
-python prd-quality-gate-flow/fix_and_run.py         # Automated end-to-end run
-```
-
----
-
-## Files Added / Modified / Deleted
-
-### Files Added (4)
-
-| File | Lines | Purpose |
-|------|------:|---------|
-| `prd-quality-gate-flow/shared.py` | 60 | DB_PATH, generate_timestamp_id(), ensure_utf8_output(), get_connection() |
-| `prd-quality-gate-flow/schema.py` | 174 | ensure_schema(conn) -- 9 tables, 7 indexes, idempotent |
-| `prd-quality-gate-flow/stage_definitions.py` | 269 | 7 stage definitions as Python dicts with load-time validation |
-| `prd-quality-gate-flow/gate_definitions.py` | 411 | 7 gate definitions, 20 business rules with load-time validation |
-
-### Files Modified (4)
-
-| File | Before | After | Change |
-|------|-------:|------:|--------|
-| `prd-quality-gate-flow/prd_flow_builder.py` | 1,157 | 259 | Decomposed to thin orchestrator (-898 lines) |
-| `prd-quality-gate-flow/prd_execute.py` | 227 | 228 | Imports DB_PATH from shared.py (+1 line) |
-| `prd-quality-gate-flow/fix_and_run.py` | 214 | 290 | Restructured into 5 named functions with main() guard; latent bug fixed |
-| `prd-quality-gate-flow/check_db.py` | 27 | 69 | Restructured with descriptive functions, error handling, main() guard |
-
-### Files Deleted (2)
-
-| File | Lines | Reason |
-|------|------:|--------|
-| `prd-quality-gate-flow/run_execute.py` | 210 | Duplicate of prd_execute.py |
-| `prd-quality-gate-flow/run_builder.py` | 44 | Duplicate of prd_flow_builder.py __main__ block |
-
-### Files Unchanged (verified zero diff)
-
-| File | Lines | Reason |
-|------|------:|--------|
-| `prd-quality-gate-flow/business_rules_engine.py` | 569 | Core module -- out of scope per NFR-06 |
-| `prd-quality-gate-flow/flow_orchestrator.py` | 598 | Core module -- out of scope per NFR-06 |
+- No new config keys introduced (all referenced keys -- `git.branch_strategy`, `git.auto_branch`, `github.create_pr` -- already exist in config schema v2.3).
+- No schema changes.
+- No breaking changes to existing pipeline behavior for projects that do not use git integration or branching.
+- Projects with `git.branch_strategy: none` are unaffected by Fix 1.
+- The confidence cap (Fix 2) applies going forward to all UAT gates.
+- The refactoring sub-type (Fix 3) applies going forward to FEATURE-type projects.
 
 ---
 
-## Bug Fix
+## Verification
 
-This release includes a fix for a **pre-existing latent bug** in `fix_and_run.py`: the script previously opened a raw `sqlite3.connect("prd_flows.db")` and ran DELETE queries before the builder (and therefore the schema) was initialized. On a fresh database with no tables, this would fail with a missing table error. The restructured version uses `shared.get_connection()`, which calls `ensure_schema()` first.
+13/13 acceptance criteria pass structural verification. Empirical validation (dogfooding via a live pipeline run exercising each fix) is a UAT gate item tracked separately.
 
 ---
 
 ## Issue Traceability
 
-| Issue | Title | Resolution |
-|-------|-------|------------|
-| #51 | God object in prd_flow_builder.py | Decomposed: 1,157 -> 259 lines via 4 extracted modules |
-| #52 | Duplicate entry points | Deleted run_execute.py and run_builder.py; constants centralized |
-| #53 | Missing function structure | fix_and_run.py and check_db.py restructured with named functions |
+| Issue | Source | Resolution |
+|-------|--------|------------|
+| #54 | GitHub issue | Branch enforcement directives added to SKILL.md and git-integration.md across 3 stages |
+| IA-1 | Retrospective r4x2 | Confidence cap and limitation documentation criteria added to quality-gates.md Gate 7 |
+| IA-4 | Retrospective r4x2 | Refactoring sub-type and routing narrowing added to project-types.md |
 
----
-
-## Technical Notes
-
-- **Zero external dependencies**: All imports are Python stdlib only (NFR-01).
-- **Python 3.9+ compatible**: No walrus operators or 3.10+ features used (NFR-03).
-- **Schema compatibility**: `ensure_schema()` uses `CREATE TABLE IF NOT EXISTS` -- existing databases load without migration (NFR-02).
-- **Data file size**: `gate_definitions.py` exceeds the 300-line guideline at 411 lines. This is expected and documented -- the file is purely declarative data (dicts/lists), not logic (NFR-05).
-- **Scope boundary**: Core modules (`business_rules_engine.py`, `flow_orchestrator.py`) intentionally retain their own `db_path` parameters and internal timestamp ID generation. Consumer files pass `shared.DB_PATH` to these modules. This asymmetry is architecturally correct -- core modules remain independently configurable and testable.
-
-> And so the god object falls, the duplicates are swept away, and every script has a proper `main()` to call home. Four new modules stand where one unwieldy beast once sat, and the pipeline counts -- 15 nodes, 20 rules, 7 gates -- remain exactly as they were. A refactoring done right changes everything and nothing at the same time. Now then, I believe elevenses is calling.
+> And so three quiet gaps in the pipeline's rulebook have been found and filled -- branches now stay on their proper paths, confidence scores speak only to what can be proven, and refactoring work shall not slip past the architect's watchful eye. The mortar holds. Now then, I believe elevenses is calling.
