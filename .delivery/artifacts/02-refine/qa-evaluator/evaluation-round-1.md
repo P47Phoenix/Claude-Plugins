@@ -1,127 +1,175 @@
-# Gate 2 Evaluation -- Round 1
+# Gate 2 Evaluation: PRD Quality Gate Flow Refactoring
 
-**Evaluator**: QA Engineer (Legolas)
-**Date**: 2026-03-29
-**PRD**: Stage Health Hardening v1.0
-**Metrics Source**: Data Analyst (Elrond) metrics.md v1.0
-**Verdict**: PASS (with warnings)
-
----
-
-## Gate 2 Criteria Checklist
-
-| # | Criterion | Status | Notes |
-|---|-----------|--------|-------|
-| 1 | All functional requirements have acceptance criteria with testable conditions [blocking] | PASS | FR-01 through FR-12 each have explicit Given/When/Then acceptance criteria with testable conditions |
-| 2 | Non-functional requirements are quantified with specific targets [blocking] | PASS | NFR-01 through NFR-05 have quantified targets (no executables, schema v2.3, no regression, <=500 tokens, traceable annotations) |
-| 3 | Out-of-scope section is present and non-empty [blocking] | PASS | Section 6 lists 7 explicit exclusions |
-| 4 | Success metrics are measurable with numeric targets and measurement method [blocking] | PASS | G1-G4 each have numeric targets and measurement methods; metrics.md provides 11 detailed metric definitions with baselines, targets, and measurement methods |
-| 5 | No blocking open questions remain [blocking] | PASS | OQ-1, OQ-2, OQ-3 are all non-blocking -- each has a reasonable default path if unresolved (OQ-1: treat all missing files as phantom; OQ-2: use 2+ imports definition already stated in FR-01; OQ-3: standalone vs. section is a template choice, not a blocker) |
-| 6 | User personas are specific with goals, pain points, and context [warning] | WARNING | P1, P2, P3 are defined with context and pain points but lack explicit **goals** as distinct statements. Each persona describes who benefits and how, but does not separate goals from pain points cleanly. |
-| 7 | Dependencies identified with status [warning] | WARNING | 4 dependencies listed with impact and mitigation but missing explicit **status** column (e.g., "Active", "Resolved", "At Risk"). |
-| 8 | Risks identified with likelihood, impact, and mitigation [warning] | PASS | 4 risks with likelihood, impact, and mitigation -- well structured |
-| 9 | Assumptions listed explicitly [suggestion] | SUGGESTION | No assumptions section exists. Implicit assumptions include: sub-agents will use Glob/Read for file-existence checks, capacity matrix values will be honest, retro action items are correctly identified. Recommend adding an explicit Assumptions section. |
+**Evaluator**: Legolas, QA Engineer
+**Date**: 2026-03-30
+**PRD Version**: 1.0
+**Metrics Version**: 1.0
+**Round**: 1
 
 ---
 
-## Extended Checks
+## BLOCKING Criteria
 
-### Retro Action Item Coverage (M1-M4 -> FRs)
+### B1: Every FR has testable acceptance criteria
 
-| Retro Item | Required FRs | Mapped FRs | Status |
-|------------|-------------|------------|--------|
-| M1: Shared-module review checkpoint (c8f2) | >= 1 | FR-01, FR-02 | PASS |
-| M1: Empirical-items tracking template (k4m9) | >= 1 | FR-03, FR-04 | PASS |
-| M2: Phantom reference high-severity (k4m9) | >= 1 | FR-05 | PASS |
-| M2: Filename reconciliation gate (k4m9) | >= 1 | FR-06 | PASS |
-| M3: Capacity + coverage matrix (c8f2) | >= 1 | FR-07, FR-08, FR-09 | PASS |
-| M3: Sprint capacity threshold warning (k4m9) | >= 1 | FR-10 | PASS |
-| M4: Regenerate derived artifacts (c8f2) | >= 1 | FR-11, FR-12 | PASS |
+**Verdict: PASS**
 
-**Result**: 7 retro items mapped to 12 FRs. All items covered. That bug still only counts as one -- but fortunately, there are zero here.
+All 8 FRs (FR-01 through FR-08) have explicit acceptance criteria written as checkboxes. Each criterion is verifiable by a concrete command or inspection method. Examples of strong testability:
 
-### Given/When/Then Format Check
+- FR-01 AC-01a: "A new file `stage_definitions.py` exists" -- file existence check
+- FR-03 AC-03a: "`PRDFlowBuilder` class is <=200 lines (measured by `wc -l`)" -- deterministic measurement
+- FR-05 AC-05c: "`grep -r '\"prd_flows.db\"'` across the plugin directory returns only `shared.py`" -- exact verification command provided
 
-All 12 FRs (FR-01 through FR-12) use explicit **Given/When/Then** format. PASS.
-
-### AC Type Classification (Structural vs. Empirical)
-
-| FR | AC Type | Valid? |
-|----|---------|--------|
-| FR-01 | structural | PASS -- verifies checklist presence in markdown |
-| FR-02 | structural | PASS -- verifies SKILL.md content |
-| FR-03 | structural | PASS -- verifies artifact template and production |
-| FR-04 | structural | PASS -- verifies validator requires artifact |
-| FR-05 | empirical | PASS -- requires runtime file-existence check |
-| FR-06 | empirical | PASS -- requires runtime file-existence check at stage transition |
-| FR-07 | structural | PASS -- verifies template includes capacity matrix |
-| FR-08 | structural | PASS -- verifies template includes coverage matrix |
-| FR-09 | structural | PASS -- verifies validator rejects missing matrices |
-| FR-10 | structural | PASS -- verifies threshold validation logic in gate criteria |
-| FR-11 | structural | PASS -- verifies Dev DoD checklist item |
-| FR-12 | structural | PASS -- verifies validator criterion presence |
-
-All 12 ACs classified. 10 structural, 2 empirical. Classifications are correct.
-
-### File Path Verification
-
-All 6 files referenced in the "Files Involved" table verified on disk via Glob:
-
-| File | Exists |
-|------|--------|
-| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | YES |
-| `delivery-team/skills/delivery-flow/references/quality-gates.md` | YES |
-| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | YES |
-| `delivery-team/skills/delivery-flow/references/project-templates.md` | YES |
-| `delivery-team/skills/quality/SKILL.md` | YES |
-| `delivery-team/skills/delivery-flow/SKILL.md` | YES |
-
-No phantom references. Clean sweep.
-
-### Data Analyst Metrics Incorporation
-
-| PRD Goal | PRD Metric | Data Analyst Metric | Aligned? |
-|----------|-----------|---------------------|----------|
-| G1 | Design first-try pass rate >= 80% | Metric 1.1: `design_first_try_pass_rate` >= 80% | YES |
-| G1 | (implicit) | Metric 1.2: `design_phantom_ref_detection_rate` >= 95% | YES -- data analyst added a sub-metric not in PRD goals table but traceable to FR-05 |
-| G2 | UAT first-try pass rate >= 85% | Metric 2.1: `uat_first_try_pass_rate` >= 85% | YES |
-| G2 | (implicit) | Metrics 2.2, 2.3: shared-module review + empirical-items artifact presence | YES -- sub-metrics for FR-01/FR-03 |
-| G3 | 0 plans pass without acknowledgment | Metrics 3.1, 3.2, 3.3 | YES |
-| G4 | 0 stale derived artifacts | Metrics 4.1, 4.2 | YES |
-| NFR-03 | No regression | Metric NR.1: non-targeted stage stability | YES |
-
-Data analyst metrics fully incorporate and extend PRD goals. PASS.
+I can write a test for every single AC in this PRD. No criterion is left to subjective judgment.
 
 ---
 
-## Findings Summary
+### B2: No ambiguous language in acceptance criteria
 
-### Blocking: None
+**Verdict: FAIL**
 
-### Warnings (2)
+The acceptance criteria themselves are free of "should", "might", and "could". Present tense and "must" are used correctly throughout. However, three ACs contain branching "either...or" constructs that create ambiguous end-states:
 
-**W1: Personas lack explicit goal statements**
-- Section 3 personas describe context and pain points but do not have a distinct "Goal" field.
-- **Fix**: Add a one-line goal statement per persona (e.g., P1: "Goal: Complete pipeline stages on first attempt without avoidable rework loops").
+**Finding 1 -- FR-04 AC-04a**:
+> `"run_execute.py is either deleted or converted to a thin wrapper (<=10 lines) that imports from prd_execute.py and prints a deprecation warning"`
 
-**W2: Dependencies missing status column**
-- Section 7 dependencies have Impact and Mitigation but no Status indicator.
-- **Fix**: Add a "Status" column (e.g., Active, Resolved, At Risk) to the Dependencies table.
+**Finding 2 -- FR-04 AC-04b**:
+> `"run_builder.py is either deleted or converted to a thin wrapper (<=10 lines) that imports from prd_flow_builder.py and prints a deprecation warning"`
 
-### Suggestions (1)
+A QA engineer cannot write a single definitive test when the expected state branches. Is the file deleted or is it a wrapper? Both are valid outcomes, but the assertion must know which one to verify. The PRD already contains a recommendation in OQ-1: "Thin wrappers with deprecation print(), remove in next release." Commit to it.
 
-**S1: Add explicit Assumptions section**
-- Several implicit assumptions exist (sub-agents have Glob/Read access, capacity values are honest, retro item identification is accurate).
-- **Fix**: Add a Section 8.5 or Section 9 listing 3-5 key assumptions.
+**Finding 3 -- FR-03 AC-03b**:
+> `"Schema creation (_create_schema) is extracted to a separate module (e.g., schema.py) or to a standalone function"`
+
+Same pattern. This maps to OQ-5 (open question deferred to Design). The AC is untestable until the extraction target is decided. The "New Files" table already proposes `schema.py` as a separate module with an estimated 150-180 lines. Commit to it.
+
+**Fix**: Replace all "either...or" ACs with definitive statements. Resolve OQ-1 and OQ-5 before exiting Refine. The PRD already has recommendations for both -- promote them to decisions.
+
+---
+
+### B3: Success metrics are measurable with defined baselines and targets
+
+**Verdict: PASS**
+
+The metrics artifact (by Elrond) is thorough. All 10 metrics (M1-M10) have:
+- Precise definitions with explicit formulas (`wc -l`, `grep -rl`, `git diff --stat`)
+- Numeric baselines captured from the actual codebase at commit `834b532`
+- Numeric targets with direction indicators
+- A complete verification script that can be run in a single pass
+
+The PRD Goals table (Section 2) aligns 1:1 with the metrics artifact. Every goal has a baseline, target, and measurement method. The dogfooding validation requirement (P0 UAT gate for before/after output comparison) is explicit with a capture protocol.
+
+---
+
+### B4: User roles are specific (not just "user")
+
+**Verdict: PASS**
+
+Section 3 defines two personas with who/goal/pain/success structure:
+- **P1: Plugin Maintainer** -- "A developer extending or modifying the PRD quality gate flow"
+- **P2: Pipeline User** -- "A user running PRD workflows via the documented CLI commands in CLAUDE.md"
+
+User stories reference these roles consistently: "As a maintainer..." (US-01 through US-04, US-07 through US-09), "As a user..." (US-05, US-06). The "user" in US-05/US-06 maps unambiguously to the defined P2 persona.
+
+---
+
+### B5: Out of scope section is present and non-empty
+
+**Verdict: PASS**
+
+Section 7 lists 8 explicit exclusions: core module changes, new features, schema migrations, test framework setup, YAML data files, SKILL.md changes, performance optimization, and documentation file changes. Well-bounded. The exclusions align with NFR-06 (core modules untouched) and NFR-01 (zero new dependencies).
+
+---
+
+## BLOCKING Summary
+
+| # | Criterion | Verdict |
+|---|-----------|---------|
+| B1 | Every FR has testable acceptance criteria | PASS |
+| B2 | No ambiguous language in acceptance criteria | **FAIL** |
+| B3 | Measurable success metrics with baselines and targets | PASS |
+| B4 | Specific user roles | PASS |
+| B5 | Out of scope present and non-empty | PASS |
+
+**Gate 2 Result: FAIL** -- B2 must be resolved before proceeding.
+
+---
+
+## WARNING Criteria
+
+### W1: NFRs have quantified targets
+
+**Verdict: PASS (with note)**
+
+All 6 NFRs have quantified or binary-verifiable targets:
+- NFR-01: "No non-stdlib imports added" -- grep verification
+- NFR-02: "Existing `prd_flows.db` files work without migration" -- load test
+- NFR-03: "No syntax or stdlib features requiring >3.9" -- code review
+- NFR-04: "Before/after output identical for all 4 CLI entry points" -- diff
+- NFR-05: "Every modified/new `.py` file <=300 lines" -- `wc -l`
+- NFR-06: "zero diff" on core modules -- `git diff`
+
+**Note**: NFR-03 lacks a concrete verification command. The metrics artifact does not include a metric for Python version compatibility. Recommend adding a specific check (e.g., `python3.9 -c "import ast; ast.parse(open(f).read())"` for each file, or listing prohibited syntax: `match`/`case`, `X | Y` type unions, `tomllib`).
+
+---
+
+### W2: Edge cases are identified
+
+**Verdict: WARNING -- Partial coverage**
+
+The Risks section identifies 6 risks that function as edge cases (ordering bugs, missed hardcoded paths, backward compat breaks, schema breaks, multi-line string formatting). FR-01 AC-01e adds load-time validation via `KeyError` for stage definitions.
+
+**Missing edge cases I would test**:
+1. Gate definitions have no equivalent load-time validation. FR-02 lacks an AC parallel to AC-01e. If `gate_definitions.py` has a malformed dict, the failure mode is undefined.
+2. What if `shared.py` is imported via relative path from outside the plugin directory?
+3. What if `prd_flows.db` is read-only or locked by another process?
+4. What if deprecation wrapper scripts are run with Python 2 accidentally? (minor, but the wrappers would be the most user-facing entry points)
+
+**Recommendation**: Add AC-02f: "Gate definitions are validated at load time -- `KeyError` raised if required fields are missing" (mirrors AC-01e).
+
+---
+
+### W3: Dependencies documented
+
+**Verdict: PASS**
+
+Section 8 documents 5 dependencies with Type, Impact, and Status columns. The pre-refactoring output baselines dependency is critical and is explicitly called out with a capture protocol in the metrics artifact. All statuses are tracked (Confirmed, Active).
+
+---
+
+## WARNING Summary
+
+| # | Criterion | Verdict |
+|---|-----------|---------|
+| W1 | NFRs have quantified targets | PASS (note on NFR-03 verification) |
+| W2 | Edge cases identified | WARNING -- gate definition validation gap |
+| W3 | Dependencies documented | PASS |
+
+---
+
+## Actionable Fixes Required (Blocking)
+
+| # | Location | Issue | Fix |
+|---|----------|-------|-----|
+| F1 | FR-04 AC-04a | "either deleted or converted" is ambiguous | Commit to thin-wrapper approach per OQ-1 recommendation. Rewrite: "run_execute.py is a thin wrapper (<=10 lines) that imports from prd_execute.py and prints a deprecation warning to stderr" |
+| F2 | FR-04 AC-04b | Same branching ambiguity | Same fix pattern as F1 for run_builder.py |
+| F3 | FR-03 AC-03b | "extracted to a separate module ... or to a standalone function" is ambiguous | Resolve OQ-5. Commit to schema.py (already proposed in New Files table). Rewrite: "Schema creation (_create_schema) is extracted to a new file schema.py as a standalone function" |
+
+## Actionable Fixes Recommended (Non-blocking)
+
+| # | Location | Issue | Fix |
+|---|----------|-------|-----|
+| R1 | FR-02 | No load-time validation AC for gate definitions | Add AC-02f: "Gate definitions are validated at load time -- KeyError raised if required fields are missing" (mirrors AC-01e) |
+| R2 | NFR-03 | No concrete verification method for Python 3.9+ compat | Add measurement method: list prohibited syntax features or add AST parse check |
 
 ---
 
 ## Verdict
 
-**STATUS: PASS**
+**STATUS: FAIL**
 
-The PRD clears all 5 blocking Gate 2 criteria. Twelve functional requirements with properly formatted Given/When/Then acceptance criteria, each classified as structural or empirical. All 7 retro action items (M1-M4) are traced to FRs. All referenced file paths verified on disk. Data analyst metrics are fully incorporated. NFRs are quantified. Out-of-scope is thorough.
+The PRD passes 4 of 5 blocking criteria. It fails B2 due to three acceptance criteria containing branching "either...or" language that prevents writing deterministic tests. The fixes are straightforward -- the PRD already contains recommendations for both open questions. Promote the recommendations to decisions and rewrite the three ACs.
 
-Two warnings (personas, dependency status) and one suggestion (assumptions) are noted for the optimizer to address at their discretion -- none block progression.
+Two non-blocking recommendations are noted: add gate definition load-time validation (mirrors existing stage validation), and strengthen NFR-03 verification.
 
-That bug still only counts as one. And today, the count is zero blocking defects.
+The edge case you thought was unreachable -- branching acceptance criteria that a QA engineer cannot write a single test for -- I have already tested it. It fails.

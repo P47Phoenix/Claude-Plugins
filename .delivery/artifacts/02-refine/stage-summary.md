@@ -1,9 +1,9 @@
 ## Stage 2: Refine — Summary
 
-**Pipeline**: run-2026-03-29-h3k7
-**Date**: 2026-03-29
+**Pipeline**: run-2026-03-30-r4x2
+**Date**: 2026-03-30
 **Depth**: full
-**DoD Rounds**: 1 (first-try pass after eval-opt + adversarial)
+**DoD Rounds**: 1 (first-try DoD pass after eval-opt round 2 + adversarial)
 
 ### Agents Invoked
 | Agent | Role | Status | Artifact |
@@ -14,9 +14,9 @@
 ### Collaboration Patterns
 | Pattern | Result |
 |---------|--------|
-| Evaluator-Optimizer (QA) | PASS — 0 blocking, 2 warnings, 1 suggestion |
-| Adversarial Review | Confidence 3/5 — 3 HIGH, 2 MEDIUM, 2 LOW findings |
-| PO Revision | All findings addressed in v1.1 |
+| Evaluator-Optimizer (QA) | Round 1: NOT_DONE (3 ambiguous ACs). Round 2: PASS after PO fix |
+| Adversarial Review | Confidence 3/5 — 3 blocking (builder.conn API, phantom files, output-diff metric), 5 non-blocking |
+| PO Revision | All 8 findings addressed in v1.1 |
 
 ### DoD Validators
 | Validator | Status | Review |
@@ -26,7 +26,9 @@
 | QA (Legolas) | DONE | 02-refine/dod/qa-review.md |
 
 ### Notes
-- 12 FRs covering all 7 M1-M4 retro action items
-- 11 success metrics defined with baselines and targets
-- Challenger findings drove target adjustments (Design goal: 50%→70% instead of 80%)
-- First-try DoD pass (maintaining 100% Refine stage health)
+- 8 FRs covering issues #51 (god object), #52 (duplicate entry points), #53 (function structure)
+- 10 success metrics with measured baselines (1,120-line god object, 6 hardcoded DB paths, 2 flat scripts)
+- Eval-opt caught 3 ambiguous "either...or" ACs — PO committed to specific decisions
+- Challenger caught builder.conn as undeclared public API — added to FR-03 scope
+- Challenger caught phantom file references in NFR-06 — corrected to actual files
+- First-try DoD pass (maintaining Refine stage health)

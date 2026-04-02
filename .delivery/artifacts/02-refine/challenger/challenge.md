@@ -1,148 +1,170 @@
-# Adversarial Challenge: Stage Health Hardening PRD
+# Adversarial Challenge: PRD Quality Gate Flow Refactoring
 
-**Challenger**: QA Engineer (Devil's Advocate)
-**Date**: 2026-03-29
-**PRD**: Stage Health Hardening v1.0
-**Confidence Rating**: 3 / 5
-
----
-
-## Challenge 1: The 50% to 80% Design Target Relies on a Single Mechanism
-
-**Claim challenged**: G1 assumes Design first-try pass rate jumps from 50% to >=80% by elevating phantom references to blocking severity (FR-05) and adding a Dev-entry reconciliation gate (FR-06).
-
-**Problem**: The PRD's own evidence says the Design stage has a 50% pass rate with a sample size of 6 attempts across 3 runs. That is extremely thin data. A single additional pass or fail swings the rate by ~17 percentage points. The baseline is statistically unreliable.
-
-More critically, FR-05 elevates phantom references to blocking -- but phantom references are only *one* root cause of Design failures. The PRD does not demonstrate that phantom references account for enough of the failures to close the 30pp gap. If even one Design failure in those 6 attempts was caused by something other than phantom references (e.g., incomplete user flows, missing edge cases -- which are existing Gate 3 blocking criteria), FR-05 alone cannot reach 80%.
-
-FR-06 is a *Dev-entry* gate, not a Design gate. It catches phantom references that survive past Design into Development. It does not improve Design's own first-try pass rate -- it prevents downstream damage. The PRD conflates "catching phantoms at Dev entry" with "Design passing on first try."
-
-**Verdict**: The target is aspirational but undersupported. The causal chain from FR-05/FR-06 to a 30pp improvement is not established.
-
-**Recommendation**: Either (a) reduce the target to >=70% for the first validation period and re-evaluate after 5 runs, or (b) add explicit evidence from retrospectives showing that phantom references were the root cause in at least 2 of the 3 Design failures, not merely a contributing factor.
+**Challenger**: Adversarial Reviewer
+**Date**: 2026-03-30
+**PRD Version**: 1.0
+**Overall Confidence**: 3/5 (Proceed with caution -- several challenges require resolution)
 
 ---
 
-## Challenge 2: OQ-1 (Planned vs. Phantom Files) Is Higher Risk Than Rated
+## Challenge 1: `builder.conn` is a Public API Surface the PRD Ignores
 
-**Claim challenged**: The QA evaluation rates OQ-1 as non-blocking, with a default of "treat all missing files as phantom."
+**Confidence: 2/5 -- Serious concern**
 
-**Problem**: This default is actively harmful. In a GREENFIELD or FEATURE project, the Design stage *routinely* references files that do not yet exist -- they are planned artifacts to be created in Development. Under the "treat all missing as phantom" default:
+The PRD says the refactoring will extract schema creation to `schema.py` and decompose `PRDFlowBuilder`. But it never acknowledges that **consumers access `builder.conn` directly** as a de facto public API. Evidence:
 
-- FR-05 would block Design completion on every GREENFIELD project that references files to be created.
-- FR-06 would block Dev entry on every project where Design and Architect stages plan new files.
+- `prd_execute.py` lines 34, 50, 98, 108: `builder.conn.execute(...)` for flow lookup, BRE initialization, and gate evaluation queries
+- `run_execute.py` lines 66, 81, 126: identical pattern
+- `fix_and_run.py` lines 43, 54, 65, 109, 122, 161: six direct `builder.conn.execute()` calls for flow lookup, node queries, rule queries, and gate queries
 
-This is not an edge case. It is the common case for the two most frequent project types. The PRD acknowledges this risk in Section 7 (Risk: "phantom reference elevation blocks stages on false positives"), rates it Low likelihood, and claims FR-06 "runs at Dev entry, giving teams Design+Architect stages to establish file paths." But FR-05 runs at *Design DoD* -- before Architect even starts. Planned files will not exist yet at that point.
+The PRD's FR-03 (AC-03d) says "Public API methods `create_flow()`, `create_node()`, `create_rule()` remain on the builder class." But `builder.conn` is the **most-used public API** in practice -- 14 direct accesses across 3 consumer files. If schema extraction to `schema.py` changes when/how `self.conn` is initialized, or if `shared.py` centralizes DB connection management, every consumer that touches `builder.conn` breaks.
 
-**Verdict**: OQ-1 should be resolved before leaving Refine. The "treat all as phantom" default will cause false-positive blocking on the majority of pipeline runs.
-
-**Recommendation**: FR-05 needs a mechanism to distinguish planned files from phantom files. Options: (a) require Design artifacts to annotate planned-but-not-yet-existing paths with a marker (e.g., `[PLANNED]`), (b) only flag phantom references for *existing* files that have been renamed or moved, or (c) limit FR-05 severity to WARNING and reserve BLOCKING for FR-06 at Dev entry where files should actually exist. Option (c) is simplest and avoids Design-stage false positives entirely.
-
----
-
-## Challenge 3: Shared-Module Definition Ambiguity (OQ-2) Creates Enforcement Gaps
-
-**Claim challenged**: FR-01 defines shared modules as "a file imported by 2+ other modules" but OQ-2 asks whether this should be directory-based instead.
-
-**Problem**: The "imported by 2+ other modules" definition requires the QA sub-agent to perform cross-file import analysis at UAT time. This is:
-
-1. **Language-dependent** -- import syntax varies across the 14 supported languages. Python uses `import/from`, TypeScript uses `import/require`, Go uses package paths, Rust uses `use/mod`. The QA agent would need language-aware static analysis.
-2. **Fragile for markdown-only repos** -- this repository (Claude-Plugins) is almost entirely markdown. The concept of "imported by 2+ modules" does not map cleanly to markdown files that reference each other via file paths rather than language-level imports.
-3. **Not enforceable via markdown changes alone** -- NFR-01 says "no new Python scripts or external dependencies." But reliably detecting shared modules requires tooling, not just a checklist item.
-
-The PRD's own scope is markdown-only changes (NFR-01), yet FR-01's acceptance criteria assume the QA agent can determine import graphs. This is a scope/feasibility tension.
-
-**Verdict**: The shared-module definition needs to be concrete and enforceable within the markdown-only constraint.
-
-**Recommendation**: Define "shared module" as: a file that is explicitly referenced (by path or name) in 2+ stage artifacts across the current pipeline run. This makes it artifact-traceable rather than code-dependency-traceable, and the QA agent can verify it using Glob/Read on the artifact directory.
+**What must change**: The PRD must explicitly acknowledge `builder.conn` as a public API surface and either (a) declare it will remain as an attribute on the builder, (b) provide a query accessor method and update consumers, or (c) add the consumer access pattern to the modification scope with explicit acceptance criteria. Without this, "100% behavioral compatibility" is unverifiable.
 
 ---
 
-## Challenge 4: Regression Risk in Gate 5 (Plan Readiness) -- Contradictory Capacity Thresholds
+## Challenge 2: NFR-06 Lists Non-Existent Files as Protected
 
-**Claim challenged**: FR-10 adds a >100% allocation warning to the Plan stage.
+**Confidence: 1/5 -- Factual error**
 
-**Problem**: Gate 5 already has a blocking criterion: "Commitment does not exceed 80% of available capacity [blocking]." This is in the current `quality-gates.md` (line 180 in pipeline-stages.md). FR-10 adds a *warning* at >100% allocation.
+NFR-06 states: "Core modules untouched: `database.py`, `business_rules_engine.py`, `flow_orchestrator.py`, `agent_registry.py` have zero diff."
 
-These two criteria are contradictory:
-- Existing Gate 5: >80% is BLOCKING (hard stop).
-- FR-10: >100% is WARNING (acknowledged override allowed).
+**`database.py` and `agent_registry.py` do not exist in the plugin directory.** The actual files in `prd-quality-gate-flow/` are:
 
-If the existing 80% blocking criterion stays, FR-10's 100% warning is unreachable -- you cannot be at >100% if you are already blocked at >80%. If the intent is to *replace* the 80% criterion with the softer 100% warning, that is a regression in an existing gate.
+```
+business_rules_engine.py  fix_and_run.py      prd_flow_builder.py  run_builder.py
+check_db.py               flow_orchestrator.py  prd_execute.py       run_execute.py
+```
 
-The PRD does not address this conflict. Neither does the QA evaluation.
+The PRD references `database.py` and `agent_registry.py` from the CLAUDE.md description of the agentic-flow-builder shared pattern, not from the actual prd-quality-gate-flow plugin. This is a copy-paste error that signals the NFR was not validated against the actual codebase.
 
-**Verdict**: This is a specification conflict that will cause implementation confusion or a silent regression in Plan stage rigor.
+The metrics document (M9) correctly lists only `business_rules_engine.py` and `flow_orchestrator.py`, contradicting the PRD's own NFR-06.
 
-**Recommendation**: Explicitly state the relationship between the existing 80% blocking criterion and the new 100% warning. Options: (a) keep the 80% block and remove FR-10 as redundant, (b) replace the 80% block with the 100% warning (and document this as a deliberate relaxation with rationale), or (c) layer them: 80% emits a warning, 100% blocks. The PRD must choose.
-
----
-
-## Challenge 5: NFR-04 Token Budget Claim Is Unverifiable at PRD Time
-
-**Claim challenged**: NFR-04 says added content should not increase per-stage context load by more than 500 tokens.
-
-**Problem**: The PRD modifies 5 files across 4 stages. Each file gets additions from multiple FRs. The token impact depends on how much markdown is actually added -- which is an implementation-time concern, not a PRD-time concern. There is no way to verify NFR-04 at the Refine stage. It is also unclear whether the 500-token budget is per-file, per-stage, or per-pipeline-run.
-
-This NFR is well-intentioned but unenforceable without implementation, making it a toothless gate criterion.
-
-**Verdict**: Minor concern. The NFR should clarify "per-stage" vs. "per-file" and be validated at Dev/UAT, not treated as a Refine-stage constraint.
-
-**Recommendation**: Clarify that NFR-04 means "per-stage" (total new content loaded for any single stage does not exceed 500 tokens). Validation deferred to Dev stage DoD where actual line counts can be measured.
+**What must change**: NFR-06 must be corrected to list only the two files that actually exist: `business_rules_engine.py` and `flow_orchestrator.py`.
 
 ---
 
-## Challenge 6: Missing Edge Case -- Light Mode Stages
+## Challenge 3: "100% Behavioral Compatibility" is Unverifiable via Output Diff
 
-**Claim challenged**: The PRD addresses standard pipeline flow but does not account for Light Mode.
+**Confidence: 2/5 -- Serious concern**
 
-**Problem**: Pipeline-stages.md defines Light Mode for BUG_FIX and DOCS_ONLY project types (visible in Stage 5 Light Mode section). Light Mode skips consensus protocol and adversarial review, and reduces Plan to a minimal plan. The PRD's FR-07/FR-08/FR-09/FR-10 (capacity matrix, coverage matrix) apply to Plan stage -- but in Light Mode, the SM produces a "minimal plan" not a full sprint plan.
+Goal G6 and NFR-04 require "Before/after output identical for all 4 CLI entry points" verified by output capture and diff. The metrics document (M6) prescribes a specific capture protocol using `diff`.
 
-Should Light Mode plans still require capacity and coverage matrices? If yes, the "minimal plan" is no longer minimal. If no, there is a bypass path that lets overcommitted plans through on BUG_FIX projects.
+But the codebase generates **timestamp-based IDs** everywhere:
 
-Similarly, FR-01 (shared-module review at UAT) -- does this apply to BUG_FIX UAT? Bug fixes are arguably *more* likely to touch shared modules (fixing a bug in a shared utility) yet Light Mode may not invoke the full UAT flow.
+- `flow_id = f"flow_{datetime.now().strftime('%Y%m%d_%H%M%S')}"`  (line 207)
+- `node_id = f"{name}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"` (line 227)
+- `rule_id = f"rule_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"` (line 257)
 
-**Verdict**: Light Mode exemptions are a meaningful gap in the FRs.
+Every run produces different flow IDs, node IDs, and rule IDs in the output. A naive `diff` of before/after stdout will **always show differences**. The metrics document says "formatting differences are acceptable; structural differences are failures" but does not define these terms or provide a comparison strategy that handles non-deterministic IDs.
 
-**Recommendation**: Add a sentence per FR or a dedicated section clarifying Light Mode behavior. At minimum: FR-01 (shared-module review) should apply regardless of mode since shared-module bugs are high-risk. FR-07/FR-08 can be waived for BUG_FIX/DOCS_ONLY. FR-10 should still apply even in Light Mode since a single-story bug fix can still be overscoped.
+Additionally, the PRD proposes centralizing ID generation into `shared.py` via `generate_timestamp_id()` (FR-05, AC-05d). If the format string changes even slightly (e.g., from `f"flow_{datetime...}"` to `generate_timestamp_id("flow")`), the IDs themselves may have a different format, further invalidating direct comparison.
 
----
-
-## Challenge 7: Dogfooding Validation Creates a Circular Dependency
-
-**Claim challenged**: Section 2 states dogfooding is a P0 UAT gate -- "the hardened stages must be validated by running an actual pipeline through them."
-
-**Problem**: The dogfooding pipeline run will exercise the *modified* reference files. But the modifications are the deliverables of *this* pipeline. This means:
-
-1. Implement changes in Dev stage (Stage 6).
-2. UAT (Stage 7) requires running a pipeline with the changes.
-3. That pipeline run uses the modified gates, which may themselves have issues.
-4. If the dogfooding pipeline fails, is it a bug in the changes or a legitimate gate failure in the dogfooding project?
-
-This is not a showstopper -- it is the nature of self-referential improvement. But the PRD should acknowledge the risk of confounding and define what "dogfooding success" looks like: does the dogfooding pipeline need to complete all 7 stages, or just exercise the modified stages (Design, Plan, Dev, UAT)?
-
-**Verdict**: Minor gap. The dogfooding criterion needs a specific definition of success.
-
-**Recommendation**: Define dogfooding as: "Run a BUG_FIX pipeline that exercises at least Design, Plan, and UAT stages. The pipeline must reach completion without regressions caused by the gate changes. Failures unrelated to the gate changes (e.g., unrelated DoD findings) do not count as dogfooding failures."
+**What must change**: The verification strategy must be concrete. Options: (a) a normalization script that strips IDs before diffing, (b) structural comparison only (node counts, rule counts, node types -- already partially in FR-03 AC-03f), or (c) redefine M6 as structural equivalence rather than output-level diff. Option (b) is the most robust and is already partially specified.
 
 ---
 
-## Summary of Findings
+## Challenge 4: The 200-Line and 300-Line Targets are Unsupported by Evidence
 
-| # | Area | Severity | Action Required |
-|---|------|----------|-----------------|
-| C1 | Design 50%->80% target | HIGH | Substantiate causal link or reduce target |
-| C2 | OQ-1 planned vs. phantom files | HIGH | Resolve before leaving Refine -- false-positive risk on common project types |
-| C3 | Shared-module definition | MEDIUM | Clarify definition within markdown-only constraint |
-| C4 | Gate 5 capacity contradiction | HIGH | Resolve 80% blocking vs. 100% warning conflict |
-| C5 | NFR-04 token budget | LOW | Clarify scope, defer validation to Dev |
-| C6 | Light Mode gap | MEDIUM | Specify Light Mode behavior per FR |
-| C7 | Dogfooding success criteria | LOW | Define what constitutes a successful dogfooding run |
+**Confidence: 3/5 -- Moderate concern**
+
+The PRD sets:
+- `PRDFlowBuilder` class body: <= 200 lines (G1, AC-03a)
+- Every modified/new `.py` file: <= 300 lines (NFR-05)
+
+The only justification is "~6x the 200-line clean code signal," which is not attributed to any standard, study, or team convention documented in this repository.
+
+More critically, the PRD's own estimates strain these limits:
+- `stage_definitions.py`: estimated 200-250 lines. Seven stages averaging 35 lines each (with triple-quoted multi-line goal/prompt strings) yields ~245 lines before module-level boilerplate.
+- `gate_definitions.py`: estimated 200-300 lines. Seven gates with multiple rules each -- the current gate factory methods average 54 lines each per the metrics document, totaling ~378 lines of pure definition data.
+
+The 300-line ceiling for `gate_definitions.py` is already at risk based on the PRD's own estimates. If definitions do not fit, the team must either (a) split data files further (4+ new files instead of 2, adding import complexity), (b) compress formatting at the expense of readability, or (c) violate the constraint and justify an exception. None of these outcomes is planned for.
+
+**Recommendation**: Validate the estimates by extracting and counting actual lines in the current factory methods. Convert the hard ceiling to "target 300, document exceptions" or increase the limit for pure data-definition files.
 
 ---
 
-## Confidence Rating: 3 / 5
+## Challenge 5: Schema Extraction Creates an Initialization Ordering Risk
 
-**Rationale**: The PRD is well-structured, evidence-grounded, and thoroughly traced to retrospective items. The QA evaluation caught the right things at its level. However, three issues -- the planned-vs-phantom file false positive risk (C2), the capacity threshold contradiction (C4), and the unsubstantiated Design target (C1) -- represent specification-level problems that will surface during implementation. C2 and C4 in particular could cause regressions in currently-passing stages if implemented as written.
+**Confidence: 3/5 -- Moderate concern**
 
-Confidence is not low enough to warrant immediate human escalation (that threshold is <=2), but the PO should address C2 and C4 before the PRD leaves Refine. C1 can be resolved by adjusting the target or providing evidence.
+FR-03 (AC-03b) extracts `_create_schema` to `schema.py` as a standalone function. Currently, schema creation is guaranteed to run first because `PRDFlowBuilder.__init__()` calls `_create_schema()`, and every entry point instantiates the builder before doing anything else.
+
+But multiple entry points open **independent database connections** that assume the schema already exists:
+
+1. `FlowOrchestrator.__init__` (line 56): opens its own `sqlite3.connect(db_path)` -- relies on builder having already created the schema.
+2. `fix_and_run.py` (line 17): opens a raw `sqlite3.connect("prd_flows.db")` connection and runs DELETE queries **before** the builder is even imported (the builder import is on line 36).
+3. `check_db.py` (line 4): opens a raw connection and queries tables directly.
+
+The PRD's proposed restructuring of `fix_and_run.py` (FR-06) will wrap code in functions with a `main()` guard. If the refactored `main()` changes the initialization order -- for example, calling `clean_incomplete_executions()` before instantiating the builder -- it will fail on a fresh database (no tables to DELETE from).
+
+The current code "works" on fresh databases only because `fix_and_run.py`'s raw connection DELETE statements silently succeed on non-existent tables (SQLite does not error on `DELETE FROM` for tables that don't exist... actually it does error if the table doesn't exist). On a truly fresh database, `fix_and_run.py` already fails at line 20. The refactoring inherits this latent bug.
+
+**Recommendation**: The PRD should specify that `schema.py`'s function is called as a guaranteed initialization step in `shared.py` or that every entry point must ensure schema existence before queries. This also reveals a pre-existing bug worth documenting.
+
+---
+
+## Challenge 6: The "Out of Scope" Boundary Will Create Visible Inconsistency
+
+**Confidence: 3/5 -- Moderate concern**
+
+The PRD declares `flow_orchestrator.py` and `business_rules_engine.py` as zero-diff out-of-scope (NFR-06). But the refactoring will create an inconsistency that looks like incomplete work:
+
+1. After refactoring, `prd_execute.py`, `fix_and_run.py`, and `check_db.py` will import `DB_PATH` from `shared.py`. But `flow_orchestrator.py` (line 56) will continue to accept `db_path` as a raw string parameter, and callers will pass `"prd_flows.db"` directly -- or will they pass `shared.DB_PATH`? The PRD does not address this call site.
+
+2. `prd_execute.py` line 51 currently passes the hardcoded string: `orchestrator = FlowOrchestrator("prd_flows.db", bre)`. After refactoring, this should become `FlowOrchestrator(DB_PATH, bre)`. This is a consumer-side change (in scope) but the resulting code passes `shared.DB_PATH` to a core module that still internally uses a local `db_path` parameter -- visually inconsistent but functionally correct.
+
+3. `fix_and_run.py` line 130 instantiates `BusinessRulesEngine()` with **no arguments** (no connection). This is a different code path from `prd_execute.py` which passes `builder.conn`. The temptation to "fix" this inconsistency during refactoring will pull the BRE into scope.
+
+**Recommendation**: Acknowledge explicitly that core modules will continue to accept `db_path`/`db_connection` parameters and that callers will pass the centralized constant. This is architecturally correct (core modules remain configurable) but should be documented as intentional.
+
+---
+
+## Challenge 7: Deprecation Wrappers Will Persist Indefinitely
+
+**Confidence: 4/5 -- Minor concern**
+
+FR-04 converts `run_execute.py` and `run_builder.py` to thin deprecation wrappers. OQ-1 says "remove in next release."
+
+There is no release cadence, no versioning scheme for individual plugins, and no mechanism to track when "next release" occurs. The plugin has a single commit in its git history (`f6264ed`). These wrappers will likely persist forever, adding two files that exist only to print warnings nobody reads.
+
+CLAUDE.md documents the canonical entry points. This is an internal plugin repo, not a distributed package with external consumers. The PRD's own evidence shows `run_execute.py` and `run_builder.py` are near-copies with zero unique functionality.
+
+**Recommendation**: Delete `run_execute.py` and `run_builder.py` outright instead of wrapping them. If wrappers are kept, define a concrete removal date or condition (e.g., "remove after 2 pipeline runs with no usage").
+
+---
+
+## Challenge 8: No Rollback or Atomicity Requirement
+
+**Confidence: 4/5 -- Minor concern**
+
+The PRD has a risk table (R1-R6) with mitigations but no rollback plan. The refactoring touches 6 existing files and creates 4 new files across 8 functional requirements. If a regression is discovered during UAT after half the changes are merged, the codebase is in a worse state than before -- partially decomposed, with some files importing from `shared.py` and others still hardcoding paths.
+
+**Recommendation**: Add a requirement that all changes land in a single PR (atomic merge). Given git, a simple "revert the PR" note in the risk table would close this gap.
+
+---
+
+## Summary Table
+
+| # | Challenge | Confidence | Verdict |
+|---|-----------|-----------|---------|
+| 1 | `builder.conn` is undeclared public API | 2/5 | **MUST FIX** before Design |
+| 2 | NFR-06 lists non-existent files | 1/5 | **MUST FIX** -- factual error |
+| 3 | Output diff unverifiable with timestamp IDs | 2/5 | **MUST FIX** -- redefine verification strategy |
+| 4 | Line count targets unsupported | 3/5 | Recommend validating estimates or softening targets |
+| 5 | Schema extraction initialization risk | 3/5 | Recommend specifying initialization contract |
+| 6 | Out-of-scope boundary creates inconsistency | 3/5 | Recommend explicit acknowledgment |
+| 7 | Deprecation wrappers add permanent debt | 4/5 | Recommend deletion over wrappers |
+| 8 | No atomicity requirement | 4/5 | Recommend single-PR requirement |
+
+---
+
+## Blocking Assessment
+
+**Three challenges scored <= 2 and must be resolved before proceeding to Design:**
+
+1. **Challenge 2 (confidence 1/5)**: NFR-06 contains phantom file references (`database.py`, `agent_registry.py`). This is a factual error. Fix: correct the file list.
+
+2. **Challenge 1 (confidence 2/5)**: The most-used public interface (`builder.conn`, 14 direct accesses across 3 files) is not acknowledged in the API preservation requirements. Fix: add `builder.conn` to FR-03's public API list or add consumer migration to scope.
+
+3. **Challenge 3 (confidence 2/5)**: The primary success metric (G6/M6: before/after output diff) is not achievable as specified due to non-deterministic timestamp-based IDs. Fix: redefine behavioral compatibility as structural equivalence (node counts, rule counts, gate counts, flow structure) rather than stdout diff.

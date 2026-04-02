@@ -1,429 +1,614 @@
-# Test Strategy: Stage Health Hardening
+# Test Strategy: prd-quality-gate-flow Refactoring
 
 **Version**: 1.0
 **Author**: Legolas (QA Engineer, delivery-team)
-**Date**: 2026-03-29
+**Date**: 2026-03-30
 **Status**: Implementation-Ready
-**Traces To**: PRD v1.1, User Stories v1.0 (5 stories, 22 ACs, 45 test cases)
+**Traces To**: PRD v1.1, User Stories v1.0 (11 stories, 42 ACs), Design Spec v1.0
 
-> *"That bug still only counts as one."*
+> *"My eyes see far. That edge case you thought was unreachable -- I have already tested it."*
 >
-> This test strategy covers 5 stories across 4 milestones, all targeting markdown-only changes to delivery-flow reference files. The testing approach is predominantly structural inspection -- we are verifying that the right words appear in the right places in the right files. The empirical items (AC-05a, AC-05b, AC-06a, AC-06b) require pipeline runtime validation and are addressed in the dogfooding plan.
+> This test strategy covers 11 user stories across 2 sprints, targeting a Python structural refactoring with zero behavioral changes. The testing approach is split between structural inspection (file existence, line counts, grep patterns, import verification) and empirical CLI execution (running Python scripts and comparing structural output). There is no test framework -- all verification is through CLI commands and manual inspection.
 
 ---
 
 ## 1. Testing Philosophy
 
-Three principles govern this strategy:
+Four principles govern this strategy:
 
-1. **Structural changes get structural tests.** 18 of 22 ACs are structural -- they require verifying that specific text, sections, and table rows exist in specific files at specific locations. These are inspected via Read/Grep, not by running a pipeline.
-2. **Empirical changes get pipeline runs.** 4 ACs (AC-05a, AC-05b, AC-06a, AC-06b) define runtime gate behavior that can only be validated by running a pipeline through the affected stages. These are covered by the dogfooding plan.
-3. **Regression is non-negotiable.** Every target file is shared across multiple pipeline stages. Changes to `pipeline-stages.md` or `quality-gates.md` must not break existing stage behavior. Non-modified stages must still pass their gates.
+1. **Structural refactoring gets structural tests.** The majority of ACs (32 of 42) can be verified by inspecting file existence, counting lines, grepping for patterns, and checking import statements. These do not require running the application.
+2. **Behavioral compatibility gets empirical tests.** 10 ACs require actually running CLI commands and comparing output. Because timestamp-based IDs (`flow_*`, `node_*`, `rule_*`) are non-deterministic, comparison is by structural equivalence: node counts, rule counts, gate counts, flow structure, and exit codes. Direct stdout diff is not viable.
+3. **Baselines before changes.** Pre-refactoring output baselines must be captured for all 4 CLI entry points before any code changes. Without baselines, behavioral compatibility cannot be verified. This is a P0 prerequisite.
+4. **Core modules are untouchable.** `business_rules_engine.py` and `flow_orchestrator.py` must have zero diff after all changes. Any modification to these files is an automatic test failure, regardless of intent.
 
 ---
 
-## 2. Test Approach per Story
+## 2. Pre-Refactoring Baseline Capture
 
-### 2.1 US-01: Shared-Module Review at UAT
+Before any code changes, the following baselines must be captured in the `prd-quality-gate-flow/` directory. These are the reference points for all empirical tests.
+
+| Baseline | Command | Captured Metrics |
+|----------|---------|-----------------|
+| BL-1: Builder output | `cd prd-quality-gate-flow && python prd_flow_builder.py` | Node count (expected: 15), rule count (expected: 20), flow name, diagram structure, exit code |
+| BL-2: Executor import | `cd prd-quality-gate-flow && python -c "import prd_execute; print('OK')"` | Import succeeds, exit code 0 |
+| BL-3: Fix-and-run output | `cd prd-quality-gate-flow && python fix_and_run.py` | Cleanup operation count, BRE evaluation structure, gate overview count, exit code |
+| BL-4: Check-db output | `cd prd-quality-gate-flow && python check_db.py` | Flow count, node type breakdown, rule count, exit code |
+| BL-5: Core module checksums | `sha256sum business_rules_engine.py flow_orchestrator.py` | SHA-256 hashes for NFR-06 verification |
+
+**Storage**: Baselines are captured to stdout and recorded in the development session. They are not persisted as files.
+
+---
+
+## 3. Test Approach per Story
+
+### 3.1 US-01: Create Shared Constants Module (`shared.py`)
+
+**Approach**: Structural inspection + import verification
+
+**Rationale**: All 4 ACs are structural -- they verify that specific exports exist, return expected values, and use only stdlib imports.
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-1.1 | Structural | `python -c "from shared import DB_PATH; assert DB_PATH == 'prd_flows.db'; print('PASS')"` |
+| AC-1.2 | Structural | `python -c "from shared import generate_timestamp_id; ids = [generate_timestamp_id('test') for _ in range(3)]; assert all(i.startswith('test_') for i in ids); print('PASS')"` |
+| AC-1.3 | Structural | `python -c "from shared import ensure_utf8_output; ensure_utf8_output(); print('PASS')"` |
+| AC-1.4 | Structural | Grep `shared.py` for non-stdlib imports; expect zero matches |
+
+**Regression concern**: None -- additive only, no existing code modified.
+
+---
+
+### 3.2 US-02: Extract Database Schema (`schema.py`)
+
+**Approach**: Structural inspection + empirical schema verification
+
+**Rationale**: AC-2.2 (table/index counts) and AC-2.3 (idempotency) require actual SQLite operations.
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-2.1 | Structural | `python -c "from schema import ensure_schema; print('OK')"` |
+| AC-2.2 | Empirical | `python -c "import sqlite3; from schema import ensure_schema; c = sqlite3.connect(':memory:'); ensure_schema(c); tables = c.execute(\"SELECT count(*) FROM sqlite_master WHERE type='table'\").fetchone()[0]; assert tables == 9, f'Expected 9 tables, got {tables}'"` |
+| AC-2.3 | Empirical | Call `ensure_schema(conn)` twice on same connection; no errors |
+| AC-2.4 | Structural | Grep `schema.py` for non-stdlib imports; expect zero matches |
+
+**Regression concern**: Schema SQL must produce identical tables and indexes as the current `_create_schema()`. Byte-for-byte fidelity of SQL statements.
+
+---
+
+### 3.3 US-03: Wire Schema into Shared Connection Helper
+
+**Approach**: Empirical verification
+
+**Rationale**: AC-3.1 requires demonstrating that `get_connection()` on a fresh database creates the full schema automatically.
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-3.1 | Empirical | `python -c "from shared import get_connection; conn = get_connection(':memory:'); tables = conn.execute(\"SELECT count(*) FROM sqlite_master WHERE type='table'\").fetchone()[0]; assert tables == 9; conn.close(); print('PASS')"` |
+| AC-3.2 | Structural | `python -c "from shared import get_connection; print('OK')"` -- no ImportError |
+
+**Regression concern**: Circular import risk between `shared.py` and `schema.py`. Verify `schema.py` has zero internal imports.
+
+---
+
+### 3.4 US-04: Extract Stage Definitions (`stage_definitions.py`)
+
+**Approach**: Structural inspection + import verification
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-4.1 | Structural | `python -c "from stage_definitions import STAGE_DEFINITIONS; assert len(STAGE_DEFINITIONS) == 7; print('PASS')"` |
+| AC-4.2 | Structural | `python -c "from stage_definitions import STAGE_DEFINITIONS; [s['config']['goal'] for s in STAGE_DEFINITIONS]; print('All goals present')"` |
+| AC-4.3 | Empirical | Remove a required field from a stage dict, attempt import, verify `KeyError` is raised |
+| AC-4.4 | Structural | Verify no `.yml`/`.yaml` data files exist in plugin directory |
+| AC-4.5 | Empirical | Compare multi-line `goal` strings against original `prd_flow_builder.py` factory methods |
+| AC-4.6 | Structural | Grep `stage_definitions.py` for imports from other plugin modules; expect zero |
+
+**Regression concern**: Multi-line goal strings with triple-quoted formatting. Risk of whitespace corruption during extraction.
+
+---
+
+### 3.5 US-05: Extract Gate Definitions (`gate_definitions.py`)
+
+**Approach**: Structural inspection + count verification
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-5.1 | Structural | `python -c "from gate_definitions import GATE_DEFINITIONS; assert len(GATE_DEFINITIONS) == 7; print('PASS')"` |
+| AC-5.2 | Structural | `python -c "from gate_definitions import GATE_DEFINITIONS; rules = sum(len(g['rules']) for g in GATE_DEFINITIONS); assert rules == 20, f'Expected 20 rules, got {rules}'; print('PASS')"` |
+| AC-5.3 | Structural | Verify every gate dict has `name`, `description`, `rules`; every rule dict has `name`, `rule_type`, `condition`, `action`, `priority` |
+| AC-5.4 | Structural | Verify list ordering matches current `build_prd_flow()` gate creation order |
+| AC-5.5 | Empirical | Remove a required field from a gate or rule dict, attempt import, verify `KeyError` |
+| AC-5.6 | Structural | Grep `gate_definitions.py` for internal imports; expect zero |
+
+**Regression concern**: Rule condition dicts with nested AND/OR logic. Transcription errors in complex conditions are the highest risk here.
+
+---
+
+### 3.6 US-06: Decompose PRDFlowBuilder
+
+**Approach**: Mixed -- structural inspection + empirical build verification
+
+**This is the highest-risk story.** The entire 1,157-line class is being rewritten. Every other consumer depends on this.
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-6.1 | Structural | Count lines from `class PRDFlowBuilder:` to end of class; assert <= 200 |
+| AC-6.2 | Structural | `grep -c '_create_stage\|_create_gate' prd_flow_builder.py` returns `0` |
+| AC-6.3 | Structural | Verify `create_flow()`, `create_node()`, `create_rule()` exist on class |
+| AC-6.4 | Structural | `python -c "from prd_flow_builder import PRDFlowBuilder; b = PRDFlowBuilder(':memory:'); assert hasattr(b, 'conn'); b.close()"` |
+| AC-6.5 | Structural | Verify `export_flow_diagram()` exists and is callable |
+| AC-6.6 | **Empirical** | `python -c "from prd_flow_builder import PRDFlowBuilder; b = PRDFlowBuilder(':memory:'); fid = b.build_prd_flow(); assert b._count_nodes(fid) == 15; assert b._count_rules(fid) == 20; b.close(); print('PASS')"` |
+| AC-6.7 | Structural | `grep -c '"prd_flows.db"' prd_flow_builder.py` returns `0` |
+| AC-6.8 | Structural | `grep -c 'f"flow_{datetime.now' prd_flow_builder.py` returns `0` |
+| AC-6.9 | Structural | Trace `PIPELINE_SEQUENCE` list against design spec section 7 ordering |
+
+**Regression concern**: Node/rule creation order, parent-child chaining (each gate's `parent_id` must be the preceding stage, and vice versa). The consecutive gates (3-4) and consecutive stages (5-6) are the most likely failure points.
+
+---
+
+### 3.7 US-07: Consolidate prd_execute.py
 
 **Approach**: Structural inspection
 
-**Target files**: `pipeline-stages.md`, `quality/SKILL.md`
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-7.1 | Structural | `grep -c '"prd_flows.db"' prd_execute.py` returns `0`; `grep 'from shared import' prd_execute.py` finds `DB_PATH` |
+| AC-7.2 | Structural | Verify `ensure_utf8_output()` call in `main()` |
+| AC-7.3 | Structural | `grep -r 'EXAMPLE_PRODUCT_IDEAS' *.py` returns matches only in `prd_execute.py` |
+| AC-7.4 | Structural | `python -c "import prd_execute; print('OK')"` succeeds |
 
-**Rationale**: All 5 ACs (AC-01a through AC-02b) are typed "structural." Each requires verifying that specific content was inserted at a specific location in the target file, with no existing content removed or modified. Pure file inspection.
-
-| AC | Test Approach | Inspection Method |
-|----|--------------|-------------------|
-| AC-01a | Read `pipeline-stages.md` Stage 7 DoD checklist, verify shared-module review item | Grep for "shared-module review" in Stage 7 DoD section |
-| AC-01b | Read `pipeline-stages.md` Stage 7 Sub-Flow, verify step 5 insertion and renumbering | Read section, verify step numbering is consecutive, step 5 content matches spec |
-| AC-01c | Read `pipeline-stages.md` Stage 7 DoD Validators, verify QA Engineer update | Grep for "shared-module review complete" in QA Engineer validator |
-| AC-02a | Read `quality/SKILL.md`, verify Shared-Module Review Protocol section | Verify 4 subsections: Definition, Identification Steps (5), Review Checklist (4 items), Output Format |
-| AC-02b | Read `quality/SKILL.md`, verify section placement | Confirm section appears after "Empirical Validation" and before "Sub-Agent Interface" |
-
-**Regression concern**: Step renumbering in Stage 7 Sub-Flow. All subsequent step references in the file must be updated.
+**Regression concern**: UTF-8 setup absorption from deleted `run_execute.py`. Verify encoding works on non-ASCII output.
 
 ---
 
-### 2.2 US-02: Empirical-Items Tracking at UAT
+### 3.8 US-08: Restructure fix_and_run.py
+
+**Approach**: Mixed -- structural + empirical execution
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-8.1 | Structural | `grep -c 'def main' fix_and_run.py` returns `1`; `grep '__name__' fix_and_run.py` confirms guard |
+| AC-8.2 | Structural | Verify `clean_incomplete_executions()` function exists |
+| AC-8.3 | Structural | Verify `demonstrate_bre_evaluation()` function exists |
+| AC-8.4 | Structural | Verify `display_flow_structure()` function exists |
+| AC-8.5 | Structural | Verify only imports and `if __name__` guard at top level |
+| AC-8.6 | **Empirical** | Run `fix_and_run.py` against a fresh (non-existent) database; DELETE queries succeed because `get_connection()` calls `ensure_schema()` first |
+| AC-8.7 | Structural | `grep -c '"prd_flows.db"' fix_and_run.py` returns `0` |
+| AC-8.8 | **Empirical** | Run `python fix_and_run.py`; verify structurally equivalent output to BL-3 baseline |
+
+**Regression concern**: The latent ordering bug fix (AC-8.6) changes behavior on fresh databases. This is an intentional improvement, not a regression. Verify the old behavior (crash on fresh DB) is gone.
+
+---
+
+### 3.9 US-09: Restructure check_db.py
+
+**Approach**: Mixed -- structural + empirical execution
+
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-9.1 | Structural | `grep -c 'def main' check_db.py` returns `1` |
+| AC-9.2 | Structural | Verify descriptive function names (`list_flows`, `list_nodes`, `list_rules` or equivalent) |
+| AC-9.3 | Structural | Verify `with` context manager or `finally` block for connection |
+| AC-9.4 | **Empirical** | Run `python check_db.py` with nonexistent DB path; verify graceful error message, no raw traceback |
+| AC-9.5 | Structural | `grep -c '"prd_flows.db"' check_db.py` returns `0` |
+| AC-9.6 | **Empirical** | Run `python check_db.py` against existing database; compare counts to BL-4 baseline |
+
+**Regression concern**: Graceful error handling must not swallow legitimate errors from existing databases.
+
+---
+
+### 3.10 US-10: Delete Duplicate Entry Points
 
 **Approach**: Structural inspection
 
-**Target files**: `artifact-contracts.md`, `quality-gates.md`
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-10.1 | Structural | `ls run_execute.py 2>&1` returns "No such file or directory" |
+| AC-10.2 | Structural | `ls run_builder.py 2>&1` returns "No such file or directory" |
+| AC-10.3 | Structural | `grep -r 'run_execute\|run_builder' *.py` returns no output |
 
-**Rationale**: All 4 ACs (AC-03a through AC-04a) are typed "structural." Each verifies specific template content, table rows, or gate criteria in reference files.
-
-| AC | Test Approach | Inspection Method |
-|----|--------------|-------------------|
-| AC-03a | Read `artifact-contracts.md`, verify empirical-items template references UAT test plan as output location | Grep for `.delivery/artifacts/07-uat/qa/test-plan.md` in template |
-| AC-03b | Read `artifact-contracts.md` Stage 6->7 contract table, verify new row | Verify "Empirical Items Classification" row exists after "CODE_COMPLETE Items" |
-| AC-03c | Read `artifact-contracts.md`, verify template section content | Verify table columns, classification rules, summary statistics, Light Mode note |
-| AC-04a | Read `quality-gates.md` Gate 7, verify blocking criterion | Grep for empirical-items criterion with `[blocking]` tag |
-
-**Regression concern**: `artifact-contracts.md` has existing contract tables and templates. New content must be purely additive.
+**Regression concern**: None -- deletion only. Git history preserves files.
 
 ---
 
-### 2.3 US-03: Phantom Reference Detection and Filename Reconciliation
-
-**Approach**: Mixed -- structural inspection (AC-05c, AC-06c) + empirical pipeline validation (AC-05a, AC-05b, AC-06a, AC-06b)
-
-**Target files**: `quality-gates.md`, `pipeline-stages.md`
-
-**Rationale**: This story contains the highest-risk changes. AC-05a/05b define runtime WARNING behavior at Design DoD, and AC-06a/06b define runtime BLOCKING behavior at Dev entry. These cannot be verified by reading files alone -- they require a pipeline run where phantom references are present and the gates fire correctly.
-
-| AC | Test Approach | Inspection Method |
-|----|--------------|-------------------|
-| AC-05a | **Empirical** -- requires pipeline Design stage run with phantom references | Dogfooding plan step DF-3 |
-| AC-05b | **Empirical** -- requires `[PLANNED]` annotated paths in Design artifacts | Dogfooding plan step DF-4 |
-| AC-05c | Structural -- verify Gate 3 criterion placement and annotations | Read `quality-gates.md` Gate 3, verify `[warning]` tag and `<!-- retro k4m9 -->` |
-| AC-06a | **Empirical** -- requires pipeline Dev entry with missing referenced files | Dogfooding plan step DF-5 |
-| AC-06b | **Empirical** -- requires `[PLANNED]` annotated paths tested at Dev entry | Dogfooding plan step DF-6 |
-| AC-06c | Structural -- verify Stage 6 entry condition content | Read `pipeline-stages.md` Stage 6, verify 5-step reconciliation, pass/fail criteria, Light Mode note |
-
-**Regression concern**: Gate 3 and Stage 6 entry conditions are active for ALL project types. Changes must not introduce false positives on GREENFIELD projects where file creation is normal.
-
----
-
-### 2.4 US-04: Plan Stage Capacity and Coverage Guardrails
+### 3.11 US-11: Update CLAUDE.md
 
 **Approach**: Structural inspection
 
-**Target files**: `project-templates.md`, `pipeline-stages.md`, `quality-gates.md`
+| AC | Type | Test Method |
+|----|------|------------|
+| AC-11.1 | Structural | Verify `Running Scripts` section lists exactly 4 scripts |
+| AC-11.2 | Structural | `grep -c 'run_execute\|run_builder' CLAUDE.md` returns `0` |
+| AC-11.3 | Structural | Every `python <script>.py` in the section corresponds to an existing file |
 
-**Rationale**: All 7 ACs (AC-07a through AC-10c) are typed "structural." They verify templates, validator text, step insertions, and gate criterion replacements.
-
-| AC | Test Approach | Inspection Method |
-|----|--------------|-------------------|
-| AC-07a | Read `project-templates.md`, verify capacity matrix template columns | Verify: Team Member, Role, Available Hours, Allocated Hours, Utilization % |
-| AC-07b | Read `project-templates.md`, verify "Sprint Plan Mandatory Sections" heading, placement, retro annotation, Light Mode waiver | Section at end of file, `<!-- retro c8f2 -->`, "WAIVED" for BUG_FIX/DOCS_ONLY |
-| AC-08a | Read `project-templates.md`, verify coverage matrix template columns | Verify: PRD FR-ID, FR Description, Planned Task(s), Story ID(s), Status |
-| AC-08b | Verify coverage matrix in same section as capacity matrix | Both under "Sprint Plan Mandatory Sections" |
-| AC-09a | Read `pipeline-stages.md` Stage 5 DoD Validators, verify Scrum Bag validator | Grep for capacity and coverage matrix requirements |
-| AC-09b | Read `pipeline-stages.md` Stage 5 Sub-Flow, verify step 4 insertion and renumbering | Step 4 "Matrix validation" with capacity/coverage checks, Light Mode waiver |
-| AC-10a | Read `quality-gates.md` Gate 5, verify >80% WARNING tier | Verify acknowledgment requirement |
-| AC-10b | Read `quality-gates.md` Gate 5, verify >100% BLOCKING tier | Verify reduction or PO sign-off requirement |
-| AC-10c | Read `quality-gates.md` Gate 5, verify old criterion replaced | Grep confirms NO remaining "Commitment does not exceed 80% of available capacity [blocking]" |
-
-**Regression concern**: AC-10c explicitly replaces an existing Gate 5 criterion. This is a modification, not an addition. Must verify the old text is gone AND the new text is present. Two-step verification.
+**Regression concern**: Ensure no other sections of CLAUDE.md are inadvertently modified.
 
 ---
 
-### 2.5 US-05: Derived Artifact Regeneration at Dev DoD
+## 4. FR-by-FR Test Coverage Map
 
-**Approach**: Structural inspection
+Every FR and AC from the PRD is mapped to a story, test approach, and specific verification command.
 
-**Target files**: `pipeline-stages.md`, `quality-gates.md`
+### FR-01: Extract Stage Definitions
 
-**Rationale**: All 4 ACs (AC-11a through AC-12b) are typed "structural." They verify validator text, step insertion, and gate criteria.
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-01a | US-04 | Structural | `python -c "from stage_definitions import STAGE_DEFINITIONS"` succeeds; file exists |
+| AC-01b | US-04 | Structural | Inspect each dict for required fields: `name`, `description`, `node_type`, `config.agent_type`, `config.goal`, `config.model`, `config.tools`, `config.working_memory_output`, `config.max_retries` |
+| AC-01c | US-06 | Structural | `grep '_create_stageN' prd_flow_builder.py` returns 0; builder loops over `STAGE_DEFINITIONS` |
+| AC-01d | US-04 | Structural | No `.yml`/`.yaml` data files in plugin directory |
+| AC-01e | US-04 | Empirical | Remove required field, import fails with `KeyError` |
 
-| AC | Test Approach | Inspection Method |
-|----|--------------|-------------------|
-| AC-11a | Read `pipeline-stages.md` Stage 6 DoD Validators, verify Developer validator | Grep for "derived artifacts regenerated from current sources" and "Derived Artifacts" section spec |
-| AC-11b | Read `pipeline-stages.md` Stage 6 Sub-Flow, verify step 5 insertion and renumbering | Step 5 with 4 substeps, Light Mode note, `<!-- retro c8f2 -->` |
-| AC-12a | Read `quality-gates.md` Gate 6, verify blocking criterion | Grep for derived artifact regeneration criterion with `[blocking]` tag |
-| AC-12b | Read `quality-gates.md` Gate 6, verify placement after empirical validations item | Verify ordering and `<!-- retro c8f2 -->` annotation |
+### FR-02: Extract Gate Definitions
 
-**Regression concern**: Stage 6 Sub-Flow step renumbering (same pattern as US-01 and US-04).
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-02a | US-05 | Structural | `python -c "from gate_definitions import GATE_DEFINITIONS"` succeeds; file exists |
+| AC-02b | US-05 | Structural | Every gate dict has `name`, `description`, `rules`; every rule dict has `name`, `rule_type`, `condition`, `action`, `priority` |
+| AC-02c | US-06 | Structural | Builder loops over `GATE_DEFINITIONS`; no `_create_gateN` methods |
+| AC-02d | US-05 | Structural | `GATE_DEFINITIONS` is an ordered list; index == pipeline position |
+| AC-02e | US-05, US-06 | Empirical | `_count_rules(flow_id)` returns 20 after `build_prd_flow()` |
+| AC-02f | US-05 | Empirical | Remove required field, import fails with `KeyError` |
 
----
+### FR-03: Decompose PRDFlowBuilder
 
-## 3. Test Coverage Matrix
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-03a | US-06 | Structural | `wc -l` on class body <= 200 |
+| AC-03b | US-02 | Structural | `from schema import ensure_schema` succeeds |
+| AC-03c | US-06 | Structural | `build_prd_flow()` uses loops, not 12+ method calls |
+| AC-03d | US-06 | Structural | `create_flow()`, `create_node()`, `create_rule()` exist on class |
+| AC-03d2 | US-06 | Structural | `builder.conn` is a valid sqlite3.Connection |
+| AC-03e | US-06 | Structural | `export_flow_diagram()` accessible |
+| AC-03f | US-06 | Empirical | 15 nodes, 20 rules after build (compare to BL-1) |
+| AC-03g | US-02, US-03 | Empirical | `get_connection(':memory:')` returns connection with 9 tables |
 
-Every AC mapped to its test cases and test approach.
+### FR-04: Consolidate Entry Points
 
-### 3.1 US-01 (5 ACs, 9 TCs)
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-04a | US-10 | Structural | `run_execute.py` does not exist |
+| AC-04b | US-10 | Structural | `run_builder.py` does not exist |
+| AC-04c | US-07 | Structural | `EXAMPLE_PRODUCT_IDEAS` in exactly one file (`prd_execute.py`) |
+| AC-04d | US-07 | Structural | `ensure_utf8_output()` consolidated in `shared.py`; `grep TextIOWrapper *.py` returns only `shared.py` |
 
-| AC | TC(s) | Approach | File Under Test |
-|----|-------|----------|----------------|
-| AC-01a | TC-01a-1, TC-01a-2 | Structural | `pipeline-stages.md` |
-| AC-01b | TC-01b-1, TC-01b-2 | Structural | `pipeline-stages.md` |
-| AC-01c | TC-01c-1 | Structural | `pipeline-stages.md` |
-| AC-02a | TC-02a-1, TC-02a-2 | Structural | `quality/SKILL.md` |
-| AC-02b | TC-02b-1, TC-02b-2 | Structural | `quality/SKILL.md` |
+### FR-05: Create Shared Constants Module
 
-### 3.2 US-02 (4 ACs, 10 TCs)
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-05a | US-01 | Structural | `from shared import DB_PATH, generate_timestamp_id, ensure_utf8_output` succeeds |
+| AC-05b | US-06, US-07, US-08, US-09 | Structural | All consumers `from shared import DB_PATH` |
+| AC-05c | US-06, US-07, US-08, US-09 | Structural | `grep -r '"prd_flows.db"' *.py` returns only `shared.py` |
+| AC-05d | US-06 | Structural | No inline `f"flow_{datetime.now..."` in modified files |
+| AC-05e | N/A | N/A | Intentional scope boundary -- core modules unchanged (NFR-06) |
 
-| AC | TC(s) | Approach | File Under Test |
-|----|-------|----------|----------------|
-| AC-03a | TC-03a-1 | Structural | `artifact-contracts.md` |
-| AC-03b | TC-03b-1, TC-03b-2 | Structural | `artifact-contracts.md` |
-| AC-03c | TC-03c-1, TC-03c-2, TC-03c-3, TC-03c-4 | Structural | `artifact-contracts.md` |
-| AC-04a | TC-04a-1, TC-04a-2, TC-04a-3 | Structural | `quality-gates.md` |
+### FR-06: Restructure fix_and_run.py
 
-### 3.3 US-03 (6 ACs, 12 TCs)
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-06a | US-08 | Structural | `def main()` + `if __name__` guard |
+| AC-06b | US-08 | Structural | `clean_incomplete_executions()` exists |
+| AC-06c | US-08 | Structural | `demonstrate_bre_evaluation()` exists |
+| AC-06d | US-08 | Structural | `display_flow_structure()` exists |
+| AC-06e | US-08 | Structural | No bare top-level statements |
+| AC-06f | US-08 | Empirical | `python fix_and_run.py` produces structurally equivalent output to BL-3 |
 
-| AC | TC(s) | Approach | File Under Test |
-|----|-------|----------|----------------|
-| AC-05a | TC-05a-1, TC-05a-2 | Structural + **Empirical (DF-3)** | `quality-gates.md` |
-| AC-05b | TC-05b-1 | Structural + **Empirical (DF-4)** | `quality-gates.md` |
-| AC-05c | TC-05c-1, TC-05c-2 | Structural | `quality-gates.md` |
-| AC-06a | TC-06a-1, TC-06a-2, TC-06a-3 | Structural + **Empirical (DF-5)** | `pipeline-stages.md` |
-| AC-06b | TC-06b-1 | Structural + **Empirical (DF-6)** | `pipeline-stages.md` |
-| AC-06c | TC-06c-1, TC-06c-2 | Structural | `pipeline-stages.md` |
+### FR-07: Restructure check_db.py
 
-### 3.4 US-04 (7 ACs, 14 TCs)
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-07a | US-09 | Structural | `def main()` + `if __name__` guard |
+| AC-07b | US-09 | Structural | All functions have descriptive names |
+| AC-07c | US-09 | Structural | Context manager or `finally` for connection |
+| AC-07d | US-09 | Empirical | Graceful error on missing DB (no raw traceback) |
+| AC-07e | US-09 | Empirical | Equivalent output against existing DB (compare to BL-4) |
 
-| AC | TC(s) | Approach | File Under Test |
-|----|-------|----------|----------------|
-| AC-07a | TC-07a-1, TC-07a-2 | Structural | `project-templates.md` |
-| AC-07b | TC-07b-1, TC-07b-2, TC-07b-3 | Structural | `project-templates.md` |
-| AC-08a | TC-08a-1, TC-08a-2 | Structural | `project-templates.md` |
-| AC-08b | TC-08b-1, TC-08b-2 | Structural | `project-templates.md` |
-| AC-09a | TC-09a-1, TC-09a-2 | Structural | `pipeline-stages.md` |
-| AC-09b | TC-09b-1, TC-09b-2, TC-09b-3 | Structural | `pipeline-stages.md` |
-| AC-10a | TC-10a-1 | Structural | `quality-gates.md` |
-| AC-10b | TC-10b-1 | Structural | `quality-gates.md` |
-| AC-10c | TC-10c-1, TC-10c-2, TC-10c-3 | Structural | `quality-gates.md` |
+### FR-08: Update CLAUDE.md
 
-### 3.5 US-05 (4 ACs, 10 TCs)
-
-| AC | TC(s) | Approach | File Under Test |
-|----|-------|----------|----------------|
-| AC-11a | TC-11a-1, TC-11a-2, TC-11a-3 | Structural | `pipeline-stages.md` |
-| AC-11b | TC-11b-1, TC-11b-2, TC-11b-3, TC-11b-4 | Structural | `pipeline-stages.md` |
-| AC-12a | TC-12a-1, TC-12a-2 | Structural | `quality-gates.md` |
-| AC-12b | TC-12b-1, TC-12b-2 | Structural | `quality-gates.md` |
-
-### 3.6 Coverage Summary
-
-| Metric | Count |
-|--------|-------|
-| Total ACs | 22 |
-| ACs with structural tests | 22 (100%) |
-| ACs requiring empirical validation | 4 (AC-05a, AC-05b, AC-06a, AC-06b) |
-| Total test cases from stories | 45 |
-| Total test cases mapped | 45 (100%) |
-| Unmapped ACs | 0 |
-
----
-
-## 4. Regression Testing Plan
-
-### 4.1 Files Modified and Regression Scope
-
-| File | Stories Modifying | Stages Affected | Regression Scope |
-|------|-------------------|-----------------|-----------------|
-| `pipeline-stages.md` | US-01, US-03, US-04, US-05 | Stage 5, 6, 7 | All 7 stage definitions, all sub-flows, all DoD validators, all entry conditions |
-| `quality-gates.md` | US-02, US-03, US-04, US-05 | Gate 3, 5, 6, 7 | All 7 gate checklists |
-| `artifact-contracts.md` | US-02 | Stage 6->7 contract | All contract tables, all templates |
-| `project-templates.md` | US-04 | Plan stage | All project type templates |
-| `quality/SKILL.md` | US-01 | UAT QA role | All existing skill sections |
-
-### 4.2 Non-Modified Stages Regression Checks
-
-These stages are NOT targeted by any story. After all changes, verify they are intact:
-
-| Stage | Regression Check | Method |
-|-------|-----------------|--------|
-| Stage 1 (Idea) | Gate 1 checklist unchanged, Stage 1 sub-flow unchanged | Diff `quality-gates.md` and `pipeline-stages.md` -- zero changes in Stage 1 / Gate 1 sections |
-| Stage 2 (Refine) | Gate 2 checklist unchanged, Stage 2 sub-flow unchanged | Diff -- zero changes in Stage 2 / Gate 2 sections |
-| Stage 4 (Architect) | Gate 4 checklist unchanged, Stage 4 sub-flow unchanged | Diff -- zero changes in Stage 4 / Gate 4 sections |
-
-### 4.3 Modified Stages Regression Checks
-
-These stages receive new content. Verify existing content is preserved:
-
-| Stage | What Must NOT Change | Verification |
-|-------|---------------------|-------------|
-| Stage 3 (Design) | All existing Gate 3 criteria remain; only additive change (new phantom ref WARNING criterion) | Count existing criteria before and after; all present, one new |
-| Stage 5 (Plan) | All existing Gate 5 criteria remain except the explicit replacement (AC-10c); sub-flow steps before insertion point unchanged | Verify old "80% blocking" criterion is gone (intended), all other criteria present |
-| Stage 6 (Dev) | All existing Gate 6 criteria remain; existing sub-flow steps before insertion point unchanged; existing entry conditions preserved | Count existing criteria and entry conditions before and after |
-| Stage 7 (UAT) | All existing Gate 7 criteria remain; existing sub-flow steps before insertion point unchanged; existing DoD validators preserved | Verify all pre-existing validators still present with original text |
-
-### 4.4 Cross-File Consistency Checks
-
-| Check | Scope | Method |
-|-------|-------|--------|
-| Step numbering consistency | US-01 (Stage 7), US-04 (Stage 5), US-05 (Stage 6) | For each sub-flow, verify steps are numbered 1..N with no gaps or duplicates |
-| Gate-to-stage alignment | Gates 3, 5, 6, 7 | Every gate criterion references a stage sub-flow step or validator that exists |
-| Contract-to-gate alignment | Stage 6->7 contract | Every required contract artifact has a corresponding gate criterion |
-| Retro annotations complete | All modified sections | Every change section contains the correct retro annotation (c8f2, k4m9, or both) per PRD traceability |
-
-### 4.5 NFR Regression Checks
-
-| NFR | Regression Check |
-|-----|-----------------|
-| NFR-01 (markdown-only) | Verify no `.py`, `.js`, `.sh` files created or modified in the changeset |
-| NFR-02 (config v2.3 compat) | Verify no new keys added to config schema; no references to config keys not in v2.3 |
-| NFR-03 (no pass rate regression) | Non-targeted stages (Idea, Architect, Development) have zero changes to their gates/sub-flows |
-| NFR-04 (token budget) | Count added lines per stage; multiply by ~1.3 tokens/word, ~10 words/line; verify < 500 tokens per stage |
-| NFR-05 (retro traceability) | Every modified section has inline retro annotation |
+| AC | Story | Approach | Verification |
+|----|-------|----------|-------------|
+| AC-08a | US-11 | Structural | 4 canonical scripts listed |
+| AC-08b | US-11 | Structural | No references to deleted scripts |
+| AC-08c | US-11 | Structural | Every documented command maps to existing file |
 
 ---
 
-## 5. Dogfooding Test Plan
+## 5. Behavioral Compatibility Verification Plan
 
-### 5.1 Objective
+This is the P0 UAT gate. All 4 CLI entry points must produce structurally equivalent results before and after refactoring.
 
-Run an actual delivery-flow pipeline through the hardened stages to validate that empirical ACs work at runtime and that structural changes do not cause regressions. Per PRD Section 2: "Dogfooding success is defined as: run a BUG_FIX pipeline that exercises at least the Design, Plan, and UAT stages."
+### 5.1 What "Structurally Equivalent" Means
 
-### 5.2 Pipeline to Run
+| Dimension | Compared | NOT Compared | Rationale |
+|-----------|----------|-------------|-----------|
+| Node count | Yes | -- | Must be exactly 15 |
+| Rule count | Yes | -- | Must be exactly 20 |
+| Gate count | Yes | -- | Must be exactly 7 |
+| Flow structure | Yes (stage/gate ordering, parent-child chain) | -- | Pipeline sequence must be preserved |
+| Exit codes | Yes | -- | Must be 0 on success |
+| Timestamp IDs | -- | NOT compared | `flow_*`, `node_*`, `rule_*` are non-deterministic per run |
+| Stdout text | -- | NOT compared (except counts) | Formatting differences acceptable |
+| Execution timing | -- | NOT compared | Performance is not a goal |
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Project type | BUG_FIX | PRD-specified; exercises Light Mode behavior for FR-07/08/09 waivers while keeping FR-01/05/06/10/11/12 active |
-| Target stages | Design, Architect (transit), Plan, Development, UAT | Exercises all 4 milestones' target stages |
-| Repo | This repo (Claude-Plugins) | Dogfooding on the repo being modified |
-| Subject | A small BUG_FIX task touching at least one shared module | Exercises shared-module review (US-01) and derived artifact regeneration (US-05) |
+### 5.2 Entry Point Verification Matrix
 
-### 5.3 Setup Preconditions
+| Entry Point | Pre-Refactoring Baseline | Post-Refactoring Check | Pass Criteria |
+|------------|-------------------------|----------------------|--------------|
+| `python prd_flow_builder.py` | BL-1: 15 nodes, 20 rules, diagram output, exit 0 | Same counts, diagram has same structure, exit 0 | `_count_nodes()` == 15, `_count_rules()` == 20 |
+| `python prd_execute.py` | BL-2: Import succeeds, exit 0 | Import succeeds, exit 0 | `python -c "import prd_execute; print('OK')"` |
+| `python fix_and_run.py` | BL-3: Cleanup + BRE demo + gate overview, exit 0 | Same operations execute, same gate count, exit 0 | Functional equivalence (formatting may differ) |
+| `python check_db.py` | BL-4: Flow/node/rule counts, exit 0 | Same counts, exit 0 | Count-based comparison |
 
-1. All 5 stories are implemented (markdown changes applied to all target files)
-2. All 45 structural test cases pass
-3. Branch is clean with no uncommitted changes
-4. `.delivery/config.yml` is valid per schema v2.3
+### 5.3 PIPELINE_SEQUENCE Verification
 
-### 5.4 Execution Steps and Verification
+The non-trivial stage/gate ordering is the single highest-risk element. The expected sequence (from design spec section 7):
 
-| Step | Action | Verifies | Pass Criteria |
-|------|--------|----------|--------------|
-| DF-1 | Start BUG_FIX pipeline, reach Design stage | Pipeline infrastructure | Pipeline starts, project type detected as BUG_FIX |
-| DF-2 | Author Design artifacts that reference at least one file that does NOT exist on disk (without `[PLANNED]` annotation) | AC-05a (phantom WARNING) | Design DoD surfaces WARNING for phantom reference; does NOT block completion |
-| DF-3 | Author Design artifacts that reference one file with `[PLANNED]` annotation that does not exist on disk | AC-05b ([PLANNED] exemption) | `[PLANNED]` path does NOT trigger phantom WARNING at Design DoD |
-| DF-4 | Progress to Dev entry gate with the phantom reference still unresolved (not in sprint plan) | AC-06a (Dev entry BLOCK) | Dev entry gate BLOCKS with list of non-existent references |
-| DF-5 | Add the phantom reference file to the sprint plan, re-attempt Dev entry | AC-06a (sprint plan exemption) | Dev entry gate PASSES (file in sprint plan) |
-| DF-6 | Verify `[PLANNED]` annotation is NOT accepted at Dev entry | AC-06b | `[PLANNED]` path that is not in sprint plan and not on disk is listed as blocking |
-| DF-7 | At Plan stage, verify capacity matrix is WAIVED for BUG_FIX | AC-07b, AC-08b Light Mode | No capacity or coverage matrix required; Plan passes without them |
-| DF-8 | At UAT, verify shared-module review step fires | AC-01a, AC-01b | UAT sub-flow includes shared-module review; QA agent identifies consuming contexts |
-| DF-9 | At UAT, verify empirical-items classification is produced | AC-03a | UAT test plan contains empirical-items section classifying each AC |
-| DF-10 | At UAT, verify empirical-items classification is checked by Gate 7 validator | AC-04a | Gate 7 checks for empirical-items section; would block if missing |
-| DF-11 | At Dev DoD, verify derived artifact regeneration step fires | AC-11a, AC-11b | Dev sub-flow includes regeneration step; developer confirms regeneration status |
-| DF-12 | At Dev DoD, verify Gate 6 checks derived artifact regeneration | AC-12a | Gate 6 includes blocking criterion for derived artifacts |
-| DF-13 | Pipeline completes without regressions caused by gate changes | NFR-03 | Pipeline reaches completion; any failures are unrelated to this feature's changes |
+```
+Stage 1 -> Gate 1 -> Stage 2 -> Gate 2 -> Stage 3 -> Gate 3 -> Gate 4 -> Stage 4 ->
+Gate 5 -> Stage 5 -> Stage 6 -> Gate 6 -> Gate 7 -> Stage 7
+```
 
-### 5.5 Pass/Fail Criteria
+Verification method: Read `PIPELINE_SEQUENCE` from `prd_flow_builder.py` and trace each `("stage", N)` / `("gate", N)` entry against the expected order above. Any deviation is a BLOCKING defect.
 
-**PASS**: All DF-1 through DF-13 steps produce expected results. Pipeline completes.
+### 5.4 Parent-Child Chain Verification
 
-**FAIL**: Any of the following:
-- A structural test case fails (the text is not where it should be)
-- An empirical gate does not fire when expected (phantom WARNING missing, Dev entry block missing)
-- An empirical gate fires incorrectly (false positive blocking on a valid reference)
-- Pipeline fails at a non-modified stage due to a change in this feature
-- A gate change causes a regression in an existing stage's behavior
+After building a flow, query the database to verify parent-child relationships:
 
-### 5.6 Failure Protocol
+```python
+# Verify parent chain: each node's parent_id matches the preceding node in PIPELINE_SEQUENCE
+nodes = conn.execute("SELECT id, parent_id, name FROM flow_nodes WHERE flow_id = ? ORDER BY created_at", (flow_id,)).fetchall()
+```
 
-1. Log the defect: which step failed, expected vs actual, relevant file excerpt
-2. Fix the markdown in the affected reference file
-3. Re-run structural tests for the affected story
-4. Re-run dogfooding from the failed step (not from the beginning)
-5. Add a regression test case for the specific failure mode
+Each gate must have the preceding stage as its parent. Each stage (except Stage 1) must have the preceding gate as its parent. Stage 1's parent must be the root flow node.
 
 ---
 
-## 6. Risk-Based Test Prioritization
+## 6. Regression Detection Approach
 
-Tests are prioritized by risk of defect and impact of failure. Execute in this order.
+### 6.1 Core Module Integrity (NFR-06)
+
+**Method**: SHA-256 checksum comparison
+
+```bash
+# Pre-refactoring (BL-5):
+sha256sum business_rules_engine.py flow_orchestrator.py
+
+# Post-refactoring:
+sha256sum business_rules_engine.py flow_orchestrator.py
+```
+
+**Pass criteria**: Identical checksums. Any difference is an automatic BLOCKING failure.
+
+**Alternative**: `git diff business_rules_engine.py flow_orchestrator.py` shows zero diff.
+
+### 6.2 Zero External Dependencies (NFR-01)
+
+**Method**: Grep all new and modified `.py` files for non-stdlib imports.
+
+```bash
+grep -r '^import \|^from ' *.py | grep -v -E '(sqlite3|json|sys|io|datetime|typing|enum|asyncio|uuid|os|pathlib|textwrap)'
+```
+
+**Pass criteria**: Only imports from other plugin modules (`shared`, `schema`, `stage_definitions`, `gate_definitions`, `prd_flow_builder`, `flow_orchestrator`, `business_rules_engine`). No external packages.
+
+### 6.3 Hardcoded DB Path Elimination (FR-05 / AC-05c)
+
+**Method**: Grep sweep
+
+```bash
+grep -r '"prd_flows.db"' prd-quality-gate-flow/*.py
+```
+
+**Pass criteria**: Only `shared.py` contains the string `"prd_flows.db"`. Zero matches in all other files.
+
+### 6.4 File Size Constraints (NFR-05)
+
+| File | Max Lines | Type | Verification |
+|------|----------|------|-------------|
+| `shared.py` | 300 | Logic | `wc -l shared.py` |
+| `schema.py` | 300 | Logic | `wc -l schema.py` |
+| `stage_definitions.py` | No hard limit | Data (declarative dicts) | `wc -l` + manual review; excess must be declarative data |
+| `gate_definitions.py` | No hard limit | Data (declarative dicts) | `wc -l` + manual review; excess must be declarative data |
+| `prd_flow_builder.py` class body | 200 | Logic | Count from `class PRDFlowBuilder:` to end of class |
+| `prd_flow_builder.py` total | 300 | Logic | `wc -l prd_flow_builder.py` |
+| `prd_execute.py` | 300 | Logic | `wc -l prd_execute.py` |
+| `fix_and_run.py` | 300 | Logic | `wc -l fix_and_run.py` |
+| `check_db.py` | 300 | Logic | `wc -l check_db.py` |
+
+### 6.5 Schema Compatibility (NFR-02)
+
+**Method**: Load a pre-refactoring `prd_flows.db` with the post-refactoring code.
+
+```bash
+# 1. Run pre-refactoring builder to create prd_flows.db
+# 2. Apply refactoring
+# 3. Run post-refactoring check_db.py against the pre-refactoring DB
+# 4. Verify counts match
+```
+
+**Pass criteria**: Pre-refactoring database loads and queries work identically with post-refactoring code. `CREATE TABLE IF NOT EXISTS` pattern makes schema creation idempotent.
+
+### 6.6 Python 3.9+ Compatibility (NFR-03)
+
+**Method**: Code review during development. Check for:
+- No `match`/`case` statements (Python 3.10+)
+- No `|` union type syntax in annotations (Python 3.10+)
+- No `tomllib` usage (Python 3.11+)
+- No `Self` type (Python 3.11+)
+
+### 6.7 Deleted File Residual Check
+
+**Method**: After US-10, verify no remaining references to deleted files.
+
+```bash
+grep -r 'run_execute\|run_builder' prd-quality-gate-flow/*.py
+grep -r 'run_execute\|run_builder' CLAUDE.md
+```
+
+**Pass criteria**: Zero matches in both commands.
+
+---
+
+## 7. Risk-Based Test Prioritization
+
+Tests are ordered by risk of defect and impact of failure.
 
 ### Priority 1: CRITICAL (execute first)
 
-These have the highest blast radius or the highest likelihood of defect.
-
 | Test Area | Risk | Impact | Why Critical |
 |-----------|------|--------|-------------|
-| AC-10c: Gate 5 criterion REPLACEMENT | High | Blocks all Plan stages | Only AC that modifies existing content rather than adding. If the old criterion remains, plans face contradictory blocking rules. If the new criterion is malformed, all Plan stages break. |
-| Step renumbering (AC-01b, AC-09b, AC-11b) | High | Corrupts sub-flow execution | Three separate stories insert new steps in three different sub-flows. Each requires renumbering. A gap or duplicate number disrupts the sequential execution model. |
-| AC-06a: Dev entry BLOCK behavior | High | Blocks all Dev stages | A false positive blocks every Dev entry. A false negative defeats the purpose of the fix. This is a runtime gate that must be dogfooded. |
-| Regression: non-modified stages | Medium | Silent breakage | Changes to `pipeline-stages.md` and `quality-gates.md` are extensive. Unintended edits to non-targeted sections would silently corrupt other stages. |
+| AC-6.6: Node/rule count after decomposition | High | All consumers break | If `build_prd_flow()` produces wrong counts, every downstream operation (executor, BRE evaluation, gate checks) produces incorrect results. This is the single most important test. |
+| AC-6.9: PIPELINE_SEQUENCE ordering | High | Silent data corruption | Wrong stage/gate ordering corrupts parent-child chain. Gates evaluate against wrong stages. No error, just wrong results. |
+| NFR-06: Core modules untouched | High | Architectural violation | Any diff in `business_rules_engine.py` or `flow_orchestrator.py` is out of scope and may introduce regressions in the BRE or orchestrator. |
+| AC-8.6: Fresh DB ordering bug fix | Medium | Crash on fresh databases | This is a known bug being fixed. Must verify the fix works AND does not break existing DB behavior. |
 
 ### Priority 2: HIGH (execute second)
 
 | Test Area | Risk | Impact | Why High |
 |-----------|------|--------|---------|
-| AC-05a/05b: Design phantom WARNING | Medium | False positives at Design DoD | WARNING is lower severity than BLOCK, but false positives erode trust in the gate system. `[PLANNED]` exemption logic must work correctly. |
-| AC-04a: Gate 7 empirical-items blocking criterion | Medium | Blocks UAT completion | New blocking criterion. If malformed or placed incorrectly, UAT stages could block unexpectedly. |
-| AC-09a/09b: Plan stage matrix validation | Medium | Plan stage slowdown | New mandatory validation step. If Light Mode waiver is missing, BUG_FIX plans would incorrectly require full matrices. |
+| AC-05c: Hardcoded DB path elimination | Medium | Shotgun surgery persists | If any file still hardcodes `"prd_flows.db"`, the centralization goal is defeated. |
+| AC-6.1: Class line count <= 200 | Medium | God object persists | The primary decomposition goal. If the class is still > 200 lines, the refactoring has not achieved its purpose. |
+| AC-4.5: Multi-line goal string fidelity | Medium | Agent behavior changes | If goal prompts are corrupted during extraction, pipeline agents receive different instructions. |
+| AC-5.2: Total rule count == 20 | Medium | Gate evaluation changes | Missing or extra rules change which gates pass/fail. |
 
 ### Priority 3: MEDIUM (execute third)
 
 | Test Area | Risk | Impact | Why Medium |
 |-----------|------|--------|-----------|
-| AC-02a/02b: quality/SKILL.md additions | Low | QA guidance incomplete | Additive only, no existing content modified. Worst case: QA agent lacks new guidance but existing behavior unchanged. |
-| AC-03a/03b/03c: artifact-contracts.md template | Low | Template incomplete | Additive only. Worst case: template missing a column, caught at UAT review. |
-| AC-07a/07b, AC-08a/08b: project-templates.md additions | Low | Template incomplete | Additive only. Worst case: template column missing, caught at Plan review. |
+| AC-7.1-7.4: prd_execute.py consolidation | Low | Entry point confusion | Low risk because changes are import replacements only. |
+| AC-9.1-9.6: check_db.py restructuring | Low | Diagnostic tool degraded | Smallest file, simplest changes. |
+| AC-10.1-10.3: File deletion | Low | Dead code remains | Trivial verification. |
+| AC-11.1-11.3: CLAUDE.md update | Low | Documentation drift | Manual review. |
 
 ### Priority 4: LOW (execute last)
 
 | Test Area | Risk | Impact | Why Low |
 |-----------|------|--------|--------|
-| Retro annotations (TC-05c-2, TC-03c-4, TC-07b-3, TC-10c-3, TC-11b-4, TC-12b-2) | Very Low | Traceability gap | Missing annotations do not affect gate behavior. They affect auditability only. |
-| NFR-04 token budget | Very Low | Slightly higher context load | Per-stage budget is generous (500 tokens). Markdown additions are unlikely to exceed this. |
+| Load-time validation (AC-01e, AC-02f, AC-4.3, AC-5.5) | Low | Missing validation | Failure means definitions are not validated at import, but runtime behavior is unaffected. |
+| NFR-03: Python 3.9+ | Very Low | Version compat | Standard refactoring patterns are not version-sensitive. |
+| NFR-05: File size limits | Very Low | Readability goal missed | Does not affect behavior. |
 
 ---
 
-## 7. Test Execution Order
+## 8. Test Execution Order
 
-Execute in priority order within each milestone, respecting dependencies.
+Execute in dependency order, respecting story dependencies and risk priority.
 
-### Phase 1: Priority 1 (Critical Path)
+### Phase 1: Foundation Modules (US-01, US-02, US-03)
 
-| # | Test | Story | TCs |
-|---|------|-------|-----|
-| 1 | Gate 5 criterion replacement verification | US-04 | TC-10c-1 (old text gone), TC-10a-1, TC-10b-1 |
-| 2 | Stage 7 sub-flow step renumbering | US-01 | TC-01b-1, TC-01b-2 |
-| 3 | Stage 5 sub-flow step renumbering | US-04 | TC-09b-1, TC-09b-2, TC-09b-3 |
-| 4 | Stage 6 sub-flow step renumbering | US-05 | TC-11b-1, TC-11b-3 |
-| 5 | Non-modified stages regression | Regression | Diff-based: Stages 1, 2, 4 unchanged |
-| 6 | Cross-file consistency checks | Regression | Step numbering, gate-to-stage, contract-to-gate alignment |
+| # | Test | Story | Verification Commands |
+|---|------|-------|----------------------|
+| 1 | `shared.py` exports | US-01 | T-01.1, T-01.2, T-01.3 |
+| 2 | `schema.py` table/index counts | US-02 | T-02.1, T-02.2, T-02.3 |
+| 3 | `get_connection()` schema integration | US-03 | T-03.1, T-03.2 |
 
-### Phase 2: Priority 2 (High Risk)
+### Phase 2: Data Modules (US-04, US-05)
 
-| # | Test | Story | TCs |
-|---|------|-------|-----|
-| 7 | Gate 3 phantom reference criterion | US-03 | TC-05a-1, TC-05a-2, TC-05b-1, TC-05c-1 |
-| 8 | Stage 6 entry condition (reconciliation gate) | US-03 | TC-06a-1, TC-06a-2, TC-06a-3, TC-06b-1, TC-06c-1, TC-06c-2 |
-| 9 | Gate 7 empirical-items blocking criterion | US-02 | TC-04a-1, TC-04a-2, TC-04a-3 |
-| 10 | Stage 5 Scrum Bag validator update | US-04 | TC-09a-1, TC-09a-2 |
-| 11 | Gate 5 two-tier capacity model (full) | US-04 | TC-10c-2, TC-10c-3 |
+| # | Test | Story | Verification Commands |
+|---|------|-------|----------------------|
+| 4 | Stage definitions: count, fields, validation | US-04 | T-04.1, T-04.2, T-04.3 |
+| 5 | Gate definitions: count, rules, fields, validation | US-05 | T-05.1, T-05.2, T-05.3 |
 
-### Phase 3: Priority 3 (Medium Risk)
+### Phase 3: Core Decomposition (US-06) -- CRITICAL PATH
 
-| # | Test | Story | TCs |
-|---|------|-------|-----|
-| 12 | quality/SKILL.md additions | US-01 | TC-02a-1, TC-02a-2, TC-02b-1, TC-02b-2 |
-| 13 | artifact-contracts.md template | US-02 | TC-03a-1, TC-03b-1, TC-03b-2, TC-03c-1, TC-03c-2, TC-03c-3, TC-03c-4 |
-| 14 | project-templates.md capacity matrix | US-04 | TC-07a-1, TC-07a-2, TC-07b-1, TC-07b-2, TC-07b-3 |
-| 15 | project-templates.md coverage matrix | US-04 | TC-08a-1, TC-08a-2, TC-08b-1, TC-08b-2 |
-| 16 | Stage 7 DoD checklist and validators | US-01 | TC-01a-1, TC-01a-2, TC-01c-1 |
-| 17 | Stage 6 DoD validators (derived artifacts) | US-05 | TC-11a-1, TC-11a-2, TC-11a-3, TC-11b-2, TC-11b-4 |
-| 18 | Gate 6 derived artifact criterion | US-05 | TC-12a-1, TC-12a-2, TC-12b-1, TC-12b-2 |
+| # | Test | Story | Verification Commands |
+|---|------|-------|----------------------|
+| 6 | **Node count == 15, Rule count == 20** | US-06 | T-06.1 (CRITICAL) |
+| 7 | Class line count <= 200 | US-06 | T-06.3 |
+| 8 | No factory methods remain | US-06 | T-06.4 |
+| 9 | `builder.conn` preserved | US-06 | T-06.5 |
+| 10 | `python prd_flow_builder.py` end-to-end | US-06 | T-06.2 |
+| 11 | PIPELINE_SEQUENCE ordering | US-06 | Manual trace |
+| 12 | Parent-child chain verification | US-06 | DB query |
 
-### Phase 4: Priority 4 + NFRs
+### Phase 4: Consumer Scripts (US-07, US-08, US-09)
 
-| # | Test | Story | TCs |
-|---|------|-------|-----|
-| 19 | Retro annotations (all stories) | All | TC-05c-2, TC-03c-4, TC-07b-3, TC-10c-3, TC-11b-4, TC-12b-2 |
-| 20 | NFR-01: no executable files | NFR | Verify changeset is markdown-only |
-| 21 | NFR-02: config v2.3 compat | NFR | No new config keys introduced |
-| 22 | NFR-04: token budget | NFR | Count added lines per stage |
-| 23 | NFR-05: retro traceability completeness | NFR | All modified sections annotated |
+| # | Test | Story | Verification Commands |
+|---|------|-------|----------------------|
+| 13 | `prd_execute.py` imports, DB_PATH, EXAMPLE_PRODUCT_IDEAS | US-07 | T-07.1, T-07.2, T-07.3 |
+| 14 | `fix_and_run.py` structure, functions, execution | US-08 | T-08.1, T-08.2, T-08.3, T-08.4 |
+| 15 | `fix_and_run.py` fresh DB ordering bug fix | US-08 | T-08.3 on fresh DB (CRITICAL) |
+| 16 | `check_db.py` structure, error handling, execution | US-09 | T-09.1, T-09.2, T-09.3, T-09.4 |
 
-### Phase 5: Dogfooding
+### Phase 5: Cleanup and Documentation (US-10, US-11)
 
-| # | Test | Scope |
-|---|------|-------|
-| 24 | Dogfooding pipeline run | DF-1 through DF-13 (Section 5.4) |
+| # | Test | Story | Verification Commands |
+|---|------|-------|----------------------|
+| 17 | Deleted files verification | US-10 | T-10.1, T-10.2 |
+| 18 | CLAUDE.md entry points | US-11 | T-11.1, T-11.2 |
 
-**Dogfooding is last because it depends on all structural tests passing first.** Running a pipeline with broken markdown wastes a full pipeline cycle.
+### Phase 6: Cross-Cutting Regression
+
+| # | Test | Scope | Verification Commands |
+|---|------|-------|----------------------|
+| 19 | Core module checksums (NFR-06) | Global | `sha256sum` comparison to BL-5 |
+| 20 | Zero external dependencies (NFR-01) | Global | Grep for non-stdlib imports |
+| 21 | Hardcoded DB path sweep (FR-05) | Global | `grep -r '"prd_flows.db"' *.py` |
+| 22 | File size constraints (NFR-05) | Global | `wc -l` on all new/modified files |
+| 23 | Schema compatibility (NFR-02) | Global | Load pre-refactoring DB with post-refactoring code |
+| 24 | Python 3.9+ compatibility (NFR-03) | Global | Code review |
+| 25 | Deleted file residuals | Global | Grep for `run_execute`/`run_builder` |
+
+### Phase 7: Behavioral Compatibility (P0 UAT Gate)
+
+| # | Test | Scope | Verification |
+|---|------|-------|-------------|
+| 26 | `python prd_flow_builder.py` structural equivalence | BL-1 comparison | 15 nodes, 20 rules, diagram, exit 0 |
+| 27 | `python prd_execute.py` import equivalence | BL-2 comparison | Import succeeds, exit 0 |
+| 28 | `python fix_and_run.py` structural equivalence | BL-3 comparison | Cleanup + BRE + gates, exit 0 |
+| 29 | `python check_db.py` structural equivalence | BL-4 comparison | Same counts, exit 0 |
 
 ---
 
-## 8. FR Traceability Matrix
+## 9. Coverage Summary
 
-| FR | Story | ACs | TCs | Approach | Dogfooding Step |
-|----|-------|-----|-----|----------|----------------|
-| FR-01 | US-01 | AC-01a, AC-01b, AC-01c | TC-01a-1/2, TC-01b-1/2, TC-01c-1 | Structural | DF-8 |
-| FR-02 | US-01 | AC-02a, AC-02b | TC-02a-1/2, TC-02b-1/2 | Structural | DF-8 |
-| FR-03 | US-02 | AC-03a, AC-03b, AC-03c | TC-03a-1, TC-03b-1/2, TC-03c-1/2/3/4 | Structural | DF-9 |
-| FR-04 | US-02 | AC-04a | TC-04a-1/2/3 | Structural | DF-10 |
-| FR-05 | US-03 | AC-05a, AC-05b, AC-05c | TC-05a-1/2, TC-05b-1, TC-05c-1/2 | Structural + Empirical | DF-2, DF-3 |
-| FR-06 | US-03 | AC-06a, AC-06b, AC-06c | TC-06a-1/2/3, TC-06b-1, TC-06c-1/2 | Structural + Empirical | DF-4, DF-5, DF-6 |
-| FR-07 | US-04 | AC-07a, AC-07b | TC-07a-1/2, TC-07b-1/2/3 | Structural | DF-7 |
-| FR-08 | US-04 | AC-08a, AC-08b | TC-08a-1/2, TC-08b-1/2 | Structural | DF-7 |
-| FR-09 | US-04 | AC-09a, AC-09b | TC-09a-1/2, TC-09b-1/2/3 | Structural | DF-7 |
-| FR-10 | US-04 | AC-10a, AC-10b, AC-10c | TC-10a-1, TC-10b-1, TC-10c-1/2/3 | Structural | -- |
-| FR-11 | US-05 | AC-11a, AC-11b | TC-11a-1/2/3, TC-11b-1/2/3/4 | Structural | DF-11 |
-| FR-12 | US-05 | AC-12a, AC-12b | TC-12a-1/2, TC-12b-1/2 | Structural | DF-12 |
+| Metric | Count |
+|--------|-------|
+| Total FRs | 8 |
+| Total ACs from PRD | 42 |
+| ACs with structural tests | 32 (76%) |
+| ACs with empirical tests | 10 (24%) |
+| ACs with both | 0 |
+| Total test cases from user stories | 37 |
+| Total test cases mapped in this strategy | 37 (100%) |
+| Additional regression tests | 7 (NFR checks) |
+| Additional behavioral compatibility tests | 4 (P0 UAT gate) |
+| Unmapped ACs | 0 |
+| Unmapped FRs | 0 |
 
-**All 12 FRs covered. All 22 ACs covered. All 45 TCs mapped. Zero gaps.**
+---
+
+## 10. Pass/Fail Criteria
+
+### Overall PASS
+
+All of the following must be true:
+1. All 37 test cases from user stories pass
+2. All 7 NFR regression checks pass
+3. All 4 behavioral compatibility checks pass (Phase 7)
+4. Core module checksums match pre-refactoring baselines
+5. `grep -r '"prd_flows.db"' *.py` returns only `shared.py`
+6. `run_execute.py` and `run_builder.py` do not exist on disk
+
+### Overall FAIL
+
+Any of the following:
+- Node count != 15 or rule count != 20 after `build_prd_flow()`
+- `PRDFlowBuilder` class body > 200 lines
+- Any diff in `business_rules_engine.py` or `flow_orchestrator.py`
+- Any non-stdlib external import in new/modified files
+- `builder.conn` is not accessible as a public attribute
+- Any CLI entry point crashes with a non-zero exit code
+- Pre-refactoring database fails to load with post-refactoring code
+
+### Failure Protocol
+
+1. Log defect: which test failed, expected vs actual, file and line reference
+2. Fix the code in the affected module
+3. Re-run the failed test AND all tests in the same phase
+4. Re-run Phase 6 (cross-cutting regression) to verify fix did not introduce new issues
+5. If Phase 7 (behavioral compatibility) was reached before failure: re-run from Phase 7
+
+### Atomic PR Requirement
+
+Per PRD R7: All changes must land in a single atomic PR. If any Phase 7 behavioral compatibility test fails after all code changes are complete, the correct action is to revert the entire PR and diagnose, not to patch individual files.

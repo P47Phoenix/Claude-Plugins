@@ -1,69 +1,148 @@
-# Consolidated Dev Notes
+# Dev Notes: prd-quality-gate-flow Refactoring
 
-**Sprint**: UAT Hardening + Pipeline Guardrails
 **Developer**: Gimli
-**Date**: 2026-03-29
+**Date**: 2026-03-30
+**Status**: CODE_COMPLETE
+**Stories**: US-01 through US-11 (all 11 implemented)
+**Sprint Plan**: v1.1 (3 sprints, 34 SP total)
+**Issues**: #51 (God object), #52 (Duplicate entry points), #53 (Missing function structure)
 
-> "Five stories. Four files touched. No line left unverified."
-
----
-
-## 1. File Change Summary
-
-| File | Stories | Changes |
-|------|---------|---------|
-| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | US-01, US-02/03, US-04, US-05 | Stage 7: new step 5 "Shared-module review", renumbered steps 6-11, QA Engineer validator updated (US-01). Stage 6: new entry condition "Filename reconciliation gate" with 5-step process (US-02/03). Stage 5: new step 4 "Matrix validation", Scrum Bag validator extended, renumbered steps 5-9 (US-04). Stage 6: new step 5 "Regenerate derived artifacts" with 4 substeps, Developer validator updated, renumbered steps 6-7 (US-05). |
-| `delivery-team/skills/quality/SKILL.md` | US-01 | New "Shared-Module Review Protocol" section with definition, 5 identification steps, 4-item review checklist, output format. |
-| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | US-01 | New "Empirical Items Classification" row in Stage 6->7 contract table. New "Empirical-Items Tracking Template" section at end of file. |
-| `delivery-team/skills/delivery-flow/references/quality-gates.md` | US-01, US-02/03, US-04, US-05 | Gate 7: new blocking criterion for empirical-items classification (US-01). Gate 3: new WARNING criterion for phantom file references with `[PLANNED]` exemption (US-02/03). Gate 5: replaced old 80% blocking threshold with two-tier model -- >80% WARNING, >100% BLOCKING (US-04). Gate 6: new blocking criterion for derived artifact regeneration (US-05). |
-| `delivery-team/skills/delivery-flow/references/project-templates.md` | US-04 | New "Sprint Plan Mandatory Sections" with Capacity Matrix template (5 columns + Total row) and Coverage Matrix template (5 columns + Unmapped FRs area). Light Mode waiver for BUG_FIX and DOCS_ONLY. |
+> "That module was built by dwarf-craft. It will hold."
 
 ---
 
-## 2. Per-Story Status
+## 1. Implementation Summary
 
-| Story | FRs | Status | Notes |
-|-------|-----|--------|-------|
-| US-01 | FR-01, FR-02, FR-03, FR-04 | DONE | All 9 ACs verified structurally. No deviations. |
-| US-02 | FR-05, FR-06 | CODE_COMPLETE | FR-05 phantom detection WARNING and FR-06 filename reconciliation gate both implemented. All 6 ACs verified structurally. |
-| US-03 | FR-05 (Gate 3 portion) | CODE_COMPLETE | Gate 3 phantom reference WARNING with `[PLANNED]` exemption. All 3 ACs verified. |
-| US-04 | FR-07, FR-08, FR-09, FR-10 | CODE_COMPLETE | Capacity/coverage templates, matrix validation step, two-tier threshold. All 10 ACs verified structurally. All ACs are structural -- no runtime validation needed. |
-| US-05 | FR-11, FR-12 | CODE_COMPLETE | Derived artifact regeneration step + Gate 6 blocking criterion. All 4 ACs verified structurally. |
+All 11 user stories implemented following the safe refactoring sequence from the design spec. The god object has been slain -- 1,157 lines reduced to 259 (162 lines class body). And my code!
 
----
+### Files Created (Sprint 1: US-01 through US-04)
+| File | Lines | Purpose |
+|------|------:|---------|
+| `shared.py` | 60 | DB_PATH, generate_timestamp_id(), ensure_utf8_output(), get_connection() |
+| `schema.py` | 174 | ensure_schema(conn) -- 9 tables, 7 indexes, idempotent |
+| `stage_definitions.py` | 269 | 7 stage dicts with load-time validation |
+| `gate_definitions.py` | 411 | 7 gate dicts, 20 business rules, load-time validation |
 
-## 3. Deviations from Design Spec
+### Files Modified (Sprint 2: US-05 through US-07, Sprint 3: US-08 through US-09)
+| File | Before | After | Delta | Story |
+|------|-------:|------:|------:|-------|
+| `prd_flow_builder.py` | 1,157 | 259 | -898 | US-06 |
+| `prd_execute.py` | 227 | 228 | +1 | US-07 |
+| `fix_and_run.py` | 214 | 290 | +76 | US-08 |
+| `check_db.py` | 27 | 69 | +42 | US-09 |
 
-None across all five stories. Every insertion point, content block, severity tag, and retro annotation matches the design spec exactly.
+### Files Deleted (Sprint 3: US-10)
+- `run_execute.py` (210 lines) -- duplicate of prd_execute.py
+- `run_builder.py` (44 lines) -- duplicate of prd_flow_builder.py __main__
 
----
+### Documentation Updated (Sprint 3: US-11)
+- `CLAUDE.md` -- already listed 4 canonical scripts, no references to deleted files. No changes needed.
 
-## 4. Pending Empirical Validations for UAT
-
-| Item | Story | What Needs Validating | Classification |
-|------|-------|-----------------------|----------------|
-| Shared-module review step triggers correctly in a real Stage 7 run | US-01 | Step 5 fires, produces output, does not break step sequencing | Empirical (runtime pipeline behavior) |
-| QA Engineer DoD validator catches missing shared-module review | US-01 | Validator rejects DoD when shared modules modified but review absent | Empirical (validator logic) |
-| Phantom reference WARNING surfaces in Gate 3 without blocking | US-02/03 | Non-existent, non-PLANNED paths produce WARNING that is logged and carried forward | Empirical (gate execution) |
-| `[PLANNED]` exemption works at Gate 3, fails at Dev entry | US-02/03 | Gate 3 exempts PLANNED paths; Stage 6 entry blocks on PLANNED without sprint plan entry | Empirical (two-stage gating) |
-| Filename reconciliation blocks Stage 6 entry on missing files | US-02/03 | 5-step process runs, FAIL items block entry, resolution guidance shown | Empirical (entry condition) |
-| Capacity matrix >80% triggers WARNING with acknowledgment | US-04 | Pipeline prompts for acknowledgment, does not block | Empirical (threshold behavior) |
-| Capacity matrix >100% blocks with PO sign-off option | US-04 | Pipeline blocks, offers reduction or PO sign-off path | Empirical (threshold behavior) |
-| Coverage matrix unmapped FR = BLOCKING | US-04 | Step 4 validation catches unmapped FRs and blocks | Empirical (validation step) |
-| Derived artifact regeneration step runs in Stage 6 sub-flow | US-05 | Step 5 identifies, regenerates, verifies, documents derived artifacts | Empirical (sub-flow execution) |
-| Gate 6 blocks when derived artifacts not regenerated | US-05 | Blocking criterion enforced at gate evaluation | Empirical (gate execution) |
+### Files Untouched (NFR-06 verified via git diff)
+- `business_rules_engine.py` (569 lines) -- zero diff
+- `flow_orchestrator.py` (598 lines) -- zero diff
 
 ---
 
-## 5. Verification Status Summary
+## 2. Behavioral Baseline Verification
 
-| Category | Count |
-|----------|-------|
-| Total ACs across all stories | 32 |
-| Structurally verified (PASS) | 32 |
-| Empirical validations pending (UAT) | 10 |
-| Deviations from spec | 0 |
-| Files modified | 5 |
-| Retro annotations applied | All changes tagged with `<!-- retro c8f2 -->` and/or `<!-- retro k4m9 -->` per NFR-05 |
+All critical baselines confirmed post-refactoring:
 
-All structural verification is complete. The 10 empirical items above require runtime pipeline execution during UAT to confirm behavioral correctness.
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| Node count | 15 | 15 | PASS |
+| Rule count | 20 | 20 | PASS |
+| Gate count | 7 | 7 | PASS |
+| Gate rule distribution | [4,4,3,1,4,3,1] | [4,4,3,1,4,3,1] | PASS |
+| Node names/types | 15 exact names | All match | PASS |
+| builder.conn accessible | public attribute | accessible | PASS |
+| export_flow_diagram() | returns diagram | works | PASS |
+| create_flow() | on class | present | PASS |
+| create_node() | on class | present | PASS |
+| create_rule() | on class | present | PASS |
+| Factory methods removed | 0 occurrences | 0 | PASS |
+| Hardcoded DB path | only shared.py | only shared.py | PASS |
+| EXAMPLE_PRODUCT_IDEAS | only prd_execute.py | only prd_execute.py | PASS |
+| Core modules unchanged | zero diff | zero diff | PASS |
+| Class body lines | <=200 | 162 | PASS |
+| Deleted scripts gone | no files on disk | confirmed | PASS |
+| No refs to deleted scripts | 0 in *.py | 0 | PASS |
+| CLAUDE.md clean | no run_execute/run_builder | 0 matches | PASS |
+
+### Node Order Verification (exact)
+```
+prd_root[root]
+stage1_prd_creator[agent]
+gate1_completeness[gate]
+stage2_technical_reviewer[agent]
+gate2_technical_feasibility[gate]
+stage3_stakeholder_orchestrator[control_flow]
+gate3_business_value[gate]
+gate4_executive_approval[gate]
+stage4_implementation_planner[agent]
+gate5_resource_feasibility[gate]
+stage5_task_flow_generator[agent]
+stage6_prd_evaluator[agent]
+gate6_success_criteria[gate]
+gate7_uat[gate]
+stage7_retrospective[agent]
+```
+
+---
+
+## 3. NFR Compliance
+
+| NFR | Target | Status | Evidence |
+|-----|--------|--------|----------|
+| NFR-01 | Zero external deps | PASS | All imports are stdlib only |
+| NFR-02 | Schema compatibility | PASS | ensure_schema() uses CREATE IF NOT EXISTS, 9 tables, 7 indexes |
+| NFR-03 | Python 3.9+ | PASS | No walrus operators, no 3.10+ features used |
+| NFR-04 | Behavioral compatibility | PASS | 15 nodes, 20 rules, [4,4,3,1,4,3,1], all names match |
+| NFR-05 | File size <=300 (logic) | PASS | All logic files <=300; gate_definitions.py (411) is declarative data |
+| NFR-06 | Core modules untouched | PASS | git diff shows zero diff on both files |
+
+---
+
+## 4. Latent Bug Fix
+
+US-08 fixes the latent ordering bug in `fix_and_run.py` (documented in PRD AC-03g): previously, raw `sqlite3.connect("prd_flows.db")` was called before the builder was imported, meaning DELETE queries would fail on a fresh database with no tables. Now `clean_incomplete_executions()` uses `shared.get_connection()` which calls `ensure_schema()` first.
+
+---
+
+## 5. Per-Story Status
+
+| Story | SP | Sprint | Status | Verification Type | Notes |
+|-------|---:|--------|--------|-------------------|-------|
+| US-01 | 2 | S1 | DONE | Structural | shared.py created with all exports |
+| US-02 | 3 | S1 | DONE | Structural | schema.py: 9 tables, 7 indexes, idempotent |
+| US-03 | 1 | S1 | DONE | Structural | get_connection() wired with ensure_schema() |
+| US-04 | 5 | S1 | DONE | Structural | 7 stage dicts, load-time validation |
+| US-05 | 5 | S2 | DONE | Structural | 7 gates, 20 rules, [4,4,3,1,4,3,1] |
+| US-06 | 8 | S2 | DONE | Structural + Empirical | 162-line class body, 15/20 baseline match |
+| US-07 | 3 | S2 | DONE | Structural | DB_PATH imported, ensure_utf8_output() called |
+| US-08 | 3 | S3 | DONE | Structural | 5 named functions, main() guard, latent bug fixed |
+| US-09 | 2 | S3 | DONE | Structural | 3 descriptive functions, graceful error handling |
+| US-10 | 1 | S3 | DONE | Structural | Both files deleted, zero references |
+| US-11 | 1 | S3 | DONE | Structural | CLAUDE.md already correct, verified clean |
+
+See individual `us-{NN}-notes.md` files for per-story acceptance criteria verification.
+
+---
+
+## 6. Deviations from Design Spec
+
+1. **fix_and_run.py line count**: Design spec estimated ~210 lines; actual is 290. The increase is due to properly extracting the test_context dict into `demonstrate_bre_evaluation()` and adding docstrings to all functions. Still under NFR-05's 300-line limit.
+
+2. **CLAUDE.md (US-11)**: No changes were needed -- the file already listed exactly the 4 canonical scripts and had no references to deleted files. The prior refactoring work (US-01 through US-07) had already been done in a previous session.
+
+---
+
+## 7. Empirical Validations Pending (UAT)
+
+| Item | Story | What Needs Validating |
+|------|-------|-----------------------|
+| `python prd_flow_builder.py` end-to-end | US-06 | Full CLI run creates flow, prints diagram, exit 0 |
+| `python fix_and_run.py` end-to-end | US-08 | Full CLI run with cleanup + BRE demo + gate overview |
+| `python check_db.py` with missing DB | US-09 | Graceful error message, no stack trace |
+| `python check_db.py` with existing DB | US-09 | Correct counts output |
+| `python prd_execute.py` import test | US-07 | Module imports cleanly (full execution requires DB state) |

@@ -1,174 +1,291 @@
-# Success Metrics: Stage Health Hardening
+# Success Metrics: PRD Quality Gate Flow Refactoring
 
-**Version**: 1.0
-**Date**: 2026-03-29
-**Author**: Data Analyst (Elrond)
-**Source**: PRD v1.0 (Goals G1--G4)
-**Baseline Period**: Last 3 pipeline runs
-
----
-
-## G1: Reduce Design Rework
-
-### Metric 1.1 — Design Stage First-Try Pass Rate
-
-| Field | Value |
-|-------|-------|
-| **Name** | `design_first_try_pass_rate` |
-| **Definition** | Percentage of pipeline runs where the Design stage passes DoD validation on the first submission, without any rework loop (re-entry to the same stage after a validator rejection). |
-| **Baseline** | 50% (3 of 6 stage attempts passed on first try across last 3 runs) |
-| **Target** | >= 80% |
-| **Measurement Method** | From `.delivery/memory/` pipeline run logs: count Design stage executions where `dod_attempts == 1` (passed on first submission) divided by total Design stage executions. A "rework loop" is defined as any DoD submission that receives a FAIL verdict followed by a re-execution of the same stage within the same pipeline run. |
-| **Cadence** | Per pipeline run (rolling 5-run window for trend) |
-
-### Metric 1.2 — Phantom Reference Detection Rate
-
-| Field | Value |
-|-------|-------|
-| **Name** | `design_phantom_ref_detection_rate` |
-| **Definition** | Percentage of phantom file references (file paths cited in Design artifacts that do not exist on disk) caught at Design DoD, versus those discovered in downstream stages (Architect, Dev, UAT). |
-| **Baseline** | 0% (phantom references currently surface downstream per retro k4m9) |
-| **Target** | >= 95% of phantom references caught at Design DoD |
-| **Measurement Method** | From pipeline run artifacts and DoD validator findings: count HIGH-severity phantom reference findings at Design stage divided by (Design phantom findings + downstream phantom findings in same run). Downstream phantom findings are file-not-found errors recorded in Architect, Dev, or UAT stage logs that trace to Design artifact references. |
-| **Cadence** | Per pipeline run |
+**Author**: Elrond, Data Analyst
+**Date**: 2026-03-30
+**PRD Version**: 1.0
+**Source**: `.delivery/artifacts/02-refine/po/prd.md`
+**Baseline Commit**: `834b532` on branch `main`
 
 ---
 
-## G2: Reduce UAT Rework
+## Measurement Methodology
 
-### Metric 2.1 — UAT Stage First-Try Pass Rate
-
-| Field | Value |
-|-------|-------|
-| **Name** | `uat_first_try_pass_rate` |
-| **Definition** | Percentage of pipeline runs where the UAT stage passes DoD validation on the first submission, without any rework loop. |
-| **Baseline** | 67% (2 of 3 runs passed UAT on first try across last 3 runs) |
-| **Target** | >= 85% |
-| **Measurement Method** | From `.delivery/memory/` pipeline run logs: count UAT stage executions where `dod_attempts == 1` divided by total UAT stage executions. |
-| **Cadence** | Per pipeline run (rolling 5-run window for trend) |
-
-### Metric 2.2 — Shared-Module Review Completion Rate
-
-| Field | Value |
-|-------|-------|
-| **Name** | `uat_shared_module_review_rate` |
-| **Definition** | Percentage of UAT stage executions involving shared-module changes where the shared-module review checklist item is completed (all consuming contexts listed and test status recorded). |
-| **Baseline** | 0% (shared-module review checkpoint does not exist yet per retros c8f2, k4m9) |
-| **Target** | 100% |
-| **Measurement Method** | From UAT stage DoD artifacts: count UAT executions where shared-module changes exist AND the "shared-module review" checklist item is marked complete with consuming-context test status, divided by total UAT executions where shared-module changes exist. A shared module is defined as a file imported by 2+ other modules (per FR-01). |
-| **Cadence** | Per pipeline run |
-
-### Metric 2.3 — Empirical-Items Tracking Artifact Presence
-
-| Field | Value |
-|-------|-------|
-| **Name** | `uat_empirical_items_artifact_rate` |
-| **Definition** | Percentage of UAT stage executions where the empirical-items tracking artifact is produced and classifies each acceptance criterion as "structural" or "empirical" with justification. |
-| **Baseline** | 0% (empirical-items tracking template does not exist yet per retro k4m9) |
-| **Target** | 100% |
-| **Measurement Method** | From UAT stage DoD submissions: check for presence of empirical-items tracking artifact (per FR-03 template). Count UAT executions with artifact present divided by total UAT executions. |
-| **Cadence** | Per pipeline run |
+All metrics are measurable via static analysis tools (`wc -l`, `grep`, `python3 -c` with `ast` module). No test framework or external tooling is required. Baselines were captured directly from the current codebase. No `prd_flows.db` existed at measurement time; database structure metrics reference the schema-creation code.
 
 ---
 
-## G3: Prevent Plan Overcommit
+## Metric Definitions
 
-### Metric 3.1 — Plan Overcommit Pass Rate
-
-| Field | Value |
-|-------|-------|
-| **Name** | `plan_overcommit_pass_rate` |
-| **Definition** | Percentage of sprint plans that pass Plan stage DoD with >100% capacity allocation without explicit acknowledgment. A value of 0% means no overcommitted plans slip through unacknowledged. |
-| **Baseline** | Unknown (no capacity tracking exists; retros c8f2 and k4m9 report overcommit incidents but no systematic measurement) |
-| **Target** | 0% (zero plans pass with >100% allocation without acknowledgment) |
-| **Measurement Method** | From Plan stage artifacts: parse the capacity matrix (FR-07) to compute total utilization percentage. Count plans where utilization > 100% AND no acknowledgment justification is present in the DoD submission. Divide by total Plan stage executions. |
-| **Cadence** | Per pipeline run |
-
-### Metric 3.2 — Capacity Matrix Presence Rate
+### M1: God Object Decomposition (PRD Goal G1)
 
 | Field | Value |
 |-------|-------|
-| **Name** | `plan_capacity_matrix_rate` |
-| **Definition** | Percentage of Plan stage artifacts that include a capacity matrix (team members x estimated hours) as required by FR-07. |
-| **Baseline** | 0% (capacity matrix template does not exist yet) |
-| **Target** | 100% |
-| **Measurement Method** | From Plan stage artifacts: check for presence of a capacity matrix table with required columns (team member, available hours, allocated hours, utilization percentage). Count plans with matrix present divided by total Plan stage executions. |
-| **Cadence** | Per pipeline run |
+| **Definition** | Line count of the `PRDFlowBuilder` class body, measured from `class PRDFlowBuilder:` to the last line of the class |
+| **Formula** | `awk '/^class PRDFlowBuilder/,0' prd_flow_builder.py \| wc -l` |
+| **Baseline** | **1,120 lines** (class body); 1,157 lines (entire file) |
+| **Target** | <= 200 lines (class body) |
+| **Reduction Required** | >= 920 lines (82% reduction) |
+| **Measurement Frequency** | After each development PR |
 
-### Metric 3.3 — Coverage Matrix Completeness Rate
-
-| Field | Value |
-|-------|-------|
-| **Name** | `plan_coverage_matrix_completeness` |
-| **Definition** | Percentage of Plan stage artifacts where the coverage matrix maps every PRD FR-ID to at least one planned task with no FR left unmapped, as required by FR-08. |
-| **Baseline** | 0% (coverage matrix template does not exist yet) |
-| **Target** | 100% |
-| **Measurement Method** | From Plan stage artifacts: extract the coverage matrix, compare mapped FR-IDs against the PRD's FR list. Count plans where all FRs are mapped divided by total Plan stage executions. |
-| **Cadence** | Per pipeline run |
+**Baseline Detail**: The class contains 25 methods, of which 14 are stage/gate factory methods consuming 759 lines (68% of the class). The 3 longest methods are `_create_schema` (157 lines), `_create_gate1_completeness` (86 lines), and `build_prd_flow` (81 lines).
 
 ---
 
-## G4: Eliminate Derived Artifact Drift
-
-### Metric 4.1 — Derived Artifact Staleness at Dev DoD
+### M2: Stage/Gate Externalization (PRD Goal G2)
 
 | Field | Value |
 |-------|-------|
-| **Name** | `dev_derived_artifact_staleness` |
-| **Definition** | Count of derived artifacts that are stale (not regenerated from current source files) at Development stage DoD submission. |
-| **Baseline** | Not tracked (retro c8f2 reports derived artifact drift incidents but no count) |
-| **Target** | 0 stale derived artifacts at Dev completion |
-| **Measurement Method** | From Dev stage DoD submissions: check the "regenerate derived artifacts" checklist item (FR-11). Count derived artifacts where regeneration is not confirmed. A derived artifact is any file generated or transformed from a source file (e.g., generated docs, compiled schemas, transformed configs). |
-| **Cadence** | Per pipeline run |
+| **Definition** | Number of stage and gate definitions residing in dedicated data modules (Python dict files) rather than inline factory methods |
+| **Formula** | Count of top-level stage dicts in `stage_definitions.py` + count of top-level gate dicts in `gate_definitions.py` |
+| **Baseline** | **0** externalized definitions (all 7 stages + 7 gates are inline factory methods in `prd_flow_builder.py`) |
+| **Target** | **14** externalized definitions (7 stages + 7 gates in separate data files) |
+| **Measurement** | File existence check + dict count in each file |
 
-### Metric 4.2 — Derived Artifact Regeneration Checklist Completion Rate
+**Baseline Detail**: 14 factory methods (`_create_stage1_creation` through `_create_stage7_completion` and `_create_gate1_completeness` through `_create_gate7_uat`) averaging 54 lines each, ranging from 33 to 87 lines.
+
+---
+
+### M3: Duplicate Entry Point Elimination (PRD Goal G3)
 
 | Field | Value |
 |-------|-------|
-| **Name** | `dev_regeneration_checklist_rate` |
-| **Definition** | Percentage of Dev stage DoD submissions where the "regenerate derived artifacts" checklist item is present and marked complete. |
-| **Baseline** | 0% (checklist item does not exist yet per retro c8f2) |
-| **Target** | 100% |
-| **Measurement Method** | From Dev stage DoD submissions: count submissions where the regeneration checklist item exists and is marked complete, divided by total Dev stage DoD submissions where source files with derived artifacts were modified. |
-| **Cadence** | Per pipeline run |
+| **Definition** | Number of files containing a `def execute_prd_workflow` function definition |
+| **Formula** | `grep -rl 'def execute_prd_workflow' prd-quality-gate-flow/*.py \| wc -l` |
+| **Baseline** | **2 files** (`prd_execute.py` at line 16, `run_execute.py` at line 56) |
+| **Target** | **1 file** (canonical: `prd_execute.py`) |
+| **Measurement** | grep count across all `.py` files in the plugin directory |
+
+**Baseline Detail**: `prd_execute.py` (226 lines) and `run_execute.py` (209 lines) both define `execute_prd_workflow()`, `EXAMPLE_PRODUCT_IDEAS`, and `main()`. The core function is 131 lines in `prd_execute.py` versus 120 lines in `run_execute.py`.
 
 ---
 
-## Non-Regression Guardrail (NFR-03)
-
-### Metric NR.1 — Non-Targeted Stage Pass Rate Stability
+### M4: Shared Constant Centralization (PRD Goal G4)
 
 | Field | Value |
 |-------|-------|
-| **Name** | `non_targeted_stage_stability` |
-| **Definition** | First-try pass rates for stages NOT targeted by this PRD (Architect, and indirectly Idea) must not regress from their current baselines. |
-| **Baselines** | Idea: 67%, Plan: 83%, Development: 83%, Architect: no failures in last 3 runs |
-| **Target** | No decrease beyond 1 standard deviation from rolling 5-run mean |
-| **Measurement Method** | From `.delivery/memory/` pipeline run logs: compute first-try pass rate per non-targeted stage on a rolling 5-run window. Flag if any stage drops more than 1 SD below the window mean. |
-| **Cadence** | Per pipeline run (rolling 5-run window) |
+| **Definition** | Number of distinct files containing the hardcoded string literal `"prd_flows.db"` |
+| **Formula** | `grep -rl '"prd_flows.db"' prd-quality-gate-flow/*.py \| wc -l` |
+| **Baseline** | **6 files**, **10 total occurrences** |
+| **Target** | **1 file** (`shared.py` only), **1 occurrence** |
+| **Measurement** | grep count of distinct files and total occurrences |
+
+**Baseline Detail** (files and occurrence counts):
+
+| File | Occurrences | Lines |
+|------|------------|-------|
+| `prd_flow_builder.py` | 2 | 41 (default param), 1131 (`__main__` block) |
+| `prd_execute.py` | 2 | 31 (builder init), 51 (orchestrator init) |
+| `run_execute.py` | 2 | 63 (builder init), 82 (orchestrator init) |
+| `fix_and_run.py` | 2 | 17 (sqlite3 connect), 40 (builder init) |
+| `run_builder.py` | 1 | 17 (builder init) |
+| `check_db.py` | 1 | 4 (sqlite3 connect) |
 
 ---
 
-## Metrics Summary Table
+### M5: Flat Script Restructuring (PRD Goal G5)
 
-| ID | Metric | Baseline | Target | Goal |
-|----|--------|----------|--------|------|
-| 1.1 | Design first-try pass rate | 50% | >= 80% | G1 |
-| 1.2 | Phantom reference detection rate | 0% | >= 95% | G1 |
-| 2.1 | UAT first-try pass rate | 67% | >= 85% | G2 |
-| 2.2 | Shared-module review completion | 0% | 100% | G2 |
-| 2.3 | Empirical-items artifact presence | 0% | 100% | G2 |
-| 3.1 | Plan overcommit pass rate | Unknown | 0% | G3 |
-| 3.2 | Capacity matrix presence | 0% | 100% | G3 |
-| 3.3 | Coverage matrix completeness | 0% | 100% | G3 |
-| 4.1 | Derived artifact staleness count | Not tracked | 0 | G4 |
-| 4.2 | Regeneration checklist completion | 0% | 100% | G4 |
-| NR.1 | Non-targeted stage stability | Per-stage baselines | No regression | NFR-03 |
+| Field | Value |
+|-------|-------|
+| **Definition** | Number of in-scope `.py` files with bare top-level executable statements and no `main()` function or `if __name__ == "__main__"` guard |
+| **Formula** | For each in-scope `.py` file: check for presence of `if __name__` guard AND `def ` function definitions. Files lacking both and containing executable top-level code count as "flat". |
+| **Baseline** | **2 files** |
+| **Target** | **0 files** |
+| **Measurement** | `grep -L 'if __name__' *.py` cross-referenced with `grep -L 'def ' *.py` |
+
+**Baseline Detail**:
+
+| File | Lines | Functions | Classes | Main Guard |
+|------|-------|-----------|---------|------------|
+| `check_db.py` | 26 | 0 | 0 | No |
+| `fix_and_run.py` | 214 | 0 | 0 | No |
+
+Note: `flow_orchestrator.py` also lacks `if __name__` but is a core module (out of scope per NFR-06) and contains no top-level executable statements.
 
 ---
 
-## Validation Cadence
+### M6: Behavioral Compatibility (PRD Goal G6)
 
-- **Per-run metrics** (1.1, 1.2, 2.1--2.3, 3.1--3.3, 4.1--4.2): Evaluated after each pipeline run completes. Data sourced from stage artifacts and DoD validator findings in `.delivery/memory/`.
-- **Rolling window metrics** (NR.1): Computed on a 5-run rolling window. Trend alerts trigger when a non-targeted stage drops below baseline minus 1 SD.
-- **Post-deployment validation**: After the Stage Health Hardening changes ship, the first 3 pipeline runs constitute the validation period. All G1--G4 targets must be met within 3 runs to confirm success. If targets are not met, gate severity should be revisited per Risk mitigation (PRD Section 7).
+| Field | Value |
+|-------|-------|
+| **Definition** | Percentage of CLI entry points producing functionally identical output before and after refactoring |
+| **Formula** | (Entry points with matching before/after output) / (Total entry points) x 100 |
+| **Baseline** | N/A (pre-refactoring output must be captured before any code changes begin) |
+| **Target** | **100%** (4 of 4 entry points) |
+| **Measurement** | Capture stdout/stderr of each command into files before refactoring; re-run after; `diff` the outputs. Formatting differences are acceptable; structural differences are failures. |
+
+**Entry points to validate**:
+
+| Command | Expected Behavior |
+|---------|-------------------|
+| `python prd_flow_builder.py` | Flow creation summary with node/rule counts |
+| `python prd_execute.py` | Workflow execution with stage/gate progression |
+| `python check_db.py` | Database table listings |
+| `python fix_and_run.py` | Combined build + execute + BRE demonstration |
+
+**Capture protocol** (to be executed at start of Development stage):
+
+```bash
+cd prd-quality-gate-flow/
+rm -f prd_flows.db
+python prd_flow_builder.py > ../baseline_builder.txt 2>&1
+python prd_execute.py > ../baseline_execute.txt 2>&1
+python check_db.py > ../baseline_checkdb.txt 2>&1
+python fix_and_run.py > ../baseline_fixrun.txt 2>&1
+```
+
+---
+
+### M7: Zero New Dependencies (PRD Goal G7)
+
+| Field | Value |
+|-------|-------|
+| **Definition** | Count of non-stdlib, non-intra-plugin import statements across all `.py` files |
+| **Formula** | `grep -rn '^import\|^from' *.py` then filter out stdlib modules (`sqlite3`, `datetime`, `json`, `os`, `sys`, `io`, `asyncio`, `pathlib`, `typing`, `dataclasses`, `enum`, `textwrap`, `re`, `abc`, `collections`, `contextlib`, `traceback`) and intra-plugin imports |
+| **Baseline** | **0 external dependencies** |
+| **Target** | **0 external dependencies** |
+| **Measurement** | grep + manual verification that no `pip install` is required |
+
+---
+
+### M8: File Size Constraint (NFR-05)
+
+| Field | Value |
+|-------|-------|
+| **Definition** | Maximum line count of any single `.py` file modified or created by this refactoring |
+| **Formula** | `wc -l *.py \| sort -rn` |
+| **Baseline** | Current maximum: `prd_flow_builder.py` at **1,157 lines**; 4 files exceed 200 lines |
+| **Target** | **Every modified/new file <= 300 lines** |
+| **Measurement** | `wc -l` on all modified and new files |
+
+**Baseline file sizes**:
+
+| File | Lines | Post-Refactoring Target |
+|------|-------|------------------------|
+| `prd_flow_builder.py` | 1,157 | <= 200 (class body) / <= 300 (file) |
+| `prd_execute.py` | 226 | <= 300 (within target) |
+| `fix_and_run.py` | 214 | <= 300 (within target) |
+| `run_execute.py` | 209 | <= 10 (deprecation wrapper) or deleted |
+| `run_builder.py` | 43 | <= 10 (deprecation wrapper) or deleted |
+| `check_db.py` | 26 | <= 300 (within target) |
+
+**New files (estimated)**:
+
+| File | Estimated Lines | Constraint |
+|------|----------------|------------|
+| `shared.py` | 30-50 | <= 300 |
+| `stage_definitions.py` | 200-250 | <= 300 |
+| `gate_definitions.py` | 200-300 | <= 300 |
+| `schema.py` (tentative) | 150-180 | <= 300 |
+
+---
+
+### M9: Core Module Integrity (NFR-06)
+
+| Field | Value |
+|-------|-------|
+| **Definition** | Number of lines changed in core modules that are explicitly out of scope |
+| **Formula** | `git diff --stat -- business_rules_engine.py flow_orchestrator.py` |
+| **Baseline** | 0 changes |
+| **Target** | **0 changes** (zero diff) |
+| **Measurement** | `git diff` after refactoring is complete |
+
+**Protected files**:
+
+| File | Lines | Functions | Classes |
+|------|-------|-----------|---------|
+| `business_rules_engine.py` | 569 | 19 | 3 |
+| `flow_orchestrator.py` | 598 | 16 | 3 |
+
+---
+
+### M10: Duplicate Code Elimination (Composite)
+
+| Field | Value |
+|-------|-------|
+| **Definition** | Count of distinct duplicated code patterns across files |
+| **Formula** | Sum of: (a) files defining `EXAMPLE_PRODUCT_IDEAS`, (b) files defining `execute_prd_workflow`, (c) files with UTF-8 `reconfigure`/`TextIOWrapper` setup pattern |
+| **Baseline** | **(a)** 2 files, **(b)** 2 files, **(c)** 3 files = **7 duplicate instances** |
+| **Target** | **(a)** 1 file, **(b)** 1 file, **(c)** 1 file (`shared.py`) = **3 canonical locations** |
+| **Measurement** | grep for each pattern across all `.py` files |
+
+**Baseline Detail**:
+
+| Pattern | Files | Locations |
+|---------|-------|-----------|
+| `EXAMPLE_PRODUCT_IDEAS` definition | 2 | `prd_execute.py:151`, `run_execute.py:20` |
+| `def execute_prd_workflow` | 2 | `prd_execute.py:16`, `run_execute.py:56` |
+| UTF-8 stdout/stderr reconfigure | 3 | `fix_and_run.py:11-12`, `run_builder.py:9-10`, `run_execute.py:12-13` |
+
+---
+
+## Summary Dashboard
+
+| Metric | Baseline | Target | Direction | PRD Goal |
+|--------|----------|--------|-----------|----------|
+| M1: PRDFlowBuilder class lines | 1,120 | <= 200 | DOWN 82% | G1 |
+| M2: Externalized definitions | 0 / 14 | 14 / 14 | UP to 100% | G2 |
+| M3: Duplicate `execute_prd_workflow` files | 2 | 1 | DOWN 50% | G3 |
+| M4: Files with hardcoded `"prd_flows.db"` | 6 (10 occ.) | 1 (1 occ.) | DOWN 83% / 90% | G4 |
+| M5: Flat scripts (no main guard) | 2 | 0 | DOWN 100% | G5 |
+| M6: Behavioral compatibility | N/A | 100% | MAINTAIN | G6 |
+| M7: External dependencies | 0 | 0 | MAINTAIN | G7 |
+| M8: Max file size (modified/new) | 1,157 | <= 300 | DOWN 74% | NFR-05 |
+| M9: Core module changes | 0 | 0 | MAINTAIN | NFR-06 |
+| M10: Duplicate code instances | 7 | 3 | DOWN 57% | G3, G4 |
+
+---
+
+## Verification Script
+
+Run from `prd-quality-gate-flow/` to verify all metrics in a single pass:
+
+```bash
+echo "=== M1: PRDFlowBuilder class lines ==="
+awk '/^class PRDFlowBuilder/,0' prd_flow_builder.py | wc -l
+
+echo "=== M2: Externalized definitions ==="
+test -f stage_definitions.py && echo "stage_definitions.py EXISTS" || echo "stage_definitions.py MISSING"
+test -f gate_definitions.py && echo "gate_definitions.py EXISTS" || echo "gate_definitions.py MISSING"
+
+echo "=== M3: Duplicate execute_prd_workflow ==="
+grep -rl 'def execute_prd_workflow' *.py | wc -l
+
+echo "=== M4: Hardcoded DB path ==="
+echo "Distinct files:" && grep -rl '"prd_flows.db"' *.py | wc -l
+echo "Total occurrences:" && grep -rc '"prd_flows.db"' *.py | grep -v ':0$'
+
+echo "=== M5: Flat scripts ==="
+for f in check_db.py fix_and_run.py; do
+  grep -q 'if __name__' "$f" 2>/dev/null && echo "$f: HAS main guard" || echo "$f: MISSING main guard"
+done
+
+echo "=== M7: External dependencies ==="
+grep -rn '^import\|^from' *.py | grep -Ev 'sqlite3|datetime|json|os|sys|io|asyncio|pathlib|typing|dataclasses|enum|textwrap|re|abc|collections|contextlib|traceback' | grep -Ev 'from (prd_|flow_|business_|agent_|shared|stage_|gate_|schema|check_|fix_)'
+
+echo "=== M8: File sizes ==="
+wc -l *.py | sort -rn
+
+echo "=== M9: Core module integrity ==="
+git diff --stat -- business_rules_engine.py flow_orchestrator.py
+
+echo "=== M10: Duplicate patterns ==="
+echo "EXAMPLE_PRODUCT_IDEAS defs:" && grep -rl 'EXAMPLE_PRODUCT_IDEAS\s*=' *.py | wc -l
+echo "execute_prd_workflow defs:" && grep -rl 'def execute_prd_workflow' *.py | wc -l
+echo "UTF-8 reconfigure blocks:" && grep -rl 'TextIOWrapper.*stdout' *.py | wc -l
+```
+
+---
+
+## Traceability
+
+| PRD Goal | Metrics | Coverage |
+|----------|---------|----------|
+| G1: Decompose god object | M1, M2 | Class line count + externalization count |
+| G2: Externalize definitions | M2 | Data module existence + dict count |
+| G3: Eliminate duplicate entry points | M3, M10 | Function definition count + composite duplicates |
+| G4: Centralize shared constants | M4, M10 | Hardcoded string count + duplicate pattern count |
+| G5: Restructure flat scripts | M5 | Main guard presence |
+| G6: Behavioral compatibility | M6 | Before/after output diff |
+| G7: Zero new dependencies | M7 | Import analysis |
+| NFR-05: File size constraint | M8 | `wc -l` on all files |
+| NFR-06: Core modules untouched | M9 | `git diff` zero-change verification |

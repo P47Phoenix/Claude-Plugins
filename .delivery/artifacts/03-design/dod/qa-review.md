@@ -1,8 +1,8 @@
 # QA Review: Design Stage (Gate 3)
 
 **Reviewer**: QA Engineer (Legolas)
-**Date**: 2026-03-29
-**Artifact**: `.delivery/artifacts/03-design/ux/user-flows.md` v1.0
+**Date**: 2026-03-30
+**Artifact**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
 **PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.1
 **Verdict**: DONE
 
@@ -14,88 +14,110 @@
 
 **Result**: PASS
 
-Every FR specification in the design includes:
-- **Target file** with verified on-disk existence
-- **Exact location** (line numbers, section names, insertion points)
-- **Change type** (ADD or MODIFY) explicitly stated
-- **Exact content** in fenced code blocks -- the expected end-state is unambiguous
-- **Integration notes** describing sequencing, renumbering, and interaction with other FRs
+Every module in the target state has:
+- **Exact line count targets** with NFR-05 pass/fail thresholds (Section 2.2)
+- **Import specifications** listing every import and export per module (Section 3.2)
+- **Dependency constraints** as enforceable rules (Section 3.3, five numbered rules)
+- **CLI entry point behavioral matrix** with output structure, exit codes, and DB side effects (Section 5.2)
 
 States and outcomes are measurable:
 
-| FR | Testable State | Measurable Outcome |
-|----|---------------|-------------------|
-| FR-01 | Stage 7 Sub-Flow step 5 exists in pipeline-stages.md | New step present with shared-module review content; steps renumbered |
-| FR-02 | New section in quality/SKILL.md after line 311 | "Shared-Module Review Protocol" section present with definition, steps, checklist, output format |
-| FR-03 | New row in Stage 6->7 table + new section at EOF of artifact-contracts.md | "Empirical Items Classification" row in table; "Empirical-Items Tracking Template" section at end of file |
-| FR-04 | New checklist item in Gate 7 of quality-gates.md | Blocking criterion for empirical-items classification present after line 207 |
-| FR-05 | New checklist item in Gate 3 of quality-gates.md | WARNING-severity phantom reference criterion present after line 153 |
-| FR-06 | New entry condition in Stage 6 of pipeline-stages.md | Filename reconciliation gate with pass/fail criteria present after line 302 |
-| FR-07 | New section at EOF of project-templates.md | "Sprint Plan Mandatory Sections" with Capacity Matrix Template present |
-| FR-08 | Combined with FR-07 | Coverage Matrix Template present within same section |
-| FR-09 | Modified SM validator + new step 4 in Stage 5 Sub-Flow | Validator text updated; matrix validation step inserted with renumbering |
-| FR-10 | Modified Gate 5 criterion + extended SM validator | Two-tier threshold (>80% WARNING, >100% BLOCKING) replaces old 80% block |
-| FR-11 | Modified Developer validator + new step 5 in Stage 6 Sub-Flow | Validator includes "derived artifacts regenerated"; new regeneration step inserted |
-| FR-12 | New checklist item in Gate 6 of quality-gates.md | Blocking criterion for derived artifact regeneration present after line 198 |
+| Design Element | Testable State | Measurable Outcome |
+|---------------|---------------|-------------------|
+| `shared.py` creation | File exists with 4 exports | `from shared import DB_PATH, generate_timestamp_id, ensure_utf8_output, get_connection` succeeds |
+| `schema.py` extraction | `ensure_schema(conn)` works on `:memory:` DB | 9 tables + 7 indexes created without error |
+| `stage_definitions.py` | 7 stage dicts with required fields | `len(STAGE_DEFINITIONS) == 7`; missing field raises `KeyError` |
+| `gate_definitions.py` | 7 gate dicts with 20 total rules | `sum(len(g['rules']) for g in GATE_DEFINITIONS) == 20` |
+| `prd_flow_builder.py` decomposition | Class body <=200 lines, no factory methods | `wc -l` check; `_count_nodes() == 15`, `_count_rules() == 20` |
+| Duplicate deletion | `run_execute.py` and `run_builder.py` removed | Files do not exist on disk |
+| Hardcoded DB path elimination | `"prd_flows.db"` in exactly one file | `grep -r '"prd_flows.db"' *.py` returns only `shared.py` |
 
-All 12 designs specify deterministic, inspectable outcomes.
+All outcomes are deterministic and automatable via shell commands. No subjective judgment required.
 
 ---
 
-### 2. Each design spec can be verified (structural vs empirical classified) [blocking]
+### 2. Each refactoring step has verifiable before/after states [blocking]
 
 **Result**: PASS
 
-| FR | Verification Type | Method | Justification |
-|----|------------------|--------|---------------|
-| FR-01 | Structural | Read pipeline-stages.md, confirm step 5 text and renumbering in Stage 7 | Content is static markdown; presence check via Read |
-| FR-02 | Structural | Read quality/SKILL.md, confirm new section after "Empirical Validation and CODE_COMPLETE Status" | Static markdown section insertion |
-| FR-03 | Structural | Read artifact-contracts.md, confirm new table row and new template section | Static markdown additions |
-| FR-04 | Structural | Read quality-gates.md Gate 7, confirm blocking criterion text | Static checklist item |
-| FR-05 | **Empirical** | Run a Design DoD validation with a phantom file reference and confirm WARNING (not BLOCK) is emitted | Requires runtime pipeline execution to observe validator behavior. The design spec itself (markdown text) is structural, but the PRD AC requires observing that the WARNING is "logged and surfaced" -- that is runtime behavior. |
-| FR-06 | **Empirical** | Run a Dev entry gate with a missing file reference and confirm BLOCKING behavior | Requires runtime pipeline execution to observe gate enforcement |
-| FR-07 | Structural | Read project-templates.md, confirm Capacity Matrix Template present | Static markdown section |
-| FR-08 | Structural | Read project-templates.md, confirm Coverage Matrix Template present | Static markdown section (combined with FR-07) |
-| FR-09 | Structural | Read pipeline-stages.md Stage 5, confirm SM validator text and new step 4 | Static markdown modifications |
-| FR-10 | Structural | Read quality-gates.md Gate 5, confirm two-tier threshold text; read pipeline-stages.md SM validator | Static markdown replacement |
-| FR-11 | Structural | Read pipeline-stages.md Stage 6, confirm Developer validator text and new step 5 | Static markdown modifications |
-| FR-12 | Structural | Read quality-gates.md Gate 6, confirm blocking criterion text | Static checklist item |
+The 11-step refactoring sequence (Section 4) specifies for every step:
+- **What** changes (exact scope)
+- **Why** the ordering matters (dependency justification)
+- **Verification** command (copy-paste executable)
+- **Risk** assessment
+- **Mitigation** strategy
 
-**Classification summary**: 10 structural, 2 empirical (FR-05, FR-06). This aligns with the PRD's own AC Type column which marks FR-05 and FR-06 as "empirical."
+Step-by-step verification feasibility:
 
-Empirical items FR-05 and FR-06 will require dogfooding pipeline execution at UAT to validate runtime behavior. The design correctly specifies the exact markdown content for both, so structural verification of the text is possible, but behavioral verification (WARNING emitted vs. BLOCK enforced) requires a live pipeline run.
+| Step | Before State | After State | Verification Method | Feasible? |
+|:----:|-------------|------------|-------------------|:---------:|
+| 1 | No `shared.py` | `shared.py` with `DB_PATH` | `python -c "from shared import DB_PATH; print(DB_PATH)"` | YES |
+| 2 | Schema in builder lines 47-203 | `ensure_schema()` in `schema.py` | `python -c` with `:memory:` DB | YES |
+| 3 | `get_connection()` returns raw conn | `get_connection()` calls `ensure_schema()` | `python -c "from shared import get_connection; ..."` | YES |
+| 4 | 7 factory methods for stages | `STAGE_DEFINITIONS` list | `len()` check returns 7 | YES |
+| 5 | 7 factory methods for gates + 20 rules | `GATE_DEFINITIONS` list | Count check returns 7 gates, 20 rules | YES |
+| 6 | 1,157-line monolith | ~180-line orchestrator | `wc -l`; node count 15, rule count 20 | YES |
+| 7 | Hardcoded `"prd_flows.db"` in executor | `shared.DB_PATH` | `grep` returns zero hits | YES |
+| 8 | Flat procedural `fix_and_run.py` | Named functions + `main()` | `grep "def main"` + functional output comparison | YES |
+| 9 | Bare 27-line `check_db.py` | Structured with error handling | Run with nonexistent DB path | YES |
+| 10 | Duplicates exist | Duplicates deleted | `ls` confirms absence | YES |
+| 11 | CLAUDE.md references deleted files | Updated documentation | `grep` for deleted names returns zero | YES |
+
+Critical observation: each step leaves the codebase in a working state (Section 4 header promise). Steps 1-5 are purely additive, meaning existing code continues to function unchanged. Step 6 is the first destructive transformation, and it occurs only after all new modules are verified. This sequencing is sound.
 
 ---
 
-### 3. FR Traceability is complete (all 12 FRs) [blocking]
+### 3. Behavioral compatibility is verifiable [blocking]
 
 **Result**: PASS
 
-The design includes a "FR Traceability Matrix" (lines 476-491) that maps all 12 FRs. I have independently verified each mapping:
+Section 5.2 defines a Behavioral Compatibility Matrix covering all 4 surviving CLI entry points:
+- Output structure: "structurally equivalent" (IDs differ due to timestamps -- correctly excluded per NFR-04)
+- Exit codes: 0 on success for all
+- DB side effects: documented per entry point
+- Compatibility level: explicit for each
 
-| PRD FR | Design Section | Target File | Traced |
-|--------|---------------|-------------|--------|
-| FR-01 | M1: Shared-module review checkpoint | pipeline-stages.md | YES |
-| FR-02 | M1: Shared-module review guidance | quality/SKILL.md | YES |
-| FR-03 | M1: Empirical-items tracking template | artifact-contracts.md | YES |
-| FR-04 | M1: Empirical-items tracking in UAT DoD | quality-gates.md | YES |
-| FR-05 | M2: Phantom reference WARNING | quality-gates.md | YES |
-| FR-06 | M2: Filename reconciliation gate | pipeline-stages.md | YES |
-| FR-07 | M3: Capacity matrix template | project-templates.md | YES |
-| FR-08 | M3: Coverage matrix template | project-templates.md (combined with FR-07) | YES |
-| FR-09 | M3: Matrix validation step | pipeline-stages.md | YES |
-| FR-10 | M3: Layered capacity threshold | quality-gates.md + pipeline-stages.md | YES |
-| FR-11 | M4: Derived artifact regeneration step | pipeline-stages.md | YES |
-| FR-12 | M4: Derived artifact regeneration criterion | quality-gates.md | YES |
+Section 9 (Structural Equivalence Verification Plan) provides the dogfooding protocol:
+- Pre-refactoring baselines captured for node count (15), rule count (20), execution status, audit events, gate evaluations, and cleanup operations
+- Post-refactoring checks compare identical metrics
+- Timestamp-based IDs excluded from comparison (correct -- these are non-deterministic)
 
-**12/12 FRs traced. No gaps. No orphan design specs (every design section maps to a PRD FR).**
+The PIPELINE_SEQUENCE constant (Section 7) addresses the non-trivial interleaving of stages and gates (Gates 3-4 are consecutive, Stages 5-6 are consecutive). This is the highest-risk aspect of behavioral equivalence. The design correctly identifies this complexity and specifies the exact sequence list, including a rationale for why simple alternation would fail.
 
-Additional traceability checks:
-- All target files match between PRD Section "Files Involved" and design specs: CONSISTENT
-- Open question OQ-3 (empirical-items format) resolved in design with rationale: CONFIRMED
-- NFR compliance documented with per-NFR justification: CONFIRMED (5/5 NFRs addressed)
-- Light Mode behavior per FR matches PRD Section 9: CONFIRMED (FR-01,02,03,04,05,06,10,11,12 apply; FR-07,08,09 waived for BUG_FIX/DOCS_ONLY)
-- Retro traceability annotations (<!-- retro c8f2 -->, <!-- retro k4m9 -->) present in every added section: CONFIRMED (NFR-05 compliance)
+---
+
+### 4. Test strategy is feasible for a codebase without existing tests [blocking]
+
+**Result**: PASS
+
+The design does not assume any test framework exists. All verification methods fall into three categories:
+
+1. **Shell-executable one-liners**: `python -c "..."`, `wc -l`, `grep -r`, `ls` -- these require zero test infrastructure
+2. **Script execution with output comparison**: `python prd_flow_builder.py` before and after, comparing counts -- standard CLI invocation
+3. **Negative testing**: Run `check_db.py` against nonexistent DB to verify graceful error handling
+
+This is pragmatic for a codebase with no test runner configured. The verification plan in Section 9 is essentially a manual smoke test suite expressed as shell commands.
+
+One note: the design does not specify how pre-refactoring baselines should be captured and stored (Section 9 says "capture" but does not specify where). This is a minor gap but not blocking -- the developer can capture baselines to stdout or a temp file before starting Step 6.
+
+---
+
+## FR Traceability Audit
+
+The design includes a comprehensive FR Traceability Matrix (Section 6) mapping all 8 FRs and 42 acceptance criteria. I have independently verified:
+
+| PRD FR | ACs Mapped | Design Module(s) | Refactoring Step(s) | Verification Method | Traced |
+|--------|:----------:|-------------------|:-------------------:|-------------------|:------:|
+| FR-01 | AC-01a through AC-01e (5) | `stage_definitions.py` + `prd_flow_builder.py` | Steps 4, 6 | Import + count + code review | YES |
+| FR-02 | AC-02a through AC-02f (6) | `gate_definitions.py` + `prd_flow_builder.py` | Steps 5, 6 | Import + count + code review | YES |
+| FR-03 | AC-03a through AC-03g (7) | `prd_flow_builder.py` + `schema.py` + `shared.py` | Steps 2, 3, 6 | `wc -l` + `hasattr` + count comparison | YES |
+| FR-04 | AC-04a through AC-04d (4) | Deletion + `prd_execute.py` + `shared.py` | Steps 7, 10 | File absence + `grep` | YES |
+| FR-05 | AC-05a through AC-05e (5) | `shared.py` + all consumers | Steps 1, 6-9 | Import + `grep` | YES |
+| FR-06 | AC-06a through AC-06f (6) | `fix_and_run.py` | Step 8 | `grep` + output comparison | YES |
+| FR-07 | AC-07a through AC-07e (5) | `check_db.py` | Step 9 | `grep` + negative test | YES |
+| FR-08 | AC-08a through AC-08c (3) | `CLAUDE.md` | Step 11 | Manual review + `grep` | YES |
+
+**8/8 FRs traced. 42/42 acceptance criteria mapped. Zero gaps. No orphan design elements.**
 
 ---
 
@@ -103,9 +125,9 @@ Additional traceability checks:
 
 | # | Finding | Severity | Status |
 |---|---------|----------|--------|
-| -- | No blocking or warning findings | -- | -- |
+| 1 | Baseline capture storage location not specified in Section 9 verification plan | INFO | Non-blocking; developer discretion is sufficient |
 
-The design is precise, complete, and leaves nothing to interpretation. Every FR has exact content, exact location, and exact integration notes. The arrow flies true.
+No blocking or warning findings. The design is thorough, testable, and provides executable verification at every step. The refactoring sequence respects dependency ordering, and the highest-risk step (Step 6) is correctly identified with explicit mitigation via pre/post count comparison.
 
 ---
 
@@ -113,4 +135,4 @@ The design is precise, complete, and leaves nothing to interpretation. Every FR 
 
 **STATUS: DONE**
 
-All three Gate 3 QA criteria pass. The design is ready for Architect stage.
+All four Gate 3 QA criteria pass. The design specification provides deterministic, shell-executable verification for every refactoring step, correctly handles behavioral equivalence across the non-trivial pipeline sequence, and is feasible to validate without any test framework. The arrow hits the mark.

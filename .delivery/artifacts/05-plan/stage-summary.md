@@ -1,37 +1,44 @@
 ## Stage 5: Plan — Summary
 
-**Pipeline**: run-2026-03-29-h3k7
-**Date**: 2026-03-30
+**Pipeline**: run-2026-03-30-r4x2
+**Date**: 2026-03-31
 **Depth**: full
-**DoD Rounds**: 2 (capacity overcommitment fixed in R2)
+**DoD Rounds**: 1 (first-try pass after adversarial)
 
 ### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
 | PO (Gandalf) | User stories | DONE | 05-plan/po/user-stories.md |
-| SM (Aragorn) | Sprint plan | DONE (revised v2.0) | 05-plan/sm/sprint-plan.md |
+| SM (Aragorn) | Sprint plan (v1.1) | DONE | 05-plan/sm/sprint-plan.md |
 | QA (Legolas) | Test strategy | DONE | 05-plan/qa/test-strategy.md |
 | DevOps (Sam) | Deployment strategy | DONE | 05-plan/devops/deployment-strategy.md |
 
 ### Collaboration Patterns
 | Pattern | Result |
 |---------|--------|
-| Adversarial Review | Confidence 4/5 — BUG_FIX dogfooding won't exercise Plan guardrails (noted) |
+| Adversarial Review | 7 challenges, 5 accepted, 1 partial, 1 rejected |
 
-### DoD Validators (Round 2)
-| Validator | R1 | R2 | Review |
-|-----------|----|----|--------|
-| SM (Aragorn) | NOT_DONE (capacity) | DONE | 05-plan/dod/sm-review-r2.md |
-| PO (Gandalf) | DONE | DONE | 05-plan/dod/po-review-r2.md |
-| QA (Legolas) | DONE | DONE | 05-plan/dod/qa-review-r2.md |
-| DevOps (Sam) | DONE | DONE | 05-plan/dod/devops-review-r2.md |
+### DoD Validators
+| Validator | Status | Review |
+|-----------|--------|--------|
+| SM (Aragorn) | DONE | 05-plan/dod/sm-review.md |
+| PO (Gandalf) | DONE | 05-plan/dod/po-review.md |
+| QA (Legolas) | DONE | 05-plan/dod/qa-review.md |
+| DevOps (Sam) | DONE | 05-plan/dod/devops-review.md |
 
 ### Self-Correction
-- R1 finding: Capacity at 117% (3.5L vs 2.4L ceiling)
-- Fix: Markdown-edit calibration re-estimated 3L+1M+1S → 3M+2S (2.0L, 83% ceiling)
-- All 12 FRs retained, no scope dropped
+- PO proposed 2 sprints (27 SP Sprint 1 = 169% ceiling) — SM rejected, re-planned to 3 sprints
+- Challenger caught Sprint 1 at 100% ceiling — SM moved US-05 to Sprint 2, now 69%
+- Added: verify.py, per-gate rule counts, velocity recalibration, entry verification
+
+### Sprint Summary
+| Sprint | Stories | SP | Ceiling % |
+|--------|---------|-----|-----------|
+| 1 | US-01 to US-04 | 11 | 69% |
+| 2 | US-05 to US-07 | 16 | 100% |
+| 3 | US-08 to US-11 | 7 | 44% |
 
 ### Notes
-- 5 stories, 28 ACs (24 structural, 4 empirical), 59 test cases
-- Challenger noted BUG_FIX dogfooding won't exercise Plan guardrails — carried to UAT
-- Session resumed after rate limit (2026-03-29 → 2026-03-30)
+- 11 stories, 34 SP total, 42 ACs, 38 test cases
+- All 8 FRs fully traced to stories
+- First-try DoD pass (Plan stage health improving: was 50% → now consecutive passes)

@@ -1,73 +1,88 @@
-# Developer DoD Review -- Gate 6
+# Developer DoD Review -- prd-quality-gate-flow Refactoring
 
 **Reviewer**: Gimli (Developer)
-**Date**: 2026-03-29
-**Sprint**: UAT Hardening + Pipeline Guardrails
+**Date**: 2026-03-30
+**Verdict**: **DONE**
 
 ---
 
-## Criteria Evaluation
+## BLOCKING Criteria
 
-### [PASS] Code is clean, follows best practices [blocking]
+### [PASS] Code is clean, follows Python best practices
 
-All five modified files use consistent markdown structure, proper heading hierarchy, table formatting, and inline HTML comments for retro annotations. No dead code, no orphaned references, no formatting violations. The changes are surgical insertions at documented insertion points -- no sprawl.
+All 8 files reviewed. Observations:
 
-### [PASS] No hardcoded secrets [blocking]
+- Every module has a module-level docstring explaining its purpose and extraction lineage.
+- All public functions have docstrings with Args/Returns sections.
+- Imports are stdlib-only (sqlite3, json, sys, os, io, datetime, enum, typing, asyncio). Zero external dependencies.
+- Functions are short and single-purpose. The longest function body is `demonstrate_bre_evaluation()` at ~80 lines, acceptable given inline output formatting.
+- Naming is consistent: snake_case functions, UPPER_CASE constants, PascalCase classes.
+- `finally` blocks used correctly for connection cleanup in `fix_and_run.py`, `check_db.py`, and `prd_flow_builder.py`.
+- Load-time validation in `stage_definitions.py` and `gate_definitions.py` catches structural errors at import time -- good defensive practice.
+- Lazy import of `schema.ensure_schema` inside `shared.get_connection()` avoids circular import between shared.py and schema.py. Correct pattern.
 
-Grep across all modified reference files returns zero matches for passwords, API keys, tokens, or credentials. These are documentation/specification files -- no executable code with secret risk.
+No issues found.
 
-### [PASS] Changes match design spec insertion points [blocking]
+### [PASS] No hardcoded secrets or magic values (except shared.py constants)
 
-Verified each story's insertion points against the dev-notes:
+- `DB_PATH = "prd_flows.db"` defined once in `shared.py` line 15. All other files import it.
+- `EXAMPLE_PRODUCT_IDEAS` defined once in `prd_execute.py` -- test data, not a magic value.
+- No passwords, API keys, tokens, or secrets found anywhere (grep confirmed).
+- Numeric constants in gate definitions (thresholds like `100`, `3`, `8`, `16`, `52`, `80`, `95`) are business rule values within declarative data structures -- appropriate placement.
 
-| Story | File | Insertion Point | Match |
-|-------|------|-----------------|-------|
-| US-01 | pipeline-stages.md | Stage 7 step 5 (shared-module review) | YES -- step inserted, subsequent steps renumbered 6-11 |
-| US-01 | pipeline-stages.md | Stage 7 QA validator updated | YES -- shared-module review clause added |
-| US-01 | quality/SKILL.md | New "Shared-Module Review Protocol" section | YES -- definition, 5 identification steps, 4-item checklist, output format |
-| US-01 | quality-gates.md | Gate 7 new blocking criterion | YES -- empirical-items classification criterion present |
-| US-01 | artifact-contracts.md | Stage 6->7 contract + tracking template | YES -- "Empirical Items Classification" row added, template appended |
-| US-02/03 | quality-gates.md | Gate 3 phantom reference WARNING | YES -- `[PLANNED]` exemption, WARNING severity, carried forward language |
-| US-02/03 | pipeline-stages.md | Stage 6 entry condition (filename reconciliation) | YES -- 5-step process with PASS/FAIL criteria, light mode note |
-| US-04 | quality-gates.md | Gate 5 two-tier threshold | YES -- >80% WARNING, >100% BLOCKING, light mode clause |
-| US-04 | pipeline-stages.md | Stage 5 step 4 (matrix validation) | YES -- capacity + coverage matrix checks, BUG_FIX/DOCS_ONLY waiver |
-| US-04 | pipeline-stages.md | Scrum Bag validator updated | YES -- capacity/coverage matrix enforcement added |
-| US-04 | project-templates.md | Sprint Plan Mandatory Sections | YES -- capacity matrix template (5 cols + Total), coverage matrix template (5 cols + unmapped area), light mode waivers |
-| US-05 | pipeline-stages.md | Stage 6 step 5 (regenerate derived artifacts) | YES -- 4 substeps, light mode applies |
-| US-05 | quality-gates.md | Gate 6 blocking criterion | YES -- derived artifact regeneration criterion present |
-| US-05 | pipeline-stages.md | Developer validator updated | YES -- derived artifact check clause added |
+No issues found.
 
-Zero deviations from spec.
+### [PASS] Each modified file <= 300 lines (except data definition files)
 
-### [PASS] All structural ACs verifiable by inspection [blocking]
+| File | Lines | Type | Verdict |
+|------|------:|------|---------|
+| `shared.py` | 61 | Logic | PASS |
+| `schema.py` | 175 | Data definition | PASS |
+| `stage_definitions.py` | 270 | Data definition | PASS (exempt) |
+| `gate_definitions.py` | 412 | Data definition | PASS (exempt -- pure declarative dicts) |
+| `prd_flow_builder.py` | 260 | Logic | PASS |
+| `prd_execute.py` | 229 | Logic | PASS |
+| `fix_and_run.py` | 291 | Logic | PASS |
+| `check_db.py` | 70 | Logic | PASS |
 
-All 32 acceptance criteria across 5 stories are structural (text present in files, correct headings, correct severity tags, correct retro annotations). Verified each by reading the file content. Every `<!-- retro c8f2 -->` and `<!-- retro k4m9 -->` annotation is present at the correct location.
+All logic files under 300 lines. The two data definition files are pure declarative dicts with load-time validation -- correctly exempt per NFR-05.
 
-### Verification Status (Empirical Items)
+### [PASS] NFR-06: business_rules_engine.py and flow_orchestrator.py have zero diff
 
-10 items require runtime validation during UAT. These are behavioral criteria that cannot be verified by file inspection alone:
-
-1. **Shared-module review step fires in Stage 7** (US-01) -- requires pipeline execution
-2. **QA validator rejects missing shared-module review** (US-01) -- requires DoD validation run
-3. **Phantom reference WARNING surfaces at Gate 3** (US-02/03) -- requires gate execution
-4. **`[PLANNED]` exemption at Gate 3, enforcement at Dev entry** (US-02/03) -- requires two-stage gating
-5. **Filename reconciliation blocks Stage 6 entry** (US-02/03) -- requires entry condition execution
-6. **Capacity >80% triggers WARNING with acknowledgment** (US-04) -- requires threshold behavior
-7. **Capacity >100% blocks with PO sign-off option** (US-04) -- requires threshold behavior
-8. **Coverage matrix catches unmapped FRs** (US-04) -- requires validation step execution
-9. **Derived artifact regeneration runs in Stage 6** (US-05) -- requires sub-flow execution
-10. **Gate 6 blocks on non-regenerated derived artifacts** (US-05) -- requires gate execution
+Verified via `git diff HEAD` -- both files produce empty diff output. Zero modifications to either core module.
 
 ---
 
-## Derived Artifacts
+## WARNING Criteria
 
-No derived artifacts apply to these changes. All modified files are source specification documents (markdown references). No generated docs, compiled schemas, or transformed configs depend on these files.
+### [PASS] builder.conn accessible, all public API methods present
+
+- `PRDFlowBuilder.__init__()` sets `self.conn` as a public attribute (line 74).
+- `create_flow()` -- present (line 78)
+- `create_node()` -- present (line 87)
+- `create_rule()` -- present (line 100)
+- `build_prd_flow()` -- present (line 113)
+- `export_flow_diagram()` -- present (line 200)
+- `close()` -- present (line 226)
+
+All consumers (`prd_execute.py`, `fix_and_run.py`) access `builder.conn` directly for queries. No access issues.
+
+---
+
+## Additional Observations (non-blocking)
+
+1. **Latent bug fix confirmed**: `fix_and_run.py` now uses `shared.get_connection()` which calls `ensure_schema()` before any DELETE queries. Previously a fresh DB with no tables would crash.
+
+2. **PIPELINE_SEQUENCE pattern**: The explicit sequence list in `prd_flow_builder.py` (lines 51-66) with comments documenting irregularities (consecutive gates 3-4, consecutive stages 5-6) is clear and maintainable. Better than the original 14 private methods.
+
+3. **Deleted files confirmed absent**: `run_execute.py` and `run_builder.py` are not on disk. Zero references in any `.py` file.
+
+4. **Behavioral baseline**: 15 nodes, 20 rules, [4,4,3,1,4,3,1] distribution verified structurally from data definitions.
 
 ---
 
 ## Summary
 
-By my axe, the stonework is sound. Five files carved with precision -- every insertion point matches the blueprint, every retro annotation sits where it belongs, and not a single secret lurks in the shadows. Thirty-two acceptance criteria verified by inspection. Ten empirical items rightly deferred to UAT where they can be tested under real pipeline fire. The code is clean and the spec is honored.
+By my axe, the god object has been properly slain. Four new modules extracted with clean separation -- shared constants, schema DDL, stage data, gate data -- and the builder reduced from 1,157 lines to 260 while preserving every node, rule, and behavioral contract. The latent ordering bug in `fix_and_run.py` is fixed. The core modules stand untouched as required. Every file is under limit, every function has a docstring, and not a secret lurks anywhere in the stone.
 
-**Verdict**: CODE_COMPLETE
+**STATUS: DONE**

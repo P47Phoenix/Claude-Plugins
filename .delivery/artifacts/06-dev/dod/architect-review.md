@@ -1,80 +1,169 @@
 # Architect DoD Review -- Stage 6 Development
 
 **Reviewer**: Celebrimbor (Architect)
-**Date**: 2026-03-29
-**Sprint**: UAT Hardening + Pipeline Guardrails
-**Stories**: US-01, US-02, US-03, US-04, US-05
+**Date**: 2026-03-30
+**Sprint**: prd-quality-gate-flow Decomposition (v1.1, 3 sprints, 34 SP)
+**Stories**: US-01 through US-11
+**Design Spec**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
+**Dev Notes**: `.delivery/artifacts/06-dev/developer/dev-notes.md`
 
 ---
 
 ## Gate 6 Architect Criteria
 
-### 1. Implementation conforms to design spec insertion points [blocking]
+### 1. Implementation conforms to design spec (module structure, dependency graph) [BLOCKING]
 
 **Status**: PASS
 
-Verified each FR's insertion point against the design specification:
+#### 1a. File inventory matches target state (design spec section 2.1)
 
-| FR | Design Spec Insertion Point | Actual Insertion Point | Match |
-|---|---|---|---|
-| FR-01 | pipeline-stages.md Stage 7 Sub-Flow, new step 5 after step 4 (Exploratory testing) | Step 5 "Shared-module review" at line 412, after step 4 (Exploratory testing sessions) | YES |
-| FR-01 | pipeline-stages.md Stage 7 QA Engineer validator updated | Line 438 includes "shared-module review complete" | YES |
-| FR-02 | quality/SKILL.md after "Empirical Validation and CODE_COMPLETE Status" section, before "Sub-Agent Interface" | "Shared-Module Review Protocol" at line 314, before "Sub-Agent Interface" at line 359 | YES |
-| FR-03 (Addition 1) | artifact-contracts.md Stage 6->7 output table, new row after CODE_COMPLETE Items | "Empirical Items Classification" row at line 138 | YES |
-| FR-03 (Addition 2) | artifact-contracts.md after "Contract Summary Matrix" section | "Empirical-Items Tracking Template" section at line 193 | YES |
-| FR-04 | quality-gates.md Gate 7 checklist, after "All pending empirical validations..." | Line 213 empirical-items classification criterion | YES |
-| FR-05 | quality-gates.md Gate 3 checklist, after "Design aligns with PRD requirements..." | Line 153 phantom reference WARNING criterion | YES |
-| FR-06 | pipeline-stages.md Stage 6 Entry Conditions | "Filename reconciliation gate" at line 309 | YES |
-| FR-07/FR-08 | project-templates.md end of file, new "Sprint Plan Mandatory Sections" | Section at line 155 with both Capacity and Coverage matrices | YES |
-| FR-09 | pipeline-stages.md Stage 5 Sub-Flow new step 4, SM validator modified | Step 4 "Matrix validation" at line 262; SM validator at line 278 extended | YES |
-| FR-10 | quality-gates.md Gate 5, replace 80% blocking with two-tier model; pipeline-stages.md SM validator | Lines 181-184 two-tier model; line 278 SM validator includes threshold enforcement | YES |
-| FR-11 | pipeline-stages.md Stage 6 Sub-Flow new step 5, Developer validator modified | Step 5 "Regenerate derived artifacts" at line 341; Developer validator at lines 351-353 | YES |
-| FR-12 | quality-gates.md Gate 6 checklist, after "Empirical validation requirements identified..." | Line 203 derived artifact regeneration blocking criterion | YES |
+| File | Spec Status | Actual Status | Match |
+|------|-------------|---------------|:-----:|
+| `shared.py` | NEW ~40 lines | NEW 61 lines | YES |
+| `schema.py` | NEW ~170 lines | NEW 174 lines | YES |
+| `stage_definitions.py` | NEW ~230 lines | NEW 269 lines | YES |
+| `gate_definitions.py` | NEW ~280 lines | NEW 411 lines | YES (declarative data, NFR-05 exemption for data files) |
+| `prd_flow_builder.py` | MOD ~180 lines | MOD 260 lines (159-line class body) | YES (class body 159 <= 200 target) |
+| `prd_execute.py` | MOD ~220 lines | MOD 228 lines | YES |
+| `fix_and_run.py` | MOD ~210 lines | MOD 291 lines | YES (deviation documented in dev notes -- function extraction + docstrings) |
+| `check_db.py` | MOD ~50 lines | MOD 69 lines | YES |
+| `business_rules_engine.py` | UNCHANGED | UNCHANGED | YES |
+| `flow_orchestrator.py` | UNCHANGED | UNCHANGED | YES |
+| `run_execute.py` | DELETED | ABSENT | YES |
+| `run_builder.py` | DELETED | ABSENT | YES |
 
-All 12 FRs implemented at the exact insertion points specified in the design.
+All 12 file dispositions match the design spec.
 
-### 2. No architectural drift [blocking]
+#### 1b. Dependency graph matches spec (design spec section 3.1-3.2)
+
+| Module | Spec Imports | Actual Imports | Match |
+|--------|-------------|----------------|:-----:|
+| `shared.py` | stdlib only (deferred `schema` in `get_connection`) | `sys, io, sqlite3, datetime` + deferred `from schema import ensure_schema` | YES |
+| `schema.py` | `sqlite3` only | `sqlite3` only | YES |
+| `stage_definitions.py` | none | none | YES |
+| `gate_definitions.py` | none | none | YES |
+| `prd_flow_builder.py` | `shared, schema, stage_definitions, gate_definitions` | exactly those 4 | YES |
+| `prd_execute.py` | `shared, prd_flow_builder, flow_orchestrator, business_rules_engine` | exactly those 4 | YES |
+| `fix_and_run.py` | `shared, prd_flow_builder, business_rules_engine` | exactly those 3 | YES |
+| `check_db.py` | `shared` only | `shared` (top-level `DB_PATH`, deferred `get_connection`) | YES |
+
+All import relationships conform exactly to design spec section 3.2.
+
+#### 1c. PIPELINE_SEQUENCE matches spec (design spec section 7)
+
+The `PIPELINE_SEQUENCE` constant in `prd_flow_builder.py` (lines 51-66) matches the 14-entry sequence defined in design spec section 7 exactly:
+
+```
+("stage",0), ("gate",0), ("stage",1), ("gate",1),
+("stage",2), ("gate",2), ("gate",3), ("stage",3),
+("gate",4), ("stage",4), ("stage",5), ("gate",5),
+("gate",6), ("stage",6)
+```
+
+Consecutive gate pairs (gates 3-4, gates 6-7) and consecutive stage pair (stages 5-6) are correctly represented.
+
+#### 1d. Public API preserved (AC-03d, AC-03d2, AC-03e)
+
+- `create_flow()`, `create_node()`, `create_rule()` remain on `PRDFlowBuilder`: CONFIRMED
+- `builder.conn` is a public attribute: CONFIRMED (line 74)
+- `export_flow_diagram()` remains on `PRDFlowBuilder`: CONFIRMED
+- `_get_node_depth()`, `_count_nodes()`, `_count_rules()`, `close()`: CONFIRMED
+
+#### 1e. Data modules include load-time validation (AC-01e, AC-02f)
+
+- `stage_definitions.py`: `REQUIRED_STAGE_FIELDS` + `REQUIRED_CONFIG_FIELDS` validation loop at module load (line 256+)
+- `gate_definitions.py`: `REQUIRED_GATE_FIELDS` + `REQUIRED_RULE_FIELDS` validation loop at module load (line 397+)
+
+### 2. No architectural drift -- modules depend only on what design spec allows [BLOCKING]
 
 **Status**: PASS
 
-Verified the following architectural invariants remain intact:
+Verified all 5 dependency rules from design spec section 3.3:
 
-- **Three-level context loading**: Unchanged. No new mandatory context injected at metadata or SKILL.md root level.
-- **Artifact namespace convention**: All new artifacts follow `{NN}-{stage}/{role}/{artifact}.md`. No new artifact file paths introduced (empirical-items tracking is a section within the existing UAT test plan, per OQ-3 resolution).
-- **Sub-flow step sequencing**: Steps correctly renumbered in Stages 5, 6, and 7 after insertions. PARALLEL/SEQUENTIAL annotations preserved.
-- **DoD validator protocol**: No changes to the validation protocol itself. New criteria are additive to existing gate checklists.
-- **Severity model**: Correct severity tags applied -- FR-05 uses [warning], FR-06 is blocking via entry condition, FR-10 uses two-tier WARNING/BLOCKING, FR-04/FR-12 use [blocking]. All consistent with design spec intent.
-- **Light Mode semantics**: "Light" means reduced depth, not skipped. All Light Mode annotations match design spec: FR-01/FR-06/FR-11 apply to all types; FR-07/FR-08/FR-09 waive matrices for BUG_FIX/DOCS_ONLY; FR-10 applies to all types.
-- **Config schema**: No new config keys introduced. Schema remains at v2.3.
-- **Retro traceability**: All added content includes `<!-- retro c8f2 -->` and/or `<!-- retro k4m9 -->` annotations per NFR-05.
+| Rule | Constraint | Verified |
+|------|-----------|:--------:|
+| Rule 1 | `shared.py`, `schema.py`, `stage_definitions.py`, `gate_definitions.py` have zero module-level internal imports | PASS (`shared.py` uses deferred import per Step 3 mitigation) |
+| Rule 2 | `prd_flow_builder.py` imports from 4 new modules only, never from consumer scripts | PASS |
+| Rule 3 | Consumer scripts never import from each other | PASS (zero cross-consumer imports found) |
+| Rule 4 | `business_rules_engine.py` and `flow_orchestrator.py` have zero diff | PASS (dev notes confirm; only pre-existing `flow_orchestrator -> business_rules_engine` import exists) |
+| Rule 5 | No circular dependencies in target graph | PASS (verified below) |
 
-### 3. Changes are consistent with existing patterns in target files [blocking]
+Additional drift checks:
+- `"prd_flows.db"` hardcoded string appears in exactly 1 location: `shared.py` line 15. All consumers use `DB_PATH`. PASS.
+- `EXAMPLE_PRODUCT_IDEAS` appears only in `prd_execute.py` per OQ-4 decision. PASS.
+- No new YAML files introduced (AC-01d). PASS.
+- No new config keys added to `.delivery/config.yml` schema. PASS.
+
+### 3. No circular dependencies [BLOCKING]
 
 **Status**: PASS
 
-Pattern consistency verified per file:
+Dependency DAG (verified via import analysis):
 
-| File | Pattern Check | Result |
-|---|---|---|
-| pipeline-stages.md | Sub-flow steps use `N. **Name** [SEQUENTIAL/PARALLEL] [required/optional]` format with indented details | Consistent |
-| pipeline-stages.md | DoD validators use `- Role [required/optional]: criteria description` format | Consistent |
-| pipeline-stages.md | Entry conditions use `- **Name**: description` format | Consistent |
-| quality-gates.md | Gate criteria use `- [ ] Description [severity]` checklist format | Consistent |
-| quality/SKILL.md | New section uses `##` heading with subsections, markdown checklists, and code-fenced output templates | Consistent with existing sections |
-| artifact-contracts.md | Table rows use `| Section | YES/No | Description |` format | Consistent |
-| artifact-contracts.md | New template section uses heading + explanation + code-fenced template + integration notes | Consistent with existing contract format |
-| project-templates.md | New section uses `##` heading with `###` subsections, code-fenced templates, and Light Mode notes | Consistent with existing template format |
+```
+Layer 0 (leaves):  schema.py, stage_definitions.py, gate_definitions.py
+Layer 0.5:         shared.py  (deferred runtime dep on schema.py, no module-level cycle)
+Layer 1:           prd_flow_builder.py -> {shared, schema, stage_definitions, gate_definitions}
+Layer 2:           prd_execute.py -> {shared, prd_flow_builder, flow_orchestrator, business_rules_engine}
+                   fix_and_run.py -> {shared, prd_flow_builder, business_rules_engine}
+                   check_db.py -> {shared}
+Unchanged:         flow_orchestrator.py -> {business_rules_engine}
+                   business_rules_engine.py -> {stdlib only}
+```
 
-No stylistic deviations detected. Markdown heading levels, list formats, annotation styles, and code fence conventions all match their respective files.
+No back-edges exist. The graph is a strict DAG. The `shared.py -> schema.py` dependency is deferred (inside `get_connection()` function body), which prevents any import-time circular dependency -- this matches the explicit mitigation documented in design spec Step 3.
+
+### 4. Core modules untouched [BLOCKING]
+
+**Status**: PASS
+
+- `business_rules_engine.py` (569 lines): Zero diff per dev notes NFR-06 verification. File timestamp `Mar 21 17:38` predates all refactoring work (Mar 31).
+- `flow_orchestrator.py` (598 lines): Zero diff per dev notes NFR-06 verification. File timestamp `Mar 21 17:38` predates all refactoring work (Mar 31).
+
+### 5. File organization matches target state [WARNING]
+
+**Status**: PASS
+
+All files present in `prd-quality-gate-flow/` directory match design spec section 2.1 target state. No unexpected files introduced (only pre-existing documentation files: `README.md`, `QUICKSTART.md`, `IMPLEMENTATION_SUMMARY.md`, `DEMONSTRATION_RESULTS.md`, `prd_flow_diagram.txt`, `.gitignore`, `__pycache__/`).
+
+Deleted files (`run_execute.py`, `run_builder.py`) confirmed absent from disk. Zero references to deleted files found in any `.py` file.
 
 ---
 
-## Derived Artifacts
+## Behavioral Baseline (from dev notes)
 
-No derived artifacts are affected by these changes. All modifications are to markdown reference documents that are loaded on demand. No generated docs, compiled schemas, or transformed configs are impacted.
+| Metric | Expected | Actual | Status |
+|--------|----------|--------|:------:|
+| Node count | 15 | 15 | PASS |
+| Rule count | 20 | 20 | PASS |
+| Gate count | 7 | 7 | PASS |
+| Rule distribution | [4,4,3,1,4,3,1] | [4,4,3,1,4,3,1] | PASS |
+| Class body lines | <=200 | 159 | PASS |
 
 ---
 
-## Summary
+## NFR Compliance (architect-relevant)
 
-All three blocking architect criteria pass. The implementation is a faithful rendering of the design specification across all 12 FRs, 5 target files, and 4 milestones. No architectural drift, no pattern violations, no insertion point deviations.
+| NFR | Target | Status |
+|-----|--------|:------:|
+| NFR-01 | Zero external dependencies | PASS -- all imports are stdlib |
+| NFR-05 | File size <=300 lines (logic files) | PASS -- `gate_definitions.py` (411) is declarative data, exempt |
+| NFR-06 | Core modules untouched | PASS -- zero diff on both files |
+
+---
+
+## Deviations Acknowledged
+
+1. **`fix_and_run.py`**: 291 lines vs spec estimate of ~210. Documented in dev notes section 6.1. Increase from function extraction + docstrings. Still under NFR-05 300-line limit. Acceptable.
+2. **`gate_definitions.py`**: 411 lines vs spec estimate of ~280. Declarative data module (rule condition dicts are verbose). NFR-05 explicitly exempts data files. Acceptable.
+3. **`shared.py`**: 61 lines vs spec estimate of ~40. Increase from docstrings on all functions. Acceptable.
+
+None of these deviations constitute architectural drift.
+
+---
+
+## Verdict
+
+**All 4 BLOCKING criteria PASS. 1 WARNING criterion PASS.**
+
+The implementation is a faithful rendering of the design specification. The module structure, dependency graph, pipeline sequence, and public API all conform exactly to what was specified. Core modules remain untouched. No circular dependencies. No architectural drift. The codebase has been decomposed from a 1,157-line god object into 6 focused modules with clean layered dependencies.

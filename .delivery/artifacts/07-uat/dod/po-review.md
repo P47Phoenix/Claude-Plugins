@@ -1,105 +1,112 @@
-# PO Review: Stage Health Hardening — Gate 7 DoD Validation
+# PO Review: prd-quality-gate-flow Refactoring — Gate 7 DoD Validation
 
 **Reviewer**: Product Owner (Gandalf)
-**Date**: 2026-03-29
+**Date**: 2026-03-30
 **PRD Version**: v1.1
 **UAT Report Version**: 1.0
-**Pipeline Run**: FEATURE type, Stage Health Hardening
+**Pipeline Run**: FEATURE type, prd-quality-gate-flow Structural Refactoring
+**Source Issues**: #51 (God object), #52 (Duplicate entry points), #53 (Missing function structure)
 
-> *"I have walked long roads and read many scrolls. This one I have read with particular care, for it concerns the health of the very road we walk."*
+> *"I look at what was built, and I look at what was promised. The two must be the same, or the gate does not open."*
 
 ---
 
 ## Gate 7 PO Criteria
 
-### 1. Delivered features match business expectations [blocking]
+### 1. Delivered features match business expectations [BLOCKING]
 
 **Verdict: PASS**
 
-The PRD defines four problem areas (M1-M4) traced to retros c8f2 and k4m9, yielding 12 functional requirements (FR-01 through FR-12). The UAT report confirms all 5 stories (US-01 through US-05) covering these 12 FRs have been implemented in the correct target files:
+The PRD defines three problem areas traced to issues #51, #52, and #53, yielding 8 functional requirements (FR-01 through FR-08) and 9 user stories (US-01 through US-09). The delivery addresses all three root causes:
 
-| Problem Area | FRs | Delivered? | Business Expectation Met? |
-|---|---|---|---|
-| M1: UAT shared-module review gap | FR-01, FR-02, FR-03, FR-04 | Yes (US-01, US-02) | Yes -- shared-module review checkpoint added to pipeline-stages.md and quality/SKILL.md; empirical-items tracking template and Gate 7 criterion added |
-| M2: Design phantom references | FR-05, FR-06 | Yes (US-03) | Yes -- WARNING at Gate 3 with `[PLANNED]` exemption; BLOCKING reconciliation at Dev entry |
-| M3: Plan capacity overcommit | FR-07, FR-08, FR-09, FR-10 | Yes (US-04) | Yes -- capacity and coverage matrices added to templates; two-tier threshold model (80% warn, 100% block) replaces old 80% hard block |
-| M4: Derived artifact drift | FR-11, FR-12 | Yes (US-05) | Yes -- regeneration step added to Dev sub-flow; blocking criterion at Gate 6 |
+| Problem Area | Issue | FRs | Delivered? | Business Expectation Met? |
+|---|---|---|---|---|
+| God object (PRDFlowBuilder 1,157 lines) | #51 | FR-01, FR-02, FR-03 | Yes | Yes -- class body reduced to 161 lines. Stage/gate definitions externalized to data modules. Build loop replaces 12 factory methods. |
+| Duplicate entry points + shotgun surgery | #52 | FR-04, FR-05, FR-08 | Yes | Yes -- `run_execute.py` and `run_builder.py` deleted. `DB_PATH` centralized in `shared.py` (confirmed: only occurrence in Python files). CLAUDE.md lists 4 canonical scripts. |
+| Missing function structure | #53 | FR-06, FR-07 | Yes | Yes -- `fix_and_run.py` has 5 named functions + `main()` guard. `check_db.py` has 3 descriptive functions + `main()` guard + graceful error handling. |
 
-All four root causes from retrospectives are addressed. The two-tier capacity model (FR-10) is a deliberate relaxation from the prior 80% block, approved in PRD v1.1. No scope creep -- changes are markdown-only edits to existing reference files (NFR-01 confirmed).
+No scope creep detected. No new features added beyond structural refactoring. Core modules (`business_rules_engine.py`, `flow_orchestrator.py`) confirmed untouched per NFR-06.
 
-### 2. All 12 FRs have acceptance criteria met (structural) [blocking]
-
-**Verdict: PASS**
-
-The UAT report verifies 28 individual acceptance criteria across 5 stories. All 28 structural ACs pass:
-
-| Story | FRs Covered | ACs | Result |
-|---|---|---|---|
-| US-01 | FR-01, FR-02 | 5/5 PASS | Shared-module review step, QA guidance, DoD validator |
-| US-02 | FR-03, FR-04 | 4/4 PASS | Empirical-items template, Gate 7 blocking criterion |
-| US-03 | FR-05, FR-06 | 6/6 PASS (4 also empirical-pending) | Phantom WARNING at Gate 3, reconciliation BLOCK at Dev entry |
-| US-04 | FR-07, FR-08, FR-09, FR-10 | 9/9 PASS | Capacity matrix, coverage matrix, mandatory validation, two-tier threshold |
-| US-05 | FR-11, FR-12 | 4/4 PASS | Derived artifact regeneration step, Gate 6 blocking criterion |
-
-Cross-file consistency verified: step renumbering correct across Stages 5, 6, 7. Gate-to-stage alignment confirmed. Retro annotations (c8f2, k4m9) present on all modified sections (NFR-05). No regressions in non-modified stages (NFR-03).
-
-FR-to-AC traceability is complete. Every FR maps to at least one structurally verified AC.
-
-### 3. Dogfooding evidence present [blocking]
+### 2. All PRD acceptance criteria met (FR-01 through FR-08) [BLOCKING]
 
 **Verdict: PASS**
 
-The UAT report Section 4 provides thorough dogfooding analysis. Key findings:
+I verified the UAT report's 41 AC claims against the codebase. The UAT report is thorough and accurate. Summary:
 
-- **This FEATURE pipeline IS the dogfooding run.** It exercises all 7 stages against the hardened reference files -- exceeding the PRD's minimum requirement of a BUG_FIX run through Design, Plan, and UAT.
-- **Stages exercised against hardened content**: Stage 3 (Gate 3 phantom WARNING active), Stage 5 (two-tier capacity model active), Stage 6 (filename reconciliation gate, derived artifact regeneration), Stage 7 (shared-module review, empirical-items classification).
-- **Positive dogfooding signals**: Plan stage self-correction for capacity validates the need for US-04 guardrails. Shared-module review and empirical-items classification are actively exercised in this UAT stage. All 5 modified files are themselves shared modules (referenced across 4+ stages), directly exercising US-01.
+| FR | Description | ACs | Verified | Status |
+|---|---|:---:|:---:|---|
+| FR-01 | Stage definitions data module | 5 | 5 | PASS -- `stage_definitions.py` (269 lines) contains 7 stage dicts with load-time validation |
+| FR-02 | Gate definitions data module | 6 | 6 | PASS -- `gate_definitions.py` (411 lines) contains 7 gate dicts, 20 rules, load-time validation |
+| FR-03 | Decompose PRDFlowBuilder | 7 | 7 | PASS -- 161-line class body, `builder.conn` public, `ensure_schema()` contract, data-driven build loop |
+| FR-04 | Consolidate entry points | 4 | 4 | PASS -- deleted files confirmed gone, `EXAMPLE_PRODUCT_IDEAS` in one file only |
+| FR-05 | Shared constants module | 5 | 5 | PASS -- `shared.py` (60 lines), `DB_PATH` centralized, `get_connection()` with schema guarantee |
+| FR-06 | Restructure fix_and_run.py | 6 | 6 | PASS -- 5 named functions, `main()` guard, latent bug fixed |
+| FR-07 | Restructure check_db.py | 5 | 5 | PASS -- 3 descriptive functions, `main()` guard, graceful missing-DB handling |
+| FR-08 | Update CLAUDE.md | 3 | 3 | PASS -- 4 canonical scripts listed, no references to deleted files |
 
-**Noted gaps** (acceptable for GO):
-- Light Mode waivers (FR-07/08/09) not tested in this FEATURE run -- requires a BUG_FIX follow-up.
-- Phantom reference WARNING did not fire (no phantoms present) -- structural text correct but runtime unobserved.
-- Filename reconciliation BLOCK did not trigger (no missing files at Dev entry).
+**Total: 41/41 ACs PASS.**
 
-These gaps are inherent to single-run limitations. A P1 follow-up BUG_FIX dogfooding run is the correct mitigation and is documented in the UAT report.
+#### PO Independent Verification (beyond UAT report)
 
-### 4. Empirical items have clear UAT follow-up plan [blocking]
+I ran the following runtime checks that QA was unable to execute during UAT:
+
+| Check | Command | Result |
+|---|---|---|
+| Builder end-to-end | `python prd_flow_builder.py` | Exit 0. Created flow with 15 nodes, 20 rules. Diagram exported. |
+| check_db with existing DB | `python check_db.py` | Exit 0. Correctly reports 2 flows, 30 nodes, 40 rules (2 runs accumulated). |
+| check_db with missing DB | `python check_db.py` (from /tmp) | Exit 1. Graceful error: "Database file 'prd_flows.db' does not exist." No stack trace. |
+| fix_and_run end-to-end | `python fix_and_run.py` | Exit 0. DB cleaned, flow structure displayed (15 nodes, 20 rules), BRE demo passed (Gate 1: 100/100, GO), all 7 gates listed. |
+
+All four CLI entry points execute successfully. This closes the P1 follow-up condition flagged in the UAT report.
+
+### 3. Issues #51, #52, #53 addressable by this delivery [WARNING]
 
 **Verdict: PASS**
 
-The UAT report Section 2 identifies 10 empirical items, all classified as runtime-dependent. Each item specifies:
-- What it tests (e.g., "shared-module review step triggers correctly in Stage 7")
-- The validation approach (e.g., "Run a pipeline through UAT stage with shared-module modifications")
-- Current status (all PENDING -- correctly, since these require future pipeline runs)
+| Issue | Resolution | Closeable? |
+|---|---|---|
+| #51 God object | `PRDFlowBuilder` reduced from 1,157 to 259 lines (161 class body). Stage/gate definitions externalized. Factory methods eliminated. | Yes |
+| #52 Duplicate entry points | `run_execute.py` and `run_builder.py` deleted. `DB_PATH` hardcoding eliminated (grep confirms `shared.py` only). | Yes |
+| #53 Missing function structure | `fix_and_run.py` and `check_db.py` both restructured with named functions, `main()` guards, and proper error handling. | Yes |
 
-The UAT report Section 6 (Go/No-Go) prescribes three follow-up conditions:
-1. **P1**: BUG_FIX pipeline post-merge for Light Mode waivers and phantom reference runtime behavior
-2. **P2**: Re-evaluate Design pass rate target after 5 runs under hardened gates
-3. **P3**: Monitor capacity threshold behavior across next 3 Plan stage executions
-
-This constitutes a clear, prioritized, and actionable UAT follow-up plan for all empirical items.
+All three issues can be closed upon merge.
 
 ---
 
 ## NFR Compliance (PO Spot-Check)
 
-| NFR | Status |
-|---|---|
-| NFR-01: Markdown-only changes | Confirmed -- 5 `.md` files, no executables |
-| NFR-02: Config v2.3 compatibility | Confirmed -- no new config keys |
-| NFR-03: No regression in untargeted stages | Confirmed -- Stages 1, 2, 4 unchanged |
-| NFR-05: Retro traceability | Confirmed -- all sections annotated |
+| NFR | Status | Evidence |
+|---|---|---|
+| NFR-01: Zero external deps | PASS | All imports stdlib or internal |
+| NFR-02: Schema compatibility | PASS | `CREATE TABLE IF NOT EXISTS` throughout; existing DB loaded successfully |
+| NFR-03: Python 3.9+ | PASS | No walrus operators, no match/case |
+| NFR-04: Behavioral compatibility | PASS | 15 nodes, 20 rules, [4,4,3,1,4,3,1] -- confirmed via runtime execution |
+| NFR-05: File size <=300 | PASS | All logic files <=300; data files documented |
+| NFR-06: Core modules untouched | PASS | Zero modifications to BRE or orchestrator |
+
+---
+
+## Noted Observations (Non-Blocking)
+
+1. **`prd_flow_builder.py` is 259 lines total, not <=200.** The PRD target of <=200 applies to the *class body* (G1, AC-03a), which is 161 lines. The file also contains 2 enums, `PIPELINE_SEQUENCE`, and a `__main__` block. NFR-05's 300-line limit applies to files. No conflict. The UAT report correctly distinguishes these two measurements.
+
+2. **UAT was structural-only.** QA flagged that bash execution was unavailable during UAT. I have now executed all 4 CLI entry points at runtime and confirmed exit codes and output. The P1 follow-up condition from the UAT report is resolved.
+
+3. **`prd_execute.py` full orchestrator run not tested.** This requires active flow state + orchestrator runtime, which is outside the scope of a structural refactoring. The import chain is verified clean, and `DB_PATH` is correctly wired. This is acceptable.
 
 ---
 
 ## PO Decision
 
-> *"You shall pass."*
+> *"The god object is slain, the duplicates are purged, and the flat scripts stand with proper bones. The numbers match -- fifteen nodes, twenty rules, seven gates. I have run each script myself and seen them work. You shall pass."*
 
 **STATUS: DONE**
 
-All four Gate 7 PO criteria are satisfied. The delivered features address every root cause identified in retrospectives c8f2 and k4m9. Structural verification is complete (28/28 ACs). Dogfooding evidence is present and exceeds the minimum PRD requirement. Empirical items have a clear, prioritized follow-up plan.
+All Gate 7 PO criteria are satisfied:
+- Delivered features match all three business expectations (god object decomposition, duplicate elimination, function structure)
+- 41/41 acceptance criteria verified (structural + runtime)
+- Issues #51, #52, #53 are all closeable upon merge
+- Runtime execution confirmed for all 4 CLI entry points (closing QA's P1 follow-up)
 
 **Conditions carried forward:**
-1. **P1 (post-merge)**: Run BUG_FIX dogfooding pipeline to validate Light Mode waivers and runtime gate behavior
-2. **P2 (after 5 runs)**: Re-evaluate Design stage pass rate target with stronger data
-3. **P3 (next 3 runs)**: Monitor two-tier capacity threshold effectiveness
+1. **P2 (post-merge)**: Run `python prd_execute.py` with an active flow to confirm full orchestrator integration end-to-end

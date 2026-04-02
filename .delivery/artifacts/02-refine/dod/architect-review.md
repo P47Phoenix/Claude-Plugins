@@ -1,7 +1,7 @@
-# Architect DoD Review -- PRD: Stage Health Hardening
+# Architect DoD Review -- PRD: prd-quality-gate-flow Refactoring
 
 **Reviewer**: Architect (Celebrimbor)
-**Date**: 2026-03-29
+**Date**: 2026-03-30
 **Artifact**: `.delivery/artifacts/02-refine/po/prd.md` (v1.1)
 **Status**: DONE
 
@@ -11,58 +11,74 @@
 
 ### 1. Technical Feasibility
 
-All 12 functional requirements (FR-01 through FR-12) propose markdown-only edits to existing reference files. No new scripts, no schema changes, no external dependencies. The changes are additive sections and checklist items within well-structured markdown documents whose current format I have verified. This is straightforward editorial work within established conventions.
+I verified every claim in the PRD against the actual codebase.
 
-**Verdict**: PASS
+| PRD Claim | Verified | Evidence |
+|-----------|----------|----------|
+| `prd_flow_builder.py` is 1,157 lines | YES | `wc -l` confirms exactly 1,157 lines |
+| `PRDFlowBuilder` contains 14 factory methods (`_create_stageN`, `_create_gateN`) | YES | `grep` confirms 7 stage creators + 7 gate creators, lines 362-1080 |
+| Schema creation spans lines 47-203 | YES | `_create_schema()` confirmed at lines 47-203 (8 tables + 7 indexes) |
+| `"prd_flows.db"` hardcoded in 5+ Python files | YES | `grep` confirms occurrences in `check_db.py`, `fix_and_run.py` (2x), `prd_execute.py` (2x), `prd_flow_builder.py` (2x), `run_builder.py`, `run_execute.py` (2x) -- 10 occurrences across 6 `.py` files |
+| `run_execute.py` duplicates `prd_execute.py` | YES | Both define `execute_prd_workflow()`, both define `EXAMPLE_PRODUCT_IDEAS`, near-identical `main()` functions. 209 vs 226 lines. |
+| `run_builder.py` duplicates `prd_flow_builder.py` `__main__` block | YES | 43-line wrapper that only calls `PRDFlowBuilder("prd_flows.db").build_prd_flow()` |
+| `fix_and_run.py` has zero functions | YES | Flat procedural: bare `sqlite3.connect()` at line 17, bare DELETE queries at lines 20-24, all at module scope |
+| `check_db.py` has no functions | YES | 26 lines, no function definitions, no `main()`, no error handling |
+| `builder.conn` is used by 3 consumer files | YES | 14 direct `builder.conn.execute()` calls across `fix_and_run.py` (6), `prd_execute.py` (4), `run_execute.py` (4) |
+| `fix_and_run.py` has latent schema ordering bug | YES | Line 17 opens raw `sqlite3.connect("prd_flows.db")` and runs DELETE queries (lines 20-24) before builder import at line 40. Fresh DB with no tables would fail. |
 
-### 2. No Obvious Blockers
+All factual claims are accurate. The decomposition is straightforward Python refactoring -- extracting methods into standalone modules and converting inline factory method bodies into declarative dicts. No algorithmic complexity, no concurrency concerns, no external service dependencies.
 
-- All six target files exist on disk and are writable (verified via Glob).
-- No concurrent PRs or branches conflict with these files (single-branch strategy stated in Dependencies).
-- NFR-02 explicitly preserves config schema v2.3 -- no migration needed.
-- The `[PLANNED]` annotation mechanism (FR-05) requires no tooling; it is a convention enforced by sub-agents using existing Glob/Read capabilities.
+**Verdict**: PASS -- no feasibility blockers
 
-**Verdict**: PASS
-
-### 3. NFRs Are Realistic
+### 2. NFRs Are Realistic and Achievable
 
 | NFR | Assessment |
 |-----|-----------|
-| NFR-01 (Markdown-only) | Achievable -- all FRs target `.md` files exclusively |
-| NFR-02 (Config schema v2.3 compat) | Achievable -- no config keys introduced |
-| NFR-03 (No regression in untargeted stages) | Achievable -- changes are additive to targeted stages only; existing gate criteria are preserved |
-| NFR-04 (Per-stage token budget < 500 tokens added) | Realistic -- each FR adds approximately 5-15 lines of markdown per file; per-stage aggregate is well within 500 tokens. Deferred validation to Dev DoD is appropriate. |
-| NFR-05 (Retro traceability) | Achievable -- inline annotations are a convention, not a technical constraint |
+| NFR-01 (Zero external deps) | Achievable. All proposed modules use only `sqlite3`, `json`, `datetime`, `enum`, `typing` -- all stdlib. Python dicts for data definitions require no dependencies. |
+| NFR-02 (SQLite schema compat) | Achievable. `CREATE TABLE IF NOT EXISTS` is idempotent. Schema extraction to `schema.py` changes file location, not SQL content. Existing `.db` files will load without migration. |
+| NFR-03 (Python 3.9+ compat) | Achievable. Nothing in the proposed design requires features beyond 3.9. Current code already uses `typing.Optional`, `typing.Dict` (not `X | Y` union syntax). |
+| NFR-04 (Behavioral equivalence) | Achievable. Structural comparison (node/rule/gate counts, flow structure, exit codes) is the correct approach. The PRD correctly identified that timestamp-based IDs make stdout diff non-viable. |
+| NFR-05 (File size <= 300 lines for logic, exemption for data) | Realistic. `schema.py` at ~160 lines (8 CREATE TABLE + 7 CREATE INDEX). `shared.py` at ~40 lines. `PRDFlowBuilder` trimmed to ~150-200 lines. Data files may exceed 300 lines but the exemption is explicitly scoped and justified. |
+| NFR-06 (Core modules untouched) | Achievable. `business_rules_engine.py` (569 lines) and `flow_orchestrator.py` (598 lines) accept `db_path`/`db_connection` as parameters. Consumer-side changes (passing `shared.DB_PATH`) do not require modifying these files. The intentional scope boundary (AC-05e) is architecturally correct -- core modules should remain injectable. |
 
 **Verdict**: PASS
 
-### 4. File Path Verification
+### 3. Architecture Decisions Are Sound
 
-All referenced file paths verified on disk:
+**Python dicts vs YAML vs JSON (OQ-3)**: The PRD correctly recommends Python dicts. YAML requires `pyyaml` (violates NFR-01). JSON cannot represent multi-line strings without `\n` escaping, which would make the multi-paragraph `goal` prompts in stage configs unreadable. Python dicts with triple-quoted strings are the only option that satisfies both constraints. This is the right call.
 
-| File | Exists |
-|------|--------|
-| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | YES |
-| `delivery-team/skills/delivery-flow/references/quality-gates.md` | YES |
-| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | YES |
-| `delivery-team/skills/delivery-flow/references/project-templates.md` | YES |
-| `delivery-team/skills/quality/SKILL.md` | YES |
-| `delivery-team/skills/delivery-flow/SKILL.md` | YES |
+**Schema extraction to `schema.py` (OQ-5)**: Sound. The `_create_schema()` method is 156 lines of pure DDL with no business logic dependencies. Extracting it to a standalone `ensure_schema(conn)` function enables the schema initialization contract (AC-03g) that fixes the `fix_and_run.py` ordering bug. The `shared.get_connection()` helper composing `sqlite3.connect()` + `ensure_schema()` is a clean pattern.
 
-**Verdict**: PASS
+**`builder.conn` preserved as public attribute (AC-03d2)**: Pragmatically correct. Introducing a query accessor method would expand scope beyond structural refactoring. The 14 direct accesses across 3 files are documented; a future migration to a proper query API is a separate scope item. No objection.
 
-### 5. Architectural Concerns
+**Shared module with `DB_PATH`, `generate_timestamp_id()`, `ensure_utf8_output()` (FR-05)**: Appropriate granularity. These are genuinely cross-cutting concerns. The intentional exclusion of core modules from `shared.py` usage (AC-05e) preserves their testability through dependency injection. This is not inconsistency -- it is correct layering.
 
-**No blocking concerns identified.** Observations for downstream stages:
+**`export_flow_diagram()` placement (OQ-2)**: Correctly deferred to Design stage. Whether it stays on the builder or moves to a utility affects the 200-line budget but not feasibility.
 
-- **Gate 5 capacity criterion change (FR-10)**: The existing Gate 5 criterion reads "Commitment does not exceed 80% of available capacity [blocking]". FR-10 replaces this with a two-tier model (80% warning, 100% blocking). The Design stage must ensure the replacement is explicit -- the old criterion must be removed or clearly superseded, not left as a contradiction. This is a Design/Dev concern, not a feasibility blocker.
+**Verdict**: PASS -- all architectural decisions are sound
 
-- **Shared-module definition scope (FR-01)**: The artifact-traceable definition (file referenced in 2+ stage artifacts) is sound and avoids language-specific static analysis. The QA agent will need Glob access to `.delivery/artifacts/` which is already a standard capability.
+### 4. No Contradictory Requirements
 
-- **OQ-3 remains open**: Whether the empirical-items tracking artifact (FR-03) is a standalone file or a section within an existing UAT artifact. This is appropriately deferred to Design stage and does not block Refine completion.
+I checked for conflicts across all FRs, NFRs, and acceptance criteria:
+
+- **FR-03 (builder <= 200 lines) vs AC-03d (public API preserved)**: No conflict. `create_flow()`, `create_node()`, `create_rule()` are ~25 lines each. `build_prd_flow()` as a loop over data defs is ~30-40 lines. Init + schema delegation + these methods fit within 200 lines.
+- **FR-04 (delete `run_execute.py`) vs NFR-04 (behavioral equivalence)**: No conflict. `prd_execute.py` is the surviving canonical script; equivalence is measured against it.
+- **NFR-05 (300-line limit) vs estimated data file sizes**: No conflict. The exemption for declarative data files is explicit and scoped.
+- **NFR-06 (core modules untouched) vs FR-05 (centralize `DB_PATH`)**: No conflict. AC-05e explicitly documents that consumer-side call sites pass `shared.DB_PATH` to core modules, while core modules retain their own parameter-based injection. Zero diff on core module source.
+- **AC-03g (schema initialization contract) vs NFR-02 (schema compat)**: No conflict. `ensure_schema()` wraps existing `CREATE TABLE IF NOT EXISTS` DDL -- same SQL, same idempotent behavior, different call site.
+
+**Verdict**: PASS -- no contradictions detected
+
+### 5. Observations for Downstream Stages (Non-Blocking)
+
+1. **Data definition ordering**: Gate-to-stage ordering is called out (AC-02d) but the specific mechanism (ordered list vs explicit `after` field vs positional index) is left to Design. This is appropriate -- the PRD specifies the constraint, Design specifies the mechanism.
+
+2. **`export_flow_diagram()` line budget impact**: If this method stays on `PRDFlowBuilder`, the 200-line target is tighter. The method itself is likely 30-50 lines. Design should resolve OQ-2 before Dev begins to avoid mid-sprint rework.
+
+3. **Structural equivalence verification**: The PRD describes this as "structural comparison script or manual count verification" (NFR-04). The Plan stage should specify whether this is automated (preferred) or manual, and what the exact comparison protocol is (e.g., query `SELECT COUNT(*) FROM nodes GROUP BY node_type` before/after).
 
 ---
 
 ## Summary
 
-The PRD is technically feasible, well-scoped, and free of architectural blockers. All target files exist, NFRs are realistic, and the markdown-only constraint ensures low risk. The two-tier capacity model and phantom reference gates are sound approaches to the identified problems.
+The PRD is technically feasible, architecturally sound, and free of contradictions. All factual claims about the codebase are verified. The Python-dicts-over-YAML decision is correct given the zero-dependency constraint. The scope boundary between consumer-side refactoring and core module preservation is well-drawn. The `fix_and_run.py` ordering bug fix is a welcome correctness improvement folded into the refactoring scope. No blocking concerns.

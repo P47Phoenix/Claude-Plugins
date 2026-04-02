@@ -1,72 +1,78 @@
-# SM Review: Sprint Plan — Stage Health Hardening
+# SM Review: Sprint Plan — prd-quality-gate-flow Refactoring
 
 **Reviewer**: Aragorn (Scrum Master)
-**Date**: 2026-03-29
-**Artifact**: `.delivery/artifacts/05-plan/sm/sprint-plan.md`
-**Stories**: `.delivery/artifacts/05-plan/po/user-stories.md`
+**Date**: 2026-03-30
+**Artifact**: `.delivery/artifacts/05-plan/sm/sprint-plan.md` (v1.1)
+**Stories**: `.delivery/artifacts/05-plan/po/user-stories.md` (v1.0)
 **Mode**: FULL / FEATURE
 
-> *"I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall."*
+> *"I do not know what strength is in my blood, but I swear to you I will not let the sprint fail."*
 
 ---
 
-## Gate 5: Plan Readiness — SM Criteria
+## Gate 5: Plan Readiness -- SM Criteria
 
 ### Blocking Criteria
 
-- [x] **Sprint goal is a single sentence expressing business value**
-  - PASS. "Harden the Design, Plan, UAT, and Dev pipeline stages with guardrails that catch phantom references, missing capacity planning, untracked empirical items, shared-module gaps, and derived artifact drift -- raising first-try pass rates and eliminating avoidable rework loops traced to retros c8f2 and k4m9." Single sentence. Business value is clear: raising first-try pass rates and eliminating rework. Long, but grammatically one sentence.
+- [x] **Capacity declaration present (velocity baseline, 80% ceiling, per-sprint commitment %)**
+  - PASS. Section 2 declares: velocity baseline (20 SP/sprint), 80% ceiling (16 SP), per-sprint commitments (Sprint 1: 11 SP / 69%, Sprint 2: 16 SP / 100%, Sprint 3: 7 SP / 44%). All three components are present, calculated, and justified. The baseline is acknowledged as an assumption with no historical data, which is honest -- and Section 2.3 provides a recalibration protocol to correct after Sprint 1. The ranger scouts the ground before committing the company.
 
-- [x] **All committed stories have acceptance criteria**
-  - PASS. All 5 stories (US-01 through US-05) have full AC tables in Given/When/Then format with structural/empirical classification. US-01: 5 ACs. US-02: 4 ACs. US-03: 6 ACs. US-04: 10 ACs. US-05: 4 ACs. Total: 29 acceptance criteria, all well-forged.
+- [x] **Commitment does not exceed 80% of capacity in any sprint**
+  - PASS. Sprint 1: 11 SP = 69% of ceiling. Sprint 2: 16 SP = 100% of ceiling. Sprint 3: 7 SP = 44% of ceiling. The ceiling itself is 16 SP (80% of the 20 SP baseline), and no sprint exceeds 16 SP. Sprint 2 sits exactly at the ceiling, which the plan justifies with entry verification from Sprint 1 and the fact that recalibration will occur before Sprint 2 begins (Section 2.3). The plan also correctly identifies that the PO's original allocation of 27 SP to Sprint 1 was a 169% overcommitment, and the SM proactively re-planned into 3 sprints. This is exactly the right call. The SM caught the overcommitment before it became a death march. Well done.
+  - **Advisory note**: Sprint 2 at exactly 100% of ceiling leaves zero buffer for the highest-risk story (US-06 at 8 SP). The plan addresses this in R7 (US-07 slides to Sprint 3 if needed, which has 56% headroom). This contingency is acceptable. The fellowship carries its heaviest burden through the narrowest pass, but has a fallback.
 
-- [ ] **Commitment does not exceed 80% of capacity**
-  - **FAIL.** The plan's own Capacity Declaration states commitment is 3.5L equivalent against a 2.4L ceiling (80% of 3L baseline). That is ~117% of the 80% ceiling. The plan acknowledges this and provides justification (markdown-only edits, low complexity, additive text). The justification is reasonable -- the work is indeed low-complexity additive markdown -- but the numbers speak plainly: the commitment exceeds the ceiling. The fellowship carries more than it promised it would, and even a ranger must respect the weight of the pack.
-  - **To resolve**: Either (a) reduce commitment to 2 stories (~2L, within ceiling), deferring US-05 and one other to the next sprint, or (b) obtain explicit PO sign-off acknowledging the overcommitment with the justification provided. If the PO has already signed off on user-stories.md with this scope, reference that sign-off here.
+- [x] **Sprint goal is a single sentence expressing value (not a task list)**
+  - PASS. Overall sprint goal (Section 1): "Decompose the `prd-quality-gate-flow` god object, eliminate duplicate entry points, and restructure flat scripts -- resolving issues #51, #52, and #53 in a single atomic PR with zero behavioral regression and zero new dependencies." Single sentence. Expresses value (resolve 3 issues), states the constraint (zero regression, zero deps). Per-sprint goals in Sections 3, 4, and 5 are also single sentences expressing outcome, not task lists. The banner flies clear.
 
 - [x] **Dogfooding planned as P0 gate**
-  - PASS. Step 8 is explicitly titled "Dogfooding validation (P0 UAT gate)" with bold statement: "This is a P0 gate. The hardened stages do not ship without dogfooding." Section 8 provides a comprehensive dogfooding plan with 9 verification items and clear success criteria. The lesson from past marches is honored.
-
-- [x] **Capacity declaration present (velocity baseline, 80% ceiling, commitment %)**
-  - PASS. Section 2 declares: velocity baseline (2-3 stories/sprint), 80% ceiling (2L equivalent), committed (3.5L equivalent), utilization (~93% of baseline / ~117% of ceiling). All three components are present and calculated. The numbers are honest, which is itself a virtue.
+  - PASS. Sprint 3, Step 5 is explicitly titled "Dogfooding Validation (P0 UAT Gate)" with bold statement: "This dogfooding gate is P0. The refactoring does not ship without it." The dogfooding plan runs all 4 canonical CLI entry points with structural equivalence checks (15 nodes, 20 rules, 7 gates), core module integrity verification, and hardcoded DB path elimination. The lesson from past marches is honored.
 
 ### Warning Criteria
 
-- [~] **Capacity accounts for ceremonies, PTO, and known interruptions**
-  - WARNING. Solo contributor model with no PTO or ceremony overhead called out. For a FEATURE sprint at ~93% baseline utilization, the plan should explicitly state whether any ceremony time (retro, review, planning for next sprint) or known interruptions reduce available capacity. The current declaration implicitly assumes 100% focus time. Even the Dunedain rest between watches.
+- [x] **Dependencies documented and sequenced**
+  - PASS. Each sprint has a dependency chain diagram (Sections 3, 4, 5) with parallel opportunities identified. The overall dependency chain from the PO's user stories is respected: US-01 is the foundation, US-06 depends on US-01 through US-05, US-10 and US-11 are terminal. Sprint boundaries respect the chain -- no story starts before its predecessor completes. The entry verification step at Sprint 2 (Step 0) explicitly guards against context loss at sprint boundaries. The march order is sound.
+
+- [x] **Risks identified with mitigations**
+  - PASS. Section 8 documents 8 risks (R1-R8) with likelihood, impact, sprint association, and specific contingencies. The highest-risk item (R1: behavioral regression during US-06) has a concrete mitigation: pre-refactoring baseline, structural equivalence check, atomic commit with revert capability. R7 addresses the Sprint 2 at-ceiling risk with a specific slide plan. The risks are not generic boilerplate -- they are specific to this refactoring. The company knows where the orcs may ambush.
+
+- [x] **Capacity accounts for ceremonies, PTO, and known interruptions**
+  - PASS. Section 2 explicitly states: "Ceremony/interruption budget: 0 -- Solo contributor, no PTO, no ceremonies." For a solo contributor sprint, this is the correct declaration. No hidden assumptions.
 
 - [x] **Test approach referenced per story**
-  - PASS. Each story in user-stories.md has a full Test Cases table (TC-01a-1 through TC-12b-2). The sprint plan references Step 7 (cross-story verification of all test cases) and Step 8 (dogfooding empirical validation). Both structural and empirical testing approaches are clearly tied to stories.
+  - PASS. Every story in the sprint plan includes explicit verification commands (runnable Python one-liners) and verification scripts (`verify.py` extended each sprint). The PO's user stories include full test case tables with TC IDs. Sprint 2 adds hard gates: per-gate rule distribution check and `export_flow_diagram()` baseline comparison. The verification approach is concrete and automated, not hand-wavy.
 
 - [x] **Deployment approach referenced**
-  - PASS. Section 6 specifies: feature branch `feat/stage-health-hardening`, one conventional commit per story (5 commits), single PR to main, no schema changes or config migration needed. Clean and clear.
+  - PASS. Section 7 specifies: feature branch `refactor/prd-quality-gate-decomposition`, one conventional commit per story (12 commits total), single atomic PR, closes #51/#52/#53. Commit messages are pre-written with conventional commit format. Clean and auditable.
+
+- [x] **Coverage matrix maps all FRs to planned tasks**
+  - PASS. Section 6 maps all 8 PRD FRs to planned tasks with story IDs and sprint assignments. No unmapped FRs. No orphan stories.
 
 ---
 
 ## Additional Observations
 
-1. **Coverage matrix is thorough**: All 12 PRD FRs mapped to planned tasks with no gaps. This is the standard the Plan stage guardrails (US-04) will enforce going forward -- good to see the plan itself demonstrating the pattern.
+1. **The SM caught and corrected the PO's overcommitment.** The PO's user stories allocated 27 SP to Sprint 1 (169% of ceiling). The SM re-planned into 3 sprints without reducing estimates -- "dishonest forecasting" is rejected explicitly. This is the correct SM behavior. The velocity is an assumption, not a wish.
 
-2. **Implementation ordering is well-reasoned**: M2 first for cascading benefit, dependency between US-01 and US-02 respected, and the ordering rationale is documented. The path through the mountains is well-charted.
+2. **Velocity recalibration protocol (Section 2.3) is excellent.** With no historical data, the plan does not pretend certainty. Sprint 1 actuals will recalibrate Sprint 2/3 commitments. This is empirical process, not cargo cult Scrum.
 
-3. **Risk table is practical**: Six risks with contingencies. The token budget risk (NFR-04, 500 tokens per stage) and the step-renumbering consistency risk are specific and actionable. The concurrent edits risk is correctly assessed as low given pipeline discipline.
+3. **Entry verification at sprint boundaries** (Sprint 2 Step 0, Sprint 3 implicit via dogfooding) guards against context loss between sessions. This is a practical mitigation for a solo contributor working across multiple sessions.
 
-4. **Plugin-dev skill loading**: Step 1 mandates loading `plugin-dev:skill-development` before any file modifications, honoring repo conventions. Section 9 reinforces this with the full file list. The law of the land is respected.
+4. **The PIPELINE_SEQUENCE irregularities** (consecutive gates, consecutive stages, mixed node types) are documented in Sprint 2 Step 3 with explicit handling instructions. These are the kind of edge cases that cause regressions -- calling them out in the plan prevents "oh I forgot about that" during implementation.
 
-5. **The 80% WARNING acknowledgment in Section 2** is transparent and well-justified, but transparency does not override a blocking gate criterion. The justification belongs in a PO sign-off, not a self-waiver.
+5. **NFR verification plan (Section 9)** maps each NFR to a verification method and sprint. NFR-06 (core modules untouched) is a hard gate at Sprint 3 dogfooding. This is thorough.
+
+6. **One minor note**: The Sprint 1 section (2.2) says "Why Sprint 1 is at 100% of revised ceiling" but Sprint 1 is 11 SP = 69% of the 16 SP ceiling. This appears to be a stale heading from an earlier draft. It does not affect the substance -- the numbers in the table are correct.
 
 ---
 
 ## Verdict
 
-**STATUS: NOT_DONE**
+**STATUS: DONE**
 
-The sprint plan meets 4 of 5 blocking criteria and all warning criteria (with one advisory). The single blocking failure is the capacity overcommitment: 3.5L equivalent committed against a 2.4L ceiling. The justification (low-complexity markdown edits) is credible, but the SM cannot self-waive a blocking criterion.
+The sprint plan meets all 4 blocking criteria and all warning criteria. Capacity is declared with an honest velocity baseline and recalibration protocol. No sprint exceeds the 80% ceiling. Sprint goals are clear single sentences. Dependencies are sequenced with entry verification at boundaries. Risks are specific with actionable mitigations. Dogfooding is a P0 gate.
 
-**Required to pass**:
-1. Reduce commitment to within 80% ceiling (drop 1-2 stories to next sprint), **or**
-2. Obtain explicit PO sign-off on the overcommitment with the justification from Section 2 documented as a PO decision.
+The SM's re-planning from 2 sprints to 3 sprints is the right call -- it respects the ceiling without inflating velocity or compressing estimates. Sprint 2 at exactly 100% of ceiling is the tightest point, but the contingency (slide US-07 to Sprint 3) is credible and Sprint 3 has capacity to absorb it.
 
-Once resolved, this plan is ready for Development. The fellowship is strong, the path is clear -- we need only settle the weight of the pack before we march.
+This plan is ready for Development. The fellowship has settled the weight of the pack. The march can begin.
 
-*"I would have gone with you to the end, into the very fires of Mordor." But first, we balance the load.*
+*"There is always hope." And this time, hope is backed by a plan with numbers that add up.*

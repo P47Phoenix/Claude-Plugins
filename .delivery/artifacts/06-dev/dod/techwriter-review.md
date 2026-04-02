@@ -1,74 +1,93 @@
 # Tech Writer DoD Review -- Stage 6 Development
 
 **Reviewer**: Bilbo (Technical Writer)
-**Date**: 2026-03-29
-**Artifact Scope**: quality-gates.md, pipeline-stages.md, dev-notes.md (+ supporting files: quality/SKILL.md, artifact-contracts.md, project-templates.md)
+**Date**: 2026-03-30
+**Artifact Scope**: prd-quality-gate-flow refactoring (shared.py, schema.py, stage_definitions.py, gate_definitions.py, plus modified prd_flow_builder.py, prd_execute.py, fix_and_run.py, check_db.py, deleted run_execute.py/run_builder.py)
+
+> "I think I'm quite ready for another documentation adventure."
 
 ---
 
 ## Gate 6 Tech Writer Criteria
 
-### 1. Inline documentation present for non-obvious logic [blocking]
+### 1. CLAUDE.md entry points are accurate (no references to deleted files) [BLOCKING]
 
 **Result: PASS**
 
-All five modified files contain inline documentation that explains *why*, not just *what*:
+CLAUDE.md lines 69-74 list exactly four canonical scripts under "Running Scripts":
 
-- **quality-gates.md**: Gate 3 phantom file reference criterion (line 153) includes a full behavioral explanation -- what triggers the WARNING, what is exempt, what is carried forward. The two-tier capacity threshold (line 181-184) documents both tiers with explicit consequences. The derived artifact regeneration criterion (line 203) explains what qualifies as a derived artifact with examples.
-- **pipeline-stages.md**: The filename reconciliation gate (lines 309-320) documents a 5-step process with clear pass/fail criteria and a rationale for why `[PLANNED]` exemptions are not accepted at Dev entry ("This is the enforcement point where all referenced files must be accounted for"). The matrix validation step (lines 263-266) explains the Light Mode waiver rationale. The shared-module review step (lines 412-420) defines the term, specifies identification method, and documents review scope. The derived artifact regeneration step (lines 341-346) includes 4 substeps with verification logic.
-- **quality/SKILL.md**: The Shared-Module Review Protocol (lines 314-355) provides a clear definition, 5 identification steps, a 4-item review checklist, and an output format template. The artifact-traceable definition is explicitly distinguished from language-level import analysis -- a non-obvious distinction worth documenting.
-- **artifact-contracts.md**: The Empirical-Items Tracking Template includes a justification column and a validation method column, both of which explain *why* the classification matters for downstream UAT.
-- **project-templates.md**: Capacity and Coverage matrix templates include column descriptions and Light Mode waiver rationale.
+```
+python prd-quality-gate-flow/prd_flow_builder.py
+python prd-quality-gate-flow/prd_execute.py
+python prd-quality-gate-flow/check_db.py
+python prd-quality-gate-flow/fix_and_run.py
+```
 
-No non-obvious logic was found without accompanying explanation.
+All four files exist on disk. No references to the deleted `run_execute.py` or `run_builder.py` appear anywhere in CLAUDE.md. The "Agentic flow core components" section (lines 107-111) lists `database.py`, `business_rules_engine.py`, `flow_orchestrator.py`, and `agent_registry.py` as shared components -- these are accurate for the agentic-flow-builder side and do not claim membership in prd-quality-gate-flow's file list.
 
-### 2. New sections have clear headings and consistent formatting [blocking]
+Verified: `grep -r "run_execute\|run_builder" CLAUDE.md` returns zero matches.
 
-**Result: PASS**
-
-All new content follows the established document conventions:
-
-| New Section | File | Heading Level | Formatting |
-|-------------|------|---------------|------------|
-| Gate 3 phantom file criterion | quality-gates.md | Bullet under H3 "Gate 3" | Consistent with sibling criteria -- checkbox, description, severity tag, retro annotation |
-| Two-tier capacity threshold | quality-gates.md | Bullet under H3 "Gate 5" | Sub-bullets for each tier, bold labels, consistent severity tags |
-| Derived artifact regeneration | quality-gates.md | Bullet under H3 "Gate 6" | Matches sibling checkbox format with severity tag |
-| Empirical-items classification | quality-gates.md | Bullet under H3 "Gate 7" | Matches sibling checkbox format with severity tag |
-| Filename reconciliation gate | pipeline-stages.md | Bold entry under H3 "Entry Conditions" | Numbered sub-steps, consistent with other entry conditions |
-| Matrix validation step | pipeline-stages.md | Numbered step under H3 "Sub-Flow" | Follows dispatch annotation pattern ([SEQUENTIAL], [required]) |
-| Shared-module review step | pipeline-stages.md | Numbered step under H3 "Sub-Flow" | Follows dispatch annotation pattern, bold definition, sub-bullets |
-| Derived artifact regeneration step | pipeline-stages.md | Numbered step under H3 "Sub-Flow" | Numbered substeps, Light Mode note, consistent annotations |
-| Shared-Module Review Protocol | quality/SKILL.md | H2 section | Clean H3 subsections, definition/steps/checklist/output structure |
-| Empirical-Items Tracking Template | artifact-contracts.md | H2 section | Code block template with markdown table, retro annotations |
-| Sprint Plan Mandatory Sections | project-templates.md | H2 section | H3 per matrix, code block templates, Light Mode notes |
-
-All heading levels are consistent with their parent document structure. No orphaned headings, no inconsistent casing, no missing horizontal rules where the document convention calls for them.
-
-### 3. Retro source annotations present where required [warning]
+### 2. Non-obvious logic has inline comments [WARNING]
 
 **Result: PASS**
 
-Every change originating from retrospective findings carries the appropriate `<!-- retro -->` annotation:
+All four new files contain inline comments that explain *why*, not just *what*:
 
-| Retro Source | Annotation | Files Present In |
-|-------------|------------|------------------|
-| c8f2 | `<!-- retro c8f2 -->` | quality-gates.md (line 203), pipeline-stages.md (lines 266, 278, 346, 351, 420), project-templates.md (lines 155, 164, 181), artifact-contracts.md (line 193) |
-| k4m9 | `<!-- retro k4m9 -->` | quality-gates.md (lines 153, 181, 213), pipeline-stages.md (lines 266, 278, 309), artifact-contracts.md (lines 193, 200) |
+| File | Non-obvious Logic | Comment Present |
+|------|------------------|-----------------|
+| `shared.py` line 14 | `DB_PATH` as single source of truth | `# Database file path -- single source of truth` |
+| `shared.py` lines 29-32 | Flow IDs use seconds, node/rule IDs use microseconds | Docstring explains collision avoidance rationale |
+| `shared.py` line 56 | Deferred import of `ensure_schema` inside `get_connection()` | Not commented -- see finding W-01 below |
+| `schema.py` lines 22-173 | Each CREATE TABLE block | Section comments (`# Flows table`, `# Nodes table`, etc.) |
+| `stage_definitions.py` lines 10-11 | Required field sets used for load-time validation | Descriptive comment on each constant |
+| `stage_definitions.py` lines 255-269 | Load-time validation loop | Pattern is self-documenting with clear error messages |
+| `gate_definitions.py` lines 8 | Rule distribution `[4, 4, 3, 1, 4, 3, 1]` | Documented in module docstring -- critical for baseline verification |
+| `gate_definitions.py` lines 396-411 | Nested load-time validation (gates + rules) | Pattern is self-documenting with clear error messages |
 
-The dev-notes.md (line 67) confirms: "All changes tagged with `<!-- retro c8f2 -->` and/or `<!-- retro k4m9 -->` per NFR-05." Cross-referencing annotations across files confirms consistent coverage. No retro-sourced change was found without its annotation.
+**Finding W-01 (WARNING)**: `shared.py` line 56 uses a deferred import (`from schema import ensure_schema` inside `get_connection()`). This is a deliberate circular-import avoidance pattern -- `schema.py` imports nothing from `shared.py`, but a future maintainer might not realize why the import is deferred. A one-line comment explaining the reason (e.g., `# Deferred to avoid circular import if schema ever imports shared`) would be helpful.
+
+### 3. Module-level docstrings present in new files [WARNING]
+
+**Result: PASS**
+
+All four new files have module-level docstrings:
+
+| File | Docstring | Quality |
+|------|-----------|---------|
+| `shared.py` | Lines 1-6: Purpose, what it centralizes, why | Good -- explains the "single definition" rationale |
+| `schema.py` | Lines 1-6: Origin (extracted from which method), scope (9 tables, 7 indexes) | Good -- traces provenance to original code |
+| `stage_definitions.py` | Lines 1-8: Pure data module, 7 stages, extraction source, no-internal-imports note, validation note | Excellent -- the "No internal imports" statement is load-order documentation |
+| `gate_definitions.py` | Lines 1-11: Pure data module, 7 gates, 20 rules, distribution array, extraction source, no-internal-imports note, validation note | Excellent -- the rule distribution in the docstring serves as a contract |
+
+All function-level docstrings are also present with Args/Returns documentation where applicable (shared.py functions, schema.py's ensure_schema).
 
 ---
 
-## Additional Observations
+## Additional Findings
 
-- **Dev notes quality**: The consolidated dev-notes.md is well-structured with a file change summary table, per-story status, deviation log, empirical validations table, and verification summary. This is exemplary documentation for a development stage artifact.
-- **Cross-file consistency**: Terminology is consistent across all five files. "Shared module," "empirical validation," "derived artifact," "phantom reference," and "filename reconciliation" are used identically everywhere they appear.
-- **Template completeness**: Both the Capacity Matrix and Coverage Matrix templates in project-templates.md include column headers, example rows, total/summary rows, and Light Mode waiver notes. The Empirical-Items Tracking Template in artifact-contracts.md includes all five required columns.
+### W-02 (WARNING): Stale references to deleted files in auxiliary markdown
+
+Two markdown files within `prd-quality-gate-flow/` still reference the deleted `run_builder.py`:
+
+- `IMPLEMENTATION_SUMMARY.md` lines 19, 197, 325: Lists `run_builder.py` as a current file, includes it in a run command, and shows it in the directory tree.
+- `DEMONSTRATION_RESULTS.md` line 312: Shows `python run_builder.py` as a re-run command.
+
+These are **not** in CLAUDE.md (which is the BLOCKING criterion), so this is a WARNING, not a blocker. However, a user following these auxiliary docs would hit a "file not found" error. Recommend updating both files to reference `python prd_flow_builder.py` instead.
+
+### Observation: Dev notes quality
+
+The `dev-notes.md` at `.delivery/artifacts/06-dev/developer/dev-notes.md` is thorough -- 149 lines covering implementation summary, behavioral baseline verification (18 checks, all PASS), NFR compliance matrix, latent bug fix documentation, per-story status table, deviations log, and pending empirical validations. The provenance trail from design spec to implementation is clear. Well done, Gimli.
 
 ---
 
 ## Verdict
 
-All blocking criteria pass. All warning criteria pass. The documentation across these changes is thorough, consistently formatted, and well-annotated. I think I'm quite ready for another documentation adventure.
+All BLOCKING criteria pass. CLAUDE.md accurately reflects the current file structure with no dangling references to deleted scripts. All new files have module-level docstrings and inline comments on non-obvious logic.
+
+Two WARNING-level findings:
+- **W-01**: Deferred import in `shared.py:get_connection()` would benefit from a one-line comment.
+- **W-02**: `IMPLEMENTATION_SUMMARY.md` and `DEMONSTRATION_RESULTS.md` still reference the deleted `run_builder.py`.
+
+Neither finding blocks acceptance.
 
 **STATUS**: DONE

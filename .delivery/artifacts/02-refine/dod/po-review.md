@@ -1,7 +1,7 @@
-# PO Review: Stage Health Hardening PRD v1.1
+# PO Review: prd-quality-gate-flow Refactoring PRD v1.1
 
 **Reviewer:** Product Owner (Gandalf)
-**Date:** 2026-03-29
+**Date:** 2026-03-30
 **Artifact:** `.delivery/artifacts/02-refine/po/prd.md`
 **Verdict:** DONE
 
@@ -13,85 +13,85 @@
 
 | FR | Business Value | Clear? |
 |----|---------------|--------|
-| FR-01 | Prevents shared-module integration failures escaping UAT | Yes |
-| FR-02 | Equips QA agents with actionable guidance for shared-module review | Yes |
-| FR-03 | Creates structured tracking for empirical vs. structural AC classification | Yes |
-| FR-04 | Enforces empirical-items tracking at validation time, preventing lost deferred items | Yes |
-| FR-05 | Surfaces phantom references at Design as warnings, improving author awareness without false-positive blocks | Yes |
-| FR-06 | Hard-blocks Dev entry on unresolved phantom references, preventing downstream rework | Yes |
-| FR-07 | Makes capacity visible at Plan time, preventing silent overcommit | Yes |
-| FR-08 | Makes FR-to-task coverage explicit, preventing unmapped requirements | Yes |
-| FR-09 | Validator enforcement of capacity and coverage matrices | Yes |
-| FR-10 | Two-tier capacity model (warn >80%, block >100%) catches overcommit with appropriate severity | Yes |
-| FR-11 | Prevents derived artifact staleness at Dev completion | Yes |
-| FR-12 | Validator enforcement of derived artifact regeneration | Yes |
+| FR-01 | Maintainers can add/modify stages without touching a 1,157-line god object | Yes |
+| FR-02 | Gate definitions become declarative data, reducing cognitive load and merge conflict surface | Yes |
+| FR-03 | Builder class becomes comprehensible at a glance (<=200 lines), enabling faster onboarding | Yes |
+| FR-04 | Eliminates user confusion about which script to run; removes drift risk from duplicate code | Yes |
+| FR-05 | Centralizes shared constants, eliminating shotgun surgery when DB path changes | Yes |
+| FR-06 | Makes fix_and_run.py testable and reusable by extracting named functions | Yes |
+| FR-07 | Makes check_db.py robust with error handling and clear structure | Yes |
+| FR-08 | Keeps CLAUDE.md (the single source of truth for entry points) accurate after deletions | Yes |
 
-All 12 FRs have clear, traceable business value tied to observed pipeline failures.
+All 8 FRs have clear, traceable business value tied to the three source issues (#51, #52, #53).
 
-### 2. Stories Are Valuable and Scope Is Appropriate
+### 2. Stories Are Valuable and Properly Scoped
 
-- All FRs are P0, which is appropriate given that each traces to a retro-identified root cause of stage failure.
-- Scope is tightly bounded: markdown-only changes to 6 existing reference files. No new scripts, no schema changes. This is a disciplined, minimal-surface intervention.
-- NFR-01 (markdown-only) and NFR-02 (config schema v2.3 preserved) ensure scope does not creep.
-- The v1.1 revision appropriately tightened scope where the adversarial review found overreach (Design target 80% reduced to 70%, phantom reference changed from BLOCKING to WARNING at Design).
+| Story | Value | Scope | Verdict |
+|-------|-------|-------|---------|
+| US-01 (stage data extraction) | High -- directly addresses god object | P0, well-bounded | Good |
+| US-02 (gate data extraction) | High -- directly addresses god object | P0, well-bounded | Good |
+| US-03 (builder decomposition) | High -- the headline deliverable | P0, depends on US-01/US-02 | Good |
+| US-04 (shared constants) | High -- eliminates shotgun surgery | P0, small scope | Good |
+| US-05 (canonical entry points) | High -- removes user confusion | P0, deletion is clean | Good |
+| US-06 (backward compat) | High -- prevents regression | P0, verification-focused | Good |
+| US-07 (fix_and_run restructure) | Medium -- improves maintainability | P1, appropriate priority | Good |
+| US-08 (check_db restructure) | Medium -- small file, low risk | P1, appropriate priority | Good |
+| US-09 (deduplicate test data) | Low -- convenience improvement | P1, appropriate priority | Good |
 
-Scope is appropriate. No bloat detected.
+No story is too large (each maps to 1-2 files). No story is too small (each delivers independently verifiable value). The P0/P1 split is correct: structural decomposition and compatibility are P0; cosmetic restructuring of smaller scripts is P1.
 
-### 3. Retro Action Item Traceability (7 Items, M1-M4)
+### 3. Scope Assessment
 
-Verified against source retrospectives c8f2 and k4m9:
+**Not too large**: This is a pure structural refactoring of a single plugin directory (8 .py files). No new features, no schema changes, no external dependencies. The "New Files" table estimates 4 new files totaling ~600-780 lines of mostly declarative data. The scope is contained and achievable in a single pipeline pass.
 
-| Retro | Action # | Action Item | Mapped FRs | Covered? |
-|-------|----------|-------------|------------|----------|
-| c8f2 | #2 | Shared-module review checkpoint in UAT | FR-01, FR-02 | Yes |
-| k4m9 | #6 | Empirical-items tracking artifact template | FR-03, FR-04 | Yes |
-| k4m9 | #5 | Elevate phantom references to high-severity | FR-05 | Yes |
-| k4m9 | #3 | Filename reconciliation gate at Dev entry | FR-06 | Yes |
-| c8f2 | #4 | Capacity + coverage matrix in Plan template | FR-07, FR-08, FR-09 | Yes |
-| k4m9 | #4 | Sprint capacity threshold warning | FR-10 | Yes |
-| c8f2 | #1 | Regenerate derived artifacts in Dev DoD | FR-11, FR-12 | Yes |
+**Not too small**: Three distinct issues are addressed (#51, #52, #53) with 8 FRs, 7 NFRs, and 9 user stories. This is substantive work that delivers measurable improvement across maintainability, usability, and code health.
 
-All 7 M1-M4 retro action items have FR coverage. Traceability matrix in the PRD (Section 4) is accurate.
+**Scope boundary discipline**: The Out of Scope section (Section 7) is well-populated with 7 explicit exclusions, including the correct decision to leave `business_rules_engine.py` and `flow_orchestrator.py` untouched (NFR-06). The intentional scope boundary at AC-05e (core modules keep their own DB path parameters) is architecturally sound and properly documented.
 
-Note: Retro action items outside M1-M4 scope (c8f2 #3/#5/#6, k4m9 #1/#2/#7/#8) are correctly excluded -- they address alias bugs, metrics, and triage work unrelated to stage health hardening.
+### 4. Traceability to Source Issues
 
-### 4. Out-of-Scope Section -- Present and Non-Empty
+| Issue | Description | Mapped FRs | Coverage |
+|-------|-------------|------------|----------|
+| #51 | God object (`PRDFlowBuilder` at 1,157 lines) | FR-01, FR-02, FR-03 | Complete -- class decomposed via data extraction + thin orchestrator |
+| #52 | Duplicate entry points (`run_execute.py`, `run_builder.py`) | FR-04, FR-05, FR-08 | Complete -- duplicates deleted, constants centralized, docs updated |
+| #53 | Missing function structure (`fix_and_run.py`, `check_db.py`) | FR-06, FR-07 | Complete -- both files restructured with named functions and main() guards |
 
-Section 6 lists 7 explicit out-of-scope items:
-- Idea stage hardening (cascading fix rationale provided)
-- Python hook scripts / automated enforcement
-- Analytics dashboard updates
-- Setup wizard / config schema changes
-- Alias theme modifications
-- Retrospective format changes
-- Automated file-existence checking tooling
+The PRD's own traceability matrix (Section 9) matches this assessment. Every FR traces to at least one source issue. Every source issue has complete FR coverage. No orphan FRs exist.
 
-Present, non-empty, and well-reasoned. Each exclusion has a brief justification.
+### 5. Success Metrics and Verification
 
-### 5. Success Metrics -- Numeric Targets
+| Goal | Baseline | Target | Measurable? |
+|------|----------|--------|-------------|
+| G1: Builder line count | 1,157 | <=200 | Yes (`wc -l`) |
+| G2: Stage/gate data externalized | 0 data files | 14 definitions in data files | Yes (file count + grep) |
+| G3: Duplicate executors | 2 | 1 | Yes (grep) |
+| G4: Hardcoded DB paths | 5+ files | 1 file | Yes (grep) |
+| G5: Bare top-level scripts | 2 | 0 | Yes (manual review) |
+| G6: Behavioral compatibility | N/A | 100% structural equivalence | Yes (count-based comparison) |
+| G7: Zero new dependencies | 0 | 0 | Yes (grep for non-stdlib imports) |
 
-| Goal | Baseline | Target | Numeric? |
-|------|----------|--------|----------|
-| G1: Design first-try pass rate | 50% | >= 70% | Yes |
-| G2: UAT first-try pass rate | 67% | >= 85% | Yes |
-| G3: Plans passing at >100% allocation | Unknown | 0 | Yes |
-| G4: Stale derived artifacts at Dev DoD | Not tracked | 0 | Yes |
-
-All 4 goals have numeric targets with baselines and measurement methods. G1 includes a re-evaluation clause after 5 runs given the thin baseline -- a wise hedge.
+All 7 goals have numeric or boolean targets with explicit measurement methods. The v1.1 revision correctly redefined G6 to use structural equivalence instead of stdout diff, addressing the non-deterministic timestamp ID problem.
 
 ---
 
 ## Additional Observations
 
-- **Dogfooding clause** (Section 2) defines explicit success criteria for validation. This directly addresses a lesson from c8f2 and aligns with team norms.
-- **Light Mode table** (Section 9) is a strong addition -- it removes ambiguity about which FRs apply in reduced-depth pipeline runs.
-- **Open Question OQ-3** remains open but is appropriately deferred to Design stage. It does not block Refine approval.
-- **Revision Notes** (Section 11) provide full traceability of adversarial review findings and their resolutions -- excellent audit trail.
+- **Adversarial challenge response** (Section 10) is thorough: 8 challenges received, 8 accepted as valid, all resolved with concrete PRD amendments. This is a strong signal of document maturity.
+- **Latent bug documentation** (AC-03g): The PRD identifies and documents a pre-existing bug in `fix_and_run.py` (raw DELETE queries before schema exists on fresh DB) and scopes the fix into FR-06. Good practice -- fixing bugs discovered during analysis rather than ignoring them.
+- **OQ-1 decision revised**: The decision to delete duplicate scripts outright rather than maintain deprecation wrappers is correct for an internal repo with no release cadence. Deprecation wrappers without a removal mechanism become permanent dead code.
+- **OQ-2 remains open** but is correctly deferred to Design stage. Does not block Refine.
+- **Dogfooding validation** is explicitly defined as a P0 UAT gate with structural comparison criteria. This aligns with team norms.
 
 ---
 
 ## Verdict
 
-The PRD passes all 5 Gate 2 PO criteria. The document is well-structured, tightly scoped, fully traceable to retro evidence, and ready for Design stage.
+The PRD passes all 5 Gate 2 PO criteria:
+
+1. Business value is clear for all 8 FRs
+2. Stories are valuable and properly scoped (P0/P1 split is correct)
+3. Scope is appropriate -- neither too large nor too small
+4. Traceability to source issues #51, #52, #53 is complete with no gaps
+5. Success metrics are numeric and measurable
 
 **APPROVED**

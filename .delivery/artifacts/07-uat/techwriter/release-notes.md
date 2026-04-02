@@ -1,170 +1,189 @@
-# Release Notes: Stage Health Hardening
+# Release Notes: PRD Quality Gate Flow Refactoring
 
-**Version**: 2.11.0
-**Date**: 2026-03-29
+**Version**: 2.12.0
+**Date**: 2026-03-30
 **Author**: Bilbo (Technical Writer)
-**Retro Sources**: c8f2, k4m9
+**Source Issues**: #51, #52, #53
 
-> "I think I'm quite ready for another documentation adventure." And what an adventure this one is -- four stages strengthened, five files refined, and not a single breaking change to speak of. A tale worth telling properly.
+> "I think I'm quite ready for another documentation adventure." This is the tale of slaying a god object -- a beast of 1,157 lines, lurking in the depths of `prd_flow_builder.py`, hoarding stage definitions, gate logic, schema creation, and shared constants all in one dreadful class. It has been dismantled, and the Shire is safer for it.
+
+---
+
+## Summary
+
+This is a **pure structural refactoring** of the `prd-quality-gate-flow/` plugin. No new features were added. No behavioral changes were introduced. The god object `PRDFlowBuilder` (1,157 lines) has been decomposed into focused modules, duplicate entry points have been deleted, and flat procedural scripts have been restructured with proper function boundaries.
+
+### By the Numbers
+
+| Metric | Before | After |
+|--------|-------:|------:|
+| `PRDFlowBuilder` class lines | 1,157 | 259 (162 class body) |
+| Hardcoded `"prd_flows.db"` occurrences | 5 files | 1 (`shared.py`) |
+| Duplicate entry point scripts | 2 | 0 |
+| Scripts without `main()` guard | 2 | 0 |
+| Modules in plugin | 7 | 9 (4 new, 2 deleted) |
+| Node count | 15 | 15 |
+| Rule count | 20 | 20 |
+| Gate count | 7 | 7 |
+
+All behavioral baselines pass: node counts, rule counts, gate counts, gate-rule distribution `[4,4,3,1,4,3,1]`, node names/types, and exit codes are identical before and after.
 
 ---
 
 ## What Changed
 
-This release hardens four delivery pipeline stages (UAT, Design, Plan, Development) to address recurring first-try failure patterns identified in retrospectives c8f2 and k4m9. All changes are markdown-only edits to existing reference files -- no new scripts, no config schema changes, no external dependencies.
+### God Object Decomposition (Issue #51)
 
-### UAT Stage Hardening (M1)
+The monolithic `PRDFlowBuilder` class has been split into four focused modules:
 
-- **Shared-module review checkpoint** added to Stage 7 (UAT) in `pipeline-stages.md`. When Development artifacts modify a file referenced in 2+ stage artifacts, the QA validator now requires listing all consuming contexts and their test status before UAT can pass.
-- **Shared-Module Review Protocol** added to `quality/SKILL.md` with a 5-step identification process and 4-item review checklist, giving QA sub-agents explicit guidance for performing shared-module reviews.
-- **Empirical-items tracking template** added to `artifact-contracts.md`. UAT sub-agents now classify each acceptance criterion as "structural" or "empirical" with justification, producing a tracking artifact.
-- **Empirical-items classification** added as a blocking criterion in Gate 7 (`quality-gates.md`). UAT submissions missing the empirical-items tracking artifact are rejected.
+- **`shared.py`** (60 lines) -- Centralized constants (`DB_PATH`), utility functions (`generate_timestamp_id()`, `ensure_utf8_output()`), and a `get_connection()` helper that ensures the schema exists before returning a database connection.
+- **`schema.py`** (174 lines) -- Database schema creation extracted into a standalone `ensure_schema(conn)` function. Covers 9 tables, 7 indexes, fully idempotent via `CREATE TABLE IF NOT EXISTS`.
+- **`stage_definitions.py`** (269 lines) -- All 7 stage definitions as Python dicts with load-time validation. Each stage dict includes `name`, `description`, `node_type`, and full `config` block.
+- **`gate_definitions.py`** (411 lines) -- All 7 gate definitions and 20 business rules as Python dicts with load-time validation. Gate-to-stage ordering is explicit in the data structure.
 
-### Design Stage Hardening (M2)
+`PRDFlowBuilder` is now a thin orchestrator: `build_prd_flow()` iterates over data definitions instead of calling 12+ individual factory methods.
 
-- **Phantom reference WARNING** added to Gate 3 (`quality-gates.md`). File paths cited in Design artifacts that do not exist on disk and lack a `[PLANNED]` annotation now produce a WARNING-severity finding. This warns authors without blocking -- important for GREENFIELD and FEATURE projects where files are routinely planned for later creation.
-- **Filename reconciliation gate** added to Stage 6 entry conditions (`pipeline-stages.md`). At Dev entry, all file paths from Design and Architect artifacts must either exist on disk or appear in the sprint plan. The `[PLANNED]` exemption no longer applies at this stage -- missing paths block Dev entry. This two-tier model (warn at Design, block at Dev) catches phantom references before Development begins.
+### Duplicate Entry Points Eliminated (Issue #52)
 
-### Plan Stage Guardrails (M3)
+- **`run_execute.py` deleted** -- Was a near-copy of `prd_execute.py` (identical `EXAMPLE_PRODUCT_IDEAS`, identical `execute_prd_workflow()`, identical `main()`).
+- **`run_builder.py` deleted** -- Duplicated the `__main__` block of `prd_flow_builder.py`.
+- `EXAMPLE_PRODUCT_IDEAS` now exists in exactly one file (`prd_execute.py`).
+- UTF-8 encoding setup consolidated into `shared.ensure_utf8_output()`.
 
-- **Capacity matrix template** (team members x estimated hours) and **coverage matrix template** (PRD FRs x planned tasks) added to `project-templates.md` as mandatory Plan stage sections.
-- **Matrix validation step** added to Stage 5 (`pipeline-stages.md`). The Scrum Bag validator now checks for both matrices.
-- **Two-tier capacity threshold** replaces the previous 80%-blocking model in Gate 5 (`quality-gates.md`):
-  - **>80% utilization**: WARNING -- must be acknowledged with brief justification; does not block.
-  - **>100% utilization**: BLOCKING -- requires allocation reduction or explicit PO sign-off.
-  - **Rationale**: The prior 80% hard block was overly conservative for teams intentionally planning at 85-95% utilization. The new model warns early but only blocks at genuine overcommit.
-- **Light Mode waiver**: Capacity and coverage matrices (FR-07, FR-08, FR-09) are waived for BUG_FIX and DOCS_ONLY project types. The capacity threshold (FR-10) still applies.
+### Flat Scripts Restructured (Issue #53)
 
-### Dev Stage DoD (M4)
+- **`fix_and_run.py`** -- Extracted into 5 named functions with a `main()` guard. No bare top-level statements remain (except imports and `if __name__`). Also fixes a latent bug where raw `sqlite3.connect()` was called before schema creation, which would fail on a fresh database.
+- **`check_db.py`** -- Restructured with 3 descriptive functions, a `main()` guard, context-managed database connections, and graceful error handling when the database file does not exist.
 
-- **Derived artifact regeneration step** added to Stage 6 (`pipeline-stages.md`). Developers must confirm all derived artifacts (generated docs, compiled schemas, transformed configs) have been regenerated from current sources before Dev completion.
-- **Derived artifact regeneration** added as a blocking criterion in Gate 6 (`quality-gates.md`). Submissions are rejected if the regeneration checklist item is not marked complete.
+### Shared Constants Centralized
+
+All `.py` files in the plugin now import `DB_PATH` from `shared.py`. The string `"prd_flows.db"` appears in exactly one location.
 
 ---
 
-## Why It Matters
+## Breaking Changes
 
-These changes directly address measurable quality gaps:
+### Deleted Files
 
-| Stage | Baseline Pass Rate | Target | Root Cause Addressed |
-|-------|-------------------|--------|---------------------|
-| Design | 50% | >= 70% | Phantom file references surviving into downstream stages |
-| UAT | 67% | >= 85% | Missing shared-module review; no empirical-items tracking |
-| Plan | Not tracked | 0 plans pass >100% without acknowledgment | Absent capacity planning; overcommit without visibility |
-| Development | Not tracked | 0 stale derived artifacts at completion | Derived artifacts drifting from source files |
+| File | Replacement |
+|------|-------------|
+| `run_execute.py` | Use `python prd_execute.py` instead |
+| `run_builder.py` | Use `python prd_flow_builder.py` instead |
 
-The targets are conservative. The Design target of 70% (reduced from 80% in v1.0) acknowledges the thin statistical baseline (6 attempts across 3 runs) and will be re-evaluated after 5 pipeline runs.
+If you have scripts, aliases, or automation that invoke `run_execute.py` or `run_builder.py`, update them to use the canonical entry points listed above. Both deleted files are preserved in git history if rollback is needed.
 
----
+### No Other Breaking Changes
 
-## Impact on Users
-
-### Plugin Contributors (pipeline users)
-
-- **Plan stage**: You will now need to include a capacity matrix and coverage matrix in sprint plans (unless running a BUG_FIX or DOCS_ONLY pipeline). Plans with >80% utilization will prompt for acknowledgment; >100% will block until resolved.
-- **Design stage**: File paths in Design artifacts that reference non-existent files will generate WARNINGs at Design DoD unless annotated with `[PLANNED]`. At Dev entry, all referenced paths must exist or appear in the sprint plan.
-- **Dev stage**: A new "regenerate derived artifacts" checklist item appears in the Dev DoD. Confirm all derived artifacts are current before submitting.
-- **UAT stage**: QA validation now includes shared-module review (if shared modules were modified) and empirical-items classification. Expect slightly more thorough UAT passes.
-
-### Pipeline Maintainers
-
-- Gate criteria in `quality-gates.md` now include 4 new validator criteria (Gates 3, 5, 6, 7). If you maintain custom gate logic, review the new criteria.
-- The Gate 5 capacity threshold has changed from a single 80% block to a two-tier WARNING/BLOCKING model. Any tooling or documentation referencing the old 80% block should be updated.
-
-### Sub-Agents (Architect, QA, Developer)
-
-- QA agents receive new shared-module review guidance in `quality/SKILL.md`.
-- Developer agents encounter a new filename reconciliation entry condition at Stage 6.
-- All agents benefit from cleaner upstream inputs as phantom references and capacity overcommit are caught earlier.
+- The SQLite schema is unchanged. Existing `prd_flows.db` files work without migration.
+- The public API surface of `PRDFlowBuilder` is preserved: `create_flow()`, `create_node()`, `create_rule()`, `export_flow_diagram()`, and `builder.conn` all remain accessible.
+- All 4 canonical CLI commands produce structurally equivalent output.
+- Core modules `business_rules_engine.py` and `flow_orchestrator.py` have zero diff.
 
 ---
 
-## Files Modified
+## Migration Guide
 
-| File | Changes |
-|------|---------|
-| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | Stage 7: shared-module review step. Stage 6: filename reconciliation entry condition + derived artifact regeneration step. Stage 5: matrix validation step. |
-| `delivery-team/skills/delivery-flow/references/quality-gates.md` | Gate 7: empirical-items criterion. Gate 3: phantom reference WARNING. Gate 5: two-tier capacity threshold. Gate 6: derived artifact regeneration criterion. |
-| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | Empirical-items tracking template added. |
-| `delivery-team/skills/delivery-flow/references/project-templates.md` | Capacity matrix and coverage matrix templates added with Light Mode waiver. |
-| `delivery-team/skills/quality/SKILL.md` | Shared-Module Review Protocol section added. |
+### If you used `run_execute.py`
 
----
+```bash
+# Before
+python prd-quality-gate-flow/run_execute.py
 
-## Migration Notes
+# After
+python prd-quality-gate-flow/prd_execute.py
+```
 
-### Breaking Changes
+The functionality is identical. `prd_execute.py` was always the canonical executor; `run_execute.py` was an accidental duplicate.
 
-**None.** This release introduces no breaking changes.
+### If you used `run_builder.py`
 
-- **Config schema**: Remains at v2.3. No new config keys were introduced. Existing `.delivery/config.yml` files require no modifications.
-- **Existing pipelines**: All changes are additive. Pipelines in progress will encounter the new gates and validators only when they reach the relevant stages. No mid-pipeline disruption.
-- **Hook scripts**: No Python hooks were created or modified. All enforcement is through markdown reference file changes that sub-agents interpret at runtime.
+```bash
+# Before
+python prd-quality-gate-flow/run_builder.py
 
-### Behavioral Changes (non-breaking)
+# After
+python prd-quality-gate-flow/prd_flow_builder.py
+```
 
-These are not breaking, but pipeline users should be aware:
+The `__main__` block of `prd_flow_builder.py` provides the same functionality.
 
-1. **Gate 5 threshold relaxation**: The previous 80% hard block is now a WARNING. If your team relied on the hard block to prevent overcommit, note that >80% now only warns (with required acknowledgment). The hard block is now at >100%.
-2. **New `[PLANNED]` annotation convention**: Design stage authors should annotate file paths that will be created in later stages with `[PLANNED]` to avoid phantom reference WARNINGs. This is a convention, not a tooling requirement -- unannotated phantom paths produce warnings but do not block at Design.
-3. **Dev entry gate**: The filename reconciliation gate at Dev entry is new. Pipelines that previously passed from Architect to Dev with unresolved file references will now be blocked until references are resolved.
+### If you imported from `prd_flow_builder.py` directly
 
-### Upgrade Steps
-
-No manual migration steps required. The changes take effect on the next pipeline run that loads the updated reference files.
+The `PRDFlowBuilder` class remains in `prd_flow_builder.py` with the same public API. No import changes needed. Internal factory methods (`_create_stage1_creation`, etc.) have been removed -- if you were calling those directly, use the data definitions in `stage_definitions.py` and `gate_definitions.py` instead.
 
 ---
 
-## Documentation Updates Needed
+## Canonical Entry Points
 
-| Document | Update Required | Priority |
-|----------|----------------|----------|
-| `CLAUDE.md` | Update the "delivery-team Plugin" table to mention stage health hardening (new gate criteria, shared-module review, capacity matrices). Add note about two-tier capacity threshold model under "Delivery-flow pipeline architecture". | P1 |
-| `delivery-team/skills/delivery-flow/SKILL.md` | If the orchestrator references gate criteria or stage steps by number, verify step renumbering in Stages 5, 6, and 7 is reflected. Check for any hardcoded step references. | P1 |
-| `CHANGELOG.md` (if exists) | Add v2.11.0 entry summarizing Stage Health Hardening. | P1 |
-| `README.md` | No update needed unless it documents specific gate criteria or stage steps (it currently does not at this level of detail). | P2 -- verify |
-| `delivery-team/skills/delivery-flow/references/config-schema.md` | No update needed -- schema remains v2.3 with no new keys. | None |
+After this release, the plugin has exactly 4 CLI entry points (unchanged from prior CLAUDE.md documentation):
 
-### CLAUDE.md Specific Updates
-
-The following sections of `CLAUDE.md` should be updated:
-
-1. **"Delivery-flow pipeline architecture" bullet list**: Add a bullet noting the two-tier capacity threshold model (>80% WARNING, >100% BLOCKING) and the `[PLANNED]` annotation convention for phantom reference handling.
-2. **"delivery-team Hooks" table**: No changes needed -- no new hooks were added.
+```bash
+python prd-quality-gate-flow/prd_flow_builder.py   # Build PRD flow
+python prd-quality-gate-flow/prd_execute.py         # Execute PRD workflow
+python prd-quality-gate-flow/check_db.py            # Inspect SQLite DB state
+python prd-quality-gate-flow/fix_and_run.py         # Automated end-to-end run
+```
 
 ---
 
-## Retro Traceability
+## Files Added / Modified / Deleted
 
-Every change in this release traces to a specific retrospective action item:
+### Files Added (4)
 
-| Retro Item | FRs Delivered | Status |
-|------------|--------------|--------|
-| M1: Shared-module review checkpoint (c8f2) | FR-01, FR-02 | Done |
-| M1: Empirical-items tracking template (k4m9) | FR-03, FR-04 | Done |
-| M2: Phantom reference detection (k4m9) | FR-05 | Done |
-| M2: Filename reconciliation gate (k4m9) | FR-06 | Done |
-| M3: Capacity + coverage matrices (c8f2) | FR-07, FR-08, FR-09 | Done |
-| M3: Sprint capacity threshold (k4m9) | FR-10 | Done |
-| M4: Derived artifact regeneration (c8f2) | FR-11, FR-12 | Done |
+| File | Lines | Purpose |
+|------|------:|---------|
+| `prd-quality-gate-flow/shared.py` | 60 | DB_PATH, generate_timestamp_id(), ensure_utf8_output(), get_connection() |
+| `prd-quality-gate-flow/schema.py` | 174 | ensure_schema(conn) -- 9 tables, 7 indexes, idempotent |
+| `prd-quality-gate-flow/stage_definitions.py` | 269 | 7 stage definitions as Python dicts with load-time validation |
+| `prd-quality-gate-flow/gate_definitions.py` | 411 | 7 gate definitions, 20 business rules with load-time validation |
 
-All 12 functional requirements across 5 user stories are code-complete. All 32 acceptance criteria passed structural verification. 10 empirical validations remain pending for UAT runtime confirmation.
+### Files Modified (4)
+
+| File | Before | After | Change |
+|------|-------:|------:|--------|
+| `prd-quality-gate-flow/prd_flow_builder.py` | 1,157 | 259 | Decomposed to thin orchestrator (-898 lines) |
+| `prd-quality-gate-flow/prd_execute.py` | 227 | 228 | Imports DB_PATH from shared.py (+1 line) |
+| `prd-quality-gate-flow/fix_and_run.py` | 214 | 290 | Restructured into 5 named functions with main() guard; latent bug fixed |
+| `prd-quality-gate-flow/check_db.py` | 27 | 69 | Restructured with descriptive functions, error handling, main() guard |
+
+### Files Deleted (2)
+
+| File | Lines | Reason |
+|------|------:|--------|
+| `prd-quality-gate-flow/run_execute.py` | 210 | Duplicate of prd_execute.py |
+| `prd-quality-gate-flow/run_builder.py` | 44 | Duplicate of prd_flow_builder.py __main__ block |
+
+### Files Unchanged (verified zero diff)
+
+| File | Lines | Reason |
+|------|------:|--------|
+| `prd-quality-gate-flow/business_rules_engine.py` | 569 | Core module -- out of scope per NFR-06 |
+| `prd-quality-gate-flow/flow_orchestrator.py` | 598 | Core module -- out of scope per NFR-06 |
 
 ---
 
-## Pending Empirical Validations
+## Bug Fix
 
-The following items require runtime pipeline execution during UAT to confirm behavioral correctness. They are documented here for UAT testers:
+This release includes a fix for a **pre-existing latent bug** in `fix_and_run.py`: the script previously opened a raw `sqlite3.connect("prd_flows.db")` and ran DELETE queries before the builder (and therefore the schema) was initialized. On a fresh database with no tables, this would fail with a missing table error. The restructured version uses `shared.get_connection()`, which calls `ensure_schema()` first.
 
-1. Shared-module review step triggers correctly in Stage 7
-2. QA validator catches missing shared-module review
-3. Phantom reference WARNING surfaces in Gate 3 without blocking
-4. `[PLANNED]` exemption works at Gate 3, fails at Dev entry
-5. Filename reconciliation blocks Stage 6 entry on missing files
-6. Capacity matrix >80% triggers WARNING with acknowledgment
-7. Capacity matrix >100% blocks with PO sign-off option
-8. Coverage matrix unmapped FR = BLOCKING
-9. Derived artifact regeneration step runs in Stage 6 sub-flow
-10. Gate 6 blocks when derived artifacts not regenerated
+---
 
-> And there you have it -- the full tale of Stage Health Hardening, from phantom references to capacity matrices, all neatly documented and ready for the road ahead. Now, where did I put my second breakfast?
+## Issue Traceability
+
+| Issue | Title | Resolution |
+|-------|-------|------------|
+| #51 | God object in prd_flow_builder.py | Decomposed: 1,157 -> 259 lines via 4 extracted modules |
+| #52 | Duplicate entry points | Deleted run_execute.py and run_builder.py; constants centralized |
+| #53 | Missing function structure | fix_and_run.py and check_db.py restructured with named functions |
+
+---
+
+## Technical Notes
+
+- **Zero external dependencies**: All imports are Python stdlib only (NFR-01).
+- **Python 3.9+ compatible**: No walrus operators or 3.10+ features used (NFR-03).
+- **Schema compatibility**: `ensure_schema()` uses `CREATE TABLE IF NOT EXISTS` -- existing databases load without migration (NFR-02).
+- **Data file size**: `gate_definitions.py` exceeds the 300-line guideline at 411 lines. This is expected and documented -- the file is purely declarative data (dicts/lists), not logic (NFR-05).
+- **Scope boundary**: Core modules (`business_rules_engine.py`, `flow_orchestrator.py`) intentionally retain their own `db_path` parameters and internal timestamp ID generation. Consumer files pass `shared.DB_PATH` to these modules. This asymmetry is architecturally correct -- core modules remain independently configurable and testable.
+
+> And so the god object falls, the duplicates are swept away, and every script has a proper `main()` to call home. Four new modules stand where one unwieldy beast once sat, and the pipeline counts -- 15 nodes, 20 rules, 7 gates -- remain exactly as they were. A refactoring done right changes everything and nothing at the same time. Now then, I believe elevenses is calling.

@@ -1,78 +1,146 @@
 # Architect DoD Review — Gate 3: Design Completeness
 
 **Reviewer**: Architect (Celebrimbor)
-**Date**: 2026-03-29
-**Artifact reviewed**: `.delivery/artifacts/03-design/ux/user-flows.md` v1.0
+**Date**: 2026-03-30
+**Artifact reviewed**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
 **Verdict**: DONE
 
 ---
 
 ## Gate 3 Architect Criteria
 
-### 1. Designs are implementable — insertion points are correct [blocking]
+### 1. Designs are implementable — no impossible interactions or unrealistic technical assumptions [blocking]
 
 **Status**: PASS
 
-Every FR specifies a target file, a precise location within that file (by section name, line number, and surrounding context), and the exact content to insert or modify. I verified each insertion point against the current state of the target files:
+I evaluated the design for technical feasibility, logical consistency, and realistic assumptions:
 
-| FR | Target File | Insertion Point Claimed | Verified |
-|---|---|---|---|
-| FR-01 | `pipeline-stages.md` | Stage 7 Sub-Flow, after step 4 (Exploratory testing), before step 5 (Invoke Supporting Agents) | PASS — step 4 is at line 382, step 5 at line 388; insertion point is valid |
-| FR-02 | `quality/SKILL.md` | After "Empirical Validation and CODE_COMPLETE Status" section (after line 311), before "Sub-Agent Interface" | PASS — section heading at line 270, Sub-Agent Interface at line 314; insertion point is valid |
-| FR-03 | `artifact-contracts.md` | Stage 6->7 output table (line 137) + end of file after "Contract Summary Matrix" | PASS — table at lines 135-141, Contract Summary Matrix at line 178; both valid |
-| FR-04 | `quality-gates.md` | Gate 7, after "All pending empirical validations..." (line 207) | PASS — line 207 matches the claimed text exactly |
-| FR-05 | `quality-gates.md` | Gate 3, after "Design aligns with PRD requirements..." (line 152) | PASS — line 152 contains the claimed text; actual content at line 152 reads "Design aligns with PRD requirements (every user story has a corresponding design element) [blocking]" |
-| FR-06 | `pipeline-stages.md` | Stage 6 Entry Conditions, after line 302 | PASS — line 303 reads "- At minimum: user stories with acceptance criteria must exist"; insertion after this line is valid |
-| FR-07/08 | `project-templates.md` | End of file (line 151) | PASS — file is 151 lines; appending at end is valid |
-| FR-09 | `pipeline-stages.md` | Stage 5 Sub-Flow after step 3 (Invoke Supporting Agents) + DoD Validators SM entry | PASS — step 3 at line 249, consensus at step 4 line 262; SM validator at line 273; both valid |
-| FR-10 | `quality-gates.md` + `pipeline-stages.md` | Gate 5 line 180 + Stage 5 DoD SM validator | PASS — line 180 reads "Commitment does not exceed 80% of available capacity [blocking]"; SM validator at line 273; both match |
-| FR-11 | `pipeline-stages.md` | Stage 6 Sub-Flow after step 4 (Technical Writer) + Developer validator at line 328 | PASS — step 4 at line 320, step 5 (Commit) at line 324; Developer validator at lines 328-329; both valid |
-| FR-12 | `quality-gates.md` | Gate 6, after "Empirical validation requirements identified..." (line 198) | PASS — line 198 matches the claimed text |
+- **Refactoring sequence is safe**: Each of the 11 steps leaves the codebase in a working state. Steps 1-5 are purely additive (new files, no existing code modified). Step 6 is the critical transformation, correctly identified as highest risk. Steps 7-9 are consumer updates that depend on the stable foundation. Step 10 deletes only after all functionality is confirmed. This ordering is sound.
 
-**Note on renumbering**: FRs 01, 09, and 11 each insert a new step into a sub-flow and require renumbering of subsequent steps. The design correctly identifies which steps must be renumbered in each case. No conflicts between renumbering operations exist because they affect different stages (5, 6, 7).
+- **No impossible interactions**: No step depends on output from a later step. The dependency chain is strictly linear: shared.py (Step 1) -> schema.py (Step 2) -> wire them (Step 3) -> data modules (Steps 4-5) -> builder decomposition (Step 6) -> consumer updates (Steps 7-9) -> cleanup (Steps 10-11).
 
-### 2. No impossible interactions or unrealistic assumptions [blocking]
+- **PIPELINE_SEQUENCE design is correct**: The non-trivial interleaving of stages and gates (consecutive gates 3-4, consecutive stages 5-6, consecutive gates 6-7) cannot be handled by simple alternation. The explicit sequence list in Section 7 correctly encodes the current `build_prd_flow()` ordering verified at lines 312-352 of the actual `prd_flow_builder.py`. The 14-element sequence produces exactly 15 nodes (14 stage/gate nodes + 1 root) and 20 rules, matching current output.
+
+- **Schema extraction is safe**: The `schema.py` -> `shared.py` dependency (Step 3) is one-directional. `schema.py` has zero internal imports, so the circular import concern raised in the risk table is correctly dismissed.
+
+- **`ensure_schema()` in `get_connection()` solves the `fix_and_run.py` crash-on-fresh-DB bug**: Currently, `fix_and_run.py` runs DELETE queries against tables that may not exist on a fresh database. The design correctly identifies this latent defect (Step 8) and resolves it by having `get_connection()` call `ensure_schema()` before returning. Sound fix.
+
+- **UTF-8 consolidation is feasible**: `run_execute.py` and `fix_and_run.py` both contain identical UTF-8 `TextIOWrapper` setup. Extracting to `ensure_utf8_output()` in `shared.py` and calling it from consumer `main()` functions is straightforward.
+
+### 2. Module dependency graph is clean and acyclic [blocking]
 
 **Status**: PASS
 
-I evaluated the design for logical consistency, circular dependencies, and unrealistic assumptions:
+Target dependency graph verified:
 
-- **Tool availability**: The design relies only on Glob and Read tools, which are confirmed available to all sub-agents in the delivery pipeline. No new tool capabilities are assumed.
-- **No circular dependencies**: Each FR targets a distinct stage or a distinct section within a shared file. The insertion order is well-defined: FRs modifying the same file (e.g., pipeline-stages.md: FR-01, FR-06, FR-09, FR-11) affect different stage sections and do not conflict.
-- **Light Mode consistency**: FRs that apply to all project types (FR-01, FR-03, FR-05, FR-06, FR-11) are correctly marked. FRs with Light Mode waivers (FR-07, FR-08, FR-09 matrix validation) are consistent with the PRD Section 9 guidance.
-- **Two-tier phantom model**: The FR-05 (warn at Design) + FR-06 (block at Dev entry) interaction is sound. The `[PLANNED]` annotation bridges the gap correctly — exempt at Design, not exempt at Dev entry.
-- **Capacity threshold two-tier model**: FR-10 replaces a single-threshold blocking criterion with a warning band (80-100%) and a hard block (>100%). The interaction with the existing SM validator is correctly specified.
-- **OQ-3 resolution (section-within-test-plan)**: The decision to embed empirical-items classification within the UAT test plan rather than a standalone file is architecturally sound. It avoids artifact namespace proliferation and the validator path is straightforward.
-- **No impossible interactions**: No FR requires output from another FR in this same design. All FRs are independently implementable.
+```
+Layer 0 (leaf):  shared.py, schema.py, stage_definitions.py, gate_definitions.py
+Layer 1 (core):  prd_flow_builder.py  (imports from Layer 0 only)
+Layer 2 (consumer): prd_execute.py, fix_and_run.py, check_db.py (import from Layers 0-1)
+Layer 3 (unchanged): business_rules_engine.py, flow_orchestrator.py (zero diff, zero new imports)
+```
 
-### 3. All file paths verified (Glob check) [blocking]
+Five dependency rules from Section 3.3 verified:
+
+| Rule | Description | Verified |
+|:----:|-------------|:--------:|
+| 1 | Leaf modules have zero internal imports | PASS -- all four Layer 0 modules import only stdlib |
+| 2 | Builder imports from leaf modules only, never from consumers | PASS |
+| 3 | Consumer scripts never import from each other | PASS |
+| 4 | Core modules (`business_rules_engine.py`, `flow_orchestrator.py`) have zero diff | PASS -- NFR-06 honored |
+| 5 | No circular dependencies exist | PASS -- strict layering prevents cycles |
+
+**One observation**: `shared.py` imports `schema.py` (Step 3), making `shared.py` no longer a true leaf after Step 3. The graph in Section 3.1 shows `shared.py` at the top of the tree with arrows pointing down to `schema.py`, `stage_definitions.py`, and `gate_definitions.py` -- but `shared.py` actually depends ON `schema.py`, not the other way around. The visual is slightly misleading (arrows suggest "is depended on by" rather than "depends on"), but the textual specification in Section 3.2 is unambiguous and correct. **Not blocking** -- the import specifications in 3.2 are the authoritative source.
+
+### 3. File size targets are realistic based on actual code analysis [blocking]
 
 **Status**: PASS
 
-All five unique target files verified to exist on disk via Glob:
+I verified current line counts against the design's claims:
 
-| File Path | Exists |
-|---|---|
-| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | YES |
-| `delivery-team/skills/delivery-flow/references/quality-gates.md` | YES |
-| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | YES |
-| `delivery-team/skills/delivery-flow/references/project-templates.md` | YES |
-| `delivery-team/skills/quality/SKILL.md` | YES |
+| File | Design Claims | Actual (`wc -l`) | Delta |
+|------|:-----:|:-----:|:-----:|
+| `prd_flow_builder.py` | 1,157 | 1,157 | exact |
+| `business_rules_engine.py` | 569 | 569 | exact |
+| `flow_orchestrator.py` | 598 | 598 | exact |
+| `prd_execute.py` | 227 | 226 | -1 |
+| `fix_and_run.py` | 214 | 214 | exact |
+| `run_execute.py` | 210 | 209 | -1 |
+| `run_builder.py` | 44 | 43 | -1 |
+| `check_db.py` | 27 | 26 | -1 |
 
-No phantom file references detected. The design references only existing files and does not create new files (NFR-01 compliance confirmed).
+Four files are off by exactly 1 line, likely a trailing newline counting discrepancy. **Not blocking** -- the target estimates (~40, ~170, ~230, ~280, ~180) are approximate by design and have sufficient margin.
+
+The net line delta arithmetic in Section 2.2 is correct: (+40 + 170 + 230 + 280 + 23) - (977 + 7 + 4 + 210 + 44) = 743 - 1242 = **-499 lines**. Verified.
+
+Target sizes are realistic:
+- `shared.py` at ~40 lines for 4 exports (constant, 3 functions) -- reasonable.
+- `schema.py` at ~170 lines for 9 CREATE TABLE + 7 CREATE INDEX -- I counted the current `_create_schema()` body at lines 47-203 (157 lines of SQL + wrapping), plus module boilerplate. ~170 is accurate.
+- `stage_definitions.py` at ~230 for 7 stage dicts with multi-line goal strings -- reasonable given the verbose goal text (e.g., Stage 1 goal is ~20 lines alone).
+- `gate_definitions.py` at ~280 for 7 gate dicts + 20 embedded rules with condition dicts -- tight but achievable. The 20 rules contain nested AND/OR logic that requires space.
+- `prd_flow_builder.py` at ~180 for the decomposed class -- the current class retains `create_flow()` (~20 lines), `create_node()` (~30 lines), `create_rule()` (~30 lines), `build_prd_flow()` with loop (~40 lines), `export_flow_diagram()` (~25 lines), helpers (~20 lines), `__init__` + `close` (~10 lines), enums (~16 lines) = ~191 lines. The ~180 target is achievable with minor tightening.
+
+### 4. No phantom file references — all cited files must exist [blocking]
+
+**Status**: PASS
+
+All files referenced in the design verified against disk:
+
+| Referenced File | Exists | Verified |
+|----------------|:------:|:--------:|
+| `prd_flow_builder.py` | YES | 1,157 lines on disk |
+| `prd_execute.py` | YES | 226 lines on disk |
+| `run_execute.py` | YES | 209 lines on disk |
+| `run_builder.py` | YES | 43 lines on disk |
+| `fix_and_run.py` | YES | 214 lines on disk |
+| `check_db.py` | YES | 26 lines on disk |
+| `business_rules_engine.py` | YES | 569 lines on disk |
+| `flow_orchestrator.py` | YES | 598 lines on disk |
+
+New files to be created (`shared.py`, `schema.py`, `stage_definitions.py`, `gate_definitions.py`) are correctly marked as `[NEW]`. No phantom references detected.
+
+The design also references `.delivery/artifacts/02-refine/po/prd.md` as its upstream PRD. This is a pipeline artifact path, not a code path, so I note it without blocking.
+
+### 5. Import changes won't break at intermediate steps [blocking]
+
+**Status**: PASS
+
+I traced the import graph at each refactoring step to verify no intermediate state produces an import error:
+
+| Step | Files Modified | New Imports Added | Risk of Import Breakage |
+|:----:|---------------|-------------------|:-:|
+| 1 | `shared.py` created | stdlib only | NONE -- additive |
+| 2 | `schema.py` created | stdlib only | NONE -- additive |
+| 3 | `shared.py` updated | `from schema import ensure_schema` | NONE -- `schema.py` exists from Step 2 |
+| 4 | `stage_definitions.py` created | none (pure data) | NONE -- additive |
+| 5 | `gate_definitions.py` created | none (pure data) | NONE -- additive |
+| 6 | `prd_flow_builder.py` rewritten | `from shared import ...`, `from schema import ...`, `from stage_definitions import ...`, `from gate_definitions import ...` | NONE -- all 4 modules exist from Steps 1-5 |
+| 7 | `prd_execute.py` updated | `from shared import DB_PATH, ensure_utf8_output` | NONE -- `shared.py` exists; builder still exports same public API |
+| 8 | `fix_and_run.py` updated | `from shared import DB_PATH, ensure_utf8_output, get_connection` | NONE -- same reasoning |
+| 9 | `check_db.py` updated | `from shared import DB_PATH, get_connection` | NONE -- same reasoning |
+| 10 | `run_execute.py`, `run_builder.py` deleted | N/A | NONE -- no other file imports from these (verified via grep) |
+| 11 | `CLAUDE.md` updated | N/A | NONE -- documentation only |
+
+Critical verification: `run_execute.py` and `run_builder.py` are not imported by any other `.py` file -- they are CLI entry points only. Deletion in Step 10 cannot break any import chain.
+
+**Public API stability through Step 6**: The design correctly preserves `PRDFlowBuilder`, `NodeType`, `WorkflowPattern` as exports from `prd_flow_builder.py`. The public methods `create_flow()`, `create_node()`, `create_rule()`, `build_prd_flow()`, `export_flow_diagram()`, `close()`, and the `conn` attribute are all retained. Consumer scripts (Steps 7-9) continue to work with the same interface.
 
 ---
 
-## Additional Observations
+## Additional Observations (non-blocking)
 
-1. **NFR-04 (Token budget)**: The per-stage token estimates appear reasonable. The largest single addition (FR-02, ~60 lines to quality/SKILL.md) is loaded on-demand, not per-stage, so it does not count against the 500-token per-stage limit. Confirmed sound.
-2. **Traceability matrix**: All 12 FRs are mapped with target files and verification status. No gaps.
-3. **Change summary by file**: The cross-reference table correctly aggregates all changes per file. This will serve implementers well.
+1. **Section 3.1 visual ambiguity**: The dependency graph visual shows `shared.py` at the apex with downward arrows to `schema.py`, `stage_definitions.py`, and `gate_definitions.py`. This could be read as "shared depends on these" (correct for schema, incorrect for the data modules) or "these depend on shared" (correct for data modules via no import, incorrect for schema). The textual specs in 3.2 are authoritative and correct. The implementer should follow 3.2, not the visual.
+
+2. **Line count off-by-one**: Four files are reported 1 line higher than actual `wc -l`. This is cosmetic and does not affect any design decision or target estimate.
+
+3. **Hardcoded DB path count verified**: The design claims 10 occurrences of `"prd_flows.db"` across 6 `.py` files. I grep-verified exactly 10 matches across exactly 6 files. Accurate.
+
+4. **Traceability is thorough**: All 8 FRs and 42 acceptance criteria are mapped to design elements, modules, refactoring steps, and verification methods. Zero gaps. This is unusually complete for a refactoring design spec.
 
 ---
 
 ## Verdict
 
-All three blocking criteria pass. The design is implementable as specified. The insertion points are precise, the interactions are logically consistent, and all file paths are verified on disk. I commend the thoroughness of the specification — each FR provides exact content, exact location, and clear integration notes. This is craft worthy of the forge.
+All five blocking criteria pass. The dependency graph is acyclic and cleanly layered. File size targets are grounded in actual code measurements. All referenced files exist on disk. The 11-step refactoring sequence maintains a working codebase at every intermediate state, with no import breakage risk. The `PIPELINE_SEQUENCE` solution correctly handles the non-trivial stage/gate interleaving. The design is implementable as specified.
 
 **DONE**

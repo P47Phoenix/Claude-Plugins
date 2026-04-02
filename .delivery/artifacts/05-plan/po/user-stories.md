@@ -1,338 +1,592 @@
-# User Stories: Stage Health Hardening
+# User Stories: prd-quality-gate-flow Refactoring
 
 **Version**: 1.0
-**Date**: 2026-03-29
+**Date**: 2026-03-30
 **Author**: Product Owner (Gandalf)
-**Source PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.1
-**Source Design**: `.delivery/artifacts/03-design/ux/user-flows.md` v1.0
+**PRD**: v1.1 | **Design Spec**: v1.0
+**Issues**: #51 (God object), #52 (Duplicate entry points), #53 (Missing function structure)
 
-> "A product owner is never late, nor early. They prioritize precisely when they mean to."
+> "Even the smallest refactoring can change the course of the codebase."
+
+---
+
+## Capacity Declaration
+
+| Parameter | Value |
+|-----------|-------|
+| Velocity baseline | Solo developer, Python refactoring |
+| Capacity ceiling | 80% (hard cap -- do NOT overcommit) |
+| Total estimated points | 34 SP |
+| Sprint commitment (80%) | 27 SP |
+| Sprint count | 2 sprints (Sprint 1: 27 SP, Sprint 2: 7 SP) |
+| Estimation basis | Standard Python code refactoring estimates (this is CODE, not markdown) |
+
+---
+
+## Dependency Chain
+
+Stories must be completed in this order. The dependency chain mirrors the 11-step safe refactoring sequence from the design spec.
+
+```
+US-01 (shared.py)
+  |
+  +---> US-02 (schema.py) ---> US-03 (wire get_connection)
+  |
+  +---> US-04 (stage_definitions.py) ---+
+  |                                      |
+  +---> US-05 (gate_definitions.py) ----+
+                                         |
+                                         v
+                                    US-06 (decompose PRDFlowBuilder)
+                                         |
+                          +--------------+--------------+
+                          |              |              |
+                          v              v              v
+                     US-07           US-08           US-09
+                 (prd_execute.py) (fix_and_run.py)  (check_db.py)
+                          |              |              |
+                          +--------------+--------------+
+                                         |
+                                         v
+                                    US-10 (delete duplicates)
+                                         |
+                                         v
+                                    US-11 (update CLAUDE.md)
+```
+
+**Critical path**: US-01 -> US-02 -> US-03 -> US-04 -> US-05 -> US-06 -> US-10 -> US-11
+
+**Parallel opportunities**:
+- US-04 and US-05 can be done in parallel after US-01
+- US-07, US-08, and US-09 can be done in parallel after US-06
+
+---
+
+## Sprint Allocation
+
+### Sprint 1 (27 SP) -- Foundation + Core Transformation
+
+| Story | Points | Rationale |
+|-------|-------:|-----------|
+| US-01 | 2 | Small new file, well-defined contents |
+| US-02 | 3 | Careful SQL extraction, byte-for-byte fidelity required |
+| US-03 | 1 | Wiring call, small edit to existing file |
+| US-04 | 5 | Extract 7 stage configs with multi-line strings, add validation |
+| US-05 | 5 | Extract 7 gate dicts + 20 business rules, add validation |
+| US-06 | 8 | Highest risk: rewrite 1,157-line class to <=200 lines |
+| US-07 | 3 | Import replacements + absorb UTF-8 setup |
+| **Total** | **27** | **80% of 34 SP capacity** |
+
+### Sprint 2 (7 SP) -- Restructuring + Cleanup + Documentation
+
+| Story | Points | Rationale |
+|-------|-------:|-----------|
+| US-08 | 3 | Extract 4+ functions, fix latent ordering bug |
+| US-09 | 2 | Small file, add functions + error handling |
+| US-10 | 1 | Delete 2 files, verify no references |
+| US-11 | 1 | Documentation update |
+| **Total** | **7** | |
 
 ---
 
 ## Story Index
 
-| Story | Milestone | Points | FRs Covered |
-|-------|-----------|--------|-------------|
-| US-01 | M1 | L | FR-01, FR-02 |
-| US-02 | M1 | L | FR-03, FR-04 |
-| US-03 | M2 | M | FR-05, FR-06 |
-| US-04 | M3 | L | FR-07, FR-08, FR-09, FR-10 |
-| US-05 | M4 | S | FR-11, FR-12 |
-
-**Total**: 5 stories (1 per milestone, M1 split into 2 due to scope)
+| Story | Description | Sprint | Points | FRs Covered |
+|-------|-------------|--------|-------:|-------------|
+| US-01 | Create shared constants module | S1 | 2 | FR-05 |
+| US-02 | Extract database schema to standalone module | S1 | 3 | FR-03 |
+| US-03 | Wire schema initialization into shared connection helper | S1 | 1 | FR-03, FR-05 |
+| US-04 | Extract stage definitions into data module | S1 | 5 | FR-01 |
+| US-05 | Extract gate definitions and business rules into data module | S1 | 5 | FR-02 |
+| US-06 | Decompose PRDFlowBuilder into thin orchestrator | S1 | 8 | FR-01, FR-02, FR-03, FR-05 |
+| US-07 | Consolidate prd_execute.py as canonical executor | S1 | 3 | FR-04, FR-05 |
+| US-08 | Restructure fix_and_run.py with named functions | S2 | 3 | FR-06, FR-05 |
+| US-09 | Restructure check_db.py with functions and error handling | S2 | 2 | FR-07, FR-05 |
+| US-10 | Delete duplicate entry point scripts | S2 | 1 | FR-04 |
+| US-11 | Update CLAUDE.md entry points documentation | S2 | 1 | FR-08 |
 
 ---
 
-## US-01: Shared-Module Review at UAT
+## US-01: Create Shared Constants Module
 
-**Milestone**: M1 -- UAT Stage Hardening
-**Story Points**: L
-**Retro Sources**: c8f2, k4m9
+**FR Coverage**: FR-05 (AC-05a, AC-05b partial, AC-05c partial, AC-05d partial)
+**Design Spec Step**: 1
+**Sprint**: 1 | **Story Points**: 2
 
 ### Description
 
-**As a** pipeline user (P1) running delivery-flow on this repo,
-**I want** the UAT stage to include a shared-module review checkpoint that identifies files referenced across multiple stage artifacts and verifies test coverage for each consuming context,
-**So that** changes touching shared modules are caught at UAT rather than surfacing as integration failures post-pipeline.
+**As a** plugin maintainer,
+**I want** a `shared.py` module containing `DB_PATH`, `generate_timestamp_id()`, and `ensure_utf8_output()`,
+**So that** constants and utilities are defined once and never hardcoded across multiple files.
 
 ### Acceptance Criteria
 
 | AC ID | Given / When / Then | Type |
 |-------|---------------------|------|
-| AC-01a | **Given** a pipeline run where Development artifacts modify a shared module (a file referenced by path or name in 2+ stage artifacts across the current pipeline run), **When** the UAT stage DoD is evaluated, **Then** the DoD checklist includes a "shared-module review" item that requires listing all consuming contexts and their test status | structural |
-| AC-01b | **Given** the UAT sub-flow in `pipeline-stages.md`, **When** a new step 5 "Shared-module review" is inserted after step 4 (Exploratory testing sessions) and before the current step 5 (Invoke Supporting Agents), **Then** the step includes the shared-module definition, identification method, review requirements, output location, and Light Mode applicability, and all subsequent steps are renumbered | structural |
-| AC-01c | **Given** the Stage 7 DoD Validators section in `pipeline-stages.md`, **When** the QA Engineer validator is updated, **Then** the validator description includes "shared-module review complete (if shared modules were modified)" | structural |
-| AC-02a | **Given** the QA skill is loaded for a UAT validation, **When** the QA sub-agent checks shared-module changes, **Then** `quality/SKILL.md` contains a "Shared-Module Review Protocol" section with: definition, identification steps (5-step process using Glob/Read), review checklist (4 items), and output format template | structural |
-| AC-02b | **Given** the new section in `quality/SKILL.md`, **When** it is inserted, **Then** it is placed after the "Empirical Validation and CODE_COMPLETE Status" section and before the "Sub-Agent Interface" section, and no existing content is removed or modified | structural |
+| AC-1.1 | **Given** the prd-quality-gate-flow plugin directory, **When** I run `python -c "from shared import DB_PATH; print(DB_PATH)"`, **Then** the output is `prd_flows.db` | structural |
+| AC-1.2 | **Given** shared.py has been created, **When** I call `generate_timestamp_id("flow")`, **Then** the returned string starts with `flow_` followed by a timestamp in `YYYYMMDD_HHMMSS` format | structural |
+| AC-1.3 | **Given** shared.py has been created, **When** I call `ensure_utf8_output()`, **Then** `sys.stdout` and `sys.stderr` are wrapped in UTF-8 `TextIOWrapper` instances | structural |
+| AC-1.4 | **Given** shared.py exists, **When** I inspect its import statements, **Then** only Python standard library modules are imported (sys, io, datetime, sqlite3) and there are zero imports from other plugin modules | structural |
 
 ### Test Cases
 
 | TC ID | Tests AC | Test Description | Expected Result |
 |-------|----------|------------------|-----------------|
-| TC-01a-1 | AC-01a | Read `pipeline-stages.md` Stage 7 DoD checklist and verify "shared-module review" item exists | Checklist contains shared-module review item with consuming-contexts and test-status requirements |
-| TC-01a-2 | AC-01a | Verify the shared-module definition matches PRD: "file referenced by path or name in 2+ stage artifacts across the current pipeline run" | Definition text matches exactly |
-| TC-01b-1 | AC-01b | Read `pipeline-stages.md` Stage 7 Sub-Flow and verify step 5 is "Shared-module review" | Step 5 exists with SEQUENTIAL tag, required marker, quality skill reference, definition, identification, review, output, and Light Mode note |
-| TC-01b-2 | AC-01b | Count Stage 7 Sub-Flow steps and verify sequential numbering | Steps are numbered consecutively with no gaps or duplicates; prior step 5+ are incremented by 1 |
-| TC-01c-1 | AC-01c | Read `pipeline-stages.md` Stage 7 DoD Validators and find QA Engineer entry | QA Engineer validator includes "shared-module review complete (if shared modules were modified)" |
-| TC-02a-1 | AC-02a | Read `quality/SKILL.md` and verify "Shared-Module Review Protocol" section exists | Section contains Definition, Identification Steps (5 steps), Review Checklist (4 items), and Output Format subsections |
-| TC-02a-2 | AC-02a | Verify the identification steps reference Glob/Read tools | Steps 1-5 include Glob and Read tool references for artifact scanning |
-| TC-02b-1 | AC-02b | Verify section placement in `quality/SKILL.md` | Section appears after "Empirical Validation and CODE_COMPLETE Status" and before "Sub-Agent Interface" |
-| TC-02b-2 | AC-02b | Diff `quality/SKILL.md` and verify no existing content removed | Only additive changes; no deletions in existing sections |
+| T-01.1 | AC-1.1, AC-1.2, AC-1.3 | `python -c "from shared import DB_PATH, generate_timestamp_id, ensure_utf8_output; print('OK')"` | Prints `OK`, exit code 0 |
+| T-01.2 | AC-1.2 | `python -c "from shared import generate_timestamp_id; ids = [generate_timestamp_id('test') for _ in range(3)]; assert all(i.startswith('test_') for i in ids); print('OK')"` | Prints `OK` -- all IDs have correct prefix |
+| T-01.3 | AC-1.1 | `python -c "from shared import DB_PATH; assert DB_PATH == 'prd_flows.db'; print('PASS')"` | Prints `PASS` |
 
 ### Dependencies
 
-- None (first story in M1)
-
-### FR Traceability
-
-| FR | Covered By |
-|----|------------|
-| FR-01 | AC-01a, AC-01b, AC-01c |
-| FR-02 | AC-02a, AC-02b |
+- None (foundation module -- first story in sequence)
 
 ---
 
-## US-02: Empirical-Items Tracking at UAT
+## US-02: Extract Database Schema to Standalone Module
 
-**Milestone**: M1 -- UAT Stage Hardening
-**Story Points**: L
-**Retro Sources**: c8f2, k4m9
+**FR Coverage**: FR-03 (AC-03b, AC-03g partial)
+**Design Spec Step**: 2
+**Sprint**: 1 | **Story Points**: 3
 
 ### Description
 
-**As a** QA sub-agent (P2) performing UAT validation,
-**I want** a standardized template for classifying each acceptance criterion as structural or empirical, with the classification enforced as a mandatory section in the UAT test plan,
-**So that** empirical items requiring runtime validation are explicitly tracked and not accidentally treated as structural pass-by-inspection items.
+**As a** plugin maintainer,
+**I want** the database schema creation logic extracted from `PRDFlowBuilder` into a standalone `schema.py` module,
+**So that** schema initialization can be called independently without instantiating the entire builder class.
 
 ### Acceptance Criteria
 
 | AC ID | Given / When / Then | Type |
 |-------|---------------------|------|
-| AC-03a | **Given** a UAT stage execution, **When** the UAT sub-agent evaluates acceptance criteria, **Then** an empirical-items tracking section is produced within the UAT test plan (`.delivery/artifacts/07-uat/qa/test-plan.md`) using the template from `artifact-contracts.md`, classifying each AC as "structural" or "empirical" with justification | structural |
-| AC-03b | **Given** the `artifact-contracts.md` Stage 6 to Stage 7 contract table, **When** the table is updated, **Then** a new row "Empirical Items Classification / YES / Classification of each AC as structural or empirical with justification" is added after the "CODE_COMPLETE Items" row | structural |
-| AC-03c | **Given** `artifact-contracts.md`, **When** the Empirical-Items Tracking Template section is added, **Then** it appears after the "Contract Summary Matrix" section and contains: template with table columns (FR/AC ID, summary, classification, justification, validation method), summary statistics block, classification rules (structural vs. empirical definitions), and integration notes including Light Mode applicability | structural |
-| AC-04a | **Given** a UAT stage DoD submission, **When** the validator checks completeness, **Then** the Gate 7 checklist in `quality-gates.md` includes a blocking criterion requiring the empirical-items classification section to be present in the UAT test plan with every PRD AC classified and empirical items having documented validation methods | structural |
+| AC-2.1 | **Given** the prd-quality-gate-flow plugin directory, **When** I run `python -c "from schema import ensure_schema; print('OK')"`, **Then** it prints `OK` with exit code 0 | structural |
+| AC-2.2 | **Given** an in-memory SQLite database, **When** I call `ensure_schema(conn)`, **Then** exactly 9 tables and 7 indexes are created, matching the current `_create_schema()` output byte-for-byte in SQL | structural |
+| AC-2.3 | **Given** an existing database with schema already applied, **When** I call `ensure_schema(conn)` a second time, **Then** no errors occur (CREATE TABLE IF NOT EXISTS pattern) | structural |
+| AC-2.4 | **Given** schema.py exists, **When** I inspect its import statements, **Then** it imports only `sqlite3` from the standard library and has zero imports from other plugin modules | structural |
 
 ### Test Cases
 
 | TC ID | Tests AC | Test Description | Expected Result |
 |-------|----------|------------------|-----------------|
-| TC-03a-1 | AC-03a | Read `artifact-contracts.md` and verify the empirical-items template specifies output location as a section within the UAT test plan | Template references `.delivery/artifacts/07-uat/qa/test-plan.md` as the output location (section, not standalone file) |
-| TC-03b-1 | AC-03b | Read `artifact-contracts.md` Stage 6->7 table and verify "Empirical Items Classification" row exists | Row present with Required=YES and correct description |
-| TC-03b-2 | AC-03b | Verify the new row appears after the "CODE_COMPLETE Items" row | Row ordering is correct in the table |
-| TC-03c-1 | AC-03c | Read the Empirical-Items Tracking Template section and verify table columns | Template contains columns: FR/AC ID, Acceptance Criterion (summary), Classification, Justification, Validation Method |
-| TC-03c-2 | AC-03c | Verify classification rules define both "structural" and "empirical" with examples | Both definitions present with at least 2 examples each |
-| TC-03c-3 | AC-03c | Verify Light Mode applicability note is present | Section states "Applies to all project types including BUG_FIX and DOCS_ONLY" |
-| TC-03c-4 | AC-03c | Verify retro traceability annotation exists | Section contains `<!-- retros c8f2, k4m9 -->` or `<!-- retro k4m9 -->` annotation |
-| TC-04a-1 | AC-04a | Read `quality-gates.md` Gate 7 checklist and verify empirical-items criterion exists | Blocking criterion present requiring empirical-items classification section with full coverage |
-| TC-04a-2 | AC-04a | Verify the criterion is marked `[blocking]` | Severity tag is `[blocking]`, not `[warning]` |
-| TC-04a-3 | AC-04a | Verify criterion placement after existing empirical validations item | New criterion appears after "All pending empirical validations from Stage 6 included as mandatory UAT test cases" |
+| T-02.1 | AC-2.2 | `python -c "import sqlite3; from schema import ensure_schema; c = sqlite3.connect(':memory:'); ensure_schema(c); tables = c.execute(\"SELECT count(*) FROM sqlite_master WHERE type='table'\").fetchone()[0]; print(f'Tables: {tables}'); assert tables == 9"` | `Tables: 9` |
+| T-02.2 | AC-2.3 | `python -c "import sqlite3; from schema import ensure_schema; c = sqlite3.connect(':memory:'); ensure_schema(c); ensure_schema(c); print('Idempotent: OK')"` | `Idempotent: OK` -- no errors on double call |
+| T-02.3 | AC-2.2 | `python -c "import sqlite3; from schema import ensure_schema; c = sqlite3.connect(':memory:'); ensure_schema(c); indexes = c.execute(\"SELECT count(*) FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'\").fetchone()[0]; print(f'Indexes: {indexes}'); assert indexes == 7"` | `Indexes: 7` |
 
 ### Dependencies
 
-- US-01 (shared UAT stage context; both modify Stage 7 sub-flow area)
-
-### FR Traceability
-
-| FR | Covered By |
-|----|------------|
-| FR-03 | AC-03a, AC-03b, AC-03c |
-| FR-04 | AC-04a |
+- US-01 (shared.py must exist, though schema.py does not import from it directly)
 
 ---
 
-## US-03: Phantom Reference Detection and Filename Reconciliation
+## US-03: Wire Schema Initialization into Shared Connection Helper
 
-**Milestone**: M2 -- Design Stage Hardening
-**Story Points**: M
-**Retro Sources**: k4m9
+**FR Coverage**: FR-03 (AC-03g), FR-05 (AC-05a partial)
+**Design Spec Step**: 3
+**Sprint**: 1 | **Story Points**: 1
 
 ### Description
 
-**As a** delivery team sub-agent (P2) receiving artifacts from upstream stages,
-**I want** phantom file references (paths cited in Design artifacts that do not exist on disk) to be surfaced as warnings at Design DoD and blocked at Dev stage entry unless accounted for in the sprint plan,
-**So that** I do not waste effort on downstream work built on references to non-existent files.
+**As a** plugin maintainer,
+**I want** `shared.get_connection()` to automatically call `ensure_schema()` before returning a connection,
+**So that** any code path that opens a database connection is guaranteed to have the schema initialized, preventing the latent fresh-database crash bug in `fix_and_run.py`.
 
 ### Acceptance Criteria
 
 | AC ID | Given / When / Then | Type |
 |-------|---------------------|------|
-| AC-05a | **Given** a Design stage artifact references file path `X`, **When** file `X` does not exist on disk at DoD validation time and is not annotated with `[PLANNED]`, **Then** the Gate 3 checklist in `quality-gates.md` reports a WARNING-severity finding that is logged and surfaced to the author but does not block stage completion | empirical |
-| AC-05b | **Given** a Design stage artifact references file path `X` annotated with `[PLANNED]`, **When** the Gate 3 phantom check runs, **Then** file `X` is exempt from phantom detection | empirical |
-| AC-05c | **Given** the new checklist item in `quality-gates.md` Gate 3, **When** it is added, **Then** it is placed after "Design aligns with PRD requirements" and includes the `[warning]` severity tag and `<!-- retro k4m9 -->` annotation | structural |
-| AC-06a | **Given** the pipeline transitions from Architect to Development, **When** the Dev stage entry gate runs, **Then** all file paths referenced in Design (Stage 3) and Architect (Stage 4) artifacts are checked: paths existing on disk pass; paths listed in the sprint plan as planned deliverables pass; all other missing paths block Dev entry with a list of non-existent references | empirical |
-| AC-06b | **Given** a file path annotated `[PLANNED]` in Design artifacts, **When** the Dev entry reconciliation gate runs, **Then** the `[PLANNED]` annotation is NOT accepted as an exemption -- the file must either exist on disk or appear in the sprint plan | empirical |
-| AC-06c | **Given** the new entry condition in `pipeline-stages.md` Stage 6, **When** it is added, **Then** it includes: 5-step reconciliation process, pass/fail criteria, resolution guidance, Light Mode applicability note, and `<!-- retro k4m9 -->` annotation | structural |
+| AC-3.1 | **Given** a fresh database file that does not yet exist, **When** I call `shared.get_connection(db_path)` for the first time, **Then** the returned connection has all 9 tables and 7 indexes already created | structural |
+| AC-3.2 | **Given** shared.py imports from schema.py, **When** I run `python -c "from shared import get_connection; print('OK')"`, **Then** it succeeds with no ImportError (schema.py has zero internal imports, no circular dependency) | structural |
 
 ### Test Cases
 
 | TC ID | Tests AC | Test Description | Expected Result |
 |-------|----------|------------------|-----------------|
-| TC-05a-1 | AC-05a | Read `quality-gates.md` Gate 3 checklist and verify phantom reference criterion exists with `[warning]` severity | Criterion present with WARNING severity, not blocking |
-| TC-05a-2 | AC-05a | Verify the criterion specifies that warnings do NOT block stage completion | Text explicitly states does not block completion |
-| TC-05b-1 | AC-05b | Verify the criterion grants `[PLANNED]` annotated paths exemption from phantom detection | Text includes `[PLANNED]` exemption language |
-| TC-05c-1 | AC-05c | Verify criterion placement in Gate 3 | Item appears after "Design aligns with PRD requirements" |
-| TC-05c-2 | AC-05c | Verify retro annotation | Criterion contains `<!-- retro k4m9 -->` |
-| TC-06a-1 | AC-06a | Read `pipeline-stages.md` Stage 6 Entry Conditions and verify filename reconciliation gate exists | Entry condition present with Glob/Read extraction, disk existence check, sprint plan cross-reference, and blocking behavior |
-| TC-06a-2 | AC-06a | Verify the gate checks BOTH Design and Architect artifacts | Text references `.delivery/artifacts/03-design/` and `.delivery/artifacts/04-architect/` |
-| TC-06a-3 | AC-06a | Verify blocking behavior on FAIL | Text states "Any FAIL blocks Dev entry" with list of non-existent references |
-| TC-06b-1 | AC-06b | Verify `[PLANNED]` is NOT an exemption at Dev entry | Text explicitly states `[PLANNED]` annotations are not accepted as exemptions at Dev entry |
-| TC-06c-1 | AC-06c | Verify Light Mode applicability | Entry condition states "Applies to all project types including BUG_FIX and DOCS_ONLY" |
-| TC-06c-2 | AC-06c | Verify the reconciliation includes resolution guidance | Text includes resolution steps: create files, add to sprint plan, or remove references |
+| T-03.1 | AC-3.1 | `python -c "from shared import get_connection; conn = get_connection(':memory:'); tables = conn.execute(\"SELECT count(*) FROM sqlite_master WHERE type='table'\").fetchone()[0]; print(f'Tables: {tables}'); assert tables == 9; conn.close()"` | `Tables: 9` |
+| T-03.2 | AC-3.1 | `python -c "from shared import get_connection; conn = get_connection(':memory:'); conn.execute('DELETE FROM flow_executions WHERE 1=0'); print('Schema preloaded: OK'); conn.close()"` | `Schema preloaded: OK` -- DELETE on fresh DB succeeds because schema exists |
 
 ### Dependencies
 
-- None (independent milestone, though Design-stage changes should ship before M3/M4 for cascading benefit)
-
-### FR Traceability
-
-| FR | Covered By |
-|----|------------|
-| FR-05 | AC-05a, AC-05b, AC-05c |
-| FR-06 | AC-06a, AC-06b, AC-06c |
+- US-01 (shared.py must exist)
+- US-02 (schema.py must exist with `ensure_schema()`)
 
 ---
 
-## US-04: Plan Stage Capacity and Coverage Guardrails
+## US-04: Extract Stage Definitions into Data Module
 
-**Milestone**: M3 -- Plan Stage Guardrails
-**Story Points**: L
-**Retro Sources**: c8f2, k4m9
+**FR Coverage**: FR-01 (AC-01a, AC-01b, AC-01c partial, AC-01d, AC-01e)
+**Design Spec Step**: 4
+**Sprint**: 1 | **Story Points**: 5
 
 ### Description
 
-**As a** pipeline user (P1) authoring sprint plans,
-**I want** the Plan stage to require a capacity matrix (team members x hours x utilization) and a coverage matrix (PRD FRs mapped to tasks), with a two-tier capacity threshold (>80% warns, >100% blocks),
-**So that** I am prevented from overcommitting and from shipping plans that leave PRD requirements unmapped.
+**As a** plugin maintainer,
+**I want** all 7 stage definitions extracted into a `stage_definitions.py` data module as Python dicts,
+**So that** I can add or modify pipeline stages by editing declarative data without touching the builder class.
 
 ### Acceptance Criteria
 
 | AC ID | Given / When / Then | Type |
 |-------|---------------------|------|
-| AC-07a | **Given** a Plan stage artifact is being authored, **When** the sprint plan is produced, **Then** the plan includes a capacity matrix table with columns: Team Member, Role, Available Hours, Allocated Hours, Utilization % | structural |
-| AC-07b | **Given** the capacity matrix template in `project-templates.md`, **When** it is added, **Then** it appears within a new "Sprint Plan Mandatory Sections" section at the end of the file, includes the retro annotation `<!-- retro c8f2 -->`, and notes that Light Mode (BUG_FIX, DOCS_ONLY) waives the capacity matrix | structural |
-| AC-08a | **Given** a Plan stage artifact is being authored, **When** the sprint plan is produced, **Then** the plan includes a coverage matrix mapping every PRD FR-ID to at least one planned task, with no FR left unmapped | structural |
-| AC-08b | **Given** the coverage matrix template in `project-templates.md`, **When** it is added, **Then** it appears within the same "Sprint Plan Mandatory Sections" section as the capacity matrix, includes the retro annotation `<!-- retro c8f2 -->`, and notes that Light Mode waives the coverage matrix | structural |
-| AC-09a | **Given** a Plan stage DoD submission, **When** the validator checks the plan artifact, **Then** the Scrum Bag validator in `pipeline-stages.md` rejects the submission if either the capacity matrix or coverage matrix is missing | structural |
-| AC-09b | **Given** the Plan sub-flow in `pipeline-stages.md`, **When** a new step 4 "Matrix validation" is inserted after step 3 (Invoke Supporting Agents), **Then** the step validates capacity matrix presence and completeness, coverage matrix presence with all FRs mapped (unmapped FR = BLOCKING), and includes Light Mode waiver for BUG_FIX/DOCS_ONLY | structural |
-| AC-10a | **Given** a sprint plan where total allocated hours exceed 80% but do not exceed 100% of total available hours, **When** the Plan stage DoD is evaluated, **Then** a WARNING is emitted stating the utilization percentage, and the plan can pass DoD only after the warning is acknowledged with brief justification | structural |
-| AC-10b | **Given** a sprint plan where total allocated hours exceed 100% of total available hours, **When** the Plan stage DoD is evaluated, **Then** a BLOCKING finding is emitted, and the plan cannot pass DoD until allocation is reduced to <=100% or the PO provides explicit sign-off with justification | structural |
-| AC-10c | **Given** the Gate 5 checklist in `quality-gates.md`, **When** the existing "Commitment does not exceed 80% of available capacity [blocking]" is replaced, **Then** it is replaced with the two-tier model: >80% WARNING with acknowledgment, >100% BLOCKING with reduction or PO sign-off, and Light Mode applicability note | structural |
+| AC-4.1 | **Given** stage_definitions.py has been created, **When** I run `python -c "from stage_definitions import STAGE_DEFINITIONS; print(len(STAGE_DEFINITIONS))"`, **Then** the output is `7` | structural |
+| AC-4.2 | **Given** STAGE_DEFINITIONS is loaded, **When** I inspect each stage dict, **Then** every dict contains: `name`, `description`, `node_type`, and `config` (with subfields `agent_type`, `goal`, `model`, `tools`, `working_memory_output`, `max_retries`) | structural |
+| AC-4.3 | **Given** a stage dict with a required field removed, **When** the module is imported, **Then** a `KeyError` is raised at import time identifying the missing field | empirical |
+| AC-4.4 | **Given** stage_definitions.py uses Python dicts, **When** I check the plugin directory for .yml or .yaml files, **Then** no YAML data files exist for stage definitions | structural |
+| AC-4.5 | **Given** stage definitions contain multi-line `goal` prompts, **When** extracted to Python triple-quoted strings, **Then** the content of each goal preserves the original formatting from prd_flow_builder.py | empirical |
+| AC-4.6 | **Given** stage_definitions.py exists, **When** I inspect its import statements, **Then** it has zero imports from other plugin modules (pure data module) | structural |
 
 ### Test Cases
 
 | TC ID | Tests AC | Test Description | Expected Result |
 |-------|----------|------------------|-----------------|
-| TC-07a-1 | AC-07a | Read `project-templates.md` and verify capacity matrix template exists with required columns | Template contains columns: Team Member, Role, Available Hours, Allocated Hours, Utilization % |
-| TC-07a-2 | AC-07a | Verify Total row exists in the template | Template includes a Total summary row |
-| TC-07b-1 | AC-07b | Verify "Sprint Plan Mandatory Sections" section exists at end of file | Section heading present, positioned after all project type templates |
-| TC-07b-2 | AC-07b | Verify Light Mode waiver for capacity matrix | Text states "WAIVED" for BUG_FIX and DOCS_ONLY |
-| TC-07b-3 | AC-07b | Verify retro annotation | Section contains `<!-- retro c8f2 -->` |
-| TC-08a-1 | AC-08a | Read `project-templates.md` and verify coverage matrix template exists with required columns | Template contains columns: PRD FR-ID, FR Description (summary), Planned Task(s), Story ID(s), Status |
-| TC-08a-2 | AC-08a | Verify "Unmapped FRs" section exists in template | Template includes an "Unmapped FRs" annotation area |
-| TC-08b-1 | AC-08b | Verify coverage matrix is in same "Sprint Plan Mandatory Sections" as capacity matrix | Both templates under same parent section heading |
-| TC-08b-2 | AC-08b | Verify Light Mode waiver for coverage matrix | Text states "WAIVED" for BUG_FIX and DOCS_ONLY |
-| TC-09a-1 | AC-09a | Read `pipeline-stages.md` Stage 5 DoD Validators and verify Scrum Bag validator includes matrix requirements | Scrum Bag validator text includes "capacity matrix present with utilization calculated, coverage matrix present with all PRD FRs mapped to at least one task" |
-| TC-09a-2 | AC-09a | Verify capacity threshold language in Scrum Bag validator | Validator text includes ">80% utilization emits WARNING requiring acknowledgment; >100% utilization is BLOCKING" |
-| TC-09b-1 | AC-09b | Read `pipeline-stages.md` Stage 5 Sub-Flow and verify step 4 "Matrix validation" exists | Step 4 present with SEQUENTIAL tag, required marker, capacity and coverage validation items, and Light Mode waiver |
-| TC-09b-2 | AC-09b | Verify unmapped FR is BLOCKING | Step states unmapped FR causes a BLOCKING finding |
-| TC-09b-3 | AC-09b | Verify subsequent steps are renumbered | Steps after the new step 4 are consecutively numbered |
-| TC-10a-1 | AC-10a | Read `quality-gates.md` Gate 5 and verify two-tier capacity threshold exists | Gate 5 contains >80% WARNING tier with acknowledgment requirement |
-| TC-10b-1 | AC-10b | Verify >100% BLOCKING tier in Gate 5 | Gate 5 contains >100% BLOCKING tier with reduction or PO sign-off requirement |
-| TC-10c-1 | AC-10c | Verify the old "80% blocking" criterion is REPLACED, not duplicated | No remaining "Commitment does not exceed 80% of available capacity [blocking]" text in Gate 5 |
-| TC-10c-2 | AC-10c | Verify Light Mode applicability on capacity threshold | Threshold section states "Applies to all project types" |
-| TC-10c-3 | AC-10c | Verify retro annotations | Both quality-gates.md and pipeline-stages.md changes contain `<!-- retros c8f2, k4m9 -->` |
+| T-04.1 | AC-4.1, AC-4.2 | `python -c "from stage_definitions import STAGE_DEFINITIONS, REQUIRED_STAGE_FIELDS; print(f'Stages: {len(STAGE_DEFINITIONS)}, Required fields: {len(REQUIRED_STAGE_FIELDS)}'); assert len(STAGE_DEFINITIONS) == 7"` | `Stages: 7, Required fields: N` (N >= 4) |
+| T-04.2 | AC-4.2 | `python -c "from stage_definitions import STAGE_DEFINITIONS; [s['config']['goal'] for s in STAGE_DEFINITIONS]; print('All goals present: OK')"` | `All goals present: OK` -- no KeyError |
+| T-04.3 | AC-4.4 | Verify `stage_definitions.py` contains no `.yml`/`.yaml` references and no `import yaml` | No YAML usage found |
 
 ### Dependencies
 
-- None (independent milestone)
-
-### FR Traceability
-
-| FR | Covered By |
-|----|------------|
-| FR-07 | AC-07a, AC-07b |
-| FR-08 | AC-08a, AC-08b |
-| FR-09 | AC-09a, AC-09b |
-| FR-10 | AC-10a, AC-10b, AC-10c |
+- US-01 (shared.py exists; stage_definitions.py does not import it but is part of the same module graph)
 
 ---
 
-## US-05: Derived Artifact Regeneration at Dev DoD
+## US-05: Extract Gate Definitions and Business Rules into Data Module
 
-**Milestone**: M4 -- Dev Stage DoD
-**Story Points**: S
-**Retro Sources**: c8f2
+**FR Coverage**: FR-02 (AC-02a, AC-02b, AC-02c partial, AC-02d, AC-02e, AC-02f)
+**Design Spec Step**: 5
+**Sprint**: 1 | **Story Points**: 5
 
 ### Description
 
-**As a** pipeline maintainer (P3) ensuring gate criteria are unambiguous,
-**I want** the Dev stage DoD to include an explicit "regenerate derived artifacts" checklist item and a corresponding blocking validator criterion,
-**So that** derived artifacts (generated docs, compiled schemas, transformed configs) never drift from their source files when Development modifies those sources.
+**As a** plugin maintainer,
+**I want** all 7 gate definitions and their 20 business rules extracted into a `gate_definitions.py` data module,
+**So that** I can add or modify quality gates and their rules declaratively without touching the builder class.
 
 ### Acceptance Criteria
 
 | AC ID | Given / When / Then | Type |
 |-------|---------------------|------|
-| AC-11a | **Given** the Development stage modifies source files that have derived artifacts, **When** the Dev stage DoD is evaluated, **Then** the Developer validator in `pipeline-stages.md` includes "derived artifacts regenerated from current sources" and requires a "Derived Artifacts" section in the DoD review listing each derived artifact path, source file(s), and regeneration status | structural |
-| AC-11b | **Given** the Dev sub-flow in `pipeline-stages.md`, **When** a new step 5 "Regenerate derived artifacts" is inserted after step 4 (Technical Writer) and before the current step 5 (Commit suggestion), **Then** the step includes: identification of derived artifacts, regeneration, verification (no unexpected diffs), documentation requirement, and Light Mode applicability note with `<!-- retro c8f2 -->` | structural |
-| AC-12a | **Given** a Dev stage DoD submission, **When** the validator checks artifact freshness, **Then** the Gate 6 checklist in `quality-gates.md` includes a blocking criterion requiring confirmation that derived artifacts have been regenerated and documented in the story's DoD review | structural |
-| AC-12b | **Given** the new criterion in Gate 6, **When** it is added, **Then** it is placed after "Empirical validation requirements identified..." and includes the `[blocking]` severity tag and `<!-- retro c8f2 -->` annotation | structural |
+| AC-5.1 | **Given** gate_definitions.py has been created, **When** I run `python -c "from gate_definitions import GATE_DEFINITIONS; print(len(GATE_DEFINITIONS))"`, **Then** the output is `7` | structural |
+| AC-5.2 | **Given** GATE_DEFINITIONS is loaded, **When** I sum all rules across all gate dicts, **Then** the total is exactly 20 rules | structural |
+| AC-5.3 | **Given** GATE_DEFINITIONS is loaded, **When** I inspect each gate dict, **Then** every dict contains: `name`, `description`, and `rules` (list of rule dicts), and every rule dict contains: `name`, `rule_type`, `condition`, `action`, `priority` | structural |
+| AC-5.4 | **Given** GATE_DEFINITIONS is an ordered list, **When** I inspect the list structure, **Then** the list index corresponds to the pipeline position, matching the ordering in the current `build_prd_flow()` method | structural |
+| AC-5.5 | **Given** a gate dict or rule dict with a required field removed, **When** the module is imported, **Then** a `KeyError` is raised at import time identifying the missing field | empirical |
+| AC-5.6 | **Given** gate_definitions.py exists, **When** I inspect its import statements, **Then** it has zero imports from other plugin modules (pure data module) | structural |
 
 ### Test Cases
 
 | TC ID | Tests AC | Test Description | Expected Result |
 |-------|----------|------------------|-----------------|
-| TC-11a-1 | AC-11a | Read `pipeline-stages.md` Stage 6 DoD Validators and verify Developer validator includes derived artifact regeneration | Developer validator text includes "derived artifacts regenerated from current sources" |
-| TC-11a-2 | AC-11a | Verify "Derived Artifacts" section requirement in DoD review | Developer validator specifies a "Derived Artifacts" section with columns: derived artifact path, source file(s), regeneration status |
-| TC-11a-3 | AC-11a | Verify regeneration status values are defined | Accepted statuses include "regenerated" and "not applicable" |
-| TC-11b-1 | AC-11b | Read `pipeline-stages.md` Stage 6 Sub-Flow and verify step 5 "Regenerate derived artifacts" exists | Step 5 present with SEQUENTIAL tag, required marker, 4-substep process (identify, regenerate, verify, document) |
-| TC-11b-2 | AC-11b | Verify Light Mode applicability | Step includes "Applies to all project types" note |
-| TC-11b-3 | AC-11b | Verify subsequent steps are renumbered | Current step 5 (Commit suggestion) becomes step 6; no gaps |
-| TC-11b-4 | AC-11b | Verify retro annotation | Step contains `<!-- retro c8f2 -->` |
-| TC-12a-1 | AC-12a | Read `quality-gates.md` Gate 6 checklist and verify derived artifact regeneration criterion exists | Blocking criterion present requiring regeneration confirmation and documentation |
-| TC-12a-2 | AC-12a | Verify the criterion is marked `[blocking]` | Severity tag is `[blocking]` |
-| TC-12b-1 | AC-12b | Verify criterion placement in Gate 6 | Item appears after "Empirical validation requirements identified..." |
-| TC-12b-2 | AC-12b | Verify retro annotation | Criterion contains `<!-- retro c8f2 -->` |
+| T-05.1 | AC-5.1, AC-5.2 | `python -c "from gate_definitions import GATE_DEFINITIONS; rules = sum(len(g['rules']) for g in GATE_DEFINITIONS); print(f'Gates: {len(GATE_DEFINITIONS)}, Rules: {rules}'); assert rules == 20"` | `Gates: 7, Rules: 20` |
+| T-05.2 | AC-5.3 | `python -c "from gate_definitions import GATE_DEFINITIONS, REQUIRED_GATE_FIELDS, REQUIRED_RULE_FIELDS; print(f'Gate fields: {REQUIRED_GATE_FIELDS}'); print(f'Rule fields: {REQUIRED_RULE_FIELDS}')"` | Prints both field sets |
+| T-05.3 | AC-5.3 | `python -c "from gate_definitions import GATE_DEFINITIONS; assert all('rules' in g for g in GATE_DEFINITIONS); print('All gates have rules: OK')"` | `All gates have rules: OK` |
 
 ### Dependencies
 
-- None (independent milestone; Dev stage changes do not conflict with M1-M3 target files)
-
-### FR Traceability
-
-| FR | Covered By |
-|----|------------|
-| FR-11 | AC-11a, AC-11b |
-| FR-12 | AC-12a, AC-12b |
+- US-01 (shared.py exists; gate_definitions.py does not import it but is part of the same module graph)
 
 ---
 
-## Cross-Story Dependency Map
+## US-06: Decompose PRDFlowBuilder into Thin Orchestrator
 
-```
-US-01 (M1: Shared-module review)
-  └──> US-02 (M1: Empirical-items tracking) [same stage, shared context]
+**FR Coverage**: FR-01 (AC-01c), FR-02 (AC-02c), FR-03 (AC-03a, AC-03c, AC-03d, AC-03d2, AC-03e, AC-03f), FR-05 (AC-05b partial, AC-05c partial, AC-05d)
+**Design Spec Step**: 6
+**Sprint**: 1 | **Story Points**: 8
 
-US-03 (M2: Phantom refs) ── independent
+### Description
 
-US-04 (M3: Plan guardrails) ── independent
+**As a** plugin maintainer,
+**I want** `PRDFlowBuilder` reduced to a thin orchestrator of <=200 lines that loops over data definitions,
+**So that** I can understand the entire orchestration logic at a glance without reading 1,157 lines.
 
-US-05 (M4: Dev DoD) ── independent
-```
+### Acceptance Criteria
 
-**Recommended execution order**: M2 (US-03) first to get Design-stage fixes cascading early, then M3 (US-04), then M1 (US-01, US-02), then M4 (US-05). However, all milestones target different stages and can be parallelized if capacity allows.
+| AC ID | Given / When / Then | Type |
+|-------|---------------------|------|
+| AC-6.1 | **Given** the refactored prd_flow_builder.py, **When** I count lines from `class PRDFlowBuilder:` to end of class, **Then** the count is <=200 lines | structural |
+| AC-6.2 | **Given** the refactored PRDFlowBuilder, **When** I inspect `build_prd_flow()`, **Then** it uses `for` loops over STAGE_DEFINITIONS and GATE_DEFINITIONS via a PIPELINE_SEQUENCE list, and no `_create_stageN_*` or `_create_gateN_*` factory methods exist | structural |
+| AC-6.3 | **Given** the refactored PRDFlowBuilder, **When** I check for `create_flow()`, `create_node()`, `create_rule()`, **Then** all three methods exist on the class | structural |
+| AC-6.4 | **Given** a PRDFlowBuilder instance, **When** I access `builder.conn`, **Then** it returns a valid sqlite3.Connection object (public attribute preserved per AC-03d2) | structural |
+| AC-6.5 | **Given** the refactored PRDFlowBuilder, **When** I call `export_flow_diagram(flow_id)`, **Then** it returns a text diagram of the flow structure | structural |
+| AC-6.6 | **Given** the refactored builder creates a new flow, **When** I call `_count_nodes(flow_id)` and `_count_rules(flow_id)`, **Then** the node count is 15 and the rule count is 20 | empirical |
+| AC-6.7 | **Given** the refactored prd_flow_builder.py, **When** I grep for `"prd_flows.db"`, **Then** zero matches are found (DB_PATH imported from shared.py) | structural |
+| AC-6.8 | **Given** the refactored prd_flow_builder.py, **When** I grep for inline timestamp ID patterns like `f"flow_{datetime.now`, **Then** zero matches are found (generate_timestamp_id from shared.py used instead) | structural |
+| AC-6.9 | **Given** the PIPELINE_SEQUENCE list in prd_flow_builder.py, **When** I trace through it, **Then** it produces the exact stage/gate ordering from the design spec section 7, including consecutive gates 3-4 and consecutive stages 5-6 | structural |
+
+### Test Cases
+
+| TC ID | Tests AC | Test Description | Expected Result |
+|-------|----------|------------------|-----------------|
+| T-06.1 | AC-6.3, AC-6.6 | `python -c "from prd_flow_builder import PRDFlowBuilder; b = PRDFlowBuilder(':memory:'); fid = b.build_prd_flow(); print(b._count_nodes(fid), b._count_rules(fid)); b.close()"` | `15 20` |
+| T-06.2 | AC-6.1, AC-6.5 | `python prd_flow_builder.py` in the plugin directory | Creates flow, prints node/rule counts and diagram, exit code 0 |
+| T-06.3 | AC-6.1 | `wc -l` on class body (from `class PRDFlowBuilder:` to end of class) | <=200 lines |
+| T-06.4 | AC-6.2 | `grep -c '_create_stage\|_create_gate' prd_flow_builder.py` | `0` -- no factory methods remain |
+| T-06.5 | AC-6.4 | `python -c "from prd_flow_builder import PRDFlowBuilder; b = PRDFlowBuilder(':memory:'); assert hasattr(b, 'conn'); print('conn exists: OK'); b.close()"` | `conn exists: OK` |
+
+### Dependencies
+
+- US-01 (shared.py), US-02 (schema.py), US-03 (get_connection wired), US-04 (stage_definitions.py), US-05 (gate_definitions.py)
 
 ---
 
-## Full FR Traceability Matrix
+## US-07: Consolidate prd_execute.py as Canonical Executor
 
-| FR | Story | ACs |
-|----|-------|-----|
-| FR-01 | US-01 | AC-01a, AC-01b, AC-01c |
-| FR-02 | US-01 | AC-02a, AC-02b |
-| FR-03 | US-02 | AC-03a, AC-03b, AC-03c |
-| FR-04 | US-02 | AC-04a |
-| FR-05 | US-03 | AC-05a, AC-05b, AC-05c |
-| FR-06 | US-03 | AC-06a, AC-06b, AC-06c |
-| FR-07 | US-04 | AC-07a, AC-07b |
-| FR-08 | US-04 | AC-08a, AC-08b |
-| FR-09 | US-04 | AC-09a, AC-09b |
-| FR-10 | US-04 | AC-10a, AC-10b, AC-10c |
-| FR-11 | US-05 | AC-11a, AC-11b |
-| FR-12 | US-05 | AC-12a, AC-12b |
+**FR Coverage**: FR-04 (AC-04c, AC-04d), FR-05 (AC-05b partial, AC-05c partial)
+**Design Spec Step**: 7
+**Sprint**: 1 | **Story Points**: 3
 
-**All 12 FRs covered. No gaps.**
+### Description
+
+**As a** pipeline user,
+**I want** `prd_execute.py` to be the single canonical execution script with UTF-8 support,
+**So that** I know exactly which script to run and never encounter encoding errors.
+
+### Acceptance Criteria
+
+| AC ID | Given / When / Then | Type |
+|-------|---------------------|------|
+| AC-7.1 | **Given** the updated prd_execute.py, **When** I grep for `"prd_flows.db"`, **Then** zero matches are found, and `from shared import DB_PATH` is present | structural |
+| AC-7.2 | **Given** the updated prd_execute.py, **When** I inspect the `main()` function, **Then** `ensure_utf8_output()` is called (imported from shared.py), absorbing the functionality from deleted run_execute.py | structural |
+| AC-7.3 | **Given** all .py files in the plugin directory, **When** I grep for `EXAMPLE_PRODUCT_IDEAS`, **Then** matches are found only in prd_execute.py (exactly one file) | structural |
+| AC-7.4 | **Given** the refactored codebase, **When** I run `python -c "import prd_execute; print('OK')"`, **Then** it prints `OK` with exit code 0 | structural |
+
+### Test Cases
+
+| TC ID | Tests AC | Test Description | Expected Result |
+|-------|----------|------------------|-----------------|
+| T-07.1 | AC-7.1 | `grep -c '"prd_flows.db"' prd_execute.py` | `0` |
+| T-07.2 | AC-7.3 | `grep -c 'EXAMPLE_PRODUCT_IDEAS' prd_execute.py` | `>= 1` (definition + usage) |
+| T-07.3 | AC-7.3 | `grep -r 'EXAMPLE_PRODUCT_IDEAS' *.py \| grep -v prd_execute.py` | No output (no matches outside prd_execute.py) |
+
+### Dependencies
+
+- US-06 (PRDFlowBuilder must be decomposed and stable before modifying its consumer)
+
+---
+
+## US-08: Restructure fix_and_run.py with Named Functions
+
+**FR Coverage**: FR-06 (AC-06a through AC-06f), FR-05 (AC-05b partial, AC-05c partial)
+**Design Spec Step**: 8
+**Sprint**: 2 | **Story Points**: 3
+
+### Description
+
+**As a** plugin maintainer,
+**I want** `fix_and_run.py` restructured into named functions with a `main()` guard,
+**So that** I can understand, test, and reuse individual pieces of the cleanup/demo workflow.
+
+### Acceptance Criteria
+
+| AC ID | Given / When / Then | Type |
+|-------|---------------------|------|
+| AC-8.1 | **Given** the refactored fix_and_run.py, **When** I inspect the file, **Then** a `def main()` function exists and is called via `if __name__ == "__main__"` guard | structural |
+| AC-8.2 | **Given** fix_and_run.py, **When** I inspect the file, **Then** a function `clean_incomplete_executions()` (or similar descriptive name) exists for database cleanup logic | structural |
+| AC-8.3 | **Given** fix_and_run.py, **When** I inspect the file, **Then** a function `demonstrate_bre_evaluation()` (or similar) exists for BRE demonstration logic | structural |
+| AC-8.4 | **Given** fix_and_run.py, **When** I inspect the file, **Then** a function `display_flow_structure()` (or similar) exists for flow structure display | structural |
+| AC-8.5 | **Given** the refactored fix_and_run.py, **When** I inspect lines outside of function definitions, **Then** only import statements and the `if __name__ == "__main__"` guard exist at top level | structural |
+| AC-8.6 | **Given** fix_and_run.py uses `shared.get_connection()`, **When** I run it against a fresh (non-existent) database, **Then** the DELETE queries succeed because `ensure_schema()` has been called first (latent ordering bug fixed) | empirical |
+| AC-8.7 | **Given** the refactored fix_and_run.py, **When** I grep for `"prd_flows.db"`, **Then** zero matches are found | structural |
+| AC-8.8 | **Given** the refactored fix_and_run.py, **When** I run `python fix_and_run.py`, **Then** it produces structurally equivalent output to the pre-refactoring version (formatting differences acceptable) | empirical |
+
+### Test Cases
+
+| TC ID | Tests AC | Test Description | Expected Result |
+|-------|----------|------------------|-----------------|
+| T-08.1 | AC-8.1 | `grep -c 'def main' fix_and_run.py` | `1` |
+| T-08.2 | AC-8.2, AC-8.3, AC-8.4 | `grep -c 'def clean_incomplete\|def demonstrate_bre\|def display_flow' fix_and_run.py` | `>= 3` (all three named functions) |
+| T-08.3 | AC-8.8 | `python fix_and_run.py` in plugin directory | Runs to completion, exit code 0, output includes cleanup + BRE demo + flow structure |
+| T-08.4 | AC-8.7 | `grep -c '"prd_flows.db"' fix_and_run.py` | `0` |
+
+### Dependencies
+
+- US-06 (PRDFlowBuilder must be decomposed and stable)
+- US-01, US-03 (shared.py with get_connection must be wired)
+
+---
+
+## US-09: Restructure check_db.py with Functions and Error Handling
+
+**FR Coverage**: FR-07 (AC-07a through AC-07e), FR-05 (AC-05b partial, AC-05c partial)
+**Design Spec Step**: 9
+**Sprint**: 2 | **Story Points**: 2
+
+### Description
+
+**As a** plugin maintainer,
+**I want** `check_db.py` restructured with descriptive function names, a `main()` guard, and graceful error handling,
+**So that** the DB inspection tool is readable, importable, and does not crash with raw stack traces.
+
+### Acceptance Criteria
+
+| AC ID | Given / When / Then | Type |
+|-------|---------------------|------|
+| AC-9.1 | **Given** the refactored check_db.py, **When** I inspect the file, **Then** a `def main()` function exists and is called via `if __name__ == "__main__"` guard | structural |
+| AC-9.2 | **Given** check_db.py, **When** I inspect all function definitions, **Then** every function has a descriptive name (no single-letter names), including at minimum: `list_flows()`, `list_nodes()`, `list_rules()` (or equivalently descriptive names) | structural |
+| AC-9.3 | **Given** check_db.py opens a database connection, **When** I inspect the connection usage, **Then** it uses `with` context manager or has explicit `conn.close()` in a `finally` block | structural |
+| AC-9.4 | **Given** the database file does not exist at the expected path, **When** I run `python check_db.py`, **Then** a human-readable error message is printed (not a raw Python stack trace), and the exit code is non-zero | empirical |
+| AC-9.5 | **Given** the refactored check_db.py, **When** I grep for `"prd_flows.db"`, **Then** zero matches are found, and `from shared import` is present | structural |
+| AC-9.6 | **Given** an existing prd_flows.db with data, **When** I run `python check_db.py`, **Then** it produces the same flow counts, node type breakdowns, and rule counts as the pre-refactoring version | empirical |
+
+### Test Cases
+
+| TC ID | Tests AC | Test Description | Expected Result |
+|-------|----------|------------------|-----------------|
+| T-09.1 | AC-9.1 | `grep -c 'def main' check_db.py` | `1` |
+| T-09.2 | AC-9.2 | `grep -c 'def list_' check_db.py` | `>= 2` (descriptive function names) |
+| T-09.3 | AC-9.4 | Run `python check_db.py` with a nonexistent DB path | Graceful error message, no traceback |
+| T-09.4 | AC-9.5 | `grep -c '"prd_flows.db"' check_db.py` | `0` |
+
+### Dependencies
+
+- US-01 (shared.py must exist with get_connection)
+
+---
+
+## US-10: Delete Duplicate Entry Point Scripts
+
+**FR Coverage**: FR-04 (AC-04a, AC-04b)
+**Design Spec Step**: 10
+**Sprint**: 2 | **Story Points**: 1
+
+### Description
+
+**As a** plugin maintainer,
+**I want** `run_execute.py` and `run_builder.py` deleted from the codebase,
+**So that** there is exactly one canonical entry point per operation and no confusion about which script to run.
+
+### Acceptance Criteria
+
+| AC ID | Given / When / Then | Type |
+|-------|---------------------|------|
+| AC-10.1 | **Given** the refactoring is complete, **When** I check the plugin directory, **Then** `run_execute.py` does not exist on disk | structural |
+| AC-10.2 | **Given** the refactoring is complete, **When** I check the plugin directory, **Then** `run_builder.py` does not exist on disk | structural |
+| AC-10.3 | **Given** run_execute.py and run_builder.py are deleted, **When** I grep all .py files for `run_execute` or `run_builder`, **Then** zero matches are found | structural |
+
+### Test Cases
+
+| TC ID | Tests AC | Test Description | Expected Result |
+|-------|----------|------------------|-----------------|
+| T-10.1 | AC-10.1, AC-10.2 | `ls run_execute.py run_builder.py 2>&1` in the plugin directory | Both files report "No such file or directory" |
+| T-10.2 | AC-10.3 | `grep -r 'run_execute\|run_builder' *.py` in the plugin directory | No output |
+
+### Dependencies
+
+- US-07 (prd_execute.py consolidated as canonical executor)
+- US-06 (prd_flow_builder.py decomposed, __main__ block preserved)
+
+---
+
+## US-11: Update CLAUDE.md Entry Points Documentation
+
+**FR Coverage**: FR-08 (AC-08a, AC-08b, AC-08c)
+**Design Spec Step**: 11
+**Sprint**: 2 | **Story Points**: 1
+
+### Description
+
+**As a** pipeline user,
+**I want** CLAUDE.md updated to reflect the 4 canonical entry points,
+**So that** documented commands match the actual codebase and I am never directed to run a deleted script.
+
+### Acceptance Criteria
+
+| AC ID | Given / When / Then | Type |
+|-------|---------------------|------|
+| AC-11.1 | **Given** the CLAUDE.md file, **When** I read the `Running Scripts` section for prd-quality-gate-flow, **Then** it lists exactly 4 scripts: `prd_flow_builder.py`, `prd_execute.py`, `check_db.py`, `fix_and_run.py` | structural |
+| AC-11.2 | **Given** the updated CLAUDE.md, **When** I grep for `run_execute` or `run_builder`, **Then** zero matches are found | structural |
+| AC-11.3 | **Given** the CLAUDE.md Running Scripts section, **When** I read each documented command, **Then** every `python <script>.py` command corresponds to an existing file with a `main()` entry point | structural |
+
+### Test Cases
+
+| TC ID | Tests AC | Test Description | Expected Result |
+|-------|----------|------------------|-----------------|
+| T-11.1 | AC-11.2 | `grep -c 'run_execute\|run_builder' CLAUDE.md` | `0` |
+| T-11.2 | AC-11.1, AC-11.3 | `grep 'python.*prd-quality-gate-flow' CLAUDE.md` | Lists exactly: prd_flow_builder.py, prd_execute.py, check_db.py, fix_and_run.py |
+
+### Dependencies
+
+- US-10 (duplicate files deleted, so documentation reflects final state)
+
+---
+
+## FR-to-Story Traceability Matrix
+
+Every FR and AC from the PRD is covered by at least one user story. QA can verify FR-by-FR.
+
+| FR | AC | Story | Test Cases |
+|----|----|-------|------------|
+| FR-01 | AC-01a | US-04 | T-04.1 |
+| FR-01 | AC-01b | US-04 | T-04.2 |
+| FR-01 | AC-01c | US-06 | T-06.4 |
+| FR-01 | AC-01d | US-04 | T-04.3 |
+| FR-01 | AC-01e | US-04 | T-04.1 |
+| FR-02 | AC-02a | US-05 | T-05.1 |
+| FR-02 | AC-02b | US-05 | T-05.2, T-05.3 |
+| FR-02 | AC-02c | US-06 | T-06.4 |
+| FR-02 | AC-02d | US-05 | T-05.1 |
+| FR-02 | AC-02e | US-05 | T-05.1 |
+| FR-02 | AC-02f | US-05 | T-05.2 |
+| FR-03 | AC-03a | US-06 | T-06.3 |
+| FR-03 | AC-03b | US-02 | T-02.1 |
+| FR-03 | AC-03c | US-06 | T-06.4 |
+| FR-03 | AC-03d | US-06 | T-06.1 |
+| FR-03 | AC-03d2 | US-06 | T-06.5 |
+| FR-03 | AC-03e | US-06 | T-06.2 |
+| FR-03 | AC-03f | US-06 | T-06.1 |
+| FR-03 | AC-03g | US-02, US-03 | T-02.1, T-03.1, T-03.2 |
+| FR-04 | AC-04a | US-10 | T-10.1, T-10.2 |
+| FR-04 | AC-04b | US-10 | T-10.1, T-10.2 |
+| FR-04 | AC-04c | US-07 | T-07.2, T-07.3 |
+| FR-04 | AC-04d | US-07 | T-07.1 |
+| FR-05 | AC-05a | US-01 | T-01.1, T-01.3 |
+| FR-05 | AC-05b | US-06, US-07, US-08, US-09 | T-06.1, T-07.1, T-08.4, T-09.4 |
+| FR-05 | AC-05c | US-06, US-07, US-08, US-09 | T-06.1, T-07.1, T-08.4, T-09.4 |
+| FR-05 | AC-05d | US-06 | T-06.1 |
+| FR-05 | AC-05e | N/A (scope boundary) | N/A (core modules unchanged per NFR-06) |
+| FR-06 | AC-06a | US-08 | T-08.1 |
+| FR-06 | AC-06b | US-08 | T-08.2 |
+| FR-06 | AC-06c | US-08 | T-08.2 |
+| FR-06 | AC-06d | US-08 | T-08.2 |
+| FR-06 | AC-06e | US-08 | T-08.1 |
+| FR-06 | AC-06f | US-08 | T-08.3 |
+| FR-07 | AC-07a | US-09 | T-09.1 |
+| FR-07 | AC-07b | US-09 | T-09.2 |
+| FR-07 | AC-07c | US-09 | T-09.1 |
+| FR-07 | AC-07d | US-09 | T-09.3 |
+| FR-07 | AC-07e | US-09 | T-09.1 |
+| FR-08 | AC-08a | US-11 | T-11.2 |
+| FR-08 | AC-08b | US-11 | T-11.1 |
+| FR-08 | AC-08c | US-11 | T-11.2 |
+
+**Coverage**: All 8 FRs mapped. All 42 acceptance criteria covered. Zero gaps.
+
+---
+
+## NFR Verification Across Stories
+
+| NFR | Verification Point | Method |
+|-----|--------------------|--------|
+| NFR-01 (Zero external deps) | All stories | `grep` for non-stdlib imports in every new/modified file |
+| NFR-02 (Schema compat) | US-02, US-06 | Load pre-refactoring DB, run queries, compare results |
+| NFR-03 (Python 3.9+) | All stories | Code review during development |
+| NFR-04 (Behavioral compat) | US-06, US-07, US-08, US-09 | Structural equivalence checks (counts, not stdout diff) |
+| NFR-05 (File size) | All stories | `wc -l` on every modified/new file; data files may exceed 300 with justification |
+| NFR-06 (Core modules untouched) | All stories | `git diff business_rules_engine.py flow_orchestrator.py` shows zero diff |
 
 ---
 
 ## Target Files by Story
 
-| Story | Files Modified |
-|-------|----------------|
-| US-01 | `delivery-team/skills/delivery-flow/references/pipeline-stages.md`, `delivery-team/skills/quality/SKILL.md` |
-| US-02 | `delivery-team/skills/delivery-flow/references/artifact-contracts.md`, `delivery-team/skills/delivery-flow/references/quality-gates.md` |
-| US-03 | `delivery-team/skills/delivery-flow/references/quality-gates.md`, `delivery-team/skills/delivery-flow/references/pipeline-stages.md` |
-| US-04 | `delivery-team/skills/delivery-flow/references/project-templates.md`, `delivery-team/skills/delivery-flow/references/pipeline-stages.md`, `delivery-team/skills/delivery-flow/references/quality-gates.md` |
-| US-05 | `delivery-team/skills/delivery-flow/references/pipeline-stages.md`, `delivery-team/skills/delivery-flow/references/quality-gates.md` |
+| Story | Files Created | Files Modified | Files Deleted |
+|-------|---------------|----------------|---------------|
+| US-01 | `shared.py` | -- | -- |
+| US-02 | `schema.py` | -- | -- |
+| US-03 | -- | `shared.py` | -- |
+| US-04 | `stage_definitions.py` | -- | -- |
+| US-05 | `gate_definitions.py` | -- | -- |
+| US-06 | -- | `prd_flow_builder.py` | -- |
+| US-07 | -- | `prd_execute.py` | -- |
+| US-08 | -- | `fix_and_run.py` | -- |
+| US-09 | -- | `check_db.py` | -- |
+| US-10 | -- | -- | `run_execute.py`, `run_builder.py` |
+| US-11 | -- | `CLAUDE.md` | -- |
+
+All files are within the `prd-quality-gate-flow/` directory except US-11 which modifies the repo-root `CLAUDE.md`.

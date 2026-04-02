@@ -1,7 +1,7 @@
 # Product Owner Review -- Idea Brief (Gate 1)
 
 **Reviewer**: Product Owner (Gandalf)
-**Date**: 2026-03-29
+**Date**: 2026-03-30
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
 **Verdict**: DONE
 
@@ -10,63 +10,43 @@
 ## Criteria Evaluation
 
 ### [PASS] [blocking] Problem statement present and specific
-The problem statement is precise and data-grounded: three named stages (Design 50%, UAT 67%, Idea 67%) with specific retrospective sources (c8f2, k4m9) and five enumerated root causes (phantom file references, missing shared-module review, absent capacity planning, over-allocated sprints, derived-artifact drift). Four MUST HAVE retro action items (M1-M4) map directly to these root causes. This is no vague wish -- it is a diagnosis drawn from evidence. "All we have to decide is what to do with the data that is given to us." And this brief decides well.
+The problem statement is precise and evidence-grounded. Three GitHub issues (#51, #52, #53) are cited, each with concrete measurements: a god object at ~1120 lines (5x the 200-line clean code signal), duplicate entry points with hardcoded strings in 5+ files (shotgun surgery), and flat procedural scripts with meaningless names (`p()`, `pp()`). This is not a vague complaint about code quality -- it is a specific, measurable diagnosis rooted in dogfooding. Even the Balrog could not hide behind such clarity.
 
 ### [PASS] [blocking] At least 1 target user persona identified with context
-Three personas identified with specific pain points:
-1. **Plugin contributors** -- experiencing avoidable rework loops at Design, UAT, and Plan stages.
-2. **Delivery team sub-agents** (Architect, QA, Developer) -- catching issues too late that should be prevented by earlier gates.
-3. **Pipeline maintainers** -- updating quality-gates.md, pipeline-stages.md, and related reference files.
+Two personas identified:
+1. **Plugin developers** -- maintainers who extend or modify the PRD quality gate flow. Their pain: navigating and changing a 1120-line god object.
+2. **Pipeline users** -- users who run PRD workflows and need reliable, understandable tooling. Their pain: duplicate entry points and confusing script structure.
 
-Each persona names who they are and the specific friction they endure. The fellowship is well-defined.
+Both personas are relevant and their friction points connect directly to the problems described. The fellowship knows who it serves.
 
 ### [PASS] [blocking] At least 1 measurable goal stated
-Four quantified goals with explicit before/after metrics:
-1. Design first-try pass rate: 50% -> >= 80%
-2. UAT first-try pass rate: 67% -> >= 85%
-3. Plan stage: capacity validation threshold (>100% allocation triggers warning) + mandatory coverage matrix
-4. Dev stage: eliminate derived-artifact drift (binary: checklist item present/absent)
+Five goals stated, four of which are measurable:
+1. Reduce `PRDFlowBuilder` from ~1120 lines to ~200 lines -- quantified target.
+2. Eliminate duplicate entry points -- binary (duplicates exist or they do not).
+3. Extract shared constants into a shared module -- structural and verifiable.
+4. Restructure flat scripts into named functions with proper error handling -- verifiable by inspection.
+5. 100% behavioral compatibility -- identical results from existing workflows.
 
-Goals 1 and 2 alone satisfy the criterion. All four together provide strong coverage with clear success conditions.
+Goal 1 alone satisfies the criterion with a clear before/after metric. Goal 5 provides the critical safety constraint. A wizard's goals are measured by outcomes, not intentions, and these are measured well.
 
 ### [PASS] [warning] Constraints or known limitations listed
-Five constraints documented:
-1. All changes are markdown reference files only -- no new Python scripts or external dependencies.
-2. Backward compatibility with config schema v2.3.
-3. Each change traceable to a specific retro action item (c8f2 or k4m9).
-4. Must use plugin-dev skills when modifying plugin components.
-5. Dogfooding is a P0 UAT gate.
+Four constraints documented:
+1. Python-only changes, no new dependencies.
+2. Preserve existing SQLite database schema and data compatibility.
+3. All existing CLI entry points in CLAUDE.md must continue to work (or consolidate with clear migration).
+4. No changes to business rules engine or flow orchestrator -- structural refactoring only.
 
-These are well-scoped and realistic. Even the old wizard knows when to stay within the boundaries of the spell.
+These are practical and well-scoped. Constraint 3 wisely allows consolidation with migration path rather than demanding frozen interfaces. Constraint 4 draws a sharp boundary around what is and is not touched.
 
 ### [PASS] [suggestion] Initial scope boundaries sketched
-In-scope: 7 specific changes grouped under M1-M4, each mapped to retro source, target stage, and affected files. Out-of-scope: 6 explicit exclusions (Idea stage hardening, Python hooks, analytics dashboard, setup wizard/config schema, alias themes, retrospective format). The boundary between in-scope and out-scope is sharp and justified.
+In-scope: 5 existing files to refactor, 1 new shared module, and new data files for stage/gate definitions. Each file is named explicitly with its intended transformation.
 
----
+Out-of-scope: 4 explicit exclusions -- `database.py`, `business_rules_engine.py`, `flow_orchestrator.py`, `agent_registry.py` -- plus no new features, no schema changes, and no test framework setup. The boundary is sharp and justified.
 
-## File Reference Verification
-
-All 6 files listed in the "Files Involved" table verified to exist on disk:
-
-| File | Status |
-|------|--------|
-| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | EXISTS |
-| `delivery-team/skills/delivery-flow/references/quality-gates.md` | EXISTS |
-| `delivery-team/skills/delivery-flow/references/artifact-contracts.md` | EXISTS |
-| `delivery-team/skills/delivery-flow/references/project-templates.md` | EXISTS |
-| `delivery-team/skills/delivery-flow/SKILL.md` | EXISTS |
-| `delivery-team/skills/quality/SKILL.md` | EXISTS |
-
-No phantom references detected.
-
----
-
-## Retro Traceability Verification
-
-The traceability matrix maps every change to its retro source, stage target, and files. All 7 items under M1-M4 are accounted for with no orphaned changes. This is the kind of lineage that makes auditing a joy rather than a burden.
+One suggestion: the brief could benefit from noting the expected number of new data files (YAML vs JSON decision) to give downstream stages clearer scope. This is non-blocking -- Design stage can resolve it.
 
 ---
 
 ## Summary
 
-A product owner is never late, nor early. They prioritize precisely when they mean to. This brief arrives at precisely the right moment -- rooted in retrospective evidence with quantified pass-rate baselines, scoped to 7 actionable changes under 4 retro action items, traceable end-to-end from retro source to target file. The road goes ever on, but this first step is sure-footed. The brief shall pass.
+This brief arrives rooted in dogfooding evidence with three linked GitHub issues, quantified baselines (~1120 lines, 5+ hardcoded paths, 80+ line functions), five measurable goals, and a well-bounded scope that names every file to be touched and every file explicitly excluded. The road goes ever on, but this refactoring journey has a clear map. The brief shall pass.

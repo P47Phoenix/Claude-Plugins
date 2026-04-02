@@ -1,13 +1,14 @@
 """
 PRD Quality Gate Flow Executor
 
-This script executes a PRD through the complete quality gate workflow.
+Canonical executor — runs a PRD through the complete quality gate workflow.
 """
 
 import asyncio
 import json
 import sys
-from datetime import datetime
+
+from shared import DB_PATH, ensure_utf8_output
 from prd_flow_builder import PRDFlowBuilder
 from flow_orchestrator import FlowOrchestrator
 from business_rules_engine import BusinessRulesEngine
@@ -28,7 +29,7 @@ async def execute_prd_workflow(product_idea: dict):
     print("=" * 80)
 
     # Initialize database and flow
-    builder = PRDFlowBuilder("prd_flows.db")
+    builder = PRDFlowBuilder(DB_PATH)
 
     # Check if flow already exists
     existing_flow = builder.conn.execute("""
@@ -48,7 +49,7 @@ async def execute_prd_workflow(product_idea: dict):
 
     # Create orchestrator
     bre = BusinessRulesEngine(builder.conn)
-    orchestrator = FlowOrchestrator("prd_flows.db", bre)
+    orchestrator = FlowOrchestrator(DB_PATH, bre)
 
     print("\n" + "-" * 80)
     print("EXECUTING FLOW")
@@ -189,6 +190,7 @@ EXAMPLE_PRODUCT_IDEAS = {
 
 async def main():
     """Main execution function"""
+    ensure_utf8_output()
     print("\n🚀 PRD Quality Gate Flow Executor")
     print("=" * 80)
 

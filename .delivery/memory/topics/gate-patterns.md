@@ -1,6 +1,6 @@
 # Gate Failure Patterns
 
-**Entries**: 9 | **Last updated**: 2026-03-29
+**Entries**: 10 | **Last updated**: 2026-04-01
 
 ## Common Failure Patterns
 
@@ -13,3 +13,4 @@
 - **Design positional references**: UX designs referencing wrong wizard question positions or file formats (state.json vs state.md) are caught by Architect validator. Cross-reference all filenames and positions against source of truth. (validated: 1, last: run-2026-03-28-k4m9)
 - **Capacity overcommitment**: Plan stage fails when total commitment exceeds 80% ceiling. Markdown-only edits need calibrated estimates (one tier lower than code changes). SM always checks this. (validated: 1, last: run-2026-03-29-h3k7)
 - **Adversarial target adjustment**: Adversarial reviewer at Refine can productively adjust targets (e.g., Design 80%→70%) based on thin baseline data. Trust challenger confidence ratings when data is sparse. (validated: 1, last: run-2026-03-29-h3k7)
+- **Gate-patterns memory injection yields compound returns**: Run r4x2 achieved 100% first-try DoD (6/6 stages) -- the first perfect run. Injecting gate-patterns lessons before stages with <80% historical pass rate is the strongest correlate. (validated: 1, last: run-2026-03-30-r4x2)
