@@ -1,26 +1,29 @@
-# Stage 4: Architect (light) — Summary
+## Stage 4: Architect -- Summary
 
-**Pipeline**: run-2026-03-28-k4m9
-**Date**: 2026-03-29
-**Depth**: light
+**Pipeline**: run-2026-04-01-p8n5
+**Date**: 2026-04-01
+**Depth**: full
+**DoD Rounds**: 1 (first-try pass)
 
-## Agents Invoked
-
+### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
-| Celebrimbor (Architect) | Primary — technical architecture | DONE | 04-architect/architecture.md |
-| Celebrimbor (Architect) | ADR-001: Bash+Python invocation | DONE | 04-architect/adrs/ADR-001.md |
-| Celebrimbor (Architect) | ADR-002: 4-layer resolution | DONE | 04-architect/adrs/ADR-002.md |
+| Architect (Celebrimbor) | Architecture decision | DONE | 04-architect/solution/architecture.md |
+| Challenger | Adversarial review | 4/5 confidence | 04-architect/dod/challenger-review.md |
 
-## DoD Validation (light: primary + 1 reviewer)
+### DoD Validators
+| Validator | Status | Review |
+|-----------|--------|--------|
+| Architect (Celebrimbor) | DONE | 04-architect/dod/architect-review.md |
+| QA (Legolas) | DONE | 04-architect/dod/qa-review.md |
 
-| Round | Celebrimbor (Architect) | Legolas (QA) | Result |
-|-------|------------------------|--------------|--------|
-| 1 | DONE | DONE | PASS (clean) |
+### Decision
+- **Approach 5: Formalized Status Quo** — document the existing Read-based cross-skill pattern, build CI validation script, add Cross-Skill References sections to SKILL.md files
+- Only 2 of 139 reference files are true sharing candidates — does not justify new infrastructure
+- ADR-047 with review triggers (revisit when >5 files cross-referenced or >3 skills share same file)
 
-## Key Design Decisions
-- 11 components across 3 phases
-- BRE extraction: condition_evaluator.py (pure logic) vs adapter (rebuilt gate orchestration)
-- Bash+Python invocation model (consistent with existing plugin patterns)
-- 4-layer resolution with last-writer-wins
-- JSONL audit trail at .delivery/audit/
+### Challenger Conditions (accepted)
+1. CI validation script is a sprint deliverable, not a follow-up
+2. Document path stability as a contract
+3. Add discoverability criterion to evaluation matrix
+4. Broader audit for sharing candidates (8 found, still within convention range)

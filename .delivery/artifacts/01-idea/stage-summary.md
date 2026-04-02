@@ -1,6 +1,6 @@
 ## Stage 1: Idea -- Summary
 
-**Pipeline**: run-2026-04-01-m7v3
+**Pipeline**: run-2026-04-01-p8n5
 **Date**: 2026-04-01
 **Depth**: full
 **DoD Rounds**: 1 (first-try pass)
@@ -17,6 +17,6 @@
 | Architect (Celebrimbor) | DONE | 01-idea/dod/architect-review.md |
 
 ### Notes
-- BUG_FIX bundling 3 items: #54, IA-1, IA-4
-- All markdown-only changes, no source code
-- Architect noted confidence cap should generalize beyond Gate 7 (downstream consideration)
+- SPIKE for #47: cross-skill shared references
+- 5 approaches to evaluate, 6 success criteria, 1-sprint timebox
+- Architect note: reject "inline copy into SKILL.md" as anti-pattern

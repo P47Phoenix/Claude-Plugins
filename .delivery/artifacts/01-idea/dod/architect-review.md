@@ -3,57 +3,53 @@
 **Reviewer**: Celebrimbor (Architect DoD Validator)
 **Date**: 2026-04-01
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Project Type**: BUG_FIX
+**Project Type**: SPIKE
 **Verdict**: DONE
 
 ---
 
-### Criterion 1: Technically Feasible with Current Tech Stack [blocking]
+### Criterion 1: Spike is Technically Feasible to Explore [blocking]
 
 **PASS.**
 
-All three work items target existing markdown reference files and `SKILL.md` within the `delivery-flow/` skill directory. The tech stack for these changes is plain markdown with structured content -- no compilation, no dependencies, no runtime environment required. The files to be modified exist and are well-understood:
+The spike explores how Claude Code resolves file paths from SKILL.md instructions and sub-agent prompts. All five proposed approaches operate on plain markdown files and path references -- no compilation, no runtime dependencies, no external tooling. The core question (which path resolution strategies actually work when Claude loads a skill) is directly testable by invoking skills and observing whether referenced files are read.
 
-- `delivery-flow/SKILL.md` -- stage step instructions (Item #1, possibly #3)
-- `delivery-flow/references/git-integration.md` -- branch strategy documentation (Item #1)
-- `delivery-flow/references/quality-gates.md` -- gate criteria (Item #2)
-- `delivery-flow/references/project-types.md` -- detection and routing logic (Item #3)
+The existing proof point is strong: godot's SKILL.md already cross-references `developer/references/clean-code.md` via a hardcoded path, and this works in production. The spike is exploring whether to formalize, replace, or extend that pattern. Feasibility is not in question -- the question is which formalization is best, which is exactly what a spike should answer.
 
-Each fix is an additive directive or rule insertion into an existing document structure. No new tooling, no new file formats, no new dependencies. This is as feasible as work gets -- the forge is already hot.
-
-### Criterion 2: No Obvious Technical Blockers Identified [blocking]
+### Criterion 2: No Obvious Technical Blockers [blocking]
 
 **PASS.**
 
-I have examined each item for blockers:
+Potential blockers examined:
 
-| Item | Potential Blocker? | Assessment |
-|------|--------------------|------------|
-| #54 -- Branch enforcement directives | Could conflict with existing stage step numbering in SKILL.md | **No blocker.** Step numbering is sequential and insertable. The brief specifies "Step 8.5" for Plan, indicating awareness of the insertion point. |
-| IA-1 -- Confidence cap rule | Could conflict with existing Gate 7 criteria structure | **No blocker.** Adding a conditional rule ("when empirical validation is unavailable, cap at 4/5") is a standard gate criterion addition. The quality-gates.md file already uses structured criteria lists. |
-| IA-4 -- Refactoring sub-type | Could break existing FEATURE routing for non-refactoring projects | **No blocker.** The brief explicitly constrains this: "Existing project type detection and routing for non-refactoring FEATURE projects must not change behavior." The fix adds a sub-type detection condition, not a replacement of existing logic. |
+| Concern | Assessment |
+|---------|------------|
+| Claude's file path resolution is undocumented | **Not a blocker.** Testing path resolution is the point of the spike. The brief correctly identifies this as a sub-question to answer empirically. |
+| Windows symlink limitations (Approach 5) | **Not a blocker.** The brief already flags this as a known risk. The spike evaluates it rather than committing to it. |
+| Plugin structure validation may reject `shared/` directory | **Not a blocker.** The brief includes plugin structure compliance as a constraint. If `shared/` fails validation, that's a spike finding, not a blocker to the exploration. |
+| Marketplace.json schema changes (Approach 4) | **Not a blocker for the spike.** Prototyping a registry entry is low-risk exploration. Committing to it would need schema review, but that's post-spike. |
 
-No cross-file dependency chains, no circular references, no schema migrations. Clean.
+No blocker prevents the exploration from proceeding. Each risk is something the spike is designed to evaluate, not something that prevents evaluation.
 
-### Criterion 3: Scope Reasonable for BUG_FIX Project Type [warning]
+### Criterion 3: Approaches Listed Are Reasonable for the Plugin Architecture [warning]
 
 **PASS.**
 
-Three items bundled together is at the upper edge of BUG_FIX scope, but the bundling rationale is sound -- all three address the same root concern (pipeline integrity enforcement gaps), all modify the same category of files (delivery-flow reference docs and SKILL.md), and all were surfaced from the same two pipeline runs. The brief correctly identifies them as enforcement gaps rather than new features.
+All five approaches are architecturally sound candidates for a spike evaluation:
 
-The constraint that no new files, no new config keys, and no source code changes are involved confirms this remains firmly within BUG_FIX territory. The scope is tight, the boundaries are clear, and the modifications are surgical.
+1. **Shared directory** -- simplest, aligns with standard monorepo patterns. The relative path `../../shared/` from a skill's references directory is straightforward. Worth testing first.
+2. **Formalized cross-skill paths** -- codifies what already works (godot pattern). Zero new structure, just documentation. Low risk.
+3. **Explicit paths in sub-agent prompts** -- leverages the orchestrator's existing role as context assembler. Architecturally clean (centralized control) but higher coupling.
+4. **Reference registry in marketplace.json** -- most structured, but adds tooling requirements that may conflict with the "no new dependencies" constraint. Worth evaluating to understand the tradeoff.
+5. **Symlinks** -- included correctly as a candidate to rule out rather than rule in, given cross-platform fragility.
 
-### Architectural Observations (Non-blocking)
+The priority ordering (simplest first) is correct for a spike. The brief also wisely includes the null hypothesis: some apparent duplication may be intentional divergence. That architectural awareness -- distinguishing shared content from content that merely looks similar -- is essential.
 
-1. **Enforcement vs. Documentation pattern**: The brief correctly identifies the core architectural issue -- the pipeline had *documented* behaviors that were not *enforced* in stage instructions. This is a well-known gap in instruction-driven architectures. The fix pattern (cross-referencing enforcement directives from stage steps to reference documents) is sound.
-
-2. **Confidence cap precedent**: The 4/5 cap when empirical validation is unavailable establishes an important architectural principle -- gate scores must reflect evidence quality, not reviewer conviction. This principle should be documented as a general gate design rule, not just a Gate 7 special case. I note this for the Design stage, not as a blocker here.
-
-3. **Sub-type detection granularity**: Adding "refactoring" as a FEATURE sub-type is the right granularity. The alternative (a new top-level project type) would be over-engineering. Sub-type detection with conditional routing keeps the type system simple while adding necessary nuance.
+**One note**: the brief does not list "SKILL.md inline inclusion" (embedding shared content directly into each SKILL.md via copy) as an anti-pattern to explicitly reject. This is worth naming during Refine so the spike doesn't accidentally validate duplication-by-copy as "sharing."
 
 ---
 
-*The brief describes three cracks in the foundation. Each is small, but a master smith knows that small cracks, left untended, become fractures that bring down the whole edifice. Let us forge something that will endure beyond the ages.*
+*Five approaches laid before the forge. The spike asks which ring to craft -- or whether the existing ad-hoc binding is sufficient. A worthy question. Let us test the metal before we commit to the mold.*
 
 ```
 STATUS: DONE

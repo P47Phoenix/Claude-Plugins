@@ -182,6 +182,16 @@ When validating a theme (built-in or custom):
 
 ---
 
+## Cross-Skill References
+
+| File | Owner Skill | Purpose |
+|------|-------------|---------|
+| `delivery-team/skills/delivery-flow/references/aliases/*.yml` | delivery-flow | Built-in alias theme definitions. 13 themes (lotr, star-wars, marvel, etc.). Read-only from alias-creator's perspective. |
+
+> Path stability: these paths are contracts. Renaming the owner skill's directory is a breaking change.
+
+---
+
 ## References
 
 - `references/theme-format.md` — Detailed theme file format documentation with field-by-field spec

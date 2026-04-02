@@ -1,84 +1,87 @@
-# Dev Notes: Pipeline Integrity Fixes (US-01)
+# Dev Notes: Cross-Skill Shared References — SPIKE Prototype (#47)
 
 **Developer**: Gimli
 **Date**: 2026-04-01
 **Status**: DONE
-**Story**: US-01 — Enforce Pipeline Integrity Rules for Branch Strategy, Confidence Scoring, and Architect Routing
-**Sprint Plan**: BUG_FIX (Light Plan), 2 SP
-**Source Issues**: #54, IA-1 (retro r4x2), IA-4 (retro r4x2)
+**Type**: SPIKE prototype implementation
+**Source Issue**: #47
+**Architecture Decision**: ADR-047 — Formalized Status Quo (Approach 5)
 
-> "The foundation was sound, but the mortar had gaps. Now it holds. And my code!"
-
----
-
-## 1. Summary of Changes Per File
-
-### File 1: `delivery-flow/SKILL.md`
-Three surgical additions to stage definitions, no existing content altered:
-
-| Location | Change | AC |
-|----------|--------|----|
-| Stage 5 (Plan), before Light mode | Added **Branch creation** directive: when `git.branch_strategy` is not `none` AND `git.auto_branch` is `true`, create feature branch per `references/git-integration.md`. Blocking error on failure. | AC-1.1 |
-| Stage 6 (Development), before Execution | Added **Branch enforcement** directive: all commits MUST target feature branch, not base branch. References `references/git-integration.md`. Missing branch when `auto_branch: true` is blocking error. | AC-1.2 |
-| Stage 7 (UAT), before Post-acceptance | Added **PR creation** step: when `github.create_pr` is `true`, create PR from feature branch to base branch. Body includes sprint goal, stories with "Closes #N", UAT results. References `references/git-integration.md`. | AC-1.3 |
-
-### File 2: `delivery-flow/references/git-integration.md`
-Three additions to the Pipeline Integration Points section:
-
-| Location | Change | AC |
-|----------|--------|----|
-| Stage 5, after skip-branch paragraph | Added **ENFORCEMENT** blockquote: branch creation is MANDATORY when conditions met. Failure is blocking error. Pipeline MUST NOT proceed without branch in state. | AC-1.4 |
-| New subsection before Commit Suggestions | Added **Stage 6 (Development) -- Branch Enforcement** subsection: commits must target feature branch, missing branch when `auto_branch: true` is blocking error with escalation. | AC-1.5 |
-| New subsection before Working Tree Validation | Added **Stage 7 (UAT) -- PR Creation** subsection: full PR workflow with body template (sprint goal, stories with "Closes #N", UAT results), state recording. | AC-1.6 |
-
-### File 3: `delivery-flow/references/quality-gates.md`
-Two new blocking criteria added to Gate 7 (UAT Acceptance), inserted after the existing Empirical-items classification criterion:
-
-| Criterion | AC |
-|-----------|----|
-| **Confidence cap**: review board confidence capped at 4/5 maximum when empirical validation cannot be performed. 5/5 requires empirical evidence. | AC-2.1 |
-| **Empirical Validation Limitation documentation**: DoD must include explicit section documenting (a) unvalidated criteria, (b) what prevented validation, (c) residual risk. | AC-2.2 |
-
-The existing Empirical-items classification criterion was preserved unchanged (AC-2.3).
-
-### File 4: `delivery-flow/references/project-types.md`
-Three changes to FEATURE detection and routing:
-
-| Location | Change | AC |
-|----------|--------|----|
-| FEATURE detection section | Added **Sub-type -- refactoring** with 8 detection signals: "refactor", "decompose", "extract module", "split class", "restructure", "reorganize modules", "break apart", "modularize". | AC-3.1 |
-| Light-or-Skip "Apply Light" list | Added bullet: "Module decomposition, boundary changes, or architectural restructuring (refactoring sub-type)". | AC-3.2 |
-| Light-or-Skip "Apply Skip" list | Narrowed "Contained within a single service or module" with qualifier: "AND does not involve module decomposition, boundary changes, or architectural restructuring." | AC-3.3 |
-
-All existing non-refactoring FEATURE detection signals and routing logic remain unchanged. No Skip conditions removed -- only narrowed (AC-3.4).
+> "Two cross-references do not require a framework. They require a map. And my code!"
 
 ---
 
-## 2. Per-AC Verification
+## 1. Files Created/Modified
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-1.1 | PASS | SKILL.md Stage 5 contains branch creation directive referencing `references/git-integration.md` by name. |
-| AC-1.2 | PASS | SKILL.md Stage 6 contains branch enforcement directive referencing `references/git-integration.md` by name. |
-| AC-1.3 | PASS | SKILL.md Stage 7 contains PR creation step referencing `references/git-integration.md` by name. |
-| AC-1.4 | PASS | git-integration.md Stage 5 contains ENFORCEMENT blockquote: MANDATORY branch creation, blocking error on failure. |
-| AC-1.5 | PASS | git-integration.md contains "Stage 6 (Development) -- Branch Enforcement" subsection with blocking error for missing branch. |
-| AC-1.6 | PASS | git-integration.md contains "Stage 7 (UAT) -- PR Creation" subsection with PR body template including sprint goal, "Closes #N", UAT results. |
-| AC-2.1 | PASS | quality-gates.md Gate 7 contains blocking criterion capping confidence at 4/5 without empirical validation. |
-| AC-2.2 | PASS | quality-gates.md Gate 7 contains blocking criterion requiring "Empirical Validation Limitation" section in DoD. |
-| AC-2.3 | PASS | Existing "Empirical-items classification" criterion remains unchanged at its original position. |
-| AC-3.1 | PASS | project-types.md FEATURE section contains "refactoring" sub-type with all 8 specified signals. |
-| AC-3.2 | PASS | project-types.md "Apply Light" list includes module decomposition/boundary changes/restructuring bullet. |
-| AC-3.3 | PASS | project-types.md "Apply Skip" single-module condition includes "AND does not involve..." qualifier. |
-| AC-3.4 | PASS | All existing non-refactoring FEATURE signals and routing unchanged. No Skip conditions removed. |
+### Created
 
-**Result**: 13/13 ACs pass structural verification.
+| File | Purpose |
+|------|---------|
+| `delivery-team/CROSS-SKILL-REFERENCES.md` | Developer guide documenting the cross-skill reference convention, path format, rules, current references, and how to add new ones |
+| `delivery-team/scripts/validate_cross_refs.py` | CI validation script — scans SKILL.md files for cross-skill references, verifies target files exist on disk |
+
+### Modified
+
+| File | Change |
+|------|--------|
+| `delivery-team/skills/godot/SKILL.md` | Added `## Cross-Skill References` section declaring dependency on `developer/references/clean-code.md` |
+| `delivery-team/skills/alias-creator/SKILL.md` | Added `## Cross-Skill References` section declaring dependency on `delivery-flow/references/aliases/*.yml` |
 
 ---
 
-## 3. Deviations from Story
+## 2. Validation Script Test Results
 
-None. All changes are exactly as specified in the acceptance criteria. No new files created. No config keys added. No existing content removed or modified.
+### Positive Test (real plugin directory)
+
+```
+$ python delivery-team/scripts/validate_cross_refs.py delivery-team/
+Scanning 11 SKILL.md files in /var/home/meconnelly/Documents/GitHub/Claude-Plugins/delivery-team
+
+Found 2 cross-skill reference(s):
+
+  [OK] alias-creator/SKILL.md:189
+         path: delivery-team/skills/delivery-flow/references/aliases/*.yml
+
+  [OK] godot/SKILL.md:223
+         path: delivery-team/skills/developer/references/clean-code.md
+
+Result: 2 valid, 0 broken
+
+OK: All cross-skill references are valid.
+EXIT CODE: 0
+```
+
+### Negative Test (phantom reference)
+
+```
+$ python validate_cross_refs.py /tmp/test-plugin/
+Scanning 1 SKILL.md files in /tmp/test-plugin
+
+Found 1 cross-skill reference(s):
+
+  [FAIL] test-skill/SKILL.md:6
+         path: delivery-team/skills/fake/references/nonexistent.md
+         resolved to: /tmp/test-plugin/skills/fake/references/nonexistent.md
+         FILE NOT FOUND
+
+Result: 0 valid, 1 broken
+
+FAIL: Broken cross-skill references detected.
+EXIT CODE: 1
+```
+
+Both cases work as designed. Valid refs pass, phantom refs fail.
+
+---
+
+## 3. Per-Deliverable Status
+
+| Deliverable | Status | Notes |
+|-------------|--------|-------|
+| Developer Guide (`CROSS-SKILL-REFERENCES.md`) | DONE | Covers convention, path format, rules, current refs, how-to-add, when-not-to, review triggers. Addresses Challenger condition #2 (breaking change contract) and #4 (discoverability gap acknowledged). |
+| SKILL.md Cross-Reference Sections (godot) | DONE | Formal table with path, owner, purpose. Stability note included. |
+| SKILL.md Cross-Reference Sections (alias-creator) | DONE | Formal table with glob path for 13 alias themes. Stability note included. |
+| CI Validation Script (`validate_cross_refs.py`) | DONE | Stdlib-only Python. Accepts plugin root as CLI arg. Parses formal tables AND inline cross-skill paths. Handles glob patterns (`*.yml`). Deduplicates. Exit 0/1. Addresses Challenger condition #1 (CI script is a deliverable, not a follow-up). |
 
 ---
 
@@ -86,18 +89,38 @@ None. All changes are exactly as specified in the acceptance criteria. No new fi
 
 | Type | Coverage | Notes |
 |------|----------|-------|
-| **Structural** | 13/13 ACs | All criteria verified by reading modified files and confirming text changes exist at correct locations. |
-| **Empirical** | 0/13 ACs | These are markdown instruction files -- empirical validation means running a pipeline session that exercises each fix (TC-5 dogfooding). This is a UAT gate item per IA-1 and per memory lesson `feedback_dogfooding.md`. |
+| **Structural** | 4/4 deliverables | All files created/modified at correct paths. Cross-reference sections inserted at correct locations in SKILL.md files. |
+| **Empirical** | 2/4 deliverables | Validation script tested against real plugin (positive) and synthetic broken refs (negative). Both exit codes verified. Guide and SKILL.md sections are documentation — empirical validation means a new skill author follows the guide (UAT gate). |
 
-### Derived Artifacts Check
-- `config-schema.json` exists in the delivery-flow references directory.
-- No config schema changes were made (all config keys already existed in v2.3).
-- No derived artifact regeneration required.
+### Pre-existing Cross-References Verified
+
+| Reference | File Exists? | Method |
+|-----------|-------------|--------|
+| `delivery-team/skills/developer/references/clean-code.md` | YES | `ls` verified on disk + validation script reports OK |
+| `delivery-team/skills/delivery-flow/references/aliases/*.yml` | YES (13 files) | `ls` verified 13 .yml files on disk + validation script reports OK |
+
+### Challenger Conditions Addressed
+
+| Condition | Status |
+|-----------|--------|
+| #1: CI validation script is a sprint deliverable | MET — script built and tested |
+| #2: Breaking change contract documented | MET — both CROSS-SKILL-REFERENCES.md and each SKILL.md section include stability note |
+| #3: ADR review trigger for platform-native support | MET — included in CROSS-SKILL-REFERENCES.md review triggers |
+| #4: Discoverability gap acknowledged | MET — guide exists at plugin root; convention documented but not self-evident |
+
+---
+
+## 5. Technical Notes
+
+- **Regex approach**: The script uses two detection methods — formal table parsing (`| \`path\` |` rows) and inline path scanning (regex for `skills/<name>/references/<file>`). The inline scanner skips self-references to avoid false positives.
+- **Glob support**: The alias-creator reference uses `*.yml`. The script handles this via `pathlib.glob()`, verifying at least one file matches.
+- **Deduplication**: If the same path appears in both the formal table and inline text (as in godot's SKILL.md), it is reported once.
+- **No external dependencies**: stdlib only — `re`, `sys`, `pathlib`.
 
 ---
 
 ```
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/06-dev/developer/dev-notes.md
-SUMMARY: US-01 implemented: 13/13 ACs pass structural verification across 4 files (SKILL.md, git-integration, quality-gates, project-types)
+SUMMARY: SPIKE #47 prototype: 4 deliverables (guide, 2 SKILL.md sections, CI script). Validation script tested — 2 refs valid, phantom detection works. Exit 0.
 ```

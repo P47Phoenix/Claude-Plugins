@@ -9,41 +9,36 @@
 
 ## Criteria Evaluation
 
-### [PASS] [blocking] Problem statement present and specific
-Three integrity gaps, each grounded in named pipeline runs and traceable to issue numbers. Run `f7a2` shows branch strategy configured but never enforced -- commits landed on master despite `feature-branch` config. Run `r4x2` shows 5/5 confidence awarded on structural evidence alone, and a god object decomposed without architect involvement despite module boundary changes. The common thread -- rules exist but lack enforcement teeth -- is identified explicitly. This is not a vague lament about "process gaps." Every claim has a run ID, a config key, or a line count behind it. Even the Enemy's gate would not fall to such well-documented evidence.
+### [PASS] [blocking] Spike question is clear and answerable
 
-### [PASS] [blocking] Target users identified
-Three user groups named, each mapped to the specific problem that affects them:
-1. **Pipeline users** -- harmed by lack of branch isolation (incomplete work on master).
-2. **Architects** -- bypassed on structural decisions they exist to govern.
-3. **POs and QA** -- misled by confidence scores that overstate validation depth.
+The primary spike question is precise: "What is the simplest viable mechanism for sharing reference files across delivery-team skills, and does it work in practice with at least two skills?" Three sub-questions decompose it further -- which files are genuine candidates, which approaches fail on constraints, and whether the existing ad-hoc pattern suffices. Each sub-question is independently answerable within a single sprint. The question asks for evidence, not opinion. A wizard finds no ambiguity here.
 
-Each persona's pain connects directly to a bundled work item. The fellowship knows who it fights for.
+### [PASS] [blocking] Success criteria defined (what "done" means for the spike)
 
-### [PASS] [blocking] Goals present and measurable
-Four goals stated, three of which are binary and verifiable:
-1. Branch enforcement -- feature branch created at Plan, used during Dev, PR at UAT. Pass/fail by observation.
-2. Confidence cap -- review board score capped at 4/5 without empirical validation, limitation documented. Pass/fail by inspection of DoD artifact.
-3. Architect routing -- FEATURE projects with module decomposition route to Architect-light. Pass/fail by testing routing logic.
-4. Dogfooding validation -- fixes exercised in a live pipeline run at UAT. This is not a hope; it is a gate.
+Six criteria, all verifiable:
+1. **Inventory complete** -- list of sharing candidates with justification. Binary: either the list exists with rationale or it does not.
+2. **At least 2 approaches prototyped** -- working proof, not theoretical analysis. Testable by inspection.
+3. **Cross-platform validated** -- Linux, macOS, Windows coverage or documented limitations. Pass/fail.
+4. **Decision recorded** -- ADR-style output with evidence. Artifact exists or it does not.
+5. **Dogfooding signal** -- actual skill invocation, not path inspection. This criterion prevents the spike from claiming success on paper alone.
+6. **No regressions** -- existing godot cross-reference still works. Binary.
 
-Goal 4 is particularly wise -- it uses the pipeline's own standards to validate fixes to the pipeline's own standards. Recursive integrity. A wizard approves.
+Criterion 5 deserves particular note -- it demands that the spike validate its own findings through the very mechanism it proposes. The pipeline that evaluates sharing must itself share. Recursive integrity, well applied.
 
-### [PASS] [warning] Scope clear -- IN and OUT
-**In-scope**: Three work items with priorities (P1, P2, P2), specific fix locations down to file and section, and a constraints section that bounds the change surface to markdown/YAML modifications of existing files only. No new files, no config schema changes, no scripts.
+### [PASS] [blocking] Time box specified
 
-**Out-of-scope**: Four explicit exclusions -- hooks/scripts/plugin structure, config schema changes, retrospective process changes, and new git integration features beyond enforcement.
+One sprint, single pipeline run. The brief explicitly states: "If the simplest approach works, the spike should stop there. Do not gold-plate." Four deliverables named (ADR, prototype diff, inventory, recommendation). The time box is proportionate to the question being asked.
 
-The bundled work items table is crisp -- each row names the item, its priority, its scope, and its fix location. Downstream stages will know exactly where to cut.
+### [PASS] [warning] Scope is appropriate for SPIKE (not over-scoped)
 
-One observation (non-blocking): the bundle rationale is sound -- all three items address pipeline integrity enforcement. Bundling avoids three separate pipeline runs for tightly related fixes that share the same validation strategy (dogfooding a pipeline session). Well-reasoned.
+Five approaches ranked by effort, with explicit instruction to evaluate simplest-first and stop early. The brief does not ask for implementation -- it asks for a decision with evidence. Constraints section prevents scope creep: no config schema changes, no new dependencies, no source code, markdown/YAML only. The "approaches to evaluate" table is a menu, not a mandate -- the spike may discard approaches that fail early without guilt.
+
+One observation (non-blocking): five approaches is generous for a spike. The brief mitigates this by prioritizing simplest-first and permitting early termination, which is sufficient. The team should feel empowered to stop at approach 2 if the evidence is clear.
 
 ---
 
 ## Summary
 
-This brief arrives battle-tested -- sourced from a filed issue and two retrospective improvement actions, with evidence from named runs rather than speculation. The problem is specific, the users are identified, the goals are measurable and binary, and the scope is bounded with surgical precision. The bundling rationale is justified and the constraints prevent scope creep before it begins.
+This spike brief is well-scoped and grounded in observable evidence -- the existing godot-to-developer cross-reference, a repository scan with named files and line counts, and a clear distinction between true duplication and intentional divergence. The question is answerable, the success criteria are binary, the time box is tight, and the constraints prevent the spike from becoming a feature in disguise.
 
-The self-referential quality of Goal 4 deserves note: a brief about pipeline enforcement gaps demands that its own fixes be validated through the pipeline's enforcement mechanisms. The pipeline that governs our craft must itself be governed -- and this brief ensures it shall be.
-
-The road is clear. The brief shall pass.
+The road goes ever on -- but this spike knows exactly where to stop.

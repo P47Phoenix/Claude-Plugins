@@ -216,6 +216,16 @@ The sub-agent must enforce these in every output:
 
 ---
 
+## Cross-Skill References
+
+| File | Owner Skill | Purpose |
+|------|-------------|---------|
+| `delivery-team/skills/developer/references/clean-code.md` | developer | Foundational clean code standards. Loaded on every godot task unless overridden by `tech_stack.clean_code_guide` in `.delivery/config.yml`. |
+
+> Path stability: these paths are contracts. Renaming the owner skill's directory is a breaking change.
+
+---
+
 ## Godot Version Note
 
 All output targets **Godot 4.x** with **GDScript 2.0** or **.NET 8 / C# 12**. Godot 3.x syntax (`onready`, `export`, `yield`, `OS.get_ticks_msec()`) is not used. If the user specifies a Godot 3.x project, ask to confirm before proceeding — the reference material does not cover Godot 3.x patterns.

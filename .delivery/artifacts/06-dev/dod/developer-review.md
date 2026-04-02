@@ -1,4 +1,4 @@
-# Developer DoD Review -- Pipeline Integrity Fixes (US-01)
+# Developer DoD Review -- Cross-Skill Shared References SPIKE (#47)
 
 **Reviewer**: Gimli (Developer)
 **Date**: 2026-04-01
@@ -8,72 +8,66 @@
 
 ## BLOCKING Criteria
 
-### [PASS] Changes follow existing file conventions (heading levels, bullet styles, formatting)
+### [PASS] Code follows conventions, no secrets
 
-Spot-checked two of the four modified files:
+**validate_cross_refs.py**: stdlib-only Python (`re`, `sys`, `pathlib`). No external dependencies. Shebang line present. Docstring with usage and exit codes documented. Functions are well-separated (extract, resolve, validate). No hardcoded secrets, tokens, API keys, or sensitive data anywhere. Exit codes are 0 (success) and 1 (failure) -- standard convention.
 
-- **quality-gates.md**: New criteria at lines 214-215 follow the exact same pattern as all other Gate 7 criteria -- checkbox list items, `[blocking]` severity tag, `<!-- retro -->` comment annotations. Heading levels unchanged. No style drift.
-- **project-types.md**: Refactoring sub-type at line 20 follows the existing sub-type and signal format used by GAME_DEV and other types. Light-or-Skip bullets at lines 132 and 137 match the existing bullet style and indentation. No heading level violations.
+**CROSS-SKILL-REFERENCES.md**: Lives at plugin root (`delivery-team/`). Markdown conventions consistent with repo style -- heading levels, table formatting, bullet styles all match existing docs.
 
-Both files are consistent with their established conventions. And my code!
+**SKILL.md modifications** (godot, alias-creator): Cross-reference sections use formal tables with path, owner, purpose columns. Stability notes included. Consistent with existing SKILL.md section patterns.
 
-### [PASS] No content accidentally removed or rewritten -- changes are additive
+No secrets. No credentials. Nothing to flag.
 
-Verified across both spot-checked files:
+### [PASS] All deliverables from architecture are present
 
-- **quality-gates.md Gate 7**: All 12 pre-existing criteria (lines 210-230) remain intact. The two new criteria (confidence cap, empirical limitation documentation) are inserted after the existing "Empirical-items classification" criterion at line 213. The existing criterion is untouched -- word for word identical to the AC-2.3 requirement. No reordering, no rewording of existing content.
-- **project-types.md FEATURE section**: All pre-existing FEATURE detection signals remain at lines 17-19. The refactoring sub-type is appended at line 20 -- additive. The existing Light-or-Skip bullets are all present. The "Apply Skip" single-module condition was narrowed with a qualifying clause (not replaced or removed) -- this is explicitly what AC-3.3 requires.
+Per dev notes, ADR-047 specified 4 deliverables. All verified on disk:
 
-No deletions detected. All changes are purely additive or narrowing (with qualifier).
+| Deliverable | Path | Exists |
+|-------------|------|--------|
+| Developer Guide | `delivery-team/CROSS-SKILL-REFERENCES.md` | YES |
+| CI Validation Script | `delivery-team/scripts/validate_cross_refs.py` | YES |
+| godot SKILL.md cross-ref section | `delivery-team/skills/godot/SKILL.md` | YES (section at line 223) |
+| alias-creator SKILL.md cross-ref section | `delivery-team/skills/alias-creator/SKILL.md` | YES (section at line 189) |
 
-### [PASS] All 13 ACs from US-01 addressed in dev notes with verification
+4/4 deliverables present. No gaps.
 
-The dev notes at `.delivery/artifacts/06-dev/developer/dev-notes.md` contain:
+### [PASS] Validation script runs and exits 0
 
-1. **Section 1 (Summary of Changes Per File)**: All 4 files documented with per-change tables mapping each modification to its AC number. 13 AC references total across the 4 file tables.
-2. **Section 2 (Per-AC Verification)**: Explicit verification table with all 13 ACs (AC-1.1 through AC-1.6, AC-2.1 through AC-2.3, AC-3.1 through AC-3.4). Each row has Status=PASS and Evidence column with specific structural verification.
-3. **Section 3 (Deviations)**: States "None" -- no deviations from story.
-4. **Section 4 (Verification Status)**: Correctly distinguishes structural verification (13/13) from empirical verification (0/13), noting these are markdown instruction files requiring pipeline dogfooding for empirical validation. References `feedback_dogfooding.md` lesson.
+Executed against the working repo:
 
-Count confirmed: 13/13 ACs addressed. No gaps.
+```
+$ python delivery-team/scripts/validate_cross_refs.py delivery-team/
+Scanning 11 SKILL.md files in /var/home/meconnelly/Documents/GitHub/Claude-Plugins/delivery-team
 
-### [PASS] No hardcoded secrets or sensitive data introduced
+Found 2 cross-skill reference(s):
 
-All changes are to markdown instruction/reference files. No code, no config values, no credentials, no API keys, no tokens. The only "values" introduced are:
+  [OK] alias-creator/SKILL.md:189
+         path: delivery-team/skills/delivery-flow/references/aliases/*.yml
 
-- Confidence score cap (4/5 and 5/5) -- business rule thresholds, not secrets.
-- Detection signal strings ("refactor", "decompose", etc.) -- keyword matching terms, not sensitive data.
+  [OK] godot/SKILL.md:223
+         path: delivery-team/skills/developer/references/clean-code.md
 
-Nothing to flag.
+Result: 2 valid, 0 broken
+
+OK: All cross-skill references are valid.
+EXIT CODE: 0
+```
+
+Both references resolve correctly. Glob pattern (`*.yml`) handles the 13 alias theme files. Script exits 0.
 
 ---
 
-## Spot-Check Results
+## Spot-Check Notes
 
-### quality-gates.md -- Gate 7 Confidence Cap (AC-2.1, AC-2.2)
-
-Verified at `/home/meconnelly/.claude/plugins/marketplaces/mec-claude-agent-skills/delivery-team/skills/delivery-flow/references/quality-gates.md`:
-
-- **AC-2.1**: Line 214 contains blocking criterion: confidence capped at 4/5 maximum without empirical validation, 5/5 requires empirical evidence. Exact match to AC specification.
-- **AC-2.2**: Line 215 contains blocking criterion: DoD must include "Empirical Validation Limitation" section with (a) unvalidated criteria, (b) what prevented validation, (c) residual risk. Exact match.
-- **AC-2.3**: Line 213 contains the original "Empirical-items classification" criterion, unchanged.
-
-All three criteria correctly placed after the existing empirical-items criterion, before the pass rate threshold criterion. Insertion point is logical and maintains the gate's narrative flow.
-
-### project-types.md -- Refactoring Sub-Type (AC-3.1, AC-3.2, AC-3.3)
-
-Verified at `/home/meconnelly/.claude/plugins/marketplaces/mec-claude-agent-skills/delivery-team/skills/delivery-flow/references/project-types.md`:
-
-- **AC-3.1**: Line 20 contains "Sub-type -- refactoring" with all 8 specified signals: "refactor", "decompose", "extract module", "split class", "restructure", "reorganize modules", "break apart", "modularize". Exact match.
-- **AC-3.2**: Line 132 in Apply Light list contains: "Module decomposition, boundary changes, or architectural restructuring (refactoring sub-type)". Exact match.
-- **AC-3.3**: Line 137 in Apply Skip list contains: "Contained within a single service or module AND does not involve module decomposition, boundary changes, or architectural restructuring". Qualifier added without removing the original condition. Exact match.
-- **AC-3.4**: All other FEATURE signals (lines 17-19), GREENFIELD/BUG_FIX/GAME_DEV/SPIKE/DOCS_ONLY sections, and remaining Light-or-Skip conditions are unchanged.
+- **Regex quality**: Two detection methods (formal table rows + inline path scanning) with deduplication. Self-references excluded to avoid false positives. Solid.
+- **Glob support**: `pathlib.glob()` used for wildcard patterns -- verifies at least one match exists. Correct behavior.
+- **Dev notes thoroughness**: All 4 deliverables mapped, positive and negative test results documented, Challenger conditions addressed (CI script as deliverable, breaking change contract, ADR review trigger, discoverability gap). Structural vs empirical verification honestly distinguished.
 
 ---
 
 ## Summary
 
-Thirteen acceptance criteria. Four files. Every change lands exactly where it should, formatted exactly as the files demand, with nothing lost and nothing smuggled in. The dev notes are thorough -- every AC mapped, every file documented, structural vs. empirical verification honestly distinguished. The stone holds.
+Four deliverables. All present on disk. Validation script runs clean -- 2 references, 0 broken, exit 0. Code is stdlib-only, well-structured, no secrets. Dev notes are thorough with both positive and negative test evidence. The stone holds.
 
 By my axe, this passes. And my code!
 
