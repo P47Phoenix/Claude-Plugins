@@ -281,4 +281,5 @@ Agents invoke the Card Finder via the Bash tool:
 - No API key required.
 - Respect rate limits (50-100ms between requests).
 - Card images and data are provided under Wizards of the Coast's fan content policy.
-- Prices are sourced from TCGPlayer and CardKingdom; they are estimates, not live market prices.
+- The `prices.usd` field reflects **TCGPlayer market price**, not Card Kingdom or other vendors. Card Kingdom prices may differ significantly (often higher for staples). Always verify at your preferred vendor before purchasing.
+- Prices are estimates based on recent market data, not guaranteed live market prices.

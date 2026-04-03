@@ -195,6 +195,11 @@ COST_REDUCTION_PLAN: (only present if FAIL and over budget)
 UNAVAILABLE_PRICES: (only present if any cards lack pricing)
   - <card_name> (excluded from budget calculation)
   [...]
+
+PRICING_DISCLAIMER:
+  Prices reflect TCGPlayer market values via Scryfall API (as of <current_date>).
+  Card Kingdom and other vendors may differ significantly.
+  Verify prices at your preferred vendor before purchasing.
 ```
 
 ### 4.1 Verdict Rules

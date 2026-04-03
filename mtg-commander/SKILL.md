@@ -686,6 +686,11 @@ COST_REDUCTION_PLAN: (only present if FAIL and over budget)
     <card> ($<price>) -> <replacement> ($<price>)   saves $<amount>
     [... enough swaps to bring total under budget ...]
   Projected total after swaps: $<amount>
+
+PRICING_DISCLAIMER:
+  Prices reflect TCGPlayer market values via Scryfall API (as of <current_date>).
+  Card Kingdom and other vendors may differ significantly.
+  Verify prices at your preferred vendor before purchasing.
 ```
 
 **After the Price Evaluator agent returns**, parse the verdict.
@@ -850,7 +855,7 @@ For basic lands, use quantity notation (e.g., `24 Swamp`).
 --- Purchase Info ---
 
   Total deck cost: $<total> (cheapest printings via Scryfall)
-  Pricing source:  Scryfall (aggregated market data)
+  Pricing source:  TCGPlayer market prices via Scryfall API
   Prices as of:    <current_date>
 
   Most expensive cards:
@@ -858,8 +863,9 @@ For basic lands, use quantity notation (e.g., `24 Swamp`).
     <card_name>    $<price>
     <card_name>    $<price>
 
-  Note: Prices reflect cheapest available printing. Actual costs
-  may vary by retailer and card condition.
+  Note: Prices reflect TCGPlayer market values via Scryfall API
+  (as of <current_date>). Card Kingdom and other vendors may differ
+  significantly. Verify prices at your preferred vendor before purchasing.
 ```
 
 ### Section 6: Post-Output Actions
