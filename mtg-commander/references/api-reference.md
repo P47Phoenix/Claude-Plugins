@@ -1,6 +1,6 @@
-# Scryfall API Reference
+# API Reference (Scryfall + Archidekt)
 
-Reference document for the Price Evaluator agent and the `card_lookup.py` script. Documents the Scryfall API endpoints, query syntax, rate limiting, response schemas, and error handling used by this plugin.
+Reference document for the Price Evaluator agent and the `card_lookup.py` script. Documents the Scryfall and Archidekt API endpoints, query syntax, rate limiting, response schemas, and error handling used by this plugin.
 
 ---
 
@@ -258,6 +258,52 @@ When `price_usd` is null:
 
 ---
 
+## Archidekt API (Card Kingdom Pricing)
+
+### Base URL
+
+```
+https://archidekt.com/api/cards/v2/
+```
+
+Free, no authentication required. Used exclusively for Card Kingdom price data.
+
+### Endpoint: Card Search with Prices
+
+**Purpose**: Fetch Card Kingdom (and TCGPlayer) prices for a card across printings.
+
+**Method**: GET
+
+**Parameters**:
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `name` | string | Exact card name (URL-encoded) |
+| `pageSize` | integer | Max results to return (use 5 for cheapest-across-printings) |
+
+**Example request**:
+```
+GET /api/cards/v2/?name=Sol+Ring&pageSize=5
+```
+
+**Response structure** (per result):
+
+| Field Path | Type | Description |
+|------------|------|-------------|
+| `oracleCard.name` | string | Canonical card name |
+| `prices.ck` | float | Card Kingdom normal price (0.0 = unavailable) |
+| `prices.ckfoil` | float | Card Kingdom foil price (0.0 = unavailable) |
+| `prices.tcg` | float | TCGPlayer price (0.0 = unavailable) |
+| `ckNormalId` | integer | Card Kingdom product ID for purchase links |
+
+**Card Kingdom purchase URL**: `https://www.cardkingdom.com/catalog/item/{ckNormalId}`
+
+**Rate limiting**: No rate limit headers visible. The script enforces a 100ms minimum delay between requests as a courtesy.
+
+**Error handling**: Network errors and non-200 responses return `None` from the helper, which the command handles gracefully by returning `found: false`.
+
+---
+
 ## CLI Commands (`card_lookup.py`)
 
 Agents invoke the Card Finder via the Bash tool:
@@ -268,18 +314,29 @@ Agents invoke the Card Finder via the Bash tool:
 | `search` | `python card_lookup.py search --query "o:sacrifice t:creature id:B f:commander"` | Search for cards matching Scryfall query syntax. Returns array of matching cards. |
 | `batch` | `python card_lookup.py batch --names "Sol Ring" "Dark Ritual" "Blood Artist"` | Batch lookup via `/cards/collection`. Splits at 75 cards. Returns `data` + `not_found`. |
 | `price` | `python card_lookup.py price --name "Sol Ring"` | Get cheapest USD printing price for a card. Handles null USD fallback. |
-| `batch-price` | `python card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"` | Batch pricing for decklists. Returns all cards with prices. |
+| `batch-price` | `python card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"` | Batch pricing for decklists. Returns all cards with TCGPlayer prices. |
+| `ck-price` | `python card_lookup.py ck-price --name "Sol Ring"` | Get Card Kingdom + TCGPlayer price for a card via Archidekt API. Returns cheapest CK price across printings with purchase link. |
+| `ck-batch-price` | `python card_lookup.py ck-batch-price --names "Sol Ring" "Dark Ritual" "Phyrexian Arena"` | Batch Card Kingdom pricing. Returns both CK and TCG prices per card, with vendor totals. 100ms delay between calls. |
 | `random-commander` | `python card_lookup.py random-commander --colors BG` | Find commander suggestions for given color identity. |
 
 **All commands output JSON to stdout** for machine parsing by agents. Errors are returned as JSON with an `"error"` field.
 
 ---
 
-## Scryfall Terms of Use
+## API Terms of Use
+
+### Scryfall
 
 - Scryfall is free for personal and open-source use.
 - No API key required.
 - Respect rate limits (50-100ms between requests).
 - Card images and data are provided under Wizards of the Coast's fan content policy.
-- The `prices.usd` field reflects **TCGPlayer market price**, not Card Kingdom or other vendors. Card Kingdom prices may differ significantly (often higher for staples). Always verify at your preferred vendor before purchasing.
+- The `prices.usd` field reflects **TCGPlayer market price**.
 - Prices are estimates based on recent market data, not guaranteed live market prices.
+
+### Archidekt
+
+- Archidekt API is free, no authentication required.
+- No documented rate limits -- the script enforces 100ms courtesy delay.
+- The `prices.ck` field reflects **Card Kingdom price**.
+- Used solely for Card Kingdom pricing; card data (names, rules text, legality) comes from Scryfall.

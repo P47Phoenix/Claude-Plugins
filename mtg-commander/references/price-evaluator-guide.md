@@ -6,9 +6,9 @@ Reference document for the Price Evaluator sub-agent. Defines the complete budge
 
 ## 1. Price Retrieval
 
-### 1.1 Batch Pricing
+### 1.1 Batch Pricing (TCGPlayer via Scryfall)
 
-Fetch prices for all 100 cards using `card_lookup.py batch-price`:
+Fetch TCGPlayer prices for all 100 cards using `card_lookup.py batch-price`:
 
 ```bash
 python ${SKILL_DIR}/scripts/card_lookup.py batch-price --names "<card1>" "<card2>" ... "<card75>"
@@ -16,6 +16,16 @@ python ${SKILL_DIR}/scripts/card_lookup.py batch-price --names "<card76>" ... "<
 ```
 
 Split into batches of 75 cards maximum (Scryfall `/cards/collection` limit). The script returns each card's cheapest USD printing price.
+
+### 1.1b Batch Pricing (Card Kingdom via Archidekt)
+
+After TCGPlayer pricing, fetch Card Kingdom prices for the same cards:
+
+```bash
+python ${SKILL_DIR}/scripts/card_lookup.py ck-batch-price --names "<card1>" "<card2>" ... "<card100>"
+```
+
+No batch size limit (individual Archidekt API calls with 100ms delay between each). Returns both CK and TCG prices per card, plus Card Kingdom purchase links.
 
 ### 1.2 Individual Price Lookup
 
@@ -48,10 +58,12 @@ Do NOT estimate prices. Do NOT use non-USD currencies. If Scryfall has no USD pr
 
 ### 2.1 Total Budget Check
 
-Sum all card prices (excluding "price unavailable" cards). Compare against the user's stated budget:
+Sum all card prices (excluding "price unavailable" cards). Calculate BOTH vendor totals. The budget check uses the HIGHER of the two totals (conservative approach):
 
 ```
-total_cost = sum(price_usd for each card where price_usd is not null)
+total_tcg = sum(price_usd for each card where price_usd is not null)
+total_ck  = sum(price_ck for each card where price_ck is not null)
+total_cost = max(total_tcg, total_ck)
 result = PASS if total_cost <= budget else FAIL
 ```
 
@@ -153,7 +165,8 @@ The Price Evaluator produces a structured verdict in this exact format:
 ```
 PRICE_VERDICT: PASS|FAIL
 
-TOTAL_COST: $<amount>
+TOTAL_COST: TCGPlayer: $<amount> | Card Kingdom: $<amount>
+BUDGET_CHECK_PRICE: $<amount> (higher of TCG/CK — conservative)
 BUDGET: $<amount>
 REMAINING: $<amount> (under budget) | OVER_BY: $<amount>
 PER_CARD_CAP: $<amount>
@@ -196,10 +209,10 @@ UNAVAILABLE_PRICES: (only present if any cards lack pricing)
   - <card_name> (excluded from budget calculation)
   [...]
 
-PRICING_DISCLAIMER:
-  Prices reflect TCGPlayer market values via Scryfall API (as of <current_date>).
-  Card Kingdom and other vendors may differ significantly.
-  Verify prices at your preferred vendor before purchasing.
+PRICING_NOTE:
+  TCGPlayer prices via Scryfall API. Card Kingdom prices via Archidekt API.
+  Prices as of <current_date>. Budget check uses the higher vendor total.
+  Verify final prices at your preferred vendor before purchasing.
 ```
 
 ### 4.1 Verdict Rules
@@ -229,16 +242,17 @@ Execute these steps in order. No steps skipped.
 2. **Extract budget parameters** -- Get total budget and per-card cap (explicit or 15% default) from intake.
 3. **Batch price fetch (cards 1-75)** -- Call `card_lookup.py batch-price` for the first 75 cards.
 4. **Batch price fetch (cards 76-100)** -- Call `card_lookup.py batch-price` for the remaining cards.
-5. **Handle null prices** -- Identify cards with no USD price after fallback chain. Flag as "price unavailable."
-6. **Calculate total cost** -- Sum all available prices.
-7. **Total budget check** -- Compare total against budget. Record PASS or FAIL.
-8. **Per-card cap check** -- Compare each card's price against the cap. Record violations.
-9. **Calculate category subtotals** -- Group prices by category, compute subtotals.
-10. **Identify most expensive cards** -- Sort by price, take top 5.
-11. **Generate replacement suggestions** -- For each violation (over-cap or over-budget contributor), search for budget-friendly alternatives.
-12. **Build cost reduction plan** -- If over budget, rank swaps by savings-to-synergy-impact ratio. Accumulate until projected total is under budget.
-13. **Tag budget-relaxed cards** -- If replacements reduce synergy below 3 interactions, tag with `[BUDGET_RELAXED]` and note the relaxed threshold of 2.
-14. **Produce verdict** -- Assemble the complete output in the format above.
+5. **Card Kingdom price fetch** -- Call `card_lookup.py ck-batch-price` for all 100 cards. Merge CK prices into the card data.
+6. **Handle null prices** -- Identify cards with no USD price after fallback chain. Flag as "price unavailable."
+7. **Calculate total cost** -- Sum TCGPlayer total and Card Kingdom total separately.
+8. **Total budget check** -- Compare the HIGHER of TCG/CK totals against budget. Record PASS or FAIL.
+9. **Per-card cap check** -- Compare each card's price (higher of TCG/CK) against the cap. Record violations.
+10. **Calculate category subtotals** -- Group prices by category, compute subtotals.
+11. **Identify most expensive cards** -- Sort by price (higher of TCG/CK), take top 5.
+12. **Generate replacement suggestions** -- For each violation (over-cap or over-budget contributor), search for budget-friendly alternatives.
+13. **Build cost reduction plan** -- If over budget, rank swaps by savings-to-synergy-impact ratio. Accumulate until projected total is under budget.
+14. **Tag budget-relaxed cards** -- If replacements reduce synergy below 3 interactions, tag with `[BUDGET_RELAXED]` and note the relaxed threshold of 2.
+15. **Produce verdict** -- Assemble the complete output in the format above.
 
 ---
 

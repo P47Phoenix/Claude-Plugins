@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scryfall API client for MTG Commander deck builder agents.
+"""Scryfall + Archidekt API client for MTG Commander deck builder agents.
 
 stdlib only — no pip dependencies. Outputs JSON to stdout for machine parsing.
 
@@ -9,6 +9,8 @@ Usage:
     python card_lookup.py batch --names "Sol Ring" "Dark Ritual" "Cabal Coffers"
     python card_lookup.py price --name "Sol Ring"
     python card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"
+    python card_lookup.py ck-price --name "Sol Ring"
+    python card_lookup.py ck-batch-price --names "Sol Ring" "Dark Ritual" "Phyrexian Arena"
     python card_lookup.py random-commander --colors BG --strategy sacrifice
     python card_lookup.py validate-deck --commander "Karlov of the Ghost Council" --cards "Sol Ring" "Sejiri Refuge" "Dark Ritual"
 """
@@ -24,6 +26,7 @@ import urllib.parse
 import urllib.request
 
 BASE_URL = "https://api.scryfall.com"
+ARCHIDEKT_BASE_URL = "https://archidekt.com/api/cards/v2/"
 USER_AGENT = "MtgCommanderDeckBuilder/1.0 (Claude-Plugins)"
 
 
@@ -391,6 +394,169 @@ def cmd_batch_price(names: list[str]) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Archidekt API helpers (Card Kingdom pricing)
+# ---------------------------------------------------------------------------
+
+_archidekt_limiter = RateLimiter(min_delay_ms=100)
+
+
+def _archidekt_request(url: str, *, timeout: int = 10) -> dict | None:
+    """Issue a GET request to the Archidekt API. Returns parsed JSON or None."""
+
+    _archidekt_limiter.wait()
+
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json",
+    }
+    req = urllib.request.Request(url, headers=headers, method="GET")
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = resp.read().decode("utf-8")
+            return json.loads(body)
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError):
+        return None
+
+
+def cmd_ck_price(name: str) -> dict:
+    """Get Card Kingdom + TCGPlayer prices for a card via Archidekt API.
+
+    Searches across printings and returns the cheapest CK price found.
+    Also includes TCGPlayer price for comparison.
+    """
+
+    encoded = urllib.parse.quote(name, safe="")
+    url = f"{ARCHIDEKT_BASE_URL}?name={encoded}&pageSize=5"
+    result = _archidekt_request(url)
+
+    if result is None or not result.get("results"):
+        return {"found": False, "query": name, "error": "Archidekt API returned no results"}
+
+    cheapest_ck = None
+    cheapest_ck_foil = None
+    cheapest_tcg = None
+    best_ck_url = None
+    best_card_name = name
+
+    for card in result.get("results", []):
+        prices = card.get("prices", {}) or {}
+        ck_normal = prices.get("ck")
+        ck_foil = prices.get("ckFoil") or prices.get("ckfoil")
+        tcg = prices.get("tcg")
+
+        ck_normal_id = card.get("ckNormalId")
+
+        # Archidekt nests the card name under oracleCard.name
+        oracle_card = card.get("oracleCard", {}) or {}
+        card_name = oracle_card.get("name") or card.get("name") or name
+        # Only consider results whose name matches (case-insensitive)
+        if card_name.lower() != name.lower():
+            continue
+
+        best_card_name = card_name
+
+        # Archidekt uses 0.0 to mean "no price" — treat as unavailable
+        if ck_normal is not None:
+            try:
+                val = float(ck_normal)
+                if val > 0 and (cheapest_ck is None or val < cheapest_ck):
+                    cheapest_ck = val
+                    if ck_normal_id:
+                        best_ck_url = f"https://www.cardkingdom.com/catalog/item/{ck_normal_id}"
+            except (ValueError, TypeError):
+                pass
+
+        if ck_foil is not None:
+            try:
+                val = float(ck_foil)
+                if val > 0 and (cheapest_ck_foil is None or val < cheapest_ck_foil):
+                    cheapest_ck_foil = val
+            except (ValueError, TypeError):
+                pass
+
+        if tcg is not None:
+            try:
+                val = float(tcg)
+                if val > 0 and (cheapest_tcg is None or val < cheapest_tcg):
+                    cheapest_tcg = val
+            except (ValueError, TypeError):
+                pass
+
+    # Use CK normal price; fall back to foil if normal unavailable
+    final_ck = cheapest_ck if cheapest_ck is not None else cheapest_ck_foil
+
+    if final_ck is None and cheapest_tcg is None:
+        return {
+            "name": best_card_name,
+            "price_ck": None,
+            "price_tcg": None,
+            "ck_url": None,
+            "found": True,
+            "warning": "No CK or TCG prices available from Archidekt",
+        }
+
+    return {
+        "name": best_card_name,
+        "price_ck": f"{final_ck:.2f}" if final_ck is not None else None,
+        "price_tcg": f"{cheapest_tcg:.2f}" if cheapest_tcg is not None else None,
+        "ck_url": best_ck_url,
+        "found": True,
+    }
+
+
+def cmd_ck_batch_price(names: list[str]) -> dict:
+    """Batch Card Kingdom + TCGPlayer pricing via Archidekt API.
+
+    Calls the Archidekt API for each card individually with a 100ms delay
+    between calls. Returns an array with both TCG and CK prices per card.
+    """
+
+    cards: list[dict] = []
+    not_found: list[str] = []
+    total_ck = 0.0
+    total_tcg = 0.0
+    ck_unavailable: list[str] = []
+    tcg_unavailable: list[str] = []
+
+    for name in names:
+        result = cmd_ck_price(name)
+
+        if not result.get("found", False):
+            not_found.append(name)
+            continue
+
+        card_entry = {
+            "name": result["name"],
+            "price_ck": result.get("price_ck"),
+            "price_tcg": result.get("price_tcg"),
+            "ck_url": result.get("ck_url"),
+        }
+        cards.append(card_entry)
+
+        if result.get("price_ck") is not None:
+            total_ck += float(result["price_ck"])
+        else:
+            ck_unavailable.append(result["name"])
+
+        if result.get("price_tcg") is not None:
+            total_tcg += float(result["price_tcg"])
+        else:
+            tcg_unavailable.append(result["name"])
+
+    return {
+        "cards": cards,
+        "not_found": not_found,
+        "total_ck": round(total_ck, 2),
+        "total_tcg": round(total_tcg, 2),
+        "ck_unavailable": ck_unavailable,
+        "tcg_unavailable": tcg_unavailable,
+        "total_priced": len(cards),
+        "total_cards": len(names),
+    }
+
+
 def cmd_random_commander(colors: str = "", strategy: str = "") -> dict:
     """Find commanders matching color identity and optional strategy."""
 
@@ -586,6 +752,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_bprice = subparsers.add_parser("batch-price", help="Batch pricing for multiple cards")
     p_bprice.add_argument("--names", nargs="+", required=True, help="Card names to price")
 
+    # ck-price
+    p_ckprice = subparsers.add_parser("ck-price", help="Get Card Kingdom price for a card via Archidekt")
+    p_ckprice.add_argument("--name", required=True, help="Card name to price")
+
+    # ck-batch-price
+    p_ckbprice = subparsers.add_parser("ck-batch-price", help="Batch Card Kingdom pricing for multiple cards via Archidekt")
+    p_ckbprice.add_argument("--names", nargs="+", required=True, help="Card names to price")
+
     # random-commander
     p_random = subparsers.add_parser("random-commander", help="Find commanders by criteria")
     p_random.add_argument("--colors", default="", help="Color identity filter (e.g. BG, WUB)")
@@ -616,6 +790,10 @@ def main() -> None:
         result = cmd_price(args.name)
     elif args.command == "batch-price":
         result = cmd_batch_price(args.names)
+    elif args.command == "ck-price":
+        result = cmd_ck_price(args.name)
+    elif args.command == "ck-batch-price":
+        result = cmd_ck_batch_price(args.names)
     elif args.command == "random-commander":
         result = cmd_random_commander(args.colors, args.strategy)
     elif args.command == "validate-deck":

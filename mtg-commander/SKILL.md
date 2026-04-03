@@ -15,9 +15,10 @@ Multi-agent pipeline for building optimized, format-legal, budget-compliant Comm
 
 ## Required Setup
 
-Before using this plugin, add `api.scryfall.com` to your allowed WebFetch domains in Claude Code settings:
+Before using this plugin, add these domains to your allowed WebFetch domains in Claude Code settings:
 
   Settings > Permissions > WebFetch > Add: api.scryfall.com
+  Settings > Permissions > WebFetch > Add: archidekt.com
 
 ## Overview
 
@@ -42,6 +43,8 @@ python ${SKILL_DIR}/scripts/card_lookup.py search --query "oracle:sacrifice type
 python ${SKILL_DIR}/scripts/card_lookup.py batch --names "Sol Ring" "Dark Ritual" "Cabal Coffers"
 python ${SKILL_DIR}/scripts/card_lookup.py price --name "Sol Ring"
 python ${SKILL_DIR}/scripts/card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"
+python ${SKILL_DIR}/scripts/card_lookup.py ck-price --name "Sol Ring"
+python ${SKILL_DIR}/scripts/card_lookup.py ck-batch-price --names "Sol Ring" "Dark Ritual" "Phyrexian Arena"
 python ${SKILL_DIR}/scripts/card_lookup.py random-commander --colors BG --strategy sacrifice
 python ${SKILL_DIR}/scripts/card_lookup.py validate-deck --commander "Karlov of the Ghost Council" --cards "Sol Ring" "Sejiri Refuge" "Dark Ritual"
 ```
@@ -616,12 +619,19 @@ Per-card cap: ${per_card_cap} (explicit cap if user specified one, otherwise 15%
 
 ## Evaluation Steps
 
-### Step 1: Fetch Prices
+### Step 1: Fetch TCGPlayer Prices
 Use batch pricing for all 100 cards:
 
   python ${SKILL_DIR}/scripts/card_lookup.py batch-price --names "<card1>" "<card2>" ...
 
 Split into batches of 75 cards. Use cheapest available printing for each card.
+
+### Step 1b: Fetch Card Kingdom Prices
+After TCGPlayer pricing, fetch CK prices via Archidekt:
+
+  python ${SKILL_DIR}/scripts/card_lookup.py ck-batch-price --names "<card1>" "<card2>" ... "<card100>"
+
+Merge CK prices into card data. Show both vendor prices in output.
 
 ### Step 2: Handle Null Prices
 If a card has no USD price: the card_lookup.py script tries usd_foil and other
@@ -629,7 +639,9 @@ printings automatically. If still null, flag as "price unavailable" and exclude
 from budget calculation with a warning.
 
 ### Step 3: Calculate Total
-Sum all card prices. Compare against the budget.
+Sum TCGPlayer total and Card Kingdom total separately. Budget check uses the
+HIGHER of the two totals (conservative). Display both in output:
+"TCGPlayer: $X | Card Kingdom: $Y"
 
 ### Step 4: Per-Card Cap
 Check each card against the per-card cap. If no explicit cap was specified by
@@ -687,10 +699,10 @@ COST_REDUCTION_PLAN: (only present if FAIL and over budget)
     [... enough swaps to bring total under budget ...]
   Projected total after swaps: $<amount>
 
-PRICING_DISCLAIMER:
-  Prices reflect TCGPlayer market values via Scryfall API (as of <current_date>).
-  Card Kingdom and other vendors may differ significantly.
-  Verify prices at your preferred vendor before purchasing.
+PRICING_NOTE:
+  TCGPlayer prices via Scryfall API. Card Kingdom prices via Archidekt API.
+  Prices as of <current_date>. Budget check uses the higher vendor total.
+  Verify final prices at your preferred vendor before purchasing.
 ```
 
 **After the Price Evaluator agent returns**, parse the verdict.
@@ -854,18 +866,17 @@ For basic lands, use quantity notation (e.g., `24 Swamp`).
 ```
 --- Purchase Info ---
 
-  Total deck cost: $<total> (cheapest printings via Scryfall)
-  Pricing source:  TCGPlayer market prices via Scryfall API
+  Total deck cost: TCGPlayer: $<tcg_total> | Card Kingdom: $<ck_total>
+  Pricing sources: TCGPlayer via Scryfall API, Card Kingdom via Archidekt API
   Prices as of:    <current_date>
 
   Most expensive cards:
-    <card_name>    $<price>
-    <card_name>    $<price>
-    <card_name>    $<price>
+    <card_name>    TCG: $<price>  CK: $<price>
+    <card_name>    TCG: $<price>  CK: $<price>
+    <card_name>    TCG: $<price>  CK: $<price>
 
-  Note: Prices reflect TCGPlayer market values via Scryfall API
-  (as of <current_date>). Card Kingdom and other vendors may differ
-  significantly. Verify prices at your preferred vendor before purchasing.
+  Budget check used: $<higher_total> (higher of TCG/CK — conservative)
+  Verify final prices at your preferred vendor before purchasing.
 ```
 
 ### Section 6: Post-Output Actions
