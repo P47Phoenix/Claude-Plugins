@@ -10,10 +10,13 @@ Usage:
     python card_lookup.py price --name "Sol Ring"
     python card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"
     python card_lookup.py random-commander --colors BG --strategy sacrifice
+    python card_lookup.py validate-deck --commander "Karlov of the Ghost Council" --cards "Sol Ring" "Sejiri Refuge" "Dark Ritual"
 """
 
 import argparse
 import json
+import os
+import re
 import sys
 import time
 import urllib.error
@@ -415,6 +418,144 @@ def cmd_random_commander(colors: str = "", strategy: str = "") -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Banned list loader
+# ---------------------------------------------------------------------------
+
+def _load_banned_list() -> set[str]:
+    """Load banned card names from references/banned-list.md.
+
+    Parses the markdown table and returns a set of exact card names.
+    Falls back to an empty set if the file cannot be read.
+    """
+    banned: set[str] = set()
+    # Resolve path relative to this script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    banned_path = os.path.join(script_dir, "..", "references", "banned-list.md")
+
+    try:
+        with open(banned_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                # Match table rows: | <number> | <Card Name> | ...
+                match = re.match(r"^\|\s*\d+\s*\|\s*(.+?)\s*\|", line)
+                if match:
+                    banned.add(match.group(1).strip())
+    except OSError:
+        pass  # File not found — rely on Scryfall legalities field as fallback
+
+    return banned
+
+
+# ---------------------------------------------------------------------------
+# Validate-deck command
+# ---------------------------------------------------------------------------
+
+def cmd_validate_deck(commander_name: str, card_names: list[str]) -> dict:
+    """Programmatic deck validation: color identity, format legality, banned list.
+
+    Looks up the commander and every card via Scryfall, then checks:
+      1. Each card exists in Scryfall.
+      2. Each card's color_identity is a subset of the commander's.
+      3. Each card's legalities.commander is "legal".
+      4. No card is on the banned list.
+
+    Returns a JSON-serialisable dict with commander info, violation details,
+    and legal/illegal counts.
+    """
+
+    # --- Resolve commander ---------------------------------------------------
+    commander_data = cmd_validate(commander_name)
+    if not commander_data.get("found"):
+        return {
+            "error": f"Commander not found: {commander_name}",
+            "did_you_mean": commander_data.get("did_you_mean"),
+        }
+
+    commander_identity = set(commander_data["color_identity"])
+
+    # --- Batch-lookup all cards ----------------------------------------------
+    batch_result = cmd_batch(card_names)
+    found_cards = {card["name"]: card for card in batch_result["data"]}
+
+    # --- Load banned list ----------------------------------------------------
+    banned_set = _load_banned_list()
+
+    # --- Check each card -----------------------------------------------------
+    violations: list[dict] = []
+    not_found_names: list[str] = []
+
+    # Track cards from the not_found array
+    for nf in batch_result.get("not_found", []):
+        nf_name = nf.get("name", str(nf))
+        not_found_names.append(nf_name)
+        violations.append({
+            "card": nf_name,
+            "type": "not_found",
+            "detail": "Card does not exist in Scryfall",
+        })
+
+    for card_name in card_names:
+        card = found_cards.get(card_name)
+        if card is None:
+            # Already handled via not_found above, but guard against name
+            # mismatches between input and Scryfall's canonical name.
+            # Check if a canonical match exists under a different casing.
+            canonical = None
+            for fname in found_cards:
+                if fname.lower() == card_name.lower():
+                    canonical = fname
+                    break
+            if canonical:
+                card = found_cards[canonical]
+            else:
+                continue  # Already in not_found violations
+
+        card_identity = set(card.get("color_identity", []))
+
+        # Color identity check
+        illegal_colors = card_identity - commander_identity
+        if illegal_colors:
+            violations.append({
+                "card": card["name"],
+                "type": "color_identity",
+                "card_identity": sorted(card_identity),
+                "commander_identity": sorted(commander_identity),
+                "illegal_colors": sorted(illegal_colors),
+            })
+
+        # Format legality check
+        legality = card.get("legalities", {}).get("commander", "not_legal")
+        if legality != "legal":
+            violations.append({
+                "card": card["name"],
+                "type": "format_legality",
+                "legality_status": legality,
+                "detail": f"legalities.commander = \"{legality}\"",
+            })
+
+        # Banned list check
+        if card["name"] in banned_set:
+            violations.append({
+                "card": card["name"],
+                "type": "banned",
+                "detail": "Card appears on the Commander banned list",
+            })
+
+    legal_count = len(card_names) - len({v["card"] for v in violations})
+
+    return {
+        "commander": {
+            "name": commander_data["name"],
+            "color_identity": sorted(commander_identity),
+        },
+        "total_cards": len(card_names),
+        "violations": violations,
+        "legal_count": legal_count,
+        "illegal_count": len(card_names) - legal_count,
+    }
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -450,6 +591,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_random.add_argument("--colors", default="", help="Color identity filter (e.g. BG, WUB)")
     p_random.add_argument("--strategy", default="", help="Strategy/oracle text filter")
 
+    # validate-deck
+    p_vdeck = subparsers.add_parser(
+        "validate-deck",
+        help="Validate deck cards against commander color identity, format legality, and banned list",
+    )
+    p_vdeck.add_argument("--commander", required=True, help="Commander card name")
+    p_vdeck.add_argument("--cards", nargs="+", required=True, help="Card names in the 99")
+
     return parser
 
 
@@ -469,6 +618,8 @@ def main() -> None:
         result = cmd_batch_price(args.names)
     elif args.command == "random-commander":
         result = cmd_random_commander(args.colors, args.strategy)
+    elif args.command == "validate-deck":
+        result = cmd_validate_deck(args.commander, args.cards)
     else:
         parser.print_help()
         sys.exit(1)

@@ -21,11 +21,16 @@ python ${SKILL_DIR}/scripts/card_lookup.py validate --name "<card name>"
 # Batch validation (preferred for full decklists -- splits at 75 per request)
 python ${SKILL_DIR}/scripts/card_lookup.py batch --names "<card1>" "<card2>" "<card3>" ...
 
+# Programmatic deck validation (color identity + legality + banned list)
+python ${SKILL_DIR}/scripts/card_lookup.py validate-deck --commander "<commander_name>" --cards "<card1>" "<card2>" ...
+
 # Search for replacement suggestions
 python ${SKILL_DIR}/scripts/card_lookup.py search --query "<scryfall query>"
 ```
 
 **Batch is mandatory for full-deck validation.** Do not validate 100 cards one at a time. Split into two batch calls: cards 1-75 and cards 76-100.
+
+**`validate-deck` is mandatory for color identity, format legality, and banned list checks (Checks 3, 4, and 6).** Never rely on your own knowledge of card color identities, format legality, or ban status. Always verify programmatically via `validate-deck`. This command queries Scryfall for each card and returns a violations array with every failure.
 
 ---
 
@@ -77,10 +82,16 @@ python ${SKILL_DIR}/scripts/card_lookup.py search --query "<scryfall query>"
 
 **Rule**: Every card's color identity must be a subset of the commander's color identity.
 
+**CRITICAL**: Never rely on your knowledge of card color identities. Always verify via the Scryfall API. LLM training data contains errors and confusions between similar card names. Use `validate-deck` for programmatic verification.
+
 **Procedure**:
-1. Extract the commander's `color_identity` array from the deck state (originally derived from Scryfall during intake).
-2. For each card in the batch results, read its `color_identity` field.
-3. Verify every color in the card's identity appears in the commander's identity.
+1. Run `validate-deck` to programmatically check all cards at once:
+   ```bash
+   python ${SKILL_DIR}/scripts/card_lookup.py validate-deck --commander "<commander_name>" --cards "<card1>" "<card2>" ... "<card99>"
+   ```
+2. Check the `violations` array in the output for any entries with `"type": "color_identity"`.
+3. Each violation includes `card_identity`, `commander_identity`, and `illegal_colors` for clear diagnostics.
+4. Any card with illegal colors is a violation -- no exceptions.
 
 **Color identity includes**:
 - Mana symbols in the mana cost
@@ -108,8 +119,8 @@ python ${SKILL_DIR}/scripts/card_lookup.py search --query "<scryfall query>"
 **Rule**: No card in the deck may appear on the Commander banned list.
 
 **Procedure**:
-1. Read `references/banned-list.md` for the current banned card list.
-2. Compare every card name in the deck against the banned list.
+1. The `validate-deck` command (run in Check 3) already checks the banned list programmatically. Check the `violations` array for entries with `"type": "banned"`.
+2. Additionally, read `references/banned-list.md` for the current banned card list as a cross-reference.
 3. Use exact string matching on Scryfall card names (the banned list uses exact Scryfall names).
 
 **Important**: The banned list applies to ALL cards in the deck -- the commander AND the 99. A card that is legal as a non-commander card may still be banned entirely from the format.
@@ -147,8 +158,8 @@ python ${SKILL_DIR}/scripts/card_lookup.py search --query "<scryfall query>"
 **Rule**: Every card must be legal in the Commander format.
 
 **Procedure**:
-1. For each card in the batch results, read the `legalities.commander` field.
-2. The value must be `"legal"`.
+1. The `validate-deck` command (run in Check 3) already checks format legality programmatically. Check the `violations` array for entries with `"type": "format_legality"`.
+2. For additional detail, the batch results also contain `legalities.commander` for each card. The value must be `"legal"`.
 
 **Values that are NOT legal**:
 - `"not_legal"` -- card is not printed in a Commander-legal set or is otherwise ineligible
@@ -259,10 +270,12 @@ This is not optional. Every check must produce the same result for the same inpu
 
 - Card count: arithmetic. No ambiguity.
 - Name verification: Scryfall says found or not found. No interpretation.
-- Color identity: subset comparison on arrays. No inference.
-- Banned list: exact string match. No judgment calls.
+- Color identity: **programmatic subset comparison via `validate-deck`**. Never use LLM knowledge for color identity -- Scryfall is the single source of truth.
+- Banned list: **programmatic check via `validate-deck`** + exact string match against `banned-list.md`. No judgment calls.
 - Singleton: duplicate detection. No exceptions beyond the 5 basic lands.
-- Format legality: read a JSON field. No interpolation.
+- Format legality: **programmatic check via `validate-deck`** reading the `legalities.commander` field. No interpolation.
 - Synergy audit: oracle text matching. The closest to subjective, but still grounded in card text -- if the text does not reference the claimed mechanic, it is a false claim.
+
+**DEFECT-001 ROOT CAUSE**: LLM training data is unreliable for card attributes. Sejiri Refuge (W/U) was confused with a W/B land. The `validate-deck` command eliminates this class of error by querying Scryfall programmatically.
 
 If you are unsure about a synergy claim, flag it as a warning rather than a violation. Only flag as a violation when the oracle text clearly contradicts the claim.

@@ -43,6 +43,7 @@ python ${SKILL_DIR}/scripts/card_lookup.py batch --names "Sol Ring" "Dark Ritual
 python ${SKILL_DIR}/scripts/card_lookup.py price --name "Sol Ring"
 python ${SKILL_DIR}/scripts/card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"
 python ${SKILL_DIR}/scripts/card_lookup.py random-commander --colors BG --strategy sacrifice
+python ${SKILL_DIR}/scripts/card_lookup.py validate-deck --commander "Karlov of the Ghost Council" --cards "Sol Ring" "Sejiri Refuge" "Dark Ritual"
 ```
 
 ---
@@ -413,18 +414,21 @@ Validate ALL card names exist in Scryfall using batch lookup:
 Split into batches of 75 cards. Every card must be found. Zero tolerance for
 hallucinated names.
 
-### Check 3: Color Identity
-For each card returned by batch lookup, check that its `color_identity` is a
-subset of the commander's color identity. Basic lands are always legal.
+### Check 3: Color Identity + Check 4: Banned List + Check 6: Format Legality
+Run the `validate-deck` command to programmatically verify color identity,
+format legality, and banned list compliance for ALL cards at once:
 
-### Check 4: Banned List
-Cross-reference every card name against the banned list in the reference above.
+  python ${SKILL_DIR}/scripts/card_lookup.py validate-deck --commander "<commander_name>" --cards "<card1>" "<card2>" ... "<card99>"
+
+Check the `violations` array in the output. Each violation includes a `type`
+field: `color_identity`, `format_legality`, `banned`, or `not_found`.
+
+CRITICAL: Never rely on your knowledge of card color identities or ban status.
+Always verify via the `validate-deck` API command. LLM training data is
+unreliable for card attributes.
 
 ### Check 5: Singleton Rule
 No duplicate card names except basic lands (Plains, Island, Swamp, Mountain, Forest).
-
-### Check 6: Format Legality
-For each card in the batch results, verify `legalities.commander` is "legal".
 
 ### Check 7: Synergy Audit
 For each synergy claim in `synergy_rationale` and `synergy_tags`, verify the
