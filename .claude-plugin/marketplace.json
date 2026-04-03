@@ -61,6 +61,15 @@
         "./delivery-team/skills/alias-creator",
         "./delivery-team/skills/presentation"
       ]
+    },
+    {
+      "name": "mtg-commander",
+      "description": "MTG Commander deck builder with multi-agent pipeline. Synergy-first card selection, Scryfall API integration, format legality validation, structural optimization, and budget enforcement. Produces complete 100-card decklists.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./mtg-commander"
+      ]
     }
   ]
 }

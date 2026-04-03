@@ -6,46 +6,29 @@
 
 ---
 
-## Criterion 1: Architecture supports testing (validation approach defined) [blocking]
+## Criterion: Architecture supports testing (clear validation approach per component) [blocking]
 
 **PASS**
 
-The architecture includes a concrete validation approach:
+Each component has a clear, concrete validation approach:
 
-1. **Validation script** (`validate_cross_refs.py`) -- scans SKILL.md files for `## Cross-Skill References` tables, extracts paths, verifies each path resolves to an existing file. Reports phantom references as errors. Suitable for CI integration.
-2. **Prototype test plan** with 4 defined tests:
-   - Test 1: Godot -> Developer cross-reference loads correctly
-   - Test 2: Alias Creator -> Delivery Flow themes discovered
-   - Test 3: Phantom reference detection (negative test)
-   - Test 4: Cross-platform path resolution verification
-3. **Review triggers** documented in the ADR -- quantitative thresholds (5+ cross-referenced files, 3+ skills referencing one file) that signal when the approach should be revisited.
+| Component | What to Verify |
+|-----------|---------------|
+| **card_lookup.py** (Card Finder) | 6 CLI commands with defined inputs/outputs (Section 5). Deterministic: given a card name, returns structured data or error. Testable per-command with known cards. Error handling table (Section 5.5) specifies exact behavior per HTTP status -- each row is a test case. Rate limiter testable with timing assertions. |
+| **Deck Builder sub-agent** | Output must conform to Deck State format (Section 4.1): exactly 100 cards, every non-land card has synergy_tags with 3+ interactions, all card names pre-validated via card_lookup.py. Format is structured text with defined delimiters -- parseable for assertion. |
+| **Rules Judge sub-agent** | Verdict format defined (Section 4.3): 7 deterministic checks (card count, names verified, color identity, banned cards, singleton, format legality, synergy audit). Each check is binary PASS/FAIL. All checks use Scryfall data, never AI inference (FR-03.9). |
+| **Optimization Reviewer sub-agent** | Validates synergy tags against taxonomy categories, counts interactions per card (threshold: 3, or 2 if budget-relaxed). Structural minimums checkable against power-level tier tables in `structural-minimums.md`. Synergy score is a computable ratio. |
+| **Price Evaluator sub-agent** | Validates total cost against budget, per-card cost against cap. Null-price handling has a defined fallback chain (Section 5.5). All arithmetic -- verifiable. |
+| **Orchestrator (SKILL.md)** | Pipeline sequence (Section 6.1) is a deterministic flow with defined entry/exit per stage. Correction routing re-enters at failing agent, not start. Global correction counter with defined max (default 3). Post-output actions (approve/swap/rerun/adjust) each have specified behavior. |
+| **Correction cycles** | Counter is global across pipeline, not per-agent. Budget priority rule (FR-07.4) triggers at max cycles. Best-effort output with warnings -- testable end state. |
 
-The "status quo + convention" approach is inherently testable because it relies on filesystem paths that can be validated with simple existence checks.
-
-## Criterion 2: Success criteria from idea brief are addressable by this design [blocking]
-
-**PASS**
-
-Mapping each success criterion from the idea brief to the architecture:
-
-| Success Criterion | Addressed? | How |
-|---|---|---|
-| Inventory complete | YES | Section 2 provides a full inventory with justification (true duplicate, partial overlap, intentionally distinct) for each candidate |
-| At least 2 approaches prototyped | PARTIAL -- see note | Architecture evaluates all 5 approaches but recommends prototyping only the selected approach (status quo + convention). The evaluation matrix with scored criteria substitutes for prototyping all 5. Prototype design (Section 6) covers the recommended approach. |
-| Cross-platform validated | YES | Symlinks explicitly rejected due to Windows fragility. Chosen approach uses plain file paths with forward slashes -- no OS-specific features. Test 4 addresses this. |
-| Decision recorded | YES | ADR-047 in Section 5 with full context, decision, consequences, and review triggers |
-| Dogfooding signal | YES | Test plan requires actually invoking godot and alias-creator skills to verify cross-references load (Tests 1 and 2) |
-| No regressions | YES | Test plan explicitly tests existing godot -> clean-code.md path continues working (Test 1) |
-
-**Note on "at least 2 approaches prototyped"**: The idea brief asks for 2 approaches prototyped. The architecture recommends prototyping only the selected approach, with the evaluation matrix serving as evidence for why the others are inferior. This is acceptable for a spike -- the architect provided sufficient evidence (scored evaluation across 5 criteria) to justify not prototyping approaches that score 1.9-2.3. The Dev stage should confirm this interpretation with the PO.
+The architecture is highly testable because: (1) every sub-agent has a structured verdict format with enumerated checks, (2) the Card Finder is a deterministic CLI script with defined I/O per command, (3) the orchestrator flow is a linear pipeline with binary gate outcomes, and (4) the 5 test cases referenced in Section 14 provide a built-in validation plan.
 
 ---
 
 ## Verdict
 
 **DONE**
-
-The architecture is testable, the validation approach is defined and automatable, and all 6 success criteria from the idea brief are addressable. The one partial gap (prototyping 2 approaches vs. 1) is justified by the evaluation evidence and should be confirmed with the PO during planning.
 
 ```
 STATUS: DONE

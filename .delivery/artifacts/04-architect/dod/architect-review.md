@@ -1,61 +1,30 @@
-# Architect Review: Gate 4 — ADR-047 Cross-Skill Shared References
+# Architect Review: Gate 4 — MTG Commander Deck Builder Plugin
 
 **Reviewer**: Celebrimbor (Solution Architect)
 **Date**: 2026-04-01
+**Depth**: Full (GREENFIELD project type)
 **Verdict**: **DONE**
 
 ---
 
-## Criteria Assessment
+## Gate Criteria
 
-### Architecture decision is sound with trade-offs documented [blocking] — PASS
+### Design is sound, trade-offs documented [blocking] — PASS
 
-The decision to formalize the status quo (Approach 5) is proportionate to the problem. The evaluation matrix compares 5 approaches across 5 weighted criteria. Trade-offs are explicitly documented: string-path fragility, discoverability gap, and the absence of enforcement tooling. The Challenger's reweighting (adding discoverability, adjusting maintenance) narrows the margin from 0.8 to 0.35 but does not change the ranking. The decision survives adversarial stress testing.
+The architecture maps the 4-agent + 1-utility design to the established Claude Code plugin model cleanly: single SKILL.md orchestrator, 4 sub-agents via `Agent` tool, `card_lookup.py` as a stdlib-only Python script via `Bash`, 7 domain reference files loaded selectively per sub-agent. The correction cycle design is well-considered -- re-entry at the failing agent (not pipeline restart), global correction counter with budget-priority relaxation at max cycles. State management via in-context deck state (no disk persistence) is appropriate for single-session v1 scope. Trade-offs are documented throughout: SKILL.md size (~400-600 lines) acknowledged, cross-session limitation scoped to v2, rate limiting gap between separate script invocations accepted with rationale. Risk analysis in Section 10 covers the six key risks with concrete mitigations. The "what is NOT in the directory" table explicitly justifies each omission.
 
-The core reasoning is sound: 2 true sharing candidates out of 139 reference files does not justify new infrastructure. The existing Read-based cross-skill pattern works in production. Alternatives introduce failure modes (symlinks on Windows, stale registries, orchestrator-only scope) that exceed the problem they solve.
+### ADRs present with context, decision, consequences [blocking] — PASS
 
-### ADR present with context, decision, and consequences [blocking] — PASS
+Four ADRs reviewed (ADR-001 through ADR-004). All follow the standard structure: Status, Date, Deciders, Context with alternatives enumerated, Decision with rationale, Consequences split into Easier/Harder. Specific findings:
 
-ADR-047 contains all required sections:
-- **Context**: Problem statement, spike reference (#47), existing patterns surveyed
-- **Decision**: 5-point convention (file ownership, path format, SKILL.md declaration, developer guide, CI validation)
-- **Consequences**: Positive (6), Negative (3 with mitigations), Neutral (1)
-- **Review triggers**: 3 concrete thresholds for revisiting the decision
-- **Supersedes**: None (first decision on topic)
+- **ADR-001** (single skill vs. multi-skill): Correctly identifies that the 4 agents are pipeline stages, not independently invocable capabilities. Aligns with existing delivery-team patterns.
+- **ADR-002** (Python script vs. MCP server): Sound decision for v1 volumes (~5-10 API calls per build). Clear migration trigger documented for v2.
+- **ADR-003** (synergy representation): Hybrid approach resolves OQ-1 well -- structured tags for deterministic counting, free text for user readability.
+- **ADR-004** (exact match with fuzzy fallback): Addresses the highest-risk failure mode (card name hallucination) with zero-tolerance exact match and a correction path for typos.
 
-The ADR is well-structured and actionable.
+### Patterns appropriate for context [blocking] — PASS
 
-### Prototype design is clear enough to implement [blocking] — PASS
-
-The prototype has 4 deliverables, each with sufficient detail:
-1. Developer guide (`CROSS-SKILL-REFERENCES.md`) — full content provided
-2. SKILL.md updates (godot, alias-creator) — exact markdown provided
-3. Validation script (`validate_cross_refs.py`) — pseudocode with clear inputs/outputs/behavior
-4. Test plan — 4 tests covering happy path, phantom detection, and cross-platform
-
-A developer can implement all 4 from this specification without ambiguity.
-
----
-
-## Challenger Conditions — Disposition
-
-The Challenger raised 4 conditions. I accept all of them:
-
-1. **CI validation script as sprint deliverable, not follow-up** — Agreed. I am reclassifying this from "follow-up recommendation" to a required deliverable for closing the spike. Without the script, the formalization is documentation-only.
-
-2. **Document that skill directory renames are breaking changes** — Agreed. The cross-skill reference guide must state this explicitly.
-
-3. **Add review trigger for platform-native shared resource support** — Agreed. Minor addition to ADR-047's review triggers section.
-
-4. **Acknowledge discoverability gap explicitly** — Agreed. The tradeoff is real and accepted: a convention in a markdown file is less self-evident than a directory. The developer guide and SKILL.md sections mitigate but do not eliminate this gap.
-
----
-
-## Notes
-
-- The architecture is additive-compatible — migrating to a `shared/` directory later requires no destructive changes, only file moves and path updates.
-- The 5% audit coverage of reference files (7 of 139) is acceptable for a spike. The review triggers serve as the safety net for undiscovered sharing candidates.
-- Path resolution relies on Claude's Read tool accepting any filesystem path. This is a runtime capability, not a documented contract. If Claude Code ever restricts Read to skill-scoped paths, this architecture breaks. Low probability but worth noting.
+The architecture follows established repo patterns: three-level context loading, sub-agents via `Agent` tool with inline prompt templates, Python scripts in `scripts/`, reference files in `references/`, marketplace registration via `.claude-plugin/marketplace.json`. No new conventions introduced. The orchestrator pattern mirrors `delivery-flow`'s SKILL.md. The structured deck state format (YAML-like text, not strict JSON) is a pragmatic choice for agent-to-agent data flow, with rationale documented in Section 4.1.
 
 ---
 
@@ -64,5 +33,4 @@ STATUS: DONE
 GATE: 04-architect
 REVIEWER: Celebrimbor (Architect)
 BLOCKING_CRITERIA: 3/3 PASS
-CHALLENGER_CONDITIONS: 4/4 ACCEPTED
 ```

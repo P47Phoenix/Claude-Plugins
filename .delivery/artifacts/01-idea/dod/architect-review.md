@@ -3,53 +3,59 @@
 **Reviewer**: Celebrimbor (Architect DoD Validator)
 **Date**: 2026-04-01
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Project Type**: SPIKE
+**Project Type**: GREENFIELD
 **Verdict**: DONE
 
 ---
 
-### Criterion 1: Spike is Technically Feasible to Explore [blocking]
+### Criterion 1: Technically Feasible [blocking]
 
 **PASS.**
 
-The spike explores how Claude Code resolves file paths from SKILL.md instructions and sub-agent prompts. All five proposed approaches operate on plain markdown files and path references -- no compilation, no runtime dependencies, no external tooling. The core question (which path resolution strategies actually work when Claude loads a skill) is directly testable by invoking skills and observing whether referenced files are read.
+The proposed architecture maps cleanly onto Claude Code plugin conventions:
 
-The existing proof point is strong: godot's SKILL.md already cross-references `developer/references/clean-code.md` via a hardcoded path, and this works in production. The spike is exploring whether to formalize, replace, or extend that pattern. Feasibility is not in question -- the question is which formalization is best, which is exactly what a spike should answer.
+- **SKILL.md + agent sub-agents**: The 4-agent pipeline (Deck Builder, Rules Judge, Optimization Reviewer, Price Evaluator) follows the established pattern of a primary SKILL.md orchestrating agent sub-agents via markdown frontmatter. Every existing multi-agent plugin in this repo works this way. No novel architecture required.
+- **Card Finder utility as Python script**: `scripts/card_lookup.py` wrapping Scryfall's REST API is straightforward. Scryfall is a well-documented, free, public API with JSON responses. The script needs HTTP requests (urllib or allowed curl via Bash) and JSON parsing -- both available without external dependencies.
+- **Sequential pipeline with feedback loops**: The Builder → Judge → Optimizer → Pricer flow with cycle-back on failure is implementable as orchestrator logic in SKILL.md. The delivery-flow plugin already demonstrates this pattern at greater complexity.
+- **Reference files for rules/archetypes/structure**: Static markdown references for Commander rules, banned list, archetype patterns, and structural minimums are the standard three-level context loading pattern. No new loading mechanisms needed.
+- **WebFetch for Scryfall API**: Requires adding `api.scryfall.com` to allowed WebFetch domains. This is a settings.json change, documented in the brief. Standard procedure.
 
-### Criterion 2: No Obvious Technical Blockers [blocking]
+No component requires capabilities outside what Claude Code plugins already support.
+
+### Criterion 2: No Obvious Blockers [blocking]
 
 **PASS.**
-
-Potential blockers examined:
 
 | Concern | Assessment |
 |---------|------------|
-| Claude's file path resolution is undocumented | **Not a blocker.** Testing path resolution is the point of the spike. The brief correctly identifies this as a sub-question to answer empirically. |
-| Windows symlink limitations (Approach 5) | **Not a blocker.** The brief already flags this as a known risk. The spike evaluates it rather than committing to it. |
-| Plugin structure validation may reject `shared/` directory | **Not a blocker.** The brief includes plugin structure compliance as a constraint. If `shared/` fails validation, that's a spike finding, not a blocker to the exploration. |
-| Marketplace.json schema changes (Approach 4) | **Not a blocker for the spike.** Prototyping a registry entry is low-risk exploration. Committing to it would need schema review, but that's post-spike. |
+| Scryfall API rate limits (10 req/s) | **Not a blocker.** A 100-card deck build needs ~100-200 lookups at most. At 10/s that is 10-20 seconds of API time. Bulk search endpoints can reduce this further. The brief correctly identifies this constraint and the Card Finder must respect it. |
+| Card name hallucination risk | **Not a blocker.** The brief explicitly gates this -- Rules Judge verifies every card name against Scryfall. This is a validation concern, not an architectural blocker. The mitigation is designed into the pipeline. |
+| 100-card output size | **Not a blocker.** Claude Code handles structured outputs of this size routinely. The categorized decklist format (commander, lands, ramp, draw, removal, etc.) keeps it organized. |
+| No local card database | **Not a blocker for v1.** Requires internet access, which is a reasonable constraint for a plugin that depends on live pricing data anyway. Correctly deferred to v2. |
+| Synergy evaluation without Recommander | **Low risk.** The brief acknowledges Recommander is deferred and Scryfall + heuristic synergy is the v1 approach. The model's knowledge of MTG card interactions is substantial. Synergy assessment will be AI-driven (not deterministic), which is appropriate for creative card selection -- distinct from the deterministic legality checks. |
+| Feedback loop termination | **Low risk.** The brief does not specify a max iteration count for correction cycles. Refine should define this (recommend max 3 cycles per gate) to prevent infinite loops. Not a blocker at Idea stage. |
 
-No blocker prevents the exploration from proceeding. Each risk is something the spike is designed to evaluate, not something that prevents evaluation.
+No blocker prevents this work from proceeding.
 
-### Criterion 3: Approaches Listed Are Reasonable for the Plugin Architecture [warning]
+### Criterion 3: Scope Reasonable for GREENFIELD [warning]
 
 **PASS.**
 
-All five approaches are architecturally sound candidates for a spike evaluation:
+The v1 scope is well-bounded:
 
-1. **Shared directory** -- simplest, aligns with standard monorepo patterns. The relative path `../../shared/` from a skill's references directory is straightforward. Worth testing first.
-2. **Formalized cross-skill paths** -- codifies what already works (godot pattern). Zero new structure, just documentation. Low risk.
-3. **Explicit paths in sub-agent prompts** -- leverages the orchestrator's existing role as context assembler. Architecturally clean (centralized control) but higher coupling.
-4. **Reference registry in marketplace.json** -- most structured, but adds tooling requirements that may conflict with the "no new dependencies" constraint. Worth evaluating to understand the tradeoff.
-5. **Symlinks** -- included correctly as a candidate to rule out rather than rule in, given cross-platform fragility.
+- 4 agent definitions (markdown files with clear responsibility boundaries)
+- 1 Python utility script (Scryfall API client)
+- 5 reference documents (rules, archetypes, structural targets, intake questions, API reference)
+- 1 SKILL.md orchestrator
+- 3 test cases for validation
 
-The priority ordering (simplest first) is correct for a spike. The brief also wisely includes the null hypothesis: some apparent duplication may be intentional divergence. That architectural awareness -- distinguishing shared content from content that merely looks similar -- is essential.
+The v2 deferrals are the right calls -- Recommander integration, EDHREC scraping, multi-source pricing, deck modification mode, and SQLite caching all add complexity without blocking v1 value delivery. The scope is a single-purpose plugin with a clear pipeline, not a platform.
 
-**One note**: the brief does not list "SKILL.md inline inclusion" (embedding shared content directly into each SKILL.md via copy) as an anti-pattern to explicitly reject. This is worth naming during Refine so the spike doesn't accidentally validate duplication-by-copy as "sharing."
+The 3 test cases (Mono-Black Graveyard, Orzhov Lifegain, Mono-Blue Mill) provide adequate coverage across color identity sizes (1-color, 2-color) and archetype diversity (graveyard, lifegain, mill). Good scope for dogfooding validation.
 
 ---
 
-*Five approaches laid before the forge. The spike asks which ring to craft -- or whether the existing ad-hoc binding is sufficient. A worthy question. Let us test the metal before we commit to the mold.*
+*A new ring to forge -- not from the fires of Orodruin, but from the careful craft of agents who each know their domain. The metal is Scryfall's data, the mold is the plugin architecture, and the smith has wisely limited v1 to what can be forged without exotic alloys. The foundation is sound.*
 
 ```
 STATUS: DONE

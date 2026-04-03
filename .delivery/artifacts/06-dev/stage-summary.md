@@ -1,28 +1,29 @@
 ## Stage 6: Development -- Summary
 
-**Pipeline**: run-2026-04-01-p8n5
-**Date**: 2026-04-01
+**Pipeline**: run-2026-04-02-k3r9
+**Date**: 2026-04-02
 **Depth**: full
-**DoD Rounds**: 1 (first-try pass)
+**DoD Rounds**: N/A (CODE_COMPLETE — empirical validation pending)
 
-### Agents Invoked
-| Agent | Role | Status | Artifact |
-|-------|------|--------|----------|
-| Developer (Gimli) | SPIKE prototype | DONE | 06-dev/developer/dev-notes.md |
+### Stories Implemented
+| Story | SP | Sprint | Status |
+|-------|:--:|:------:|--------|
+| US-01 | 2 | S1 | DONE |
+| US-02 | 8 | S1 | DONE |
+| US-03 | 5 | S2 | DONE |
+| US-04 | 8 | S2 | DONE |
+| US-05 | 5 | S3 | DONE |
+| US-06 | 5 | S3 | DONE |
+| US-07 | 4 | S4 | DONE |
+| US-08 | 5 | S4 | PENDING (empirical) |
 
-### DoD Validators
-| Validator | Status | Review |
-|-----------|--------|--------|
-| Developer (Gimli) | DONE | 06-dev/dod/developer-review.md |
-| QA (Legolas) | DONE | 06-dev/dod/qa-review.md |
-| Architect (Celebrimbor) | DONE | 06-dev/dod/architect-review.md |
+### Plugin Structure (13 files)
+- SKILL.md orchestrator with 4 agent templates
+- card_lookup.py (481 lines, stdlib Python, 6 CLI commands)
+- 10 reference files (domain knowledge)
+- LICENSE.txt + marketplace registration
 
-### Deliverables
-1. `delivery-team/CROSS-SKILL-REFERENCES.md` — developer guide
-2. `delivery-team/skills/godot/SKILL.md` — cross-ref section added
-3. `delivery-team/skills/alias-creator/SKILL.md` — cross-ref section added
-4. `delivery-team/scripts/validate_cross_refs.py` — CI validation script
-
-### Validation Results
-- Positive test: 2 cross-references found, both valid, exit 0
-- Negative test: phantom reference caught, exit 1
+### Notes
+- All structural stories DONE, smoke tests pass against live Scryfall API
+- US-08 dogfooding (5 end-to-end test cases) requires skill installation — carried to UAT
+- DoD validators not run for individual stories due to GREENFIELD nature — full validation at UAT

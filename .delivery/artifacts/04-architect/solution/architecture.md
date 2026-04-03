@@ -1,328 +1,717 @@
-# Architecture Decision: Cross-Skill Shared References
+# Architecture: MTG Commander Deck Builder Plugin
 
-**Spike**: #47 — Cross-skill shared references mechanism for delivery-team
+**Version**: 1.0
+**Date**: 2026-04-01
 **Architect**: Celebrimbor (Solution Architect)
-**Date**: 2026-04-01
-**Status**: PROPOSED
+**PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.1
+**UX Spec**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
+**Project Type**: GREENFIELD
 
 ---
 
-## 1. Structural Survey — What Exists Today
-
-Before forging anything new, I examined the existing metalwork. Two cross-skill reference patterns already operate in production:
-
-### Pattern A: Godot -> Developer (cross-skill file read)
-
-In `godot/SKILL.md` line 58:
-```
-Otherwise, read `delivery-team/skills/developer/references/clean-code.md`
-(shared with the developer skill -- do NOT copy this file into the Godot skill directory)
-```
-
-**How it works**: The SKILL.md instructs Claude to `Read` a file from another skill's directory. The path `delivery-team/skills/developer/references/clean-code.md` is resolved by Claude Code relative to the plugin installation root (`~/.claude/plugins/marketplaces/mec-claude-agent-skills/`). Claude uses the `Read` tool with this path, and the file exists at that location. This works because Claude can read any file on the filesystem — path resolution is not constrained to the skill's own directory.
-
-**Verified**: The file exists at the installed location: `delivery-team/skills/developer/references/clean-code.md` contains the clean code guide.
-
-### Pattern B: Alias Creator -> Delivery Flow (cross-skill directory reference)
-
-In `alias-creator/SKILL.md` line 15:
-```
-Built-in themes are in `delivery-flow/references/aliases/`.
-```
-
-**How it works**: Same mechanism — a relative path from the plugin root referencing another skill's references directory. The 13 `.yml` theme files exist at `delivery-team/skills/delivery-flow/references/aliases/`.
-
-**Key insight**: Both patterns use the same resolution mechanism. Claude resolves paths relative to the plugin installation root. This is not documented as a formal feature — it works because Claude's `Read` tool accepts any accessible filesystem path.
-
-### Reference Loading Patterns Across All Skills
-
-Every skill follows the same architecture: SKILL.md contains path strings like `references/test-strategy.md`. When Claude loads the SKILL.md, it reads these paths using the `Read` tool. The paths are resolved relative to the SKILL.md's parent directory (the skill root). Cross-skill paths use a longer relative path from the plugin root.
-
-**Sub-agent context passing**: Skills spawn sub-agents via the `Agent` tool. The sub-agent prompt contains the **pasted contents** of reference files (not file paths). The parent agent reads the file, then includes the content in the sub-agent prompt string. This means path resolution happens in the parent agent, not the sub-agent.
+> *"Let us forge something that will endure beyond the ages. A pipeline of four agents, each a ring of power unto itself, yet bound together in one orchestrator to rule them all -- and in the synergy, bind them."*
 
 ---
 
-## 2. Sharing Candidates Inventory
+## 1. Architecture Overview
 
-From the idea brief and structural analysis:
+The MTG Commander Deck Builder is a **single-skill Claude Code plugin** that orchestrates four domain-specialized sub-agents via the `Agent` tool. This follows the established delivery-team pattern: one SKILL.md as orchestrator, sub-agents spawned with isolated context from reference files, no persistent agent definitions.
 
-| File | Owner Skill | Sharing Candidate? | Justification |
-|---|---|---|---|
-| `developer/references/clean-code.md` | developer | **TRUE DUPLICATE** | Already cross-referenced by godot. Any code-producing skill benefits. |
-| `developer/references/clean-code-review-checklist.md` | developer | **PARTIAL OVERLAP** | Useful for quality skill's code review tasks. Currently developer-only. |
-| `delivery-flow/references/aliases/*.yml` | delivery-flow | **TRUE SHARED** | Already cross-referenced by alias-creator. Ownership is delivery-flow, consumption is alias-creator. |
-| `architect/references/security-patterns.md` | architect | **INTENTIONALLY DISTINCT** | Architect's security patterns focus on architectural decisions. Quality's `security-scanning.md` focuses on scanning techniques. Different audiences, different concerns. |
-| `architect/references/quality-attributes.md` | architect | **INTENTIONALLY DISTINCT** | Non-functional requirements from an architecture perspective vs. quality metrics from a QA perspective. |
-| `godot/references/defect-prevention.md` | godot | **PARTIAL OVERLAP** | Game-specific defect patterns. Could be useful for developer skill on GAME_DEV projects, but content is Godot-specific, not general. |
-| `delivery-flow/references/quality-gates.md` | delivery-flow | **ORCHESTRATOR-OWNED** | Consumed during DoD validation. The delivery-flow orchestrator reads it and passes relevant criteria to sub-agents. Not a sharing problem — it is orchestrator infrastructure. |
+### Core Architecture Decision
 
-**Conclusion**: There are exactly **2 true sharing candidates** today (clean-code.md and alias themes), plus **1 partial overlap** (clean-code-review-checklist.md). The remaining cases are intentionally distinct content serving different roles. This is a small, well-bounded problem.
+The user's design proposes 4 agents + 1 utility. This maps to the Claude Code plugin model as:
 
----
+| User Design | Plugin Implementation | Rationale |
+|------------|----------------------|-----------|
+| Deck Builder (Agent 1) | Sub-agent via `Agent` tool | Spawned by SKILL.md with archetype + intake references |
+| Rules Judge (Agent 2) | Sub-agent via `Agent` tool | Spawned with commander-rules + banned-list references |
+| Optimization Reviewer (Agent 3) | Sub-agent via `Agent` tool | Spawned with synergy-taxonomy + structural-minimums references |
+| Price Evaluator (Agent 4) | Sub-agent via `Agent` tool | Spawned with api-reference; invokes card_lookup.py for pricing |
+| Card Finder (Utility) | Python script (`scripts/card_lookup.py`) | Invoked via `Bash` tool by any agent that needs Scryfall data |
 
-## 3. Evaluation Matrix
-
-| Criterion | 1. `shared/` Directory | 2. Symlinks | 3. Orchestrator Passes Paths | 4. Reference Registry | 5. Status Quo + Convention |
-|---|---|---|---|---|---|
-| **Feasibility** | HIGH -- mkdir + move files. Claude reads from any path. | MEDIUM -- works on Linux/Mac. Windows requires admin or developer mode. | HIGH -- delivery-flow already passes context to sub-agents. | LOW -- no tooling exists to resolve a registry. Claude cannot auto-resolve declared references. | HIGH -- already working in production (2 cross-references). |
-| **Simplicity** | MEDIUM -- new directory, update 2-3 SKILL.md paths, document convention. | LOW -- symlink creation, tracking, potential confusion when Claude reads the link vs target. | MEDIUM -- orchestrator SKILL.md changes, path lists per stage. Only works for orchestrated flows. | LOW -- new JSON schema, resolution logic, no implementation exists. | **HIGH** -- zero changes. Document what exists. |
-| **Portability** | HIGH -- directories and file paths work everywhere. | **LOW** -- Windows symlinks require elevated privileges or developer mode. Git symlinks need `core.symlinks=true`. Known fragile. | HIGH -- text paths in prompts. No OS dependency. | HIGH -- JSON is portable. But the resolution tooling would need to be. | HIGH -- no OS-specific features used. |
-| **Maintenance** | MEDIUM -- shared files have no clear owner. Who reviews PRs to `shared/`? Shared ownership is diffuse ownership. | LOW -- symlinks break on file moves/renames. Must recreate on every structural change. | MEDIUM -- orchestrator must be updated when shared refs change. Centralized but coupled. | HIGH burden -- registry must stay in sync with actual files. No automated validation. | **LOW burden** -- each SKILL.md owns its own cross-references. Change is local. |
-| **Risk** | MEDIUM -- introduces a new directory convention. All skills must know about it. May incentivize over-sharing (files migrate to shared/ prematurely). | **HIGH** -- Windows breakage, git confusion, Claude may resolve symlink targets inconsistently. | MEDIUM -- only works within delivery-flow pipeline. Direct skill invocation (e.g., `/developer`) bypasses orchestrator, loses shared refs. | HIGH -- over-engineering for 2-3 shared files. Registry becomes stale. | LOW -- the current pattern works. Risk is discoverability for new skill authors. |
-
-### Scoring Summary (5 = best)
-
-| Criterion | Weight | shared/ | Symlinks | Orchestrator | Registry | Status Quo |
-|---|---|---|---|---|---|---|
-| Feasibility | 25% | 5 | 3 | 4 | 2 | 5 |
-| Simplicity | 25% | 3 | 2 | 3 | 2 | 5 |
-| Portability | 20% | 5 | 1 | 5 | 4 | 5 |
-| Maintenance | 15% | 3 | 2 | 3 | 2 | 4 |
-| Risk | 15% | 3 | 1 | 3 | 2 | 4 |
-| **Weighted Total** | | **3.9** | **1.9** | **3.6** | **2.3** | **4.7** |
+**There are no agent definition files.** The existing plugin architecture (delivery-team, architect, developer, godot) uses the `Agent` tool with inline prompt templates in SKILL.md. Agent "definitions" are prompt templates that include the relevant reference file contents. See [ADR-001](../adrs/ADR-001.md) for the full decision record.
 
 ---
 
-## 4. Recommendation
+## 2. Plugin Directory Structure
 
-**Approach 5: Status Quo + Convention (formalized)**
-
-The evidence is clear. Let us not forge a new ring when the existing craft serves well.
-
-### Rationale
-
-1. **The problem is smaller than it appears.** Of 107+ reference files, exactly 2 are true sharing candidates. This does not justify new infrastructure.
-
-2. **The existing pattern works.** Godot has been cross-referencing developer's clean-code.md since the skill was created. Alias-creator cross-references delivery-flow's alias themes. Both work in production across platforms.
-
-3. **Claude's file resolution is the enabling mechanism.** Claude can `Read` any file path on the filesystem. Cross-skill references are just longer relative paths. No special infrastructure is needed to enable this — it is already a capability of the runtime.
-
-4. **A `shared/` directory creates shared ownership problems.** When `clean-code.md` lives in `developer/references/`, the developer skill owns it. If it moves to `shared/`, who owns it? Shared ownership is diffuse ownership, and diffuse ownership leads to stale content.
-
-5. **The orchestrator approach (3) only works within the pipeline.** When a user directly invokes `/developer` or `/godot` outside of delivery-flow, the orchestrator is not running. Shared references must work regardless of invocation path.
-
-6. **Symlinks (2) are a non-starter.** Windows fragility alone disqualifies this approach for a cross-platform plugin.
-
-7. **A registry (4) is premature abstraction.** Building tooling to resolve 2-3 shared files is engineering for a problem we do not have.
-
-### What "Formalized" Means
-
-The status quo works, but it is undocumented and undiscoverable. Formalization means:
-
-- **Document the convention** in a reference file that all skill authors can find
-- **Add a cross-reference section** to each SKILL.md that uses cross-skill references
-- **Establish naming/path conventions** so cross-references are predictable
-- **Validate in CI** that cross-referenced files actually exist (no phantom references)
-
----
-
-## 5. ADR — Architecture Decision Record
-
-### ADR-047: Cross-Skill Shared References Convention
-
-**Status**: Proposed
-**Date**: 2026-04-01
-**Deciders**: Celebrimbor (Architect), delivery team
-
-#### Context
-
-The delivery-team plugin has 11 skills with 107+ reference files. Two cross-skill references exist today:
-- `godot/SKILL.md` reads `developer/references/clean-code.md`
-- `alias-creator/SKILL.md` reads `delivery-flow/references/aliases/*.yml`
-
-Both use the same mechanism: Claude's `Read` tool resolves paths relative to the plugin installation root. This works but is undocumented — new skill authors must discover the pattern from existing SKILL.md files.
-
-A spike was conducted (#47) evaluating 5 approaches: shared directory, symlinks, orchestrator-passed paths, reference registry, and formalized status quo.
-
-#### Decision
-
-**Formalize the existing cross-skill reference convention without introducing new infrastructure.**
-
-The convention is:
-1. Files remain in their owner skill's `references/` directory
-2. Cross-skill references use paths relative to the plugin root: `delivery-team/skills/<skill>/references/<file>.md`
-3. Each SKILL.md that uses cross-skill references declares them in a `## Cross-Skill References` section
-4. A developer guide documents how to add cross-skill references
-5. CI validation ensures cross-referenced paths resolve to existing files
-
-#### Consequences
-
-**Positive**:
-- Zero migration effort — no files move, no paths change
-- Clear ownership — the file lives where it is maintained
-- Works on all platforms — no symlinks, no OS-specific features
-- Works in all invocation contexts — direct skill invocation, pipeline orchestration, sub-agent spawning
-- Low maintenance — no registry to keep in sync, no tooling to maintain
-
-**Negative**:
-- Cross-skill references are string paths in SKILL.md files, not enforced by tooling (mitigated by CI validation)
-- Discoverability depends on documentation (mitigated by the developer guide and SKILL.md sections)
-- If sharing needs grow beyond 5-10 files, this convention may need revisiting (trigger: more than 3 skills referencing the same file)
-
-**Neutral**:
-- Does not prevent a future `shared/` directory if the problem grows — this decision is additive-compatible
-
-#### Supersedes
-
-None (first decision on this topic).
-
-#### Review Trigger
-
-Revisit this decision when any of:
-- More than 5 files are cross-referenced between skills
-- More than 3 skills reference the same single file
-- A new skill author reports difficulty discovering cross-reference patterns
-
----
-
-## 6. Prototype Design
-
-The prototype should prove two things:
-1. The convention is discoverable (a new skill author can find and follow it)
-2. Cross-references can be validated (phantom references are caught)
-
-### 6.1 Developer Guide: `delivery-team/CROSS-SKILL-REFERENCES.md`
-
-Create a guide at the plugin root that documents:
-
-```markdown
-# Cross-Skill Reference Convention
-
-## How It Works
-
-Skills can reference files from other skills using paths relative to the
-plugin root. Claude resolves these paths using the Read tool.
-
-## Path Format
-
-  delivery-team/skills/<owner-skill>/references/<file>.md
-
-Example: The godot skill references the developer skill's clean code guide:
-
-  delivery-team/skills/developer/references/clean-code.md
-
-## Rules
-
-1. The file stays in the owner skill's references/ directory
-2. The owner skill maintains the file -- consumers do not modify it
-3. Every SKILL.md that cross-references another skill's file MUST
-   declare it in a "Cross-Skill References" section (see format below)
-4. Before adding a cross-reference, verify the file exists at the path
-
-## SKILL.md Declaration Format
-
-Add this section to any SKILL.md that uses cross-skill references:
-
-  ## Cross-Skill References
-
-  | File | Owner Skill | Purpose |
-  |------|-------------|---------|
-  | `delivery-team/skills/developer/references/clean-code.md` | developer | Clean code standards (loaded on every task) |
-
-## Current Cross-References
-
-| Consumer Skill | Referenced File | Owner Skill |
-|----------------|----------------|-------------|
-| godot | developer/references/clean-code.md | developer |
-| alias-creator | delivery-flow/references/aliases/*.yml | delivery-flow |
-
-## When NOT to Cross-Reference
-
-- If the content serves a different audience (architect's security-patterns.md
-  vs quality's security-scanning.md) -- these are intentionally distinct
-- If you need a modified version -- copy and adapt, then document why
-  it diverged from the original
+```
+mtg-commander/
+├── SKILL.md                           # Orchestrator: intake, agent sequencing, output formatting
+├── LICENSE.txt                        # Apache 2.0
+├── references/
+│   ├── commander-rules.md             # Format rules, color identity, singleton, commander tax
+│   ├── banned-list.md                 # Current Commander banned list (manually maintained)
+│   ├── archetype-patterns.md          # Strategy archetypes with synergy patterns, commander suggestions
+│   ├── structural-minimums.md         # Ramp/draw/removal/land targets by power level tier
+│   ├── synergy-taxonomy.md            # The 6 interaction categories + exclusion rules
+│   ├── intake-questions.md            # 7 intake questions with validation rules, defaults, smart behaviors
+│   └── api-reference.md              # Scryfall API endpoints, query syntax, rate limits, error codes
+└── scripts/
+    └── card_lookup.py                 # Card Finder utility: Scryfall API client (stdlib only)
 ```
 
-### 6.2 SKILL.md Updates (2 skills)
+### What Is NOT in the Directory
 
-**godot/SKILL.md** -- Add a `## Cross-Skill References` section:
+| Omitted Item | Why |
+|-------------|-----|
+| `agents/` directory | Claude Code plugins do not use agent definition files. Sub-agents are spawned via the `Agent` tool with prompt templates in SKILL.md. See ADR-001. |
+| `skills/` directory | This plugin has one skill (the orchestrator). Sub-skills add value when a plugin has multiple independently-invocable capabilities. The 4 agents are pipeline stages, not independent skills. |
+| `.mcp.json` | MCP server deferred to v2. Python script via Bash tool is sufficient. See ADR-002. |
+| `hooks/` directory | Hooks deferred to v2 per PRD scope boundary. Agent validation is sufficient for v1. |
+| `plugin.json` | This repo does not use plugin.json. Plugin registration is via `.claude-plugin/marketplace.json`. |
 
-```markdown
-## Cross-Skill References
+### Marketplace Registration
 
-| File | Owner Skill | Purpose |
-|------|-------------|---------|
-| `delivery-team/skills/developer/references/clean-code.md` | developer | Foundational clean code standards. Loaded on every godot task unless overridden by `tech_stack.clean_code_guide` in `.delivery/config.yml`. |
+```json
+{
+  "name": "mtg-commander",
+  "description": "MTG Commander deck builder with multi-agent pipeline. Synergy-first card selection, Scryfall API integration, format legality validation, structural optimization, and budget enforcement. Produces complete 100-card decklists.",
+  "source": "./",
+  "strict": false,
+  "skills": [
+    "./mtg-commander"
+  ]
+}
 ```
 
-**alias-creator/SKILL.md** -- Add a `## Cross-Skill References` section:
+This entry is appended to the `plugins` array in `.claude-plugin/marketplace.json`.
 
-```markdown
-## Cross-Skill References
+---
 
-| File | Owner Skill | Purpose |
-|------|-------------|---------|
-| `delivery-team/skills/delivery-flow/references/aliases/*.yml` | delivery-flow | Built-in alias theme definitions. 13 themes (lotr, star-wars, marvel, etc.). Read-only from alias-creator's perspective. |
+## 3. SKILL.md Orchestrator Design
+
+The SKILL.md follows the **delivery-flow pattern**: it is an orchestrator that delegates all domain work to sub-agents. It never produces deck content directly.
+
+### 3.1 SKILL.md Frontmatter
+
+```yaml
+---
+name: mtg-commander
+description: >
+  MTG Commander deck builder with multi-agent pipeline. Build synergy-dense,
+  format-legal, budget-compliant 100-card Commander decklists. Synergy-first
+  card selection via Scryfall API. Triggers on phrases like "build a commander
+  deck", "MTG deck", "commander deck", "EDH deck", "build me a deck",
+  "100-card deck", "commander pipeline", "deck builder".
+license: Apache License 2.0 - See repository LICENSE file
+---
 ```
 
-### 6.3 Validation Script: `delivery-team/scripts/validate_cross_refs.py`
+### 3.2 Orchestrator Responsibilities
 
-A simple Python script that:
-1. Scans all `SKILL.md` files for the `## Cross-Skill References` table
-2. Extracts file paths from the table
-3. Verifies each path resolves to an existing file (relative to repo root)
-4. Reports phantom references as errors
+The SKILL.md handles:
+
+1. **Intake extraction** -- Detects Mode A/B/C from the user's first message (per UX spec Section 1.1). Extracts parameters, identifies gaps, asks sequentially.
+2. **Commander validation** -- Invokes `card_lookup.py` via Bash to validate the commander name against Scryfall before proceeding.
+3. **Agent sequencing** -- Spawns the 4 sub-agents in order: Deck Builder > Rules Judge > Optimization Reviewer > Price Evaluator.
+4. **Correction routing** -- When an agent returns FAIL, routes violations back to the Deck Builder sub-agent with correction instructions. Tracks cycle count (max from pipeline config, default 3).
+5. **Output formatting** -- Assembles the final output: summary card, categorized deck list, agent verdicts, export list, purchase summary (per UX spec Section 5).
+6. **Post-output actions** -- Handles approve/swap/rerun/adjust commands.
+
+### 3.3 What the Orchestrator Does NOT Do
+
+- Does not select cards (Deck Builder's job)
+- Does not validate legality (Rules Judge's job)
+- Does not evaluate synergy (Optimization Reviewer's job)
+- Does not check prices (Price Evaluator's job)
+- Does not call Scryfall directly (card_lookup.py's job, except for commander validation at intake)
+
+---
+
+## 4. Sub-Agent Definitions
+
+Each sub-agent is spawned using the `Agent` tool with a prompt template. The template includes: role instructions, relevant reference file contents (read via `Read` tool before spawning), the deck state (shared artifact), and tool access declarations.
+
+### 4.1 Shared Artifact: The Deck State
+
+The deck state is a structured text artifact passed between agents. It is NOT persisted to disk -- it flows through the orchestrator as agent output/input.
+
+**Deck State Format:**
+
+```
+DECK_STATE:
+  commander: <name>
+  color_identity: [<colors>]
+  strategy: <archetype>
+  power_level: <1-10>
+  meta: <alignment>
+  budget: <USD amount>
+  per_card_cap: <USD amount or "15% of budget">
+  restrictions:
+    must_include: [<card names>]
+    must_exclude: [<card names>]
+    no_infinite_combos: <true/false>
+
+CARDS:
+  - name: <exact Scryfall name>
+    category: <Commander|Ramp|Card Draw|Removal|Board Wipes|Win Conditions|Synergy Pieces|Lands>
+    mana_cost: <{1}{B}{B} notation>
+    synergy_rationale: <one sentence>
+    synergy_tags: [<TRIGGERS:target>, <ENABLES:target>, ...]
+    price_usd: <cheapest printing price or null>
+  [... 99 more entries ...]
+
+GAME_PLAN: <2-3 sentence description>
+```
+
+**Why structured text, not JSON:** The agents are Claude sub-agents that produce natural language output. Structured text with clear delimiters is more reliably produced and parsed by the model than strict JSON. The format uses YAML-like notation for readability but does not require a YAML parser -- the orchestrator pattern-matches on the structure.
+
+**Synergy tags** use the structured tag format (e.g., `[TRIGGERS: Blood Artist]`, `[ENABLES: Cabal Coffers]`). This resolves OQ-1 from the PRD: structured tags enable automated counting by the Optimization Reviewer while remaining human-readable. Tags are drawn from the 6 taxonomy categories defined in `references/synergy-taxonomy.md`.
+
+### 4.2 Deck Builder Sub-Agent
+
+**Spawned by:** SKILL.md orchestrator (Phase 1, or during correction cycles)
+**References loaded:** `archetype-patterns.md`, `intake-questions.md`, `synergy-taxonomy.md`, `structural-minimums.md`
+**Tools available:** `Bash` (to invoke `card_lookup.py`)
+**Input:** Intake parameters (initial run) or intake parameters + violation list (correction cycle)
+**Output:** Complete deck state with 100 cards, synergy tags, game plan
+
+**Prompt template structure:**
+
+```
+You are an expert MTG Commander deck builder. You specialize in synergy-first
+card selection -- every non-land card must interact meaningfully with 3+ other
+cards in the deck.
+
+---
+[CONTENTS OF archetype-patterns.md]
+---
+[CONTENTS OF synergy-taxonomy.md]
+---
+[CONTENTS OF structural-minimums.md]
+---
+[CONTENTS OF intake-questions.md]
+---
+
+## Task
+
+[INITIAL BUILD or CORRECTION CYCLE with violations]
+
+## Card Lookup
+
+You have access to the Card Finder utility. To look up cards, use the Bash tool:
+
+  python /path/to/mtg-commander/scripts/card_lookup.py search --query "oracle:sacrifice type:creature id:B legal:commander"
+  python /path/to/mtg-commander/scripts/card_lookup.py validate --name "Blood Artist"
+  python /path/to/mtg-commander/scripts/card_lookup.py batch --names "Sol Ring" "Dark Ritual" "Cabal Coffers"
+
+Validate EVERY card name before including it in the deck. Do not include any
+card that fails name validation (FR-02.9).
+
+## Output
+
+Produce the deck state in the format specified above. Exactly 100 cards.
+Every non-land card must have synergy_tags listing specific interactions
+with other cards in the deck.
+```
+
+### 4.3 Rules Judge Sub-Agent
+
+**Spawned by:** SKILL.md orchestrator (Phase 2)
+**References loaded:** `commander-rules.md`, `banned-list.md`
+**Tools available:** `Bash` (to invoke `card_lookup.py`)
+**Input:** Complete deck state from Deck Builder
+**Output:** Structured verdict (PASS or FAIL with violations)
+
+**Key behaviors:**
+- Validates card names via batch lookup (`card_lookup.py batch`)
+- Checks color identity by comparing each card's Scryfall color_identity against the commander's
+- Checks banned list against `banned-list.md` reference
+- Validates singleton rule (no duplicates except basic lands)
+- Audits synergy claims by cross-referencing oracle text from Scryfall
+- All checks are deterministic -- based on Scryfall data, never AI-inferred (FR-03.9)
+
+**Verdict format:**
+
+```
+RULES_JUDGE_VERDICT: PASS|FAIL
+
+CHECKS:
+  card_count: 100/100
+  names_verified: 100/100
+  color_identity: 100/100
+  banned_cards: 0
+  singleton: PASS
+  format_legality: 100/100
+  synergy_audit: 0 false claims
+
+VIOLATIONS: (only if FAIL)
+  - card: <name>
+    rule: <which rule violated>
+    detail: <explanation>
+    suggested_replacement: <card name>
+```
+
+### 4.4 Optimization Reviewer Sub-Agent
+
+**Spawned by:** SKILL.md orchestrator (Phase 3)
+**References loaded:** `synergy-taxonomy.md`, `structural-minimums.md`
+**Tools available:** `Bash` (to invoke `card_lookup.py` for replacement suggestions)
+**Input:** Complete deck state (post-Rules Judge pass)
+**Output:** Structured verdict with synergy score, structural check, mana curve, isolated card list
+
+**Key behaviors:**
+- Reads synergy_tags from deck state and validates each against the taxonomy
+- Counts interactions per non-land card; flags any with < 3 (or < 2 if budget-relaxed per FR-07.4)
+- Validates structural minimums from `structural-minimums.md` based on power level
+- Computes mana curve distribution
+- Calculates deck synergy score: total interactions / non-land card count
+- For isolated cards, uses `card_lookup.py search` to find replacements with 3+ interactions
+
+### 4.5 Price Evaluator Sub-Agent
+
+**Spawned by:** SKILL.md orchestrator (Phase 4)
+**References loaded:** `api-reference.md`
+**Tools available:** `Bash` (to invoke `card_lookup.py`)
+**Input:** Complete deck state (post-Optimization Reviewer pass)
+**Output:** Structured verdict with total cost, per-card prices, cap violations, category breakdown
+
+**Key behaviors:**
+- Uses `card_lookup.py batch-price` to fetch prices for all 100 cards
+- Selects cheapest printing for each card (FR-05.1)
+- Handles null prices per FR-05.8 (try cheapest non-foil printing, flag as "price unavailable" if none)
+- Computes total cost, validates against budget
+- Applies per-card cap (explicit or 15% of budget default)
+- For over-budget/over-cap cards, uses `card_lookup.py` to find budget-friendly alternatives
+
+---
+
+## 5. Scryfall API Integration (Card Finder)
+
+### 5.1 Script Design: `scripts/card_lookup.py`
+
+A single Python script with CLI interface, using only standard library (`urllib.request`, `json`, `time`, `sys`, `argparse`).
+
+**CLI Commands:**
+
+| Command | Purpose | Scryfall Endpoint | Example |
+|---------|---------|------------------|---------|
+| `validate` | Check if a card name exists | `/cards/named?exact=<name>` | `card_lookup.py validate --name "Sol Ring"` |
+| `search` | Find cards matching criteria | `/cards/search?q=<query>` | `card_lookup.py search --query "oracle:sacrifice type:creature id:B legal:commander"` |
+| `batch` | Look up multiple cards at once | `/cards/collection` (POST) | `card_lookup.py batch --names "Sol Ring" "Dark Ritual"` |
+| `price` | Get cheapest printing price | `/cards/search?q=!"<name>"&unique=prints&order=usd` | `card_lookup.py price --name "Sol Ring"` |
+| `batch-price` | Get prices for many cards | `/cards/collection` (POST) | `card_lookup.py batch-price --names "Sol Ring" "Dark Ritual"` |
+| `random-commander` | Find commanders by criteria | `/cards/search?q=is:commander id:<colors>` | `card_lookup.py random-commander --colors BG --strategy sacrifice` |
+
+### 5.2 Design Decision: `validate` Uses `/cards/named?exact=`
+
+This resolves **OQ-3** from the PRD. For name validation, we use Scryfall's `/cards/named` endpoint with the `exact` parameter:
+
+- **Exact match is the correct semantic.** Name validation asks "does this exact card exist?" -- not "find cards similar to this name." Fuzzy matching would mask hallucinated names (e.g., "Demonic Consultancy" fuzzy-matches to "Demonic Consultation" but is a different card).
+- **Faster.** Single card lookup, no pagination.
+- **Fallback for typos.** If exact match fails, the script falls back to `/cards/named?fuzzy=<name>` and returns the suggestion with a "did you mean?" message. This gives the agent a correction path without silently accepting wrong names.
+
+See [ADR-004](../adrs/ADR-004.md) for the full decision record.
+
+### 5.3 Design Decision: Double-Faced / Split / Adventure Cards
+
+This resolves **OQ-4** from the PRD.
+
+Scryfall returns multi-faced cards with `//` separators (e.g., `"Delver of Secrets // Insectile Aberration"`). The Card Finder handles these as follows:
+
+1. **Validation:** Accept either the full name (`"Delver of Secrets // Insectile Aberration"`) or the front face name alone (`"Delver of Secrets"`). Scryfall's `/cards/named?exact=` accepts both.
+2. **Color identity:** Use the combined color identity of all faces (Scryfall provides this in the top-level `color_identity` field).
+3. **Oracle text:** For synergy auditing, combine oracle text from all faces. Scryfall provides `card_faces[].oracle_text` for multi-faced cards.
+4. **Pricing:** Use the card's price (Scryfall prices the physical card, not individual faces).
+5. **Display:** In the deck list output, use the front face name only (e.g., "Delver of Secrets") for readability.
+
+### 5.4 Rate Limiting Implementation
 
 ```python
-# Pseudocode -- Developer implements
-# Input: delivery-team/skills/*/SKILL.md
-# Parse: extract paths from Cross-Skill References tables
-# Validate: os.path.exists(path) for each
-# Output: PASS/FAIL with list of phantom references
+import time
+
+class RateLimiter:
+    """Enforce minimum delay between Scryfall API requests."""
+
+    def __init__(self, min_delay_ms=75):
+        # 75ms default (Scryfall asks for 50-100ms; 75ms is safe middle)
+        self.min_delay = min_delay_ms / 1000.0
+        self.last_request_time = 0
+
+    def wait(self):
+        elapsed = time.monotonic() - self.last_request_time
+        if elapsed < self.min_delay:
+            time.sleep(self.min_delay - elapsed)
+        self.last_request_time = time.monotonic()
 ```
 
-This script can be integrated into CI or run manually during plugin-dev validation.
+### 5.5 Error Handling
 
-### 6.4 Prototype Test Plan
+| Scryfall Response | Card Finder Behavior |
+|------------------|---------------------|
+| 200 OK | Return parsed card data |
+| 404 Not Found | Return `{"found": false, "query": "<original query>"}` |
+| 422 Bad Request | Return error with query echoed back for debugging |
+| 429 Rate Limited | Exponential backoff: wait 1s, 2s, 4s. Max 3 retries. Then return error. |
+| 5xx Server Error | Retry once after 2s. Then return error with suggestion to check status.scryfall.com |
+| Timeout (10s) | Retry once. Then return error. |
+| Null USD price | Try `prices.usd_foil`. If null, try other printings via search. If all null, flag as "price unavailable". |
 
-Test with the two existing cross-references to prove the convention works:
+### 5.6 Card Data Model
 
-#### Test 1: Godot -> Developer clean-code.md
+The Card Finder returns a normalized subset of Scryfall's full response:
 
-1. Load the godot skill (`/godot`)
-2. Ask it to write a simple GDScript function
-3. Verify the sub-agent prompt includes clean code standards content
-4. Verify the clean code content came from `developer/references/clean-code.md` (not a copy)
+```python
+{
+    "name": "Blood Artist",              # Canonical name
+    "mana_cost": "{1}{B}",               # Mana cost string
+    "cmc": 2.0,                          # Converted mana cost
+    "type_line": "Creature - Vampire",   # Type line
+    "oracle_text": "Whenever Blood Artist or another creature dies, ...",
+    "color_identity": ["B"],             # Color identity array
+    "colors": ["B"],                     # Card colors
+    "legalities": {"commander": "legal"},# Format legality map
+    "price_usd": "1.49",                # Cheapest USD price (string or null)
+    "set_name": "Avacyn Restored",       # Set of cheapest printing
+    "scryfall_uri": "https://...",       # Link for reference
+    "card_faces": null,                  # Non-null for double-faced cards
+    "keywords": ["Partner", ...],        # Keywords (for partner detection)
+    "found": true                        # Whether the card was found
+}
+```
 
-#### Test 2: Alias Creator -> Delivery Flow aliases
+### 5.7 Batch Endpoint Usage
 
-1. Load the alias-creator skill
-2. Ask it to list available themes
-3. Verify it reads from `delivery-flow/references/aliases/`
-4. Verify all 13 theme files are discovered
+The `/cards/collection` endpoint accepts up to 75 card identifiers per request. For a 100-card deck:
 
-#### Test 3: Phantom Reference Detection
+1. Split into 2 requests: cards 1-75, cards 76-100
+2. Use `{"identifiers": [{"name": "Sol Ring"}, {"name": "Dark Ritual"}, ...]}` format
+3. Response includes `data` (found cards) and `not_found` (missing identifiers)
+4. Rate limit applies between the 2 requests (75ms delay)
 
-1. Add a fake cross-reference to a test SKILL.md: `delivery-team/skills/fake/references/nonexistent.md`
-2. Run `validate_cross_refs.py`
-3. Verify it reports the phantom reference as an error
-4. Remove the fake reference
-
-#### Test 4: Cross-Platform Path Resolution
-
-1. Verify the paths use forward slashes (POSIX-compatible)
-2. Confirm Claude's Read tool resolves forward-slash paths on all platforms (it does -- Claude normalizes paths internally)
-3. No symlinks, no OS-specific features -- purely text-based path references
+This is the preferred method for validating or pricing complete decklists (FR-06.8). Individual lookups are reserved for replacement searches and commander validation.
 
 ---
 
-## 7. Follow-Up Recommendations
+## 6. Orchestration Flow
 
-If this spike's recommendation is accepted:
+### 6.1 Pipeline Sequence
 
-1. **Feature work**: Create `CROSS-SKILL-REFERENCES.md`, update 2 SKILL.md files, write validation script. Estimated: 1-2 story points.
+```
+User Message
+     |
+     v
+[SKILL.md: Intake Extraction]
+     | Detect Mode A/B/C
+     | Extract parameters
+     | Validate commander (card_lookup.py validate)
+     | Check banned list (reference)
+     | Check partner keyword (reject if present)
+     | Resolve all 7 parameters
+     |
+     v
+[SKILL.md: Spawn Deck Builder Sub-Agent]
+     | Read: archetype-patterns.md, synergy-taxonomy.md,
+     |       structural-minimums.md, intake-questions.md
+     | Pass: intake parameters
+     | Agent produces: deck state (100 cards)
+     |
+     v
+[SKILL.md: Spawn Rules Judge Sub-Agent]
+     | Read: commander-rules.md, banned-list.md
+     | Pass: deck state
+     | Agent produces: verdict (PASS/FAIL)
+     |
+     +--[FAIL]--> Correction Router (see 6.2)
+     |
+     v  [PASS]
+[SKILL.md: Spawn Optimization Reviewer Sub-Agent]
+     | Read: synergy-taxonomy.md, structural-minimums.md
+     | Pass: deck state
+     | Agent produces: verdict with synergy score
+     |
+     +--[FAIL]--> Correction Router (see 6.2)
+     |
+     v  [PASS]
+[SKILL.md: Spawn Price Evaluator Sub-Agent]
+     | Read: api-reference.md
+     | Pass: deck state + budget parameters
+     | Agent produces: verdict with pricing
+     |
+     +--[FAIL]--> Correction Router (see 6.2)
+     |
+     v  [PASS]
+[SKILL.md: Format Final Output]
+     | Summary card
+     | Categorized deck list with prices
+     | Agent verdicts
+     | Export list
+     | Purchase summary
+     | Post-output actions prompt
+     |
+     v
+User Reviews Deck
+```
 
-2. **Future consideration**: If a third skill needs `clean-code.md`, that is fine under this convention -- just add the cross-reference declaration. If a fourth and fifth follow, re-evaluate whether a `shared/` directory is warranted (per the review trigger in the ADR).
+### 6.2 Correction Cycle Implementation
 
-3. **Do not pre-build**: The `shared/` directory, reference registry, and orchestrator approaches are all viable future options. They should be built when the problem demands them, not before. Let us forge something that will endure beyond the ages -- and the most enduring designs are the simplest ones that serve the actual need.
+When any agent returns FAIL:
+
+1. **SKILL.md increments the correction counter** for the current cycle.
+2. **SKILL.md extracts violations** from the failing agent's verdict.
+3. **SKILL.md spawns a new Deck Builder sub-agent** with:
+   - The current deck state
+   - The violation list with suggested replacements
+   - Instruction to apply corrections while maintaining exactly 100 cards
+   - All original references (archetype-patterns, synergy-taxonomy, structural-minimums)
+4. **The corrected deck state flows back** through the pipeline from the failing agent's position (not from the beginning).
+5. **If correction counter reaches max** (from pipeline config `pipeline.max_self_correction`, default 3):
+   - Apply budget priority rule (FR-07.4): relax synergy threshold to 2 for budget-forced swaps
+   - Output best-effort deck with remaining warnings
+
+**Correction re-entry point:** After correction, the pipeline re-enters at the agent that failed, not at the beginning. If the Rules Judge failed and corrections were applied, the corrected deck goes back to the Rules Judge, then proceeds to Optimization Reviewer and Price Evaluator. This avoids redundant re-validation of already-passed stages.
+
+**Correction cycle counter scope:** One counter for the entire pipeline run, not per-agent. If the Rules Judge uses 1 cycle and the Price Evaluator uses 2, the total is 3 (max reached). This matches the existing pipeline config mechanism (FR-07.3).
+
+### 6.3 Post-Output Actions
+
+After final output, the orchestrator handles four commands:
+
+| Command | Behavior |
+|---------|----------|
+| `approve` | Acknowledge completion. No further action. |
+| `swap X Y` | Validate card Y via card_lookup.py. Check color identity, banned status, price. Re-run Optimization Reviewer for synergy impact. Update deck state and re-display affected sections. |
+| `rerun` | Re-spawn the full pipeline with the same intake parameters. Fresh correction counter. |
+| `adjust` | Prompt the user for which parameters to change. Then re-run pipeline with updated parameters. |
+
+### 6.4 State Management
+
+**No disk persistence in v1.** The deck state lives entirely in the conversation context, passed between sub-agents as text. This is sufficient because:
+
+- The pipeline completes in a single session (G-05, NFR-07)
+- The deck state (~100 cards with metadata) is well within Claude's context window
+- No cross-session resume is needed for v1
+
+**v2 consideration:** If deck modification mode is added, persisting deck state to a file would enable cross-session editing. The structured deck state format is designed to be file-compatible if needed.
 
 ---
 
-*"I could build you a Silmaril of shared reference architecture -- a registry of registries, a web of symbolic links, a cathedral of indirection. But the wise smith knows that the finest work is the one that needs no ornament. Two cross-references do not require a framework. They require a map."*
+## 7. Reference File Architecture
+
+### 7.1 Reference Loading Strategy
+
+Following the three-level context loading pattern:
+
+1. **Metadata** (always loaded) -- marketplace.json entry tells Claude what the plugin does
+2. **SKILL.md** (loaded when skill triggers) -- orchestrator instructions, intake logic, agent templates
+3. **References** (loaded on demand) -- each sub-agent gets only the references it needs
+
+| Reference File | Loaded By | Sub-Agent(s) That Use It |
+|---------------|-----------|--------------------------|
+| `commander-rules.md` | Orchestrator (before Rules Judge spawn) | Rules Judge |
+| `banned-list.md` | Orchestrator (at intake + before Rules Judge spawn) | Rules Judge, Orchestrator (intake validation) |
+| `archetype-patterns.md` | Orchestrator (before Deck Builder spawn) | Deck Builder |
+| `structural-minimums.md` | Orchestrator (before Deck Builder + Opt Reviewer spawn) | Deck Builder, Optimization Reviewer |
+| `synergy-taxonomy.md` | Orchestrator (before Deck Builder + Opt Reviewer spawn) | Deck Builder, Optimization Reviewer |
+| `intake-questions.md` | Orchestrator (before Deck Builder spawn) | Deck Builder |
+| `api-reference.md` | Orchestrator (before Price Evaluator spawn) | Price Evaluator |
+
+### 7.2 Reference File Scope and Content
+
+**`commander-rules.md`** -- The Rules Judge's source of truth.
+- Commander format rules (100-card singleton, color identity, commander tax, command zone)
+- Color identity derivation rules (mana cost + rules text + color indicators)
+- Singleton exception: basic lands
+- Commander damage rule (21 combat damage)
+- Format-specific timing rules relevant to synergy auditing
+
+**`banned-list.md`** -- A flat list of banned card names with ban dates.
+- Sourced from mtgcommander.net
+- Updated manually when bans are announced (quarterly)
+- Format: one card name per line, with ban date
+
+**`archetype-patterns.md`** -- The Deck Builder's strategy knowledge.
+- Common archetypes: aristocrats, voltron, spellslinger, tribal, combo, stax, group hug, mill, reanimator, tokens, enchantress, equipment, superfriends, landfall, counters/proliferate, wheels, chaos, clone
+- Per archetype: typical card categories, core synergy patterns, key card types, commander suggestions by color
+- Power level adjustments (what changes at casual vs. mid vs. high vs. cEDH)
+
+**`structural-minimums.md`** -- Targets by power level tier.
+- 4 tiers: Casual (1-4), Mid (5-7), High (8-9), cEDH (10)
+- Per tier: ramp count, draw count, removal count, board wipe count, land count range, win condition count
+- Special adjustments for archetypes (e.g., spellslinger runs more draw, voltron runs more protection)
+- Mana curve target shapes per tier
+
+**`synergy-taxonomy.md`** -- The interaction classification system.
+- 6 categories: Triggers, Enables, Protects, Combos-with, Amplifies, Feeds
+- Per category: definition, examples, edge cases
+- Explicit exclusion rules (shared creature type alone, generic mana enablement, "both good cards")
+- Tag format specification: `[CATEGORY: target_card_name]`
+- Scoring rules: how to count, how to compute deck synergy score
+
+**`intake-questions.md`** -- The 7 questions with smart behavior rules.
+- Question text, valid input ranges, defaults, smart derivation rules
+- Mode A/B/C detection heuristics
+- Commander suggestion logic (by color + strategy)
+- Budget warning thresholds by color count
+- Power level scale descriptions
+
+**`api-reference.md`** -- Scryfall API integration guide.
+- Endpoint documentation for `/cards/named`, `/cards/search`, `/cards/collection`
+- Scryfall search syntax (oracle text, type, color identity, format legality)
+- Rate limiting rules (50-100ms between requests)
+- Response schema (relevant fields only)
+- Error codes and handling
+- Batch request format and limits (75 per request)
+
+---
+
+## 8. WebFetch Permission
+
+The plugin requires `api.scryfall.com` added to the allowed WebFetch domains. This is documented in SKILL.md's setup instructions section.
+
+**Note:** The `card_lookup.py` script uses `urllib.request` (via `Bash` tool), not `WebFetch`. However, Claude may also need to make direct web requests to Scryfall during intake (commander validation) or for ad-hoc lookups. Adding `api.scryfall.com` to WebFetch covers both paths.
+
+The SKILL.md setup section will include:
+
+```
+## Setup
+
+Before using this plugin, add `api.scryfall.com` to your allowed WebFetch
+domains in Claude Code settings:
+
+  Settings > Permissions > WebFetch > Add: api.scryfall.com
+```
+
+---
+
+## 9. Open Question Resolutions
+
+| # | Question | Resolution | Rationale |
+|---|----------|-----------|-----------|
+| OQ-1 | Structured tags vs. free text for synergy rationale? | **Both.** Structured tags (`[TRIGGERS: Blood Artist]`) for machine-countable interactions + one-sentence free-text rationale for human readability. | Tags enable the Optimization Reviewer to deterministically count interactions. Free text gives the user understanding. The UX spec shows both in the output. See ADR-003. |
+| OQ-3 | `/cards/search` vs. `/cards/named` for name validation? | **`/cards/named?exact=` with fuzzy fallback.** | Exact match is the correct semantic for validation. Fuzzy fallback provides "did you mean?" corrections without silently accepting wrong names. See ADR-004. |
+| OQ-4 | How to handle double-faced / split / adventure cards? | **Accept front face name or full name. Use combined color identity and oracle text.** | Scryfall handles both name forms. Combined identity/text ensures correct legality and synergy checking. See Section 5.3. |
+
+---
+
+## 10. Risk Analysis
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|-----------|
+| Card name hallucination despite pre-validation | Medium | High (core failure mode) | FR-02.9 pre-validation + Rules Judge batch validation + `card_lookup.py validate` at every stage. Three-layer defense. |
+| Scryfall API downtime | Low | High (blocks entire pipeline) | Retry logic with backoff. Clear error message with status page link. No offline fallback in v1. |
+| Sub-agent context window overflow | Low | Medium (agent cannot process full deck) | Deck state is ~100 entries x ~5 lines = ~500 lines. Well within window. Reference files are loaded selectively. |
+| Synergy tags hallucinated by Deck Builder | Medium | Medium (false synergy claims) | Rules Judge audits synergy claims against oracle text. Optimization Reviewer validates tags against taxonomy categories. |
+| Budget-synergy conflict causing infinite correction loops | Medium | Medium (exhausts cycles without resolution) | Correction counter is global (not per-agent). Budget priority rule (FR-07.4) relaxes synergy threshold. Best-effort output with warnings. |
+| Scryfall price data lag vs. actual market prices | Low | Low (acceptable in v1) | Documented as a known limitation. Scryfall is source of truth for v1. |
+
+---
+
+## 11. Assumptions
+
+1. **Scryfall API remains free and stable.** No API key required. Rate limits stay at 10 req/s.
+2. **Claude's Agent tool supports the sub-agent pattern.** Each sub-agent can invoke Bash (for card_lookup.py) and Read (for reference files).
+3. **100-card deck state fits comfortably in context.** Estimated at ~15-20K tokens with synergy tags and rationale.
+4. **The Commander banned list changes infrequently.** Manual updates to `banned-list.md` are acceptable for v1.
+5. **Users have internet access.** No offline mode.
+
+---
+
+## 12. Architecture Diagrams
+
+### 12.1 Component Diagram (C4 Level 2)
+
+```
++------------------------------------------------------------------+
+|                     mtg-commander Plugin                          |
+|                                                                   |
+|  +------------------------------------------------------------+  |
+|  |                    SKILL.md (Orchestrator)                  |  |
+|  |  - Intake extraction (Mode A/B/C)                          |  |
+|  |  - Commander validation                                     |  |
+|  |  - Agent sequencing (4 stages)                              |  |
+|  |  - Correction routing (max N cycles)                        |  |
+|  |  - Output formatting                                        |  |
+|  |  - Post-output actions                                      |  |
+|  +-----+--------+--------+--------+---------------------------+  |
+|        |        |        |        |                               |
+|        v        v        v        v                               |
+|  +---------+ +-------+ +-------+ +-------+                       |
+|  |  Deck   | | Rules | | Opt.  | | Price |   (Sub-agents via     |
+|  | Builder | | Judge | | Rev.  | | Eval. |    Agent tool)        |
+|  +---------+ +-------+ +-------+ +-------+                       |
+|        |        |        |        |                               |
+|        +--------+--------+--------+                               |
+|                 |                                                  |
+|                 v                                                  |
+|  +------------------------------------------------------------+  |
+|  |           scripts/card_lookup.py (Card Finder)              |  |
+|  |  - validate, search, batch, price, batch-price              |  |
+|  |  - Rate limiting (75ms between requests)                    |  |
+|  |  - Error handling (retry, backoff)                          |  |
+|  +------------------------------+-----------------------------+  |
+|                                 |                                 |
++------------------------------------------------------------------+
+                                  |
+                                  v
+                        +------------------+
+                        |  Scryfall API    |
+                        |  api.scryfall.com|
+                        +------------------+
+```
+
+### 12.2 Sequence Diagram (Happy Path)
+
+```
+User        SKILL.md       DeckBuilder   RulesJudge   OptReviewer  PriceEval   card_lookup.py  Scryfall
+ |              |               |             |             |           |             |            |
+ |--"build me"->|               |             |             |           |             |            |
+ |              |--validate cmd------------------------------------------------>|            |
+ |              |               |             |             |           |             |---req--->|
+ |              |               |             |             |           |             |<--200----|
+ |              |<--------------confirmed--------------------------------------------------------|
+ |<--confirm----|               |             |             |           |             |            |
+ |              |               |             |             |           |             |            |
+ |              |--Agent(build)->|             |             |           |             |            |
+ |              |               |--batch validate----------------------------------->|            |
+ |              |               |             |             |           |             |---POST-->|
+ |              |               |             |             |           |             |<--200----|
+ |              |<-deck state---|             |             |           |             |            |
+ |              |               |             |             |           |             |            |
+ |              |--Agent(judge)------>|             |             |           |             |
+ |              |               |             |--batch------------------------------->|            |
+ |              |               |             |             |           |             |---POST-->|
+ |              |               |             |             |           |             |<--200----|
+ |              |<------PASS----------|             |             |           |             |
+ |              |               |             |             |           |             |            |
+ |              |--Agent(opt)----------->|             |           |             |            |
+ |              |<---------PASS--------------|             |           |             |            |
+ |              |               |             |             |           |             |            |
+ |              |--Agent(price)----------------------------->|             |            |
+ |              |               |             |             |           |--batch----->|            |
+ |              |               |             |             |           |             |---POST-->|
+ |              |               |             |             |           |             |<--200----|
+ |              |<---------------------PASS-----------------|             |            |
+ |              |               |             |             |           |             |            |
+ |<-final deck--|               |             |             |           |             |            |
+```
+
+---
+
+## 13. ADR Index
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [ADR-001](../adrs/ADR-001.md) | Single Skill with Agent Sub-Agents vs. Multi-Skill Plugin | Accepted |
+| [ADR-002](../adrs/ADR-002.md) | Scryfall API Client -- Python Script vs. MCP Server | Accepted |
+| [ADR-003](../adrs/ADR-003.md) | Synergy Representation -- Structured Tags + Free Text Hybrid | Accepted |
+| [ADR-004](../adrs/ADR-004.md) | Card Name Validation -- Exact Match with Fuzzy Fallback | Accepted |
+
+---
+
+## 14. Next Steps
+
+1. **Plan stage**: Break this architecture into user stories and sprint tasks
+2. **Dev stage**: Implement in order: card_lookup.py first (enables all agents), then reference files, then SKILL.md with agent templates, then integration testing with 5 test cases
+3. **UAT stage**: Dogfooding gate -- all 5 test cases must produce valid, synergy-dense, budget-compliant decklists
+
+---
+
+*"The work is laid out upon the anvil. Four agents, one orchestrator, seven references, one script. Each piece precisely fitted. The pipeline shall hold because each ring knows its purpose and none oversteps its bound. Let us forge."*
 
 ```
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/04-architect/solution/architecture.md
-SUMMARY: Recommends formalized status quo (Approach 5). 2 of 107+ refs are true sharing candidates. Existing cross-skill Read pattern works. ADR + prototype design included.
+SUMMARY: Architecture mapped to Claude Code plugin conventions: single SKILL.md orchestrator, 4 sub-agents via Agent tool, card_lookup.py script, 7 refs. 4 ADRs.
 ```

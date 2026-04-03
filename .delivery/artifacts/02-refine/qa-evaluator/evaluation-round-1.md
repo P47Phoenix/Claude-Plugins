@@ -1,83 +1,101 @@
-# Gate 2 Evaluation: PRD Quality Gate Flow Refactoring
+# Gate 2 Evaluation: MTG Commander Deck Builder Plugin
 
 **Evaluator**: Legolas, QA Engineer
-**Date**: 2026-03-30
+**Date**: 2026-04-01
 **PRD Version**: 1.0
-**Metrics Version**: 1.0
 **Round**: 1
 
 ---
 
 ## BLOCKING Criteria
 
-### B1: Every FR has testable acceptance criteria
+### B1: All requirements are testable
 
 **Verdict: PASS**
 
-All 8 FRs (FR-01 through FR-08) have explicit acceptance criteria written as checkboxes. Each criterion is verifiable by a concrete command or inspection method. Examples of strong testability:
+All 7 FRs (FR-01 through FR-07) and 7 NFRs (NFR-01 through NFR-07) have explicit, verifiable acceptance criteria. Each AC maps to a concrete verification method:
 
-- FR-01 AC-01a: "A new file `stage_definitions.py` exists" -- file existence check
-- FR-03 AC-03a: "`PRDFlowBuilder` class is <=200 lines (measured by `wc -l`)" -- deterministic measurement
-- FR-05 AC-05c: "`grep -r '\"prd_flows.db\"'` across the plugin directory returns only `shared.py`" -- exact verification command provided
+- **FR-01** (Plugin Structure): File existence checks (`ls mtg-commander/SKILL.md`, `ls mtg-commander/LICENSE.txt`), JSON key lookup in `marketplace.json`, `plugin-validator` execution with zero-error exit code.
+- **FR-02** (Deck Builder): Count intake questions presented (7), verify Scryfall API call on commander name input, count output cards (exactly 100), verify category assignments sum to 100, verify synergy rationale present for each non-land card.
+- **FR-03** (Rules Judge): Every AC is a deterministic check against Scryfall API data -- card existence, color identity subset, banned list membership, singleton rule, format legality. Verdict output is structured (PASS/FAIL). All verifiable programmatically.
+- **FR-04** (Optimization Reviewer): Numeric thresholds (10+ ramp, 10+ draw, 5+ removal, 2+ board wipes, 3+ win conditions, 34-40 lands). Synergy interaction count per card. Synergy score formula defined. All measurable.
+- **FR-05** (Price Evaluator): USD values from Scryfall, arithmetic sum, comparison against budget ceiling, per-card cap calculation (15% of total). All numeric and verifiable.
+- **FR-06** (Card Finder): API endpoint verification, response schema validation, rate limit timing measurement, error code handling (404, 422, 429). File existence check for `scripts/card_lookup.py`. Import check for `urllib` only.
+- **FR-07** (Orchestration): Agent execution sequence observable in output. Correction cycle count against `pipeline.max_self_correction`. Final output format verification (sections present, export-ready list format).
 
-I can write a test for every single AC in this PRD. No criterion is left to subjective judgment.
-
----
-
-### B2: No ambiguous language in acceptance criteria
-
-**Verdict: FAIL**
-
-The acceptance criteria themselves are free of "should", "might", and "could". Present tense and "must" are used correctly throughout. However, three ACs contain branching "either...or" constructs that create ambiguous end-states:
-
-**Finding 1 -- FR-04 AC-04a**:
-> `"run_execute.py is either deleted or converted to a thin wrapper (<=10 lines) that imports from prd_execute.py and prints a deprecation warning"`
-
-**Finding 2 -- FR-04 AC-04b**:
-> `"run_builder.py is either deleted or converted to a thin wrapper (<=10 lines) that imports from prd_flow_builder.py and prints a deprecation warning"`
-
-A QA engineer cannot write a single definitive test when the expected state branches. Is the file deleted or is it a wrapper? Both are valid outcomes, but the assertion must know which one to verify. The PRD already contains a recommendation in OQ-1: "Thin wrappers with deprecation print(), remove in next release." Commit to it.
-
-**Finding 3 -- FR-03 AC-03b**:
-> `"Schema creation (_create_schema) is extracted to a separate module (e.g., schema.py) or to a standalone function"`
-
-Same pattern. This maps to OQ-5 (open question deferred to Design). The AC is untestable until the extraction target is decided. The "New Files" table already proposes `schema.py` as a separate module with an estimated 150-180 lines. Commit to it.
-
-**Fix**: Replace all "either...or" ACs with definitive statements. Resolve OQ-1 and OQ-5 before exiting Refine. The PRD already has recommendations for both -- promote them to decisions.
+Every AC can have a test written for it. No criterion relies on subjective judgment alone.
 
 ---
 
-### B3: Success metrics are measurable with defined baselines and targets
+### B2: Acceptance criteria are specific and measurable (no "either...or")
 
-**Verdict: PASS**
+**Verdict: NOT PASS -- 2 blocking issues found**
 
-The metrics artifact (by Elrond) is thorough. All 10 metrics (M1-M10) have:
-- Precise definitions with explicit formulas (`wc -l`, `grep -rl`, `git diff --stat`)
-- Numeric baselines captured from the actual codebase at commit `834b532`
-- Numeric targets with direction indicators
-- A complete verification script that can be run in a single pass
+I scanned all 44 acceptance criteria across FR-01 through FR-07 and 7 NFRs for branching language, ambiguity, and unmeasurable phrasing.
 
-The PRD Goals table (Section 2) aligns 1:1 with the metrics artifact. Every goal has a baseline, target, and measurement method. The dogfooding validation requirement (P0 UAT gate for before/after output comparison) is explicit with a capture protocol.
+**Blocking Issue 1: FR-02.1 -- Test Case 1 commander is "either...or"**
+
+The PRD's AC FR-02.1 itself is clean, but Test Case 1 in Section 8 specifies:
+
+> Commander: Sheoldred, the Apocalypse (or K'rrik, Son of Yawgmoth -- builder's choice based on archetype fit)
+
+This is an "either...or" in the test specification. A test case must have a single, deterministic expected input. "Builder's choice" means the test is not repeatable -- different runs may use different commanders, producing fundamentally different decklists with different color identities, synergy patterns, and price profiles. The pass criteria cannot be consistently evaluated.
+
+**Fix required**: Pick one commander. If both are valuable test scenarios, split into two test cases (3a and 3b) or make one the primary and the other an optional stretch test.
+
+**Blocking Issue 2: FR-02.6 -- category assignment has overlapping definitions**
+
+FR-02.6 states: "Every card is assigned to exactly one category." The categories include Ramp (10+), Card Draw (10+), and Synergy Pieces (remaining). Many Commander staples serve dual roles -- e.g., Solemn Simulacrum is both ramp and card draw; Phyrexian Arena is card draw but also a synergy piece in lifegain decks. The PRD does not define how dual-purpose cards are categorized.
+
+This matters because the structural minimums in FR-04.3 count cards per category. If a dual-purpose card is placed in "Synergy Pieces," the ramp or draw count may fall below the 10-card minimum, triggering a false FAIL. If placed in "Ramp," the card draw count suffers. The assignment rule is untestable without a disambiguation criterion.
+
+**Fix required**: Add a prioritization rule for dual-purpose cards. For example: "When a card serves multiple category functions, it is assigned to the category with the fewest cards above its structural minimum. Ties are broken by primary function (the function most relevant to the deck's strategy archetype)."
 
 ---
 
-### B4: User roles are specific (not just "user")
+### B3: Success metrics have baselines and targets
 
-**Verdict: PASS**
+**Verdict: NOT PASS -- no baselines or metrics table**
 
-Section 3 defines two personas with who/goal/pain/success structure:
-- **P1: Plugin Maintainer** -- "A developer extending or modifying the PRD quality gate flow"
-- **P2: Pipeline User** -- "A user running PRD workflows via the documented CLI commands in CLAUDE.md"
+The PRD has a Goals table (Section 2) with 6 goals (G-01 through G-06). Each goal has a "Success Measure" column. However:
 
-User stories reference these roles consistently: "As a maintainer..." (US-01 through US-04, US-07 through US-09), "As a user..." (US-05, US-06). The "user" in US-05/US-06 maps unambiguously to the defined P2 persona.
+1. **No baselines.** This is a GREENFIELD plugin -- there is no existing system to measure against. The PRD should still define baselines, even if they are "0" or "N/A (new capability)." Without explicit baselines, there is no way to demonstrate improvement or validate that the plugin delivers new value versus the null state.
+
+2. **No numeric targets in goals.** The success measures are restatements of the requirements, not independently measurable metrics. For example:
+   - G-02: "Every non-land card interacts meaningfully with 3+ other cards" -- this is the requirement itself (FR-04.2), not a success metric with a target. A proper metric would be: "Baseline: 0 decks built. Target: 3/3 dogfooding test cases produce decks with synergy score >= 3.0."
+   - G-05: "User provides intake answers, receives finished decklist. No manual intermediate steps." -- this is a feature description, not a metric. A proper metric would be: "Baseline: N/A. Target: 100% of pipeline runs complete without user intervention between agents."
+
+3. **No measurement methodology.** The goals do not specify HOW each success measure is verified. The test cases in Section 8 partially fill this gap, but they are not linked to the goals table.
+
+**Fix required**: Add a proper metrics table with columns: Goal ID, Metric, Baseline, Target, Measurement Method. The 3 dogfooding test cases provide excellent raw material -- link them to goals explicitly.
 
 ---
 
-### B5: Out of scope section is present and non-empty
+### B4: Edge cases identified
 
-**Verdict: PASS**
+**Verdict: WARNING -- significant gaps**
 
-Section 7 lists 8 explicit exclusions: core module changes, new features, schema migrations, test framework setup, YAML data files, SKILL.md changes, performance optimization, and documentation file changes. Well-bounded. The exclusions align with NFR-06 (core modules untouched) and NFR-01 (zero new dependencies).
+The PRD identifies risks in Section 11 (Dependencies) but does not have a dedicated edge cases or risks section for functional behavior. The Open Questions (Section 10) surface 5 good design-level questions but are positioned as deferred, not as identified edge cases.
+
+**Missing edge cases I would test:**
+
+1. **Commander with partner/companion/background ability**: OQ-5 asks whether partner commanders are supported, but the PRD does not define behavior when a user inputs a partner commander. Does the pipeline reject it? Silently treat it as a solo commander? This is a runtime edge case, not just a design question. If a user inputs "Thrasios, Triton Hero" (a partner commander), the Deck Builder must handle it -- reject with a clear message or support it. Neither behavior is specified.
+
+2. **Scryfall API returns no price data**: FR-05.1 assumes Scryfall always has USD pricing. Some cards (especially new releases, promos, or digital-only printings) have null price fields in Scryfall. The Price Evaluator has no AC for handling cards with missing price data. Does it skip the card? Use $0? Fail the evaluation? This directly impacts budget calculations.
+
+3. **Commander is on the banned list**: The Rules Judge (FR-03.4) checks for banned cards, but the intake flow (FR-02.3) only validates that the commander name exists in Scryfall. A user could input a banned commander (e.g., Golos, Tireless Pilgrim). The Deck Builder would build an entire 100-card list before the Rules Judge catches the illegal commander. This wastes a full pipeline cycle. The intake should validate ban status upfront.
+
+4. **Budget too low for any viable deck**: What happens when a user specifies a $10 budget? The Price Evaluator will FAIL, suggest replacements, and the Deck Builder will attempt corrections -- but basic lands and the commander alone may exceed $10 for some commanders. No AC defines a minimum viable budget or a "budget infeasible" early exit.
+
+5. **Card Finder returns no results**: FR-06.3 supports "budget replacement" queries. What if no functionally similar card exists under the price ceiling? FR-06 has no AC for empty result sets. The Price Evaluator (FR-05.5) and Optimization Reviewer (FR-04.6) both depend on Card Finder suggestions. If Card Finder returns nothing, these agents have no defined fallback behavior.
+
+6. **Scryfall API down (extended outage)**: NFR-05 acknowledges internet is required and Section 11 notes "Scryfall downtime blocks deck building." But no AC defines user-facing behavior -- does the pipeline hang? Timeout? Display an error? The Card Finder (FR-06.5) handles individual request errors but not "API unreachable" as a distinct state.
+
+7. **100-card count after correction cycles**: FR-07.2 cycles back to the Deck Builder when an agent fails. If the Rules Judge flags 5 illegal cards for removal, the Deck Builder must replace them while maintaining exactly 100 cards. No AC explicitly requires that replacement operations preserve the 100-card count invariant during corrections (FR-02.5 only governs initial output).
+
+8. **Duplicate basic lands and singleton rule interaction**: FR-03.5 states "no duplicate card names except basic lands." Commander decks commonly run snow-covered basics (Snow-Covered Island, etc.) and Wastes. Are these considered "basic lands" for the singleton exception? The Scryfall type line distinguishes "Basic Snow Land" from "Basic Land." The boundary of the exception is undefined.
+
+**Recommendation**: Edge cases 2, 3, 5, and 7 should be addressed before Plan stage -- they represent runtime failures with no defined behavior. Edge cases 1, 4, 6, and 8 can be addressed during Design/Architect.
 
 ---
 
@@ -85,91 +103,103 @@ Section 7 lists 8 explicit exclusions: core module changes, new features, schema
 
 | # | Criterion | Verdict |
 |---|-----------|---------|
-| B1 | Every FR has testable acceptance criteria | PASS |
-| B2 | No ambiguous language in acceptance criteria | **FAIL** |
-| B3 | Measurable success metrics with baselines and targets | PASS |
-| B4 | Specific user roles | PASS |
-| B5 | Out of scope present and non-empty | PASS |
-
-**Gate 2 Result: FAIL** -- B2 must be resolved before proceeding.
-
----
-
-## WARNING Criteria
-
-### W1: NFRs have quantified targets
-
-**Verdict: PASS (with note)**
-
-All 6 NFRs have quantified or binary-verifiable targets:
-- NFR-01: "No non-stdlib imports added" -- grep verification
-- NFR-02: "Existing `prd_flows.db` files work without migration" -- load test
-- NFR-03: "No syntax or stdlib features requiring >3.9" -- code review
-- NFR-04: "Before/after output identical for all 4 CLI entry points" -- diff
-- NFR-05: "Every modified/new `.py` file <=300 lines" -- `wc -l`
-- NFR-06: "zero diff" on core modules -- `git diff`
-
-**Note**: NFR-03 lacks a concrete verification command. The metrics artifact does not include a metric for Python version compatibility. Recommend adding a specific check (e.g., `python3.9 -c "import ast; ast.parse(open(f).read())"` for each file, or listing prohibited syntax: `match`/`case`, `X | Y` type unions, `tomllib`).
-
----
-
-### W2: Edge cases are identified
-
-**Verdict: WARNING -- Partial coverage**
-
-The Risks section identifies 6 risks that function as edge cases (ordering bugs, missed hardcoded paths, backward compat breaks, schema breaks, multi-line string formatting). FR-01 AC-01e adds load-time validation via `KeyError` for stage definitions.
-
-**Missing edge cases I would test**:
-1. Gate definitions have no equivalent load-time validation. FR-02 lacks an AC parallel to AC-01e. If `gate_definitions.py` has a malformed dict, the failure mode is undefined.
-2. What if `shared.py` is imported via relative path from outside the plugin directory?
-3. What if `prd_flows.db` is read-only or locked by another process?
-4. What if deprecation wrapper scripts are run with Python 2 accidentally? (minor, but the wrappers would be the most user-facing entry points)
-
-**Recommendation**: Add AC-02f: "Gate definitions are validated at load time -- `KeyError` raised if required fields are missing" (mirrors AC-01e).
-
----
-
-### W3: Dependencies documented
-
-**Verdict: PASS**
-
-Section 8 documents 5 dependencies with Type, Impact, and Status columns. The pre-refactoring output baselines dependency is critical and is explicitly called out with a capture protocol in the metrics artifact. All statuses are tracked (Confirmed, Active).
-
----
+| B1 | All requirements are testable | **PASS** |
+| B2 | Acceptance criteria are specific and measurable | **NOT PASS** -- 2 issues (either/or in test case, dual-purpose card categorization undefined) |
+| B3 | Success metrics have baselines and targets | **NOT PASS** -- no baselines, no numeric targets, no measurement methodology |
 
 ## WARNING Summary
 
 | # | Criterion | Verdict |
 |---|-----------|---------|
-| W1 | NFRs have quantified targets | PASS (note on NFR-03 verification) |
-| W2 | Edge cases identified | WARNING -- gate definition validation gap |
-| W3 | Dependencies documented | PASS |
+| W1 | Edge cases identified | **WARNING** -- 8 functional edge cases not covered; 4 should be addressed before Plan |
 
 ---
 
-## Actionable Fixes Required (Blocking)
+## Detailed Findings
 
-| # | Location | Issue | Fix |
-|---|----------|-------|-----|
-| F1 | FR-04 AC-04a | "either deleted or converted" is ambiguous | Commit to thin-wrapper approach per OQ-1 recommendation. Rewrite: "run_execute.py is a thin wrapper (<=10 lines) that imports from prd_execute.py and prints a deprecation warning to stderr" |
-| F2 | FR-04 AC-04b | Same branching ambiguity | Same fix pattern as F1 for run_builder.py |
-| F3 | FR-03 AC-03b | "extracted to a separate module ... or to a standalone function" is ambiguous | Resolve OQ-5. Commit to schema.py (already proposed in New Files table). Rewrite: "Schema creation (_create_schema) is extracted to a new file schema.py as a standalone function" |
+### Finding 1: Test Case 1 uses "either...or" commander selection [BLOCKING]
 
-## Actionable Fixes Recommended (Non-blocking)
+**Severity**: Blocking
+**Location**: Section 8, Test Case 1
+**Issue**: "Sheoldred, the Apocalypse (or K'rrik, Son of Yawgmoth -- builder's choice based on archetype fit)" introduces non-deterministic test input. These are different commanders with different oracle text, different synergy profiles, and different price points. A test case must have fixed inputs to be repeatable.
+**Fix**: Choose one commander for Test Case 1. If both are valuable, create Test Case 1a (Sheoldred) and Test Case 1b (K'rrik).
 
-| # | Location | Issue | Fix |
-|---|----------|-------|-----|
-| R1 | FR-02 | No load-time validation AC for gate definitions | Add AC-02f: "Gate definitions are validated at load time -- KeyError raised if required fields are missing" (mirrors AC-01e) |
-| R2 | NFR-03 | No concrete verification method for Python 3.9+ compat | Add measurement method: list prohibited syntax features or add AST parse check |
+### Finding 2: Dual-purpose card categorization rule missing [BLOCKING]
+
+**Severity**: Blocking
+**Location**: FR-02.6, FR-04.3
+**Issue**: FR-02.6 requires every card in exactly one category. FR-04.3 validates structural minimums by category count. Many Commander staples serve dual roles (e.g., Solemn Simulacrum = ramp + draw, Swords to Plowshares = removal + lifegain synergy). Without a categorization disambiguation rule, the Deck Builder's assignment is arbitrary, and the Optimization Reviewer's count validation is unreliable.
+**Fix**: Add a categorization priority rule to FR-02.6 or FR-04.3. Suggested: "Dual-purpose cards are assigned to the category with the greatest structural deficit. If no deficit exists, the card is assigned based on its primary function relative to the deck's strategy archetype."
+
+### Finding 3: Success metrics lack baselines and targets [BLOCKING]
+
+**Severity**: Blocking
+**Location**: Section 2, Goals table
+**Issue**: The Goals table has 6 rows with "Success Measure" descriptions, but no Baseline column, no numeric Target column, and no Measurement Method column. Success measures are restatements of requirements, not independently verifiable metrics. Example: G-02's measure is the same as FR-04.2's requirement text.
+**Fix**: Add a proper metrics table. Suggested format:
+
+| Goal | Metric | Baseline | Target | Measurement |
+|------|--------|----------|--------|-------------|
+| G-01 | Legal decklists produced by dogfooding test cases | 0/3 | 3/3 | Rules Judge PASS on all 3 test cases |
+| G-02 | Avg synergy score across test case decks | 0 | >= 3.0 | Optimization Reviewer synergy score output |
+| G-04 | Test case decks within budget | 0/3 | 3/3 | Price Evaluator PASS on all 3 test cases |
+| G-05 | Pipeline runs completing without manual intervention | 0% | 100% (3/3 test cases) | End-to-end run logs |
+| G-06 | Plugin validator errors | N/A | 0 errors, 0 warnings | `plugin-validator` output |
+
+### Finding 4: Missing price data handling [WARNING]
+
+**Severity**: Warning
+**Location**: FR-05.1, FR-06.2
+**Issue**: Scryfall returns null USD prices for some cards (new releases, promos, digital-only). FR-05.1 assumes price data always exists. No AC defines behavior when a card has no price.
+**Fix**: Add an AC to FR-05 or FR-06: "When Scryfall returns null USD price for a card, Card Finder uses the card's cheapest non-foil printing price. If no printing has a USD price, the card is flagged as 'price unavailable' and excluded from budget calculations with a warning in the verdict."
+
+### Finding 5: Banned commander not caught at intake [WARNING]
+
+**Severity**: Warning
+**Location**: FR-02.3, FR-03.4
+**Issue**: Intake validates commander name existence (FR-02.3) but not ban status. A banned commander passes intake, and the Deck Builder constructs a full 100-card list before the Rules Judge catches the illegal commander in FR-03.4. This wastes an entire pipeline cycle.
+**Fix**: Add FR-02.3a: "Commander name is validated against the Commander banned list before proceeding. A banned commander halts intake with an error message naming the ban and prompting for an alternative."
+
+### Finding 6: Empty Card Finder results undefined [WARNING]
+
+**Severity**: Warning
+**Location**: FR-06.3, FR-04.6, FR-05.5
+**Issue**: FR-04.6 and FR-05.5 both instruct agents to "suggest 1-2 replacement candidates" using Card Finder. FR-06 has no AC for when Card Finder returns zero results for a replacement query.
+**Fix**: Add FR-06.8: "When a search query returns zero results, Card Finder returns an empty result set with the query parameters echoed back. Consuming agents (Optimization Reviewer, Price Evaluator) must include a 'no replacement found' note in their verdict for that card."
+
+### Finding 7: 100-card invariant during correction cycles [WARNING]
+
+**Severity**: Warning
+**Location**: FR-07.2, FR-02.5
+**Issue**: FR-02.5 requires exactly 100 cards in the initial output. FR-07.2 sends violations back to the Deck Builder for correction. No AC requires that the corrected decklist also has exactly 100 cards. If the Deck Builder removes flagged cards without adding replacements, the count breaks.
+**Fix**: Add to FR-07.2: "After each correction cycle, the resulting decklist must satisfy FR-02.5 (exactly 100 cards). The Rules Judge re-validates card count on every cycle."
+
+### Finding 8: Synergy score threshold undefined [OBSERVATION]
+
+**Severity**: Observation (non-blocking)
+**Location**: FR-04.8, Section 8 test cases
+**Issue**: FR-04.8 defines the synergy score formula but sets no minimum threshold for PASS. The test cases in Section 8 require "synergy score > 3.0" but this threshold appears nowhere in FR-04. OQ-2 asks about this but defers it. The test cases assume a threshold that the FR does not mandate -- the Optimization Reviewer has no AC telling it to fail a deck with synergy score 2.9.
+**Recommendation**: This is correctly deferred to Design (OQ-2), but the test cases should not assume an answer. Either remove the synergy score threshold from test case pass criteria, or add an AC to FR-04.7 that references the threshold.
 
 ---
 
 ## Verdict
 
-**STATUS: FAIL**
+**STATUS: NOT_DONE**
 
-The PRD passes 4 of 5 blocking criteria. It fails B2 due to three acceptance criteria containing branching "either...or" language that prevents writing deterministic tests. The fixes are straightforward -- the PRD already contains recommendations for both open questions. Promote the recommendations to decisions and rewrite the three ACs.
+The PRD fails 2 of 3 blocking criteria. It has strong testable requirements (B1 PASS) and well-structured acceptance criteria overall, but two specific AC issues block passage:
 
-Two non-blocking recommendations are noted: add gate definition load-time validation (mirrors existing stage validation), and strengthen NFR-03 verification.
+1. **B2 fails** due to an "either...or" in Test Case 1 and undefined dual-purpose card categorization rules that make structural minimum validation non-deterministic.
+2. **B3 fails** due to missing baselines, numeric targets, and measurement methodology in the Goals table. The success measures restate requirements rather than defining independently verifiable metrics.
 
-The edge case you thought was unreachable -- branching acceptance criteria that a QA engineer cannot write a single test for -- I have already tested it. It fails.
+Additionally, 8 edge cases are unaddressed (WARNING), with 4 representing runtime failures that have no defined behavior (price data gaps, banned commander at intake, empty Card Finder results, 100-card invariant during corrections).
+
+The bones of this PRD are excellent. The functional requirements are thorough, the agent boundaries are clean, the test cases are well-chosen, and the scope boundary is disciplined. The fixes needed are additive (add a metrics table, add disambiguation rules, add edge case ACs) -- nothing needs to be redesigned.
+
+The bow is drawn but the aim needs adjusting. Three targeted fixes unblock this gate.
+
+```
+STATUS: NOT_DONE
+ARTIFACT: .delivery/artifacts/02-refine/qa-evaluator/evaluation-round-1.md
+SUMMARY: Gate 2 FAIL. B1 PASS (all requirements testable). B2 NOT PASS (either/or in Test Case 1 commander, dual-purpose card categorization undefined). B3 NOT PASS (no baselines, no numeric targets, success measures restate requirements). 8 edge case warnings (price data gaps, banned commander at intake, empty Card Finder results, 100-card invariant during corrections, partner commanders, minimum budget, API outage, snow basics). 3 targeted fixes unblock.
+```

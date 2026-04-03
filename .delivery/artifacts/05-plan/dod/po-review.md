@@ -1,68 +1,73 @@
 # Gate 5 DoD Review: Product Owner
 
 **Reviewer**: Gandalf (Product Owner)
-**Date**: 2026-03-30
-**Sprint Plan Version**: 1.1
+**Date**: 2026-04-01
+**Sprint Plan Version**: 1.0
 **User Stories Version**: 1.0
 **PRD Version**: 1.1
 **Verdict**: DONE
 
-> "All we have to decide is what to do with the time that is given us." The plan decides wisely.
+> *"Eight stories. Forty-two points. Every card in these decks shall earn its place through synergy, and every story shall earn its place through traceability."*
 
 ---
 
-## Criterion 1: Scope Correct -- All 8 FRs Covered [BLOCKING]
+## Criterion: Scope Correct, Stories Valuable, Properly Prioritized [BLOCKING]
 
 **Result**: PASS
 
-All 8 functional requirements (FR-01 through FR-08) from PRD v1.1 are mapped to user stories and scheduled in the sprint plan. Independent verification confirms every FR has at least one planned task and story assignment.
+### Scope Verification
+
+All 7 functional requirements from PRD v1.1 are mapped to user stories. US-08 (dogfooding) covers the cross-cutting validation gate.
 
 | PRD FR | Description | Story | Sprint | Covered |
 |--------|-------------|-------|--------|---------|
-| FR-01 | Extract stage definitions | US-04 | S1 | Yes |
-| FR-02 | Extract gate definitions | US-05 | S2 | Yes |
-| FR-03 | Decompose PRDFlowBuilder | US-02, US-03, US-06 | S1-S2 | Yes |
-| FR-04 | Consolidate entry points | US-07, US-10 | S2-S3 | Yes |
-| FR-05 | Shared constants module | US-01, US-03 | S1 | Yes |
-| FR-06 | Restructure fix_and_run.py | US-08 | S3 | Yes |
-| FR-07 | Restructure check_db.py | US-09 | S3 | Yes |
-| FR-08 | Update CLAUDE.md | US-11 | S3 | Yes |
+| FR-01 | Plugin scaffold and structure | US-01 | S1 | Yes |
+| FR-02 | Intake + Deck Builder agent | US-04 | S2 | Yes |
+| FR-03 | Rules Judge validation | US-05 | S2 | Yes |
+| FR-04 | Optimization Reviewer | US-06 | S2 | Yes |
+| FR-05 | Price Evaluator | US-07 | S2 | Yes |
+| FR-06 | Scryfall API client | US-02 | S1 | Yes |
+| FR-07 | Pipeline orchestration | US-04 | S2 | Yes |
 
-The sprint plan's Coverage Matrix (Section 6) declares "Unmapped FRs: None." I have independently verified every mapping. No gaps.
+Supporting stories without direct FR mapping but justified by architecture and PRD non-functional requirements:
+- **US-03** (Reference Files): Sourced from PRD S7 and Architecture S2. Provides domain context for all agents -- no agent can function without these.
+- **US-08** (Dogfooding): Sourced from PRD S8 test cases and acceptance gates G-01 through G-06. Enforces the team's dogfooding standard.
 
----
+Unmapped FRs: None. All 72 acceptance criteria include AC-level source traceability back to specific FR sub-requirements or architecture sections.
 
-## Criterion 2: Stories Valuable and Properly Prioritized [BLOCKING]
+### Story Value
 
-**Result**: PASS
+All 8 stories have persona-grounded "As a / I want / So that" statements tied to concrete pipeline roles (plugin developer, agent, orchestrator, user, delivery team). No story exists without a traced requirement source. The dependency graph is clean: scaffold first, tools and context second, orchestrator third, specialized agents fourth, end-to-end validation last.
 
-- All 11 stories (US-01 through US-11) trace to PRD functional requirements with explicit AC coverage
-- P0 stories (US-01 through US-07) addressing source issues #51, #52, #53 are scheduled before P1 cleanup work
-- Dependency chain is correct: foundation modules first (US-01 through US-03), data extraction (US-04, US-05), transformation (US-06), then consumers (US-07 through US-11)
-- Story point estimates reflect genuine Python refactoring complexity -- not inflated, not deflated
-- The SM's 3-sprint replan (11 SP + 16 SP + 7 SP) correctly addresses my original Sprint 1 overcommitment of 27 SP against a 16 SP ceiling. The redistribution preserves all story estimates and adds a velocity recalibration protocol after Sprint 1. This is disciplined capacity planning and I endorse it.
-- Dogfooding validation gate (P0) is explicitly scheduled as Sprint 3 Step 5 per PRD Section 2
+### Prioritization
 
----
+All 8 stories are P0 -- correct for a GREENFIELD single-feature plugin where every component is load-bearing. There is no P1 or "nice to have" scope. The sprint plan sequences them by dependency, not by priority tier, which is the right approach when everything is P0 and the dependency graph dictates execution order.
 
-## Criterion 3: No Scope Creep [WARNING]
+### Sprint Plan Alignment
 
-**Result**: PASS (one advisory note)
+- 3 sprints: 15 SP + 22 SP + 5 SP = 42 SP total.
+- Sprint 1 (15 SP, 94% ceiling): Justified. US-01 is trivial scaffolding, and US-02/US-03 are fully parallel with zero cross-dependency. Effective serial load is US-01 (2) + max(US-02, US-03) = 10 SP.
+- Sprint 2 (22 SP, 138% ceiling): Ceiling exception documented and justified. US-05/06/07 are parallel prompt templates with identical structure. Effective serial path is US-04 (8) + max(US-05, US-06, US-07) (5) = 13 SP, within ceiling.
+- Sprint 3 (5 SP, 31% ceiling): Deliberately light. Dogfooding involves 5 full pipeline runs with live API calls and unpredictable correction cycles. Low SP commitment absorbs integration risk.
+- Dependency chain is correct: foundation (S1) before pipeline brain (S2) before end-to-end proof (S3).
 
-The SM added `verify.py` as a verification script not present in the PRD or user stories. This is **not scope creep** -- it is an engineering verification tool that directly supports the PRD's P0 dogfooding validation gate (PRD Section 2) and the SM's velocity recalibration protocol. It creates no new user-facing functionality, adds no dependencies, and is consistent with NFR-01.
+### Estimation Calibration
 
-No other scope additions detected. The sprint plan does not introduce features, capabilities, or files beyond what the PRD specifies.
+Estimates differentiate by work type: Python script at highest tier (US-02: 8 SP for 6 CLI commands with rate limiting, retry, batch splitting), prompt engineering at mid-high tier (US-04: 8 SP, US-05/06: 5 SP, US-07: 4 SP), markdown reference at one tier lower (US-03: 5 SP for 7 research-heavy files), pure scaffolding at lowest (US-01: 2 SP). Rationale table in the user stories document is consistent and defensible.
 
----
+### Acceptance Criteria Coverage
 
-## Criterion 4: Acceptance Criteria on Every Story [WARNING]
-
-**Result**: PASS
-
-All 11 user stories (US-01 through US-11) have acceptance criteria in Given/When/Then format with associated test cases. Every AC is tagged as `structural` or `empirical`. This is thorough work.
+72 acceptance criteria across 8 stories. 46 test cases. Every AC is testable -- code stories via CLI execution, prompt engineering stories via pipeline invocation, reference stories via content inspection, dogfooding via end-to-end runs with evidence capture. The dogfooding story (US-08) enforces that code review alone is not sufficient -- 5 specific test cases must produce working decklists with measurable quality gates (100 cards, synergy >= 3.0, budget compliance, zero hallucinated names, zero banned cards).
 
 ---
 
 ## Verdict
 
-**DONE** -- The sprint plan passes all four PO review criteria. All 8 PRD functional requirements are fully covered, stories are properly valued and prioritized, no scope creep is present, and every story has acceptance criteria. The fellowship may proceed to Development.
+**DONE** -- Scope is complete (7 FRs mapped to 8 stories with full AC-level traceability), stories are valuable (each is load-bearing in a GREENFIELD dependency chain), and prioritization is correct (all P0, sequenced by dependency graph with two parallelization points). The fellowship may proceed to Development.
+
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/05-plan/dod/po-review.md
+REVIEWER: Gandalf (Product Owner)
+VERDICT: DONE — scope correct, stories valuable, properly prioritized
+```

@@ -1,8 +1,10 @@
-# Dev Notes: US-01 -- Create Shared Constants Module
+# Dev Notes: US-01 -- Plugin Scaffold
 
 **Story**: US-01 | **SP**: 2 | **Sprint**: 1
-**FR Coverage**: FR-05 (AC-05a, AC-05b partial, AC-05c partial, AC-05d partial)
-**File Created**: `prd-quality-gate-flow/shared.py` (60 lines)
+**Developer**: Gimli
+**Files Created**: `mtg-commander/SKILL.md`, `mtg-commander/LICENSE.txt`
+**Files Modified**: `.claude-plugin/marketplace.json`
+**Directories**: `mtg-commander/`, `mtg-commander/references/`, `mtg-commander/scripts/` (pre-existing empty dirs reused)
 
 ---
 
@@ -10,13 +12,31 @@
 
 | AC | Status | Method |
 |----|--------|--------|
-| AC-1.1 | PASS | `from shared import DB_PATH; print(DB_PATH)` returns `prd_flows.db` |
-| AC-1.2 | PASS | `generate_timestamp_id("flow")` returns `flow_YYYYMMDD_HHMMSS` format |
-| AC-1.3 | PASS | `ensure_utf8_output()` wraps stdout/stderr on Windows, no-op elsewhere |
-| AC-1.4 | PASS | Imports only sys, io, sqlite3, datetime (all stdlib) |
+| 1.1 | PASS | `ls mtg-commander/` -- directory exists at repo root, kebab-case |
+| 1.2 | PASS | `cat mtg-commander/SKILL.md` -- stub with YAML frontmatter (name, description, license) |
+| 1.3 | PASS | `cat mtg-commander/LICENSE.txt` -- full Apache 2.0 text with copyright 2026 Michael Connelly |
+| 1.4 | PASS | `python3 -m json.tool .claude-plugin/marketplace.json` -- valid JSON, entry with `"name": "mtg-commander"`, description, `"source": "./"`, `"skills": ["./mtg-commander"]` |
+| 1.5 | PASS | `ls mtg-commander/references/ mtg-commander/scripts/` -- both subdirectories exist |
+| 1.6 | PASS | No `agents/`, `skills/`, `hooks/`, `plugin.json`, or `.mcp.json` created (per ADR-001) |
+| 1.7 | PASS | SKILL.md documents `api.scryfall.com` as required WebFetch domain |
 
-## Notes
+## Test Cases
 
-- `generate_timestamp_id()` uses microseconds for non-flow prefixes to avoid collisions in rapid node/rule creation
-- `get_connection()` added in US-03 wiring step
-- No deviations from design spec
+| # | Status | Result |
+|---|--------|--------|
+| T1.1 | PASS | `ls mtg-commander/` shows SKILL.md, LICENSE.txt, references/, scripts/ |
+| T1.2 | PASS | marketplace.json passes `python3 -m json.tool`, contains `"name": "mtg-commander"` |
+| T1.3 | PASS | SKILL.md frontmatter has name, description, license; body mentions `api.scryfall.com` |
+| T1.4 | PASS | `ls mtg-commander/agents/` returns "No such file or directory" (expected) |
+
+## Design Decisions
+
+1. **Apache 2.0 license**: Per AC 1.3 and architecture doc, not MIT. The repo root LICENSE is MIT but this plugin uses Apache 2.0 per spec.
+2. **No plugin.json**: Architecture ADR-001 explicitly excludes plugin.json. This repo uses `.claude-plugin/marketplace.json` for plugin registration.
+3. **SKILL.md frontmatter**: Follows the pattern from `research-agent/SKILL.md` and `prompt-engineer/SKILL.md` -- YAML frontmatter with name, description, license.
+4. **Marketplace entry**: Matches architecture doc S2 specification exactly -- name, description, source, strict, skills array.
+5. **Pre-existing directories reused**: `mtg-commander/`, `references/`, `scripts/` already existed (empty). Added files into them rather than recreating.
+
+## Deviations
+
+None. All 7 acceptance criteria met as specified.

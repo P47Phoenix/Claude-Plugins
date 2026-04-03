@@ -1,101 +1,181 @@
-## Idea Brief — SPIKE: Cross-Skill Shared References
+## Idea Brief — GREENFIELD: MTG Commander Deck Builder Plugin
 
-**Project Type**: SPIKE
+**Project Type**: GREENFIELD
 **Date**: 2026-04-01
-**Source Issue**: #47 — Cross-skill shared references mechanism for delivery-team
-**Pipeline Routing**: SPIKE (Idea → Refine-light → Design-skip → Architect-light → Plan-light → Dev → UAT-light)
+**Pipeline Routing**: GREENFIELD (Idea → Refine → Design → Architect → Plan → Dev → UAT)
 
 ---
 
-### 1. Spike Question
+### 1. Problem Statement
 
-**What is the simplest viable mechanism for sharing reference files across delivery-team skills, and does it work in practice with at least two skills?**
+Building a Commander deck is a 100-card optimization problem wrapped in a creative expression problem. The format demands exactly 100 cards (singleton, except basic lands), all within a commander's color identity, with no banned cards — and that is merely the legality floor. A *good* deck requires every card to interact meaningfully with multiple other cards, sufficient mana acceleration, card advantage engines, and structural balance across the mana curve.
 
-Sub-questions:
-- Which reference files are genuine sharing candidates vs. skill-specific?
-- Do any of the four proposed approaches fail on cross-platform, context loading, or plugin architecture constraints?
-- Is the existing ad-hoc pattern (godot SKILL.md hardcodes a path to developer/clean-code.md) sufficient, or does it need to be formalized?
+Today's tools fail this in predictable ways:
 
----
+- **EDHREC and similar popularity aggregators** solve the wrong problem. They surface the most *popular* cards, not the most *synergistic* cards for a specific commander and strategy. A card that appears in 80% of decks is not necessarily correct for *your* deck's game plan. Popularity-driven selection produces generically strong but strategically unfocused lists — decks that do everything adequately and nothing exceptionally.
+- **Manual deck building** requires deep format knowledge, extensive card pool familiarity (30,000+ legal cards), and iterative playtesting to identify synergy gaps. A skilled player spends 4-8 hours building a tuned list. A newer player may never achieve structural soundness without guidance.
+- **Existing AI-assisted tools** lack format-specific validation. They hallucinate card names, ignore color identity restrictions, suggest banned cards, and cannot verify that card interactions actually work within Magic's rules framework. There is no rules judge in the loop.
+- **Budget awareness is an afterthought**. Most tools suggest optimal cards regardless of cost. A player with a $100 budget does not benefit from being told to run Mana Crypt ($180). Budget must be a constraint that shapes the entire build, not a filter applied after the fact.
 
-### 2. Background
-
-The delivery-team plugin currently contains 11 skills with 107+ reference files (~25,000 lines). Each skill loads references from its own `references/` directory. There is no formal mechanism for sharing reference content across skills.
-
-**Why this matters now**:
-
-1. **Duplication is already happening**. The godot skill reads `developer/references/clean-code.md` via a hardcoded cross-skill path in its SKILL.md — a working but undocumented pattern. If a second skill (e.g., quality) needs the same file, it would need to discover and replicate this ad-hoc convention.
-
-2. **Maintenance cost scales with skill count**. We have 11 skills today. When content that applies to multiple skills (security patterns, clean code standards, defect prevention checklists) must be updated, there is no single source of truth unless we formalize sharing.
-
-3. **New skills cannot reuse existing material**. A new skill author must either duplicate content or discover the hardcoded cross-reference pattern from godot's SKILL.md.
-
-**Current state evidence** (from repository scan):
-- `developer/references/clean-code.md` (104 lines) — already cross-referenced by godot SKILL.md
-- `developer/references/clean-code-review-checklist.md` — used by developer, potentially useful for quality
-- `architect/references/security-patterns.md` and `quality/references/security-scanning.md` — related but distinct content on security
-- `architect/references/quality-attributes.md` and `quality/references/quality-metrics.md` — overlapping quality domain
-- `delivery-flow/references/quality-gates.md` — referenced from delivery-flow SKILL.md but conceptually consumed by quality role during DoD validation
-- `godot/references/defect-prevention.md` (111 lines) — potentially useful for developer skill on game projects
+The core philosophy this plugin must embody: **Synergy first. Always.** Every card in a deck must interact meaningfully with 3 or more other cards. Popularity is a tiebreaker, never a selection criterion.
 
 ---
 
-### 3. Approaches to Evaluate
+### 2. Vision
 
-The spike should evaluate these approaches in priority order (simplest first):
+A multi-agent Claude Code plugin where specialized agents collaborate to produce Commander decks that are format-legal, synergy-dense, structurally sound, and budget-compliant — in a single pipeline run.
 
-| # | Approach | Effort | Description |
-|---|----------|--------|-------------|
-| 1 | **Shared directory** (`delivery-team/shared/`) | Low | Create a `shared/` directory at the plugin root. Skills reference files via relative path (`../../shared/clean-code.md`). No architecture change needed. |
-| 2 | **Formalized cross-skill paths** (current godot pattern) | Low | Document a convention: any SKILL.md may reference `delivery-team/skills/<other-skill>/references/<file>.md`. No new directory. Codify the existing ad-hoc pattern. |
-| 3 | **Explicit paths in sub-agent prompts** | Medium | The delivery-flow orchestrator passes shared reference paths when spawning sub-agents. Centralized control, but requires orchestrator changes. |
-| 4 | **Reference registry in marketplace.json** | Medium | Declare shared references at the plugin level in `marketplace.json`. Skills declare which shared refs they consume. Requires tooling to resolve. |
-| 5 | **Symlinks** | Low | Symlink shared files into each skill's `references/` directory. Known fragile on Windows and potentially confusing for Claude's file resolution. |
+The user invokes the plugin, answers 7 intake questions (or provides them upfront), and receives a complete 100-card decklist that has been:
 
-**Spike should also answer**: Is there a reason to NOT share? Some "duplication" may actually be intentional divergence — security-patterns.md (architect) and security-scanning.md (quality) serve different roles. The spike must distinguish true duplicates from related-but-distinct content.
+1. **Built** by a Deck Builder agent who understands Commander archetypes and synergy-first card selection
+2. **Judged** by a Rules Judge agent who verifies format legality, color identity compliance, card interaction accuracy, and timing correctness
+3. **Optimized** by a Reviewer agent who flags isolated cards (fewer than 3 synergy connections), checks structural minimums (ramp, draw, removal, lands), and evaluates mana curve distribution
+4. **Priced** by a Price Evaluator agent who enforces total budget, per-card caps, and identifies cheapest printings
 
----
+Each agent has a clear responsibility boundary. The pipeline is sequential with feedback loops — if the Rules Judge finds illegal cards or the Optimizer flags synergy failures, the deck cycles back to the Builder for correction. The output is a deck that satisfies all four agents simultaneously.
 
-### 4. Success Criteria
-
-The spike is DONE when:
-
-- [ ] **Inventory complete**: A list of reference files that are candidates for sharing, with justification for each (true duplicate, partial overlap, or intentionally distinct)
-- [ ] **At least 2 approaches prototyped**: Working proof that two approaches can load a shared reference from two different skills
-- [ ] **Cross-platform validated**: The chosen approach works on Linux, macOS, and Windows (or documents known limitations)
-- [ ] **Decision recorded**: An ADR-style decision stating which approach is recommended (or "none viable") with evidence
-- [ ] **Dogfooding signal**: The prototype was tested by actually invoking two skills that load the shared reference, not just by reading the file paths
-- [ ] **No regressions**: Existing skill loading (especially godot -> clean-code.md) still works after the prototype
+This is not a card recommendation engine. It is a deck *construction* pipeline with built-in quality gates.
 
 ---
 
-### 5. Time Box
+### 3. Agent Architecture
 
-**1 sprint (single pipeline run)**. This is an architecture exploration, not a committed feature. If the simplest approach (shared directory or formalized paths) works, the spike should stop there. Do not gold-plate.
+The spec defines 4 primary agents and 1 utility sub-agent. Here is how they map to the Claude Code plugin architecture:
 
-Deliverables:
-- Decision document (ADR format)
-- Prototype diff (can be throwaway)
-- Sharing candidate inventory
-- Recommendation for follow-up feature work (if any)
+#### Plugin Component Mapping
+
+| Spec Agent | Plugin Component | Rationale |
+|------------|-----------------|-----------|
+| **Deck Builder (Agent 1)** | Skill with agent sub-agent | Intake specialist + initial architect. Handles the 7 intake questions and produces the initial 100-card list with category assignments. This is the pipeline entry point. |
+| **Rules Judge (Agent 2)** | Agent sub-agent | Stateless validation pass. Checks format legality, color identity, banned list, card interaction accuracy, and timing rules. References official rules sources. No creative decisions — pure rules enforcement. |
+| **Optimization Reviewer (Agent 3)** | Agent sub-agent | Synergy-first evaluation. Flags cards with fewer than 3 interactions. Checks structural minimums (10+ ramp, 10+ draw, removal suite, land count). Evaluates mana curve. Suggests replacements. |
+| **Price Evaluator (Agent 4)** | Agent sub-agent + MCP integration | Budget enforcement. Needs live pricing data from Scryfall API. Checks total budget, per-card caps, identifies cheapest printings across sets. |
+| **Card Finder (Utility)** | Shared utility (script or MCP tool) | On-demand card lookup available to all agents. Priority chain: Recommander → Scryfall API → MTG JSON → EDHREC (tiebreaker only). |
+
+#### Plugin Directory Structure (Proposed)
+
+```
+mtg-commander/
+├── SKILL.md                    # Primary skill: intake, orchestration, output format
+├── LICENSE.txt
+├── agents/
+│   ├── deck-builder.md         # Agent 1: intake + initial build
+│   ├── rules-judge.md          # Agent 2: legality validation
+│   ├── optimization-reviewer.md # Agent 3: synergy + structure checks
+│   └── price-evaluator.md      # Agent 4: budget enforcement
+├── references/
+│   ├── commander-rules.md      # Format rules, banned list, color identity rules
+│   ├── archetype-patterns.md   # Known archetypes, synergy patterns, category templates
+│   ├── structural-minimums.md  # Ramp/draw/removal/land targets by power level
+│   ├── intake-questions.md     # The 7 intake questions with validation
+│   └── api-reference.md        # Scryfall API patterns, rate limits, endpoints
+├── scripts/
+│   └── card_lookup.py          # Card Finder utility (Scryfall API client)
+└── .mcp.json                   # MCP server config for Scryfall (if MCP approach chosen)
+```
+
+#### Pipeline Flow
+
+```
+User Input → Deck Builder (intake + build)
+                 ↓
+           Rules Judge (validate)
+                 ↓ (fail → cycle back to Builder with corrections)
+           Optimization Reviewer (synergy + structure)
+                 ↓ (fail → cycle back to Builder with replacements)
+           Price Evaluator (budget check)
+                 ↓ (fail → cycle back to Builder with budget swaps)
+           Output: Final 100-card decklist
+```
+
+The Card Finder is invoked on-demand by any agent that needs to look up card data, find alternatives, or verify card text.
 
 ---
 
-### 6. Constraints
+### 4. External Dependencies
 
-- **No breaking changes**: Existing skill loading must continue to work unchanged. This is additive only.
-- **Plugin structure compliance**: Any new directory or convention must be compatible with the plugin structure documented in CLAUDE.md and validated by plugin-dev:plugin-validator.
-- **No new dependencies**: No build tools, no package managers, no scripts required to resolve references. Claude must be able to `Read` the file directly from a path.
-- **Markdown/YAML only**: The spike produces documentation and prototype config changes. No source code required.
-- **Config schema unchanged**: No new keys in `.delivery/config.yml` for this spike. If the recommended approach needs config support, that goes into the follow-up feature brief.
-- **Claude's file resolution**: The mechanism must work within how Claude Code resolves file paths — relative paths from the SKILL.md's location, absolute paths from the repo root, or paths specified in sub-agent prompts. The spike must test which of these actually work.
+| Resource | Purpose | Access Model | Risk |
+|----------|---------|-------------|------|
+| **Scryfall API** | Card data, oracle text, legality, pricing, set printings | Free, public REST API. 50-100ms/request rate limit. | Low — well-documented, stable, community-standard. This is the primary data source. |
+| **Recommander** | Synergy-based card recommendations | API/tool (needs investigation in Refine) | Medium — availability and API stability need verification. Fallback to Scryfall + heuristic synergy if unavailable. |
+| **MTG JSON** | Bulk card data for offline reference | Free JSON downloads | Low — static data, versioned releases. Good fallback for card text when API is unavailable. |
+| **EDHREC** | Popularity data (tiebreaker only) | Web scraping or API (if available) | Medium — no official API. Used only as tiebreaker, never as primary signal. Can be omitted in v1 without impact. |
+| **Commander Banned List** | Format legality enforcement | mtgcommander.net (static page) | Low — changes infrequently (quarterly announcements). Can be maintained as a reference file with periodic updates. |
+| **TCGPlayer / Card Kingdom** | Alternative pricing sources | APIs with varying access models | High — may require API keys, have rate limits, or terms restrictions. Scryfall pricing is sufficient for v1. |
+
+**v1 dependency decision**: Scryfall API alone covers card data, oracle text, legality, and pricing. It is the minimum viable external dependency. Recommander adds significant synergy value but needs investigation. EDHREC, TCGPlayer, Card Kingdom, Moxfield, and Archidekt are all deferred to v2.
 
 ---
 
-*Not all those who wander through reference directories are lost — but some of them are reading the same document in three different places. This spike shall determine whether they need a shared library or merely a better map.*
+### 5. Target Users
+
+| Persona | Experience Level | Primary Need | Key Constraint |
+|---------|-----------------|-------------|----------------|
+| **Experienced player, new commander** | Veteran (5+ years) | Wants to build around a specific commander they have not played before. Knows the format but not the card pool for that strategy. | Time — does not want to spend 6 hours on card research for a new archetype. |
+| **New-to-Commander player** | Intermediate (knows Magic, new to Commander) | Needs a structurally sound 100-card list that actually works. Does not know the format's structural requirements. | Knowledge gap — does not know they need 10+ ramp sources or what a good mana curve looks like. |
+| **Budget-conscious brewer** | Any level | Wants a competitive deck within a hard budget ceiling. Needs budget to shape selection, not just filter after the fact. | Budget — the $50-200 range where card choices are constrained and substitution quality matters. |
+| **Returning player** | Lapsed (1-3 year gap) | Wants to build a deck with current card pool. May have outdated assumptions about what is legal or strong. | Currency — card pool has expanded significantly, banned list has changed, power level has shifted. |
+
+---
+
+### 6. Goals
+
+1. **Produce format-legal 100-card Commander decklists** — Every output passes Rules Judge validation: exactly 100 cards including Commander, all within color identity, no banned cards, singleton compliance, valid card names (no hallucinations).
+2. **Enforce synergy-first card selection** — Every non-land card in the deck interacts meaningfully with 3 or more other cards. The Optimization Reviewer gates this. Popularity is never a primary selection criterion.
+3. **Meet structural minimums by power level** — 10+ ramp sources, 10+ card draw sources, appropriate removal suite, and land count calibrated to curve. These targets may flex with power level (a cEDH deck has different needs than a power-6 casual deck).
+4. **Enforce budget compliance with real pricing** — Total deck cost and per-card caps enforced using Scryfall's pricing data. Cheapest printings identified. Budget shapes selection, not just filters it.
+5. **Complete the pipeline in a single session** — User provides intake answers, receives a finished decklist. No "come back tomorrow" or manual intermediate steps. The pipeline handles corrections internally.
+6. **Ship as a valid Claude Code plugin** — Registered in `marketplace.json`, follows plugin conventions (SKILL.md + agents + references + optional scripts/MCP), installable by any Claude Code user.
+
+---
+
+### 7. v1 Scope vs Future
+
+#### v1 — This Pipeline Run
+
+| Deliverable | Details |
+|-------------|---------|
+| **Plugin skeleton** | `mtg-commander/` directory with SKILL.md, agents/, references/, scripts/, LICENSE.txt. Registered in marketplace.json. |
+| **Deck Builder agent** | 7 intake questions (color identity, commander, strategy archetype, power level 1-10, meta alignment, total budget, card restrictions). Produces categorized 100-card list. |
+| **Rules Judge agent** | Format legality validation: color identity, banned list, singleton, card name verification via Scryfall. |
+| **Optimization Reviewer agent** | Synergy audit (3+ interactions per card), structural minimum checks (ramp, draw, removal, lands), mana curve analysis. |
+| **Price Evaluator agent** | Scryfall-based pricing. Total budget enforcement, per-card cap, cheapest printing identification. |
+| **Card Finder utility** | Scryfall API client script. Card lookup, search, pricing, legality checks. |
+| **Commander reference files** | Format rules, banned list, archetype patterns, structural targets, intake question definitions. |
+| **3 test cases** | Mono-Black Graveyard, Orzhov Lifegain, Mono-Blue Mill — validated end-to-end through the full pipeline. |
+
+#### Deferred to v2
+
+| Item | Reason |
+|------|--------|
+| **Recommander integration** | Needs API investigation and fallback strategy. Scryfall + heuristic synergy is sufficient for v1. |
+| **EDHREC integration** | No official API. Tiebreaker-only use case does not justify scraping complexity in v1. |
+| **Multi-source pricing** (TCGPlayer, Card Kingdom) | Scryfall pricing covers v1 needs. Multi-source adds API key management and rate limit complexity. |
+| **Moxfield / Archidekt export** | Output format standardization (MTGO, Arena, CSV) covers v1. Platform-specific export is a convenience feature. |
+| **Deck modification mode** ("improve my existing deck") | Requires a different intake flow (paste existing list, identify weaknesses). v1 focuses on new builds. |
+| **Persistent card database** (SQLite cache) | Scryfall API is fast enough for v1 volumes. Caching becomes valuable at scale or for offline use. |
+| **Hooks** (validation on deck output) | The agents themselves provide validation. Hooks add value for automated CI-style checks but are not needed for v1 correctness. |
+| **Meta-game analysis** | Tracking local or online meta trends to adjust recommendations. Requires data sources and ongoing maintenance. |
+
+---
+
+### 8. Constraints
+
+- **Scryfall API rate limits**. Scryfall allows 10 requests/second for well-behaved clients. The Card Finder utility must respect this. Bulk endpoints should be preferred over individual card lookups where possible.
+- **Card name accuracy is non-negotiable**. The number one failure mode of AI-assisted deck building is hallucinated card names. Every card name in the output must be verified against Scryfall. The Rules Judge agent gates this explicitly.
+- **No local card database in v1**. The plugin does not bundle or maintain a local card database. All card data comes from Scryfall API at runtime. This keeps the plugin lightweight but requires internet access.
+- **Plugin conventions**. Must follow the Claude-Plugins repo patterns: kebab-case directory, SKILL.md as primary skill file, marketplace.json registration, three-level context loading.
+- **WebFetch permissions**. The plugin needs `api.scryfall.com` added to allowed WebFetch domains in settings. This must be documented in the plugin's setup instructions.
+- **No AI-inferred legality decisions**. Format legality (banned list, color identity, singleton rule) must be checked against authoritative sources, not inferred by the model. This mirrors the Business Rules Engine philosophy: gate decisions are deterministic, not AI-variable.
+- **Pipeline compliance**. This work routes through delivery-flow. All stages execute — GREENFIELD means no stages are skipped or lightened.
+- **Dogfooding gate**. All 3 test cases must produce valid, synergy-dense, budget-compliant decklists before UAT passes. The team plays with the tool before the users do.
+
+---
+
+*Not all those who wander through 30,000 legal cards are lost — but most of them could use a wizard with a plan, a judge with a rulebook, a reviewer with sharp eyes, and an accountant who knows the price of power. This plugin assembles that fellowship. Synergy first. Always.*
 
 ```
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/01-idea/po/idea-brief.md
-SUMMARY: SPIKE idea brief for #47 — cross-skill shared references. 5 approaches to evaluate, 6 success criteria, 1-sprint timebox.
+SUMMARY: GREENFIELD idea brief for MTG Commander Deck Builder plugin. 4 agents + Card Finder utility, Scryfall API, synergy-first philosophy. v1 scope defined, 6 items deferred to v2.
 ```

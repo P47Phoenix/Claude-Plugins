@@ -1,89 +1,71 @@
 # UX Designer DoD Review — Gate 3: Design Completeness
 
 **Reviewer**: Galadriel (UX Designer)
-**Date**: 2026-03-30
+**Date**: 2026-04-01
 **Artifact**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
 **PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.1
 
 ---
 
-## Gate 3 Criteria (adapted for decomposition refactoring design)
+## Gate 3 Criteria
 
-### 1. All user flows are complete — every user journey covered [blocking]
-
-**PASS**
-
-The design maps all CLI entry points (the "user journeys" for a developer tool) with full before-and-after traceability:
-
-| Journey | Coverage |
-|---------|----------|
-| `python prd_flow_builder.py` — build a PRD flow | Section 5.1: preserved, same command, decomposed internals |
-| `python prd_execute.py` — execute a workflow | Section 5.1: preserved, gains UTF-8 setup from deleted duplicate |
-| `python prd_execute.py <idea>` — execute with argument | Section 5.1: preserved, argument handling unchanged |
-| `python fix_and_run.py` — cleanup + demo | Section 5.1: preserved, restructured with named functions |
-| `python check_db.py` — inspect DB state | Section 5.1: preserved, gains error handling |
-| `python run_execute.py` — duplicate executor | Section 5.1: consolidated into `prd_execute.py` |
-| `python run_builder.py` — duplicate builder | Section 5.1: consolidated into `prd_flow_builder.py` |
-
-All 7 current entry points are accounted for. The 2 consolidated journeys redirect to canonical equivalents. No user path is lost. The Behavioral Compatibility Matrix (Section 5.2) specifies output structure, exit codes, and DB side effects for each surviving entry point.
-
-### 2. Edge cases addressed [blocking]
+### 1. Flows complete, edge cases addressed [blocking]
 
 **PASS**
 
-The design explicitly handles the following edge cases:
+Every user-facing flow is designed end-to-end with edge case and error handling:
 
-- **Fresh database**: `shared.get_connection()` calls `ensure_schema()`, fixing the latent bug where `fix_and_run.py` crashes on a fresh DB (Step 8, AC-03g). This is the most important error-state fix.
-- **Missing DB file for read-only tool**: `check_db.py` gains graceful error handling when the DB file does not exist (Step 9, AC-07d), rather than the current bare `sqlite3.OperationalError`.
-- **Non-trivial pipeline ordering**: Section 7 documents that gates and stages do not simply alternate (Gate 3 and Gate 4 are consecutive, Stage 5 and Stage 6 are consecutive). The `PIPELINE_SEQUENCE` constant encodes this explicitly rather than relying on implicit alternation. This prevents a subtle class of ordering bugs during the refactoring.
-- **Multi-line string formatting loss**: Step 4 mitigation calls for triple-quoted strings and `repr()` comparison to ensure goal text survives extraction.
-- **Schema SQL fidelity**: Step 2 mandates copy-paste with character-by-character diff, not rewrite.
-- **Circular import risk**: Step 3 explicitly identifies and mitigates the `shared` -> `schema` import risk by enforcing the zero-internal-imports constraint on leaf modules.
+| Flow | Edge Cases Addressed |
+|------|---------------------|
+| Intake (Section 1) | 3 input modes (full inline, partial, guided). One-at-a-time questioning in partial mode. Smart defaults and contextual adaptation per prior answers. Commander recommendation sub-flow when user is unsure. |
+| Validation at intake (Section 1.4) | Name typo with fuzzy suggestion (1.4A), banned commander with ban reason (1.4B), color identity conflict with explicit user choice (1.4C). System never silently overrides. |
+| Partner rejection (Section 1.5) | Clear message explaining why partners are unsupported in v1, prompts for single commander. |
+| Pipeline visibility (Section 2) | Banner with 4-agent sequence, per-agent sub-step progress, estimated time. User cannot intervene mid-pipeline — input queued. Two intervention points defined (intake and post-output). |
+| Correction cycles (Section 4) | Violations listed with suggested replacements, cycle counter (n/3), re-validation shown. Budget-wins tiebreaker with explicit synergy tradeoff disclosure (4.2). Max cycles exhausted outputs best-effort with grouped warnings (4.3). |
+| Final output (Section 5) | Summary card, categorized deck with pricing, pipeline verdicts, export-ready list, purchase summary. Post-output actions: approve, swap, rerun, adjust. |
+| Error handling (Section 6) | Scryfall timeout/5xx with retry (6.1), rate limiting informational (6.1), impossible budget warning at intake (6.2), no valid commander (6.3), invalid must-include card (6.4). |
+| Post-output swap (Section 5.6) | Single-card swap with full validation (Scryfall, color identity, banned, price) and synergy re-check. |
 
-One edge case I want to call out as well-handled: the design recognizes that timestamp-based IDs make exact output comparison impossible and excludes them from equivalence checks (Section 9, per NFR-04). This prevents false test failures.
+First-time use is handled by the guided mode (Mode C) — the system walks the user through all 7 questions with plain-language descriptions. No prior knowledge required.
 
-### 3. Design follows best practices for module decomposition [blocking]
-
-**PASS**
-
-The decomposition follows sound principles:
-
-- **Acyclic dependency graph**: Section 3.3 enforces 5 explicit constraints that guarantee no circular dependencies. Leaf modules (`shared.py`, `schema.py`, `stage_definitions.py`, `gate_definitions.py`) have zero internal imports.
-- **Single Responsibility**: Each new module has one clear job — constants (`shared`), DDL (`schema`), stage data (`stage_definitions`), gate data (`gate_definitions`). The builder becomes a thin orchestrator.
-- **Data vs. logic separation**: Stage and gate definitions are pure data modules (Python dicts, no behavior). Orchestration logic stays in `prd_flow_builder.py`. The `PIPELINE_SEQUENCE` correctly lives in the builder, not in the data modules.
-- **Consumer isolation**: Section 3.3 Rule 3 prevents consumer scripts from importing each other, maintaining a clean DAG.
-- **Public API preservation**: `create_flow()`, `create_node()`, `create_rule()`, `builder.conn`, `export_flow_diagram()` all remain on `PRDFlowBuilder` (AC-03d, AC-03d2, AC-03e). No downstream consumer needs to change its API usage pattern.
-- **Core module zero-diff**: `business_rules_engine.py` and `flow_orchestrator.py` are explicitly untouched (NFR-06), with consumers passing `shared.DB_PATH` to them via injection rather than modifying their internals.
-
-### 4. Refactoring sequence is logical and safe [blocking]
+### 2. All PRD requirements have corresponding design elements [blocking]
 
 **PASS**
 
-The 11-step sequence in Section 4 is well-ordered:
+Spot-check of FR-02 (intake) and FR-07 (orchestration):
 
-- **Foundation first** (Steps 1-3): Create leaf modules before anything depends on them. Each step is additive-only — no existing code is modified until the new modules are verified.
-- **Data extraction before logic change** (Steps 4-5): Stage and gate data are extracted into standalone modules while the builder still works with its old factory methods. This means any step can fail without breaking the existing codebase.
-- **Critical transformation isolated** (Step 6): The highest-risk step — decomposing `prd_flow_builder.py` — happens only after all 4 new modules exist and are independently verified. The design explicitly calls for this to be an atomic commit.
-- **Consumers updated after producer stabilizes** (Steps 7-9): `prd_execute.py`, `fix_and_run.py`, and `check_db.py` are updated only after the builder is stable. This prevents cascading failures.
-- **Deletion last** (Step 10): Duplicate files are removed only after all functionality is confirmed in canonical scripts.
-- **Documentation last** (Step 11): CLAUDE.md reflects the final state, not an intermediate one.
+**FR-02 (Deck Builder / Intake):**
 
-Each step includes: what, why (ordering rationale), verification command, risk assessment, and mitigation. Every step has a rollback path (Section 8). The global rollback via atomic PR revert provides the ultimate safety net.
+| AC | Design Coverage |
+|----|----------------|
+| FR-02.1: 7 intake questions in sequence | Section 1.2 — all 7 questions listed in order with smart defaults |
+| FR-02.2: Inline or interactive input | Section 1.1 — 3 modes: Full Inline (A), Partial Inline (B), Guided (C) |
+| FR-02.3: Commander Scryfall validation | Section 1.4A — validation with typo suggestion flow |
+| FR-02.3a: Banned commander check | Section 1.4B — banned message with ban reason, prompts alternative |
+| FR-02.4: Color identity derived from commander | Section 1.4C — cross-check with conflict resolution, user decides |
+| FR-02.5: Exactly 100 cards | Section 3.1 — "Total: 100 cards" shown in output |
+| FR-02.6: Cards assigned to categories | Section 3.1 — 8 categories shown with card counts |
+| FR-02.7: Grouped output with synergy rationale | Section 3.1 — card name, mana cost, one-sentence rationale per non-land card |
+| FR-02.8: Game plan before card list | Section 3.1 — "Game Plan" block at top of deck output |
+| FR-02.9: Pre-validation during construction | Section 2.2 — Deck Builder progress shows "Validating card names against Scryfall (batch lookup)" |
+| FR-02.10: Partner commander rejection | Section 1.5 — explicit rejection message with v1 explanation |
 
----
+**FR-07 (Orchestration):**
 
-## Findings
+| AC | Design Coverage |
+|----|----------------|
+| FR-07.1: Sequential pipeline | Section 2.1 — 4-agent banner in order: Deck Builder > Rules Judge > Optimization Reviewer > Price Evaluator |
+| FR-07.2: FAIL cycles back to Deck Builder | Section 4.1 — correction cycle with violations, corrections, re-validation narrative |
+| FR-07.3: Uses existing config mechanism | Internal config — not a UX surface, no design element needed |
+| FR-07.4: Max cycles + budget priority | Section 4.3 — max cycles exhausted with best-effort output. Section 4.2 — budget-wins tiebreaker with synergy threshold relaxation disclosure |
+| FR-07.5: Final formatted output | Section 5.1 (summary card), 5.2 (categorized list with pricing), 5.3 (verdicts) |
+| FR-07.6: Export-ready card list | Section 5.4 — one card per line, basic land quantity notation |
+| FR-07.7: Agent verdicts preserved | Section 5.3 — all 4 agent verdicts shown in pipeline results block |
 
-| # | Severity | Finding |
-|---|----------|---------|
-| 1 | NOTE | The `PIPELINE_SEQUENCE` design (Section 7) is the single most important design insight in this spec. It correctly identifies that the stage/gate interleaving is non-trivial and encodes the ordering explicitly. Without this, a naive refactoring would silently produce an incorrect pipeline. Well done. |
-| 2 | NOTE | Section 2.2 line count math checks out: net delta of -499 lines is correct, and all individual files pass their NFR-05 thresholds. |
-| 3 | NOTE | The FR Traceability Matrix (Section 6) maps all 8 FRs and all 42 acceptance criteria with zero gaps. This is thorough. |
+All acceptance criteria for FR-02 (11 ACs) and FR-07 (7 ACs) have corresponding design elements. No gaps found.
 
 ---
 
 ## Verdict
-
-The light of Earendil shines clear upon this design. Every user journey is mapped and preserved, every edge case is foreseen and mitigated, the module decomposition follows a clean acyclic structure, and the refactoring sequence ensures the codebase remains working at every step. The `PIPELINE_SEQUENCE` insight demonstrates genuine understanding of the domain's complexity rather than mechanical decomposition. There are no shadows to illuminate.
 
 **STATUS: DONE**

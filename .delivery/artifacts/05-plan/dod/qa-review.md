@@ -1,64 +1,52 @@
-# QA Engineer Review: Sprint Plan (Gate 5 -- Plan Readiness)
+# QA Review — Gate 5 (Plan)
 
 **Reviewer**: Legolas (QA Engineer)
 **Date**: 2026-04-01
-**Artifacts Reviewed**: `sprint-plan.md` v1.0, `user-stories.md` v1.0
-**Sprint**: Pipeline Integrity Fixes (Issues #54, IA-1, IA-4)
-**Scope**: 1 story (US-01, 2 SP), 1 sprint, 3 AC groups, 13 ACs, 5 test cases
-**Verdict**: DONE
-
-> *"Thirteen acceptance criteria. Five test cases across four files. Each arrow flies to a named target. The coverage holds."*
+**Artifacts Reviewed**: `test-strategy.md` v1.0, `sprint-plan.md` v2.0, `user-stories.md` v1.0
+**Verdict**: **DONE**
 
 ---
 
-## Gate 5 Criteria Assessment (Light -- Blocking Only)
+## Gate Criteria
 
-### [PASS] Test cases cover critical paths for each AC group [BLOCKING]
+- [x] Test strategy covers critical paths [blocking]
+- [x] Test approach referenced for each story [blocking]
 
-All three AC groups have dedicated test cases with full AC traceability:
+## Findings
 
-| AC Group | ACs | Test Cases | Critical Path Covered |
-|----------|-----|------------|----------------------|
-| Group 1: Branch Strategy Enforcement (#54) | AC-1.1 through AC-1.6 (6 ACs) | TC-1 (3 steps), TC-2 (3 steps) | Branch creation at Plan, commit targeting at Dev, PR creation at UAT -- the full branch lifecycle |
-| Group 2: Confidence Cap (IA-1) | AC-2.1 through AC-2.3 (3 ACs) | TC-3 (3 steps) | Confidence cap at 4/5 without empirical evidence, mandatory limitation documentation, existing criterion preservation |
-| Group 3: Refactoring Sub-Type (IA-4) | AC-3.1 through AC-3.4 (4 ACs) | TC-4 (4 steps) | Sub-type detection, Light routing inclusion, Skip narrowing, regression safety (no existing routing broken) |
+The test strategy (`test-strategy.md` v1.0) now targets the correct project (MTG Commander Deck Builder Plugin, GREENFIELD) and covers all 8 stories with 46 test cases across 3 verification methods (structural inspection, script execution, end-to-end dogfooding).
 
-TC-5 (Dogfooding Integration Test) covers the end-to-end critical path: running this actual pipeline with branching configured and observing both the branch lifecycle and confidence scoring behavior in practice. This is the right approach -- the team eats what it cooks.
+### Critical Path Coverage
 
-Every AC maps to at least one test case step. No AC is orphaned.
+| Critical Path | Section | Verdict |
+|---------------|---------|---------|
+| API dependency (Scryfall rate limits, retries, batch splitting) | S2 — API Isolation Strategy | Covered. Per-story isolation rules, 75ms enforcement, sequential TC execution, 429 backoff protocol. |
+| Non-determinism (agent output varies per run) | S3 — Non-Deterministic Output Strategy | Covered. 14 deterministic vs 5 non-deterministic properties enumerated. Rule: assert on constraints, never on content. |
+| Price volatility (daily price changes) | S4 — Price Volatility Strategy | Covered. Point-in-time snapshots, no budget padding, correction cycle absorbs drift, TC5 as stress test. |
+| Correction cycle behavior (max 3, best-effort, budget > synergy) | S5 — Correction Cycle Testing | Covered. Implicit exercise via dogfooding, TC5 explicitly designed to stress correction cycles. |
+| Zero hallucinated card names (cross-cutting) | S6 US-05 + S7 dogfooding protocol | Covered. Rules Judge batch-validates all 100 names. P2 criterion requires 100/100 across all 5 TCs. |
 
-### [PASS] Test approach is referenced for each story [BLOCKING]
+### Per-Story Test Approach
 
-US-01 has a single, explicit test approach stated in the user stories document:
+| Story | Method | Tests | Covered |
+|-------|--------|-------|---------|
+| US-01: Plugin Scaffold | Structural inspection | T1.1-T1.4 | Yes |
+| US-02: Scryfall API Client | Script execution (live API) | T2.1-T2.9 | Yes |
+| US-03: Reference Files | Structural inspection | T3.1-T3.7 | Yes |
+| US-04: Orchestrator + Deck Builder | Dogfooding + 4 standalone micro-tests | T4.1-T4.7 | Yes |
+| US-05: Rules Judge | Dogfooding via US-08 | T5.1-T5.7 | Yes |
+| US-06: Optimization Reviewer | Dogfooding via US-08 | T6.1-T6.6 | Yes |
+| US-07: Price Evaluator | Dogfooding via US-08 | T7.1-T7.6 | Yes |
+| US-08: Dogfooding Validation | 5 TCs, 20-point pass criteria checklist | T8.1-T8.7 | Yes |
 
-> "All test cases follow a dogfooding approach: verify by reading the modified files and confirming the specific text changes exist and are correctly placed."
+### Coverage
 
-This is appropriate for markdown-only changes. The approach decomposes into:
+Coverage matrix (Section 11) maps all 72 top-level ACs to test methods. 100% AC coverage confirmed.
 
-- **TC-1 through TC-4**: Structural inspection (read file, confirm text exists at correct location). Each step has an Action and Expected Result column with specific content to verify.
-- **TC-5**: Empirical dogfooding (run the pipeline with the configuration, observe the behavior). This validates that the written rules actually produce the intended pipeline behavior.
+Sprint plan v2.0 (4 sprints: 10+13+10+9 SP, all at or below 13 SP ceiling) aligns with the test strategy -- sprint exit checks reference the strategy's test case IDs.
 
-The sprint plan (Section 4) reinforces this by specifying execution order across AC groups and calling out the main regression risk (AC Group 3 inadvertently changing FEATURE routing). TC-4 Step 4 directly addresses this risk.
+No gaps found.
 
-### [PASS] Acceptance criteria are specific and measurable [BLOCKING]
-
-All 13 ACs specify:
-
-1. **Exact file** to modify (4 named files)
-2. **Exact section** within each file (e.g., "Gate 7 (UAT Acceptance)", "Light-or-Skip Decision Logic", "Pipeline Integration Points")
-3. **Exact content** to add or verify (quoted text, specific config keys, named subsections)
-4. **Exact constraints** on what must NOT change (AC-2.3: existing criterion unchanged; AC-3.4: existing routing unchanged, Skip conditions narrowed not removed)
-
-No ambiguous "either...or" constructions found. No vague qualifiers. Every criterion has a binary pass/fail check derivable from the stated text.
-
----
-
-## Verdict
-
-**DONE** -- All three Gate 5 QA criteria (light) are satisfied:
-
-1. **Critical paths covered**: 5 test cases trace to all 13 ACs across all 3 AC groups, including an integration dogfooding test.
-2. **Test approach referenced**: Structural inspection plus empirical dogfooding -- appropriate for the markdown-only scope.
-3. **Acceptance criteria are specific and measurable**: Every AC names the file, section, content, and constraint. No ambiguity.
-
-> *"Thirteen shafts, thirteen marks. The quiver is light but the aim is sure. Proceed."*
+```
+STATUS: DONE
+```

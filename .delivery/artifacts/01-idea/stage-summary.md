@@ -1,7 +1,7 @@
 ## Stage 1: Idea -- Summary
 
-**Pipeline**: run-2026-04-01-p8n5
-**Date**: 2026-04-01
+**Pipeline**: run-2026-04-02-k3r9
+**Date**: 2026-04-02
 **Depth**: full
 **DoD Rounds**: 1 (first-try pass)
 
@@ -17,6 +17,8 @@
 | Architect (Celebrimbor) | DONE | 01-idea/dod/architect-review.md |
 
 ### Notes
-- SPIKE for #47: cross-skill shared references
-- 5 approaches to evaluate, 6 success criteria, 1-sprint timebox
-- Architect note: reject "inline copy into SKILL.md" as anti-pattern
+- GREENFIELD: MTG Commander Deck Builder plugin
+- 4 agents + Card Finder utility, Scryfall API, synergy-first philosophy
+- v1: 8 deliverables. v2 deferred: multi-source pricing, Recommander, EDHREC, improve-existing mode
+- PO note: Agent Architecture in Section 3 is proposed, not decided (Refine to finalize)
+- Architect note: Define max iteration count for correction cycles

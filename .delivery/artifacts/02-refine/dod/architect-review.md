@@ -1,7 +1,7 @@
-# Architect DoD Review -- PRD: prd-quality-gate-flow Refactoring
+# Architect DoD Review -- PRD: MTG Commander Deck Builder Plugin v1.1
 
 **Reviewer**: Architect (Celebrimbor)
-**Date**: 2026-03-30
+**Date**: 2026-04-01
 **Artifact**: `.delivery/artifacts/02-refine/po/prd.md` (v1.1)
 **Status**: DONE
 
@@ -9,76 +9,58 @@
 
 ## Gate 2 Architect Criteria
 
-### 1. Technical Feasibility
+### 1. Technically Feasible, No Blockers
 
-I verified every claim in the PRD against the actual codebase.
+- [x] **Technically feasible, no blockers** [blocking]
 
-| PRD Claim | Verified | Evidence |
-|-----------|----------|----------|
-| `prd_flow_builder.py` is 1,157 lines | YES | `wc -l` confirms exactly 1,157 lines |
-| `PRDFlowBuilder` contains 14 factory methods (`_create_stageN`, `_create_gateN`) | YES | `grep` confirms 7 stage creators + 7 gate creators, lines 362-1080 |
-| Schema creation spans lines 47-203 | YES | `_create_schema()` confirmed at lines 47-203 (8 tables + 7 indexes) |
-| `"prd_flows.db"` hardcoded in 5+ Python files | YES | `grep` confirms occurrences in `check_db.py`, `fix_and_run.py` (2x), `prd_execute.py` (2x), `prd_flow_builder.py` (2x), `run_builder.py`, `run_execute.py` (2x) -- 10 occurrences across 6 `.py` files |
-| `run_execute.py` duplicates `prd_execute.py` | YES | Both define `execute_prd_workflow()`, both define `EXAMPLE_PRODUCT_IDEAS`, near-identical `main()` functions. 209 vs 226 lines. |
-| `run_builder.py` duplicates `prd_flow_builder.py` `__main__` block | YES | 43-line wrapper that only calls `PRDFlowBuilder("prd_flows.db").build_prd_flow()` |
-| `fix_and_run.py` has zero functions | YES | Flat procedural: bare `sqlite3.connect()` at line 17, bare DELETE queries at lines 20-24, all at module scope |
-| `check_db.py` has no functions | YES | 26 lines, no function definitions, no `main()`, no error handling |
-| `builder.conn` is used by 3 consumer files | YES | 14 direct `builder.conn.execute()` calls across `fix_and_run.py` (6), `prd_execute.py` (4), `run_execute.py` (4) |
-| `fix_and_run.py` has latent schema ordering bug | YES | Line 17 opens raw `sqlite3.connect("prd_flows.db")` and runs DELETE queries (lines 20-24) before builder import at line 40. Fresh DB with no tables would fail. |
+| Feasibility Area | Assessment |
+|-----------------|------------|
+| FR-01 (Plugin Structure) | Feasible. Standard plugin skeleton (`mtg-commander/`, SKILL.md, LICENSE.txt, subdirectories). Follows established repo conventions exactly. No novel structural patterns. |
+| FR-02 (Deck Builder Agent) | Feasible. 7-question intake with Scryfall validation is straightforward. Commander validation via `/cards/named` (exact match) is a single API call. Category disambiguation rule is deterministic. Partner rejection (FR-02.10) is a simple keyword check on oracle text. |
+| FR-03 (Rules Judge Agent) | Feasible. All validation rules map directly to Scryfall API fields: `legalities.commander`, `color_identity`, `name`. Banned list is a static reference file lookup. Synergy rationale validation (FR-03.7) against oracle text is the most complex check but is bounded -- it validates claims against card text, not open-ended reasoning. |
+| FR-04 (Optimization Reviewer) | Feasible. Synergy Interaction Taxonomy (6 categories) is well-defined with explicit exclusions. Structural minimums are static thresholds. Synergy scoring formula is arithmetic (total connections / non-land cards). Mana curve distribution is a count-and-bucket operation. |
+| FR-05 (Price Evaluator) | Feasible. Scryfall returns USD pricing per printing. Cheapest-printing selection requires iterating printings. Null-price handling (FR-05.8) is specified. Budget math is summation and comparison. |
+| FR-06 (Card Finder Utility) | Feasible. Python script using `urllib` against Scryfall REST API. Rate limiting (50ms delay) is a `time.sleep(0.05)`. Batch endpoint (`/cards/collection`, 75 per request) is documented Scryfall functionality. Retry with exponential backoff is standard pattern. |
+| FR-07 (Orchestration) | Feasible. Sequential agent pipeline with correction loops reuses existing `pipeline.max_self_correction` config. Budget-over-synergy priority rule (FR-07.4) is a clear precedence -- no ambiguity. 100-card invariant during corrections is enforceable by the Rules Judge re-validating count each cycle. |
+| Scryfall API dependency | No blocker. Scryfall is free, well-documented, stable, and requires no API key. Rate limit (10 req/sec) is generous for deck-building volumes. `api.scryfall.com` WebFetch permission is a user config step. |
 
-All factual claims are accurate. The decomposition is straightforward Python refactoring -- extracting methods into standalone modules and converting inline factory method bodies into declarative dicts. No algorithmic complexity, no concurrency concerns, no external service dependencies.
+**No technical blockers identified.** The plugin is a SKILL.md orchestrator + 4 agent definitions + 1 Python script (Card Finder) + 6 reference files. All agent logic is prompt-driven with Scryfall as the sole external dependency.
 
-**Verdict**: PASS -- no feasibility blockers
+### 2. NFRs Realistic
 
-### 2. NFRs Are Realistic and Achievable
+- [x] **NFRs realistic** [blocking]
 
 | NFR | Assessment |
 |-----|-----------|
-| NFR-01 (Zero external deps) | Achievable. All proposed modules use only `sqlite3`, `json`, `datetime`, `enum`, `typing` -- all stdlib. Python dicts for data definitions require no dependencies. |
-| NFR-02 (SQLite schema compat) | Achievable. `CREATE TABLE IF NOT EXISTS` is idempotent. Schema extraction to `schema.py` changes file location, not SQL content. Existing `.db` files will load without migration. |
-| NFR-03 (Python 3.9+ compat) | Achievable. Nothing in the proposed design requires features beyond 3.9. Current code already uses `typing.Optional`, `typing.Dict` (not `X | Y` union syntax). |
-| NFR-04 (Behavioral equivalence) | Achievable. Structural comparison (node/rule/gate counts, flow structure, exit codes) is the correct approach. The PRD correctly identified that timestamp-based IDs make stdout diff non-viable. |
-| NFR-05 (File size <= 300 lines for logic, exemption for data) | Realistic. `schema.py` at ~160 lines (8 CREATE TABLE + 7 CREATE INDEX). `shared.py` at ~40 lines. `PRDFlowBuilder` trimmed to ~150-200 lines. Data files may exceed 300 lines but the exemption is explicitly scoped and justified. |
-| NFR-06 (Core modules untouched) | Achievable. `business_rules_engine.py` (569 lines) and `flow_orchestrator.py` (598 lines) accept `db_path`/`db_connection` as parameters. Consumer-side changes (passing `shared.DB_PATH`) do not require modifying these files. The intentional scope boundary (AC-05e) is architecturally correct -- core modules should remain injectable. |
+| NFR-01 (Scryfall rate limiting) | Realistic. 50ms minimum delay is trivial (`time.sleep`). Batch endpoint reduces call volume for full-deck operations. |
+| NFR-02 (No external Python dependencies) | Realistic. `urllib`, `json`, `time` are stdlib. Scryfall returns JSON over HTTPS -- no parsing libraries needed beyond stdlib. |
+| NFR-03 (Card name accuracy) | Realistic. Rules Judge validates every name against Scryfall. Deck Builder pre-validates during construction (FR-02.9). Two-layer defense is sound. Zero-tolerance gate is enforceable because Scryfall `/cards/named?exact=` returns 404 for non-existent names. |
+| NFR-04 (Plugin validation) | Realistic. Plugin structure follows established conventions. Zero errors/warnings is achievable with correct structure. |
+| NFR-05 (Internet required) | Realistic. Documented constraint, not a technical challenge. |
+| NFR-06 (Scryfall error resilience) | Realistic. Exponential backoff with max 3 retries is a standard pattern. `urllib` handles HTTP status codes natively. |
+| NFR-07 (Session completion) | Realistic with caveat. A full pipeline run with correction cycles involves multiple Scryfall API calls (100+ cards validated, priced, searched). With batch endpoints and 50ms delays, API time is bounded (~5-10 seconds for a full deck validation). Agent reasoning time dominates. Single-session completion is achievable for the 3-cycle correction limit. |
 
-**Verdict**: PASS
-
-### 3. Architecture Decisions Are Sound
-
-**Python dicts vs YAML vs JSON (OQ-3)**: The PRD correctly recommends Python dicts. YAML requires `pyyaml` (violates NFR-01). JSON cannot represent multi-line strings without `\n` escaping, which would make the multi-paragraph `goal` prompts in stage configs unreadable. Python dicts with triple-quoted strings are the only option that satisfies both constraints. This is the right call.
-
-**Schema extraction to `schema.py` (OQ-5)**: Sound. The `_create_schema()` method is 156 lines of pure DDL with no business logic dependencies. Extracting it to a standalone `ensure_schema(conn)` function enables the schema initialization contract (AC-03g) that fixes the `fix_and_run.py` ordering bug. The `shared.get_connection()` helper composing `sqlite3.connect()` + `ensure_schema()` is a clean pattern.
-
-**`builder.conn` preserved as public attribute (AC-03d2)**: Pragmatically correct. Introducing a query accessor method would expand scope beyond structural refactoring. The 14 direct accesses across 3 files are documented; a future migration to a proper query API is a separate scope item. No objection.
-
-**Shared module with `DB_PATH`, `generate_timestamp_id()`, `ensure_utf8_output()` (FR-05)**: Appropriate granularity. These are genuinely cross-cutting concerns. The intentional exclusion of core modules from `shared.py` usage (AC-05e) preserves their testability through dependency injection. This is not inconsistency -- it is correct layering.
-
-**`export_flow_diagram()` placement (OQ-2)**: Correctly deferred to Design stage. Whether it stays on the builder or moves to a utility affects the 200-line budget but not feasibility.
-
-**Verdict**: PASS -- all architectural decisions are sound
-
-### 4. No Contradictory Requirements
-
-I checked for conflicts across all FRs, NFRs, and acceptance criteria:
-
-- **FR-03 (builder <= 200 lines) vs AC-03d (public API preserved)**: No conflict. `create_flow()`, `create_node()`, `create_rule()` are ~25 lines each. `build_prd_flow()` as a loop over data defs is ~30-40 lines. Init + schema delegation + these methods fit within 200 lines.
-- **FR-04 (delete `run_execute.py`) vs NFR-04 (behavioral equivalence)**: No conflict. `prd_execute.py` is the surviving canonical script; equivalence is measured against it.
-- **NFR-05 (300-line limit) vs estimated data file sizes**: No conflict. The exemption for declarative data files is explicit and scoped.
-- **NFR-06 (core modules untouched) vs FR-05 (centralize `DB_PATH`)**: No conflict. AC-05e explicitly documents that consumer-side call sites pass `shared.DB_PATH` to core modules, while core modules retain their own parameter-based injection. Zero diff on core module source.
-- **AC-03g (schema initialization contract) vs NFR-02 (schema compat)**: No conflict. `ensure_schema()` wraps existing `CREATE TABLE IF NOT EXISTS` DDL -- same SQL, same idempotent behavior, different call site.
-
-**Verdict**: PASS -- no contradictions detected
-
-### 5. Observations for Downstream Stages (Non-Blocking)
-
-1. **Data definition ordering**: Gate-to-stage ordering is called out (AC-02d) but the specific mechanism (ordered list vs explicit `after` field vs positional index) is left to Design. This is appropriate -- the PRD specifies the constraint, Design specifies the mechanism.
-
-2. **`export_flow_diagram()` line budget impact**: If this method stays on `PRDFlowBuilder`, the 200-line target is tighter. The method itself is likely 30-50 lines. Design should resolve OQ-2 before Dev begins to avoid mid-sprint rework.
-
-3. **Structural equivalence verification**: The PRD describes this as "structural comparison script or manual count verification" (NFR-04). The Plan stage should specify whether this is automated (preferred) or manual, and what the exact comparison protocol is (e.g., query `SELECT COUNT(*) FROM nodes GROUP BY node_type` before/after).
+**All NFRs are achievable within the stated scope.**
 
 ---
 
-## Summary
+## Open Questions (Architect-Relevant)
 
-The PRD is technically feasible, architecturally sound, and free of contradictions. All factual claims about the codebase are verified. The Python-dicts-over-YAML decision is correct given the zero-dependency constraint. The scope boundary between consumer-side refactoring and core module preservation is well-drawn. The `fix_and_run.py` ordering bug fix is a welcome correctness improvement folded into the refactoring scope. No blocking concerns.
+OQ-3 and OQ-4 are flagged for the Architect stage. Brief pre-assessment:
+
+- **OQ-3** (`/cards/search` vs `/cards/named` for name validation): `/cards/named?exact=` is the correct choice for validation -- returns 200 or 404, no ambiguity. `/cards/search` is for discovery queries (Card Finder's replacement suggestions). Both endpoints will be needed for different purposes.
+- **OQ-4** (Double-faced / split / adventure cards): Scryfall handles these with `card_faces` array and `//` in names. Card Finder should accept either the full name or the front face name. Design should specify the canonical name format used in decklists.
+
+These are solvable in the Architect stage with no feasibility risk.
+
+---
+
+## Verdict
+
+**DONE.** The PRD is technically feasible with zero blockers. All components map to proven patterns: SKILL.md orchestration, prompt-driven agents, Python stdlib HTTP client, static reference files. Scryfall API is a reliable, free, well-documented external dependency. All 7 NFRs are realistic and achievable. Two open questions (OQ-3, OQ-4) are tractable and deferred to Architect stage.
+
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/02-refine/dod/architect-review.md
+SUMMARY: Gate 2 DONE. All FRs feasible (SKILL.md + agents + 1 Python script + reference files). Scryfall API is sole external dependency, no blockers. All 7 NFRs realistic. OQ-3 and OQ-4 tractable for Architect stage.
+```
