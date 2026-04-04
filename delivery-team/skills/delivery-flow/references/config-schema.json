@@ -7,7 +7,7 @@
   "properties": {
     "config_version": {
       "type": "string",
-      "default": "2.3"
+      "default": "2.6"
     },
     "project_type": {
       "type": "string",
@@ -683,7 +683,8 @@
           "enum": [
             "structured-markdown",
             "marp",
-            "paste-ready"
+            "paste-ready",
+            "pptx"
           ],
           "default": "structured-markdown"
         },
@@ -725,6 +726,61 @@
         "vocabulary_overrides": {
           "type": "string",
           "default": "{}"
+        },
+        "pptx_template": {
+          "type": "string",
+          "default": ""
+        },
+        "pptx_font": {
+          "type": "string",
+          "default": "Calibri"
+        },
+        "pptx_accent_color": {
+          "type": "string",
+          "default": "#2d5aa0"
+        },
+        "narrative": {
+          "type": "object",
+          "properties": {
+            "emphasis": {
+              "type": "boolean",
+              "default": true
+            },
+            "cutting": {
+              "type": "boolean",
+              "default": true
+            },
+            "framing": {
+              "type": "boolean",
+              "default": true
+            },
+            "tension": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "light_mode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
+          "default": "auto"
+        },
+        "thresholds": {
+          "type": "string",
+          "enum": [
+            "type-name: seconds pairs (e.g.",
+            "sprint-review: 120). 0 = unlimited."
+          ],
+          "default": "{}"
+        },
+        "thresholds_default": {
+          "type": "integer",
+          "default": 90
         }
       },
       "additionalProperties": false

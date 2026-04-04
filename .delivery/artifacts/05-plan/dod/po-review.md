@@ -1,69 +1,150 @@
 # Gate 5 DoD Review: Product Owner
 
 **Reviewer**: Gandalf (Product Owner)
-**Date**: 2026-04-01
-**Sprint Plan Version**: 1.0
-**User Stories Version**: 1.0
-**PRD Version**: 1.1
+**Date**: 2026-04-04
+**Pipeline**: run-2026-04-04-w7m3
+**Stories Version**: 1.0
+**PRD Version**: 1.0
 **Verdict**: DONE
 
-> *"Eight stories. Forty-two points. Every card in these decks shall earn its place through synergy, and every story shall earn its place through traceability."*
+> *"Twenty requirements. Eight stories. Four groups woven into four sprints. I have walked each thread from its origin in the PRD to its terminus in the plan, and not one has been lost along the way. The map is true."*
 
 ---
 
-## Criterion: Scope Correct, Stories Valuable, Properly Prioritized [BLOCKING]
+## Criterion: Scope Correct [BLOCKING]
 
 **Result**: PASS
 
-### Scope Verification
+### FR-to-Story Traceability Matrix
 
-All 7 functional requirements from PRD v1.1 are mapped to user stories. US-08 (dogfooding) covers the cross-cutting validation gate.
+All 20 functional requirements from the PRD are mapped to exactly one user story. No FR is orphaned. No story introduces scope beyond the PRD.
 
 | PRD FR | Description | Story | Sprint | Covered |
 |--------|-------------|-------|--------|---------|
-| FR-01 | Plugin scaffold and structure | US-01 | S1 | Yes |
-| FR-02 | Intake + Deck Builder agent | US-04 | S2 | Yes |
-| FR-03 | Rules Judge validation | US-05 | S2 | Yes |
-| FR-04 | Optimization Reviewer | US-06 | S2 | Yes |
-| FR-05 | Price Evaluator | US-07 | S2 | Yes |
-| FR-06 | Scryfall API client | US-02 | S1 | Yes |
-| FR-07 | Pipeline orchestration | US-04 | S2 | Yes |
+| FR-01 | Investor Pitch type definition | US-01 | S1 | Yes |
+| FR-02 | Roadmap type definition | US-01 | S1 | Yes |
+| FR-03 | Product Demo type definition | US-01 | S1 | Yes |
+| FR-04 | Onboarding type definition | US-01 | S1 | Yes |
+| FR-05 | Retrospective Summary type definition | US-01 | S1 | Yes |
+| FR-06 | Error handling update for new types | US-02 | S1 | Yes |
+| FR-07 | PPTX generation script | US-03 | S4 | Yes |
+| FR-08 | Slide layout mapping | US-03 | S4 | Yes |
+| FR-09 | Template support | US-03 | S4 | Yes |
+| FR-10 | PPTX as output format option | US-04 | S4 | Yes |
+| FR-11 | Font and color configuration | US-04 | S4 | Yes |
+| FR-12 | Enhanced progress indicators | US-06 | S3 | Yes |
+| FR-13 | Light mode for simpler types | US-05 | S3 | Yes |
+| FR-14 | Per-type threshold configuration | US-05 | S3 | Yes |
+| FR-15 | Degradation behavior when threshold exceeded | US-05 | S3 | Yes |
+| FR-16 | Emphasis selection | US-07 | S2 | Yes |
+| FR-17 | Information cutting | US-07 | S2 | Yes |
+| FR-18 | Audience-specific framing | US-07 | S2 | Yes |
+| FR-19 | Narrative tension | US-07 | S2 | Yes |
+| FR-20 | Review Gate narrative quality criteria | US-08 | S2 | Yes |
 
-Supporting stories without direct FR mapping but justified by architecture and PRD non-functional requirements:
-- **US-03** (Reference Files): Sourced from PRD S7 and Architecture S2. Provides domain context for all agents -- no agent can function without these.
-- **US-08** (Dogfooding): Sourced from PRD S8 test cases and acceptance gates G-01 through G-06. Enforces the team's dogfooding standard.
+**Unmapped FRs**: None. 20/20 covered.
 
-Unmapped FRs: None. All 72 acceptance criteria include AC-level source traceability back to specific FR sub-requirements or architecture sections.
+**Scope creep check**: No story introduces requirements beyond the PRD. US-01 through US-08 are strictly traceable to FR-01 through FR-20. The eight new config keys documented in the stories match exactly the eight keys in PRD Section 5.
 
-### Story Value
+---
 
-All 8 stories have persona-grounded "As a / I want / So that" statements tied to concrete pipeline roles (plugin developer, agent, orchestrator, user, delivery team). No story exists without a traced requirement source. The dependency graph is clean: scaffold first, tools and context second, orchestrator third, specialized agents fourth, end-to-end validation last.
+## Criterion: Stories Valuable [BLOCKING]
 
-### Prioritization
+**Result**: PASS
 
-All 8 stories are P0 -- correct for a GREENFIELD single-feature plugin where every component is load-bearing. There is no P1 or "nice to have" scope. The sprint plan sequences them by dependency, not by priority tier, which is the right approach when everything is P0 and the dependency graph dictates execution order.
+### Value Assessment
 
-### Sprint Plan Alignment
+Every story has a persona-grounded "As a / I want / So that" statement tied to a concrete user need from the PRD personas (Priya, Marcus, Chen, Jake). No story exists for internal convenience alone.
 
-- 3 sprints: 15 SP + 22 SP + 5 SP = 42 SP total.
-- Sprint 1 (15 SP, 94% ceiling): Justified. US-01 is trivial scaffolding, and US-02/US-03 are fully parallel with zero cross-dependency. Effective serial load is US-01 (2) + max(US-02, US-03) = 10 SP.
-- Sprint 2 (22 SP, 138% ceiling): Ceiling exception documented and justified. US-05/06/07 are parallel prompt templates with identical structure. Effective serial path is US-04 (8) + max(US-05, US-06, US-07) (5) = 13 SP, within ceiling.
-- Sprint 3 (5 SP, 31% ceiling): Deliberately light. Dogfooding involves 5 full pipeline runs with live API calls and unpredictable correction cycles. Low SP commitment absorbs integration risk.
-- Dependency chain is correct: foundation (S1) before pipeline brain (S2) before end-to-end proof (S3).
+| Story | Value Justification | Load-Bearing? |
+|-------|-------------------|---------------|
+| US-01 | Unlocks 5 new type definitions; all other stories depend on types existing | Yes -- foundational |
+| US-02 | Completes the type contract (error handling for all 9 types) | Yes -- user contract |
+| US-03 | Headline feature for Issue #44 (Marcus, Chen personas) | Yes -- only code-tier story |
+| US-04 | Completes PPTX user experience (config, format option, fallback) | Yes -- usability |
+| US-05 | Addresses #45 user feedback (Jake persona: generation speed) | Yes -- performance UX |
+| US-06 | Quality-of-life: silent waits become visible progress | Yes -- user trust |
+| US-07 | Core differentiator for v1.1 (Priya, Chen: editorial quality) | Yes -- narrative quality |
+| US-08 | Completes narrative intelligence (config + Review Gate criteria) | Yes -- completeness |
 
-### Estimation Calibration
-
-Estimates differentiate by work type: Python script at highest tier (US-02: 8 SP for 6 CLI commands with rate limiting, retry, batch splitting), prompt engineering at mid-high tier (US-04: 8 SP, US-05/06: 5 SP, US-07: 4 SP), markdown reference at one tier lower (US-03: 5 SP for 7 research-heavy files), pure scaffolding at lowest (US-01: 2 SP). Rationale table in the user stories document is consistent and defensible.
+No story is a "nice-to-have." Each delivers traceable value from the PRD goals (G-01 through G-04).
 
 ### Acceptance Criteria Coverage
 
-72 acceptance criteria across 8 stories. 46 test cases. Every AC is testable -- code stories via CLI execution, prompt engineering stories via pipeline invocation, reference stories via content inspection, dogfooding via end-to-end runs with evidence capture. The dogfooding story (US-08) enforces that code review alone is not sufficient -- 5 specific test cases must produce working decklists with measurable quality gates (100 cards, synergy >= 3.0, budget compliance, zero hallucinated names, zero banned cards).
+The 8 stories contain comprehensive acceptance criteria with both structural (reviewer-inspectable) and empirical (dogfooding) categories. Each story has empirical ACs that enforce dogfooding before shipping, consistent with the team's standard that code review alone is not sufficient.
+
+---
+
+## Criterion: Properly Prioritized [BLOCKING]
+
+**Result**: PASS
+
+### Priority Assessment
+
+| Story | Priority | Justification |
+|-------|----------|---------------|
+| US-01 | P1 Critical | Unblocks all other stories; types must exist first |
+| US-02 | P1 Critical | Completes type contract; paired with US-01 in Sprint 1 |
+| US-07 | P1 High | Core differentiator; applies to all 9 types including new ones |
+| US-08 | P2 Medium | Config + review gate; small but necessary companion to US-07 |
+| US-05 | P2 High | Addresses user feedback; needs types defined first |
+| US-06 | P2 Medium | Quality-of-life; pairs with US-05 in Sprint 3 |
+| US-03 | P1 High | Headline PPTX feature; independent output path |
+| US-04 | P2 Medium | Completes PPTX UX; depends on US-03 |
+
+Priority tiers are correct. P1 stories deliver the core capabilities (types, PPTX script, narrative intelligence). P2 stories complete the experience (config, progress, review criteria). No P2 story blocks a P1 story.
+
+### Sprint Sequencing
+
+| Sprint | Stories | SP | Theme | Rationale |
+|--------|---------|-----|-------|-----------|
+| S1 | US-01, US-02 | 5 | Type foundations | Unblocks everything; must be first |
+| S2 | US-07, US-08 | 6 | Narrative intelligence | Applies to all 9 types (needs S1 complete) |
+| S3 | US-05, US-06 | 5 | Fallback & progress | Per-type thresholds need types defined |
+| S4 | US-03, US-04 | 8 | PPTX output | Independent path; validated last since it consumes all types |
+
+The delivery sequence matches PRD Section 11 recommended ordering: A > D > C > B. Dependencies are respected:
+- US-01/02 have no upstream dependencies (correct for S1)
+- US-07/08 depend on types existing (correct after S1)
+- US-05/06 need types for per-type thresholds (correct after S1)
+- US-03/04 are independent but validated last (correct for S4)
+
+The dependency map in the stories document is clean and acyclic.
+
+### Estimation Calibration
+
+| Tier | SP Range | Stories |
+|------|----------|---------|
+| Code-tier | 5 | US-03 (Python script -- anchor estimate) |
+| Markdown-complex | 3-5 | US-01 (5 types), US-07 (4 editorial passes), US-04 (multi-section) |
+| Markdown-moderate | 2-3 | US-05 (light mode + threshold), US-06 (progress indicators) |
+| Markdown-simple | 1-2 | US-02 (error table), US-08 (review criteria) |
+
+Total: 24 SP across 4 sprints. Velocity assumption of 8 SP/sprint with 80% utilization ceiling (6.4 SP effective) is reasonable. Sprint 4 at ceiling (8 SP) is justified as the final sprint with one code-tier story carrying the bulk.
+
+---
+
+## Findings Summary
+
+| # | Finding | Severity | Resolution |
+|---|---------|----------|------------|
+| 1 | All 20 FRs mapped to stories with full traceability | N/A | Verification passed |
+| 2 | All 4 PRD goals (G-01 through G-04) addressed by stories | N/A | Verification passed |
+| 3 | Dependency chain is acyclic and sprint ordering respects it | N/A | Verification passed |
+| 4 | Config keys in stories match PRD Section 5 exactly (8 keys) | N/A | Verification passed |
+| 5 | Every story has empirical (dogfooding) ACs | N/A | Verification passed |
+| 6 | NFR-01 (backward compatibility) respected: all changes are additive | N/A | Verification passed |
+
+**Blocking issues**: None.
+**Non-blocking observations**: None.
 
 ---
 
 ## Verdict
 
-**DONE** -- Scope is complete (7 FRs mapped to 8 stories with full AC-level traceability), stories are valuable (each is load-bearing in a GREENFIELD dependency chain), and prioritization is correct (all P0, sequenced by dependency graph with two parallelization points). The fellowship may proceed to Development.
+**DONE** -- Scope is complete (20 FRs mapped to 8 stories with full AC-level traceability), stories are valuable (each is load-bearing with persona-grounded justification), and prioritization is correct (P1/P2 tiers aligned to dependency graph, sprint sequencing matches PRD Section 11 delivery order). The fellowship may proceed to Development.
+
+> *"The plan is laid. The stories are written. The sprints stretch before us like the road from Rivendell to Mordor -- long, but with clear waypoints. One does not simply skip a sprint. But one does walk each sprint with purpose, and that purpose has been well-defined."*
 
 ```
 STATUS: DONE

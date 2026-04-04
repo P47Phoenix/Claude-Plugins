@@ -3,8 +3,8 @@
 **Reviewer**: Product Owner (Gandalf)
 **Date**: 2026-04-04
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Pipeline**: run-2026-04-04-w7m3
-**Issue**: #55 -- Architect overrides user-provided specs
+**Pipeline**: Presentation v1.1 batch
+**Issues**: #43, #44, #45, #46 -- Presentation Skill v1.1 Enhancement Batch
 **Verdict**: DONE
 
 ---
@@ -13,54 +13,82 @@
 
 ### [PASS] [blocking] Problem statement present and specific
 
-The problem statement names the exact failure mode: the Architect agent proposes competing designs instead of building on user-provided specifications. It describes the concrete trigger ("when a user hands the team a detailed spec"), the expected behavior ("validate feasibility, identify gaps, and map to implementation"), the actual behavior ("reimagine the solution from scratch"), and the downstream cost ("erodes user trust and wastes pipeline cycles"). This is not a vague complaint about architecture quality -- it is a specific behavioral defect with observable symptoms. A developer reading this knows exactly what is broken and can verify whether a fix resolves it.
+The problem statement identifies four distinct gaps in the existing presentation skill, and each gap is described with concrete observable symptoms rather than vague aspirations:
+
+1. **Limited type coverage** -- five named presentation types hit a hard "Unknown type" error. The failure mode is specific: users encounter a STOP, not degraded behavior.
+2. **No branded file output** -- markdown and Marp text exist but no path to `.pptx`. The gap is precisely bounded: teams need files they can email or present without a markdown renderer.
+3. **No degradation strategy** -- the 90-second target is named, and the failure mode is described: no progress, no fallback, no tuning levers. A user encountering this knows exactly the stall the brief describes.
+4. **Shallow narrative intelligence** -- the brief distinguishes between what the Composer does today (normalize tone, enforce density) and what it does not do (editorial judgment: emphasis, cutting, audience framing, narrative tension). This is not "make it better" -- it names the specific editorial capabilities that are absent.
+
+Each gap maps to a numbered GitHub issue. A developer reading this problem statement can reproduce each failure independently. Sufficient specificity for a FEATURE enhancement batch.
 
 ### [PASS] [blocking] Target users identified with brief descriptions
 
-Two user groups are named:
+Four user groups are named, each with a distinct need:
 
-1. **Plugin developers** -- users who provide detailed specs or existing designs and expect the team to build ON them. The key constraint is clear: they have already made design decisions and need them respected.
-2. **Delivery pipeline users** -- anyone running delivery-flow who provides upstream artifacts with established design decisions. This broadens the scope beyond plugin-specific work.
+1. **Delivery pipeline users** -- create presentations as part of sprint reviews, stakeholder updates, and feature pitches within delivery-flow. Their context is internal pipeline usage.
+2. **Product owners and team leads** -- need branded `.pptx` files for stakeholders who do not use markdown tooling. The constraint is explicit: their audience cannot consume the current output formats.
+3. **Teams running long presentations** -- 10+ slides, multiple contributing roles. The friction point is generation time, not output quality.
+4. **Anyone presenting to executives, investors, or external audiences** -- narrative quality determines whether the message lands. The stakes are explicit: these are high-consequence presentations.
 
-The personas are distinct: the first is a spec-provider, the second is a pipeline user who may not think of themselves as providing "specs" but whose upstream artifacts contain implicit design decisions. Both map to the same root cause but through different entry paths. Sufficient for downstream validation.
+Each persona maps to at least one of the four issues. No persona is orphaned, no issue lacks a user. The personas are distinct enough that downstream story writing can use them as the "As a..." role.
 
 ### [PASS] [blocking] Goals present and measurable
 
-Four goals stated:
+Four goals, each tied to a specific issue with a measurable target:
 
-1. "Architect always reads and summarizes user-provided specs before proposing any architecture" -- verifiable by inspecting Architect output for a summary section before design proposals.
-2. "Architect distinguishes 'decisions already made' from 'open questions' and respects the former" -- verifiable by checking that Architect output categorizes spec elements into these two buckets.
-3. "Architect only proposes alternatives when the existing design has clear, documented technical blockers" -- verifiable: alternatives must cite blockers, absence of blockers means no alternatives proposed.
-4. "Reduction in wasted self-correction cycles caused by Architect overriding user intent" -- this is the outcome metric. Measurable by counting self-correction loops in pipeline runs with user-provided specs, before and after the fix.
+| # | Goal | Measurable? | Assessment |
+|---|------|-------------|------------|
+| 1 | 5 new types fully functional with slide sequencing, narrative arc, content gate rules | Yes -- each type passes end-to-end with no [TBD] artifacts and no "Unknown type" fallback | Binary pass/fail per type. Five tests, five verdicts. |
+| 2 | python-pptx script produces branded `.pptx` from structured output | Yes -- valid `.pptx` opens in PowerPoint/LibreOffice with correct slide mapping, fonts, colors | Verifiable by opening the file. Acceptance criteria name the specific attributes to check. |
+| 3 | Progress indication + graceful degradation when 90s exceeded | Yes -- progress indicators display, light mode activates, per-type threshold tuning is configurable | Three sub-criteria, each independently testable. |
+| 4 | Composer applies editorial judgment: emphasis, cutting, framing, tension | Yes -- TW + UX reviewers confirm four specific behaviors | The four behaviors are named. Reviewers have a checklist, not a vibes assessment. |
 
-Goal 4 is the softest of the four -- it says "reduction" without a target number. However, for a BUG_FIX at the Idea stage, directional improvement is an appropriate bar. The Refine stage can quantify the baseline and target if needed. No goal requires subjective judgment to evaluate.
+Goal 4 is the most subjective of the four -- "confirm the Composer actively reorders for impact" requires reviewer judgment. However, the brief mitigates this by naming four specific editorial behaviors as the checklist. A reviewer who cannot point to evidence of reordering, cutting, framing, or climax-building has a clear basis for NOT_DONE. This is acceptable rigor for narrative quality at the Idea stage; the Refine stage can define concrete test scenarios.
 
 ### [PASS] [blocking] Initial scope defined
 
-The scope is tightly bounded: add a mandatory "Prior Art Analysis" step to the architect skill, with four sub-requirements (read and summarize, identify decided vs. open, build on existing design, only propose alternatives with documented blockers). The implementation boundary is explicit: changes confined to `delivery-team/skills/architect/` (SKILL.md and/or reference files). No schema changes, no new dependencies, no cross-skill modifications. Backward compatibility is explicitly required -- pipelines without user-provided specs must be unaffected.
+The scope section is structured per-issue with specific deliverables:
 
-The constraint that the fix must be dogfooded ("run the updated skill against a scenario with a user-provided spec") is well-placed -- it ensures the team does not ship a change they have not tested themselves.
+- **#43**: 5 type definitions in SKILL.md, narrative arc patterns, slide structure definitions, error handling table update. Four discrete file changes.
+- **#44**: Python script in `scripts/`, template-based slide mapping (4 slide types named), font/color config, new output format option. Bounded to one new script and integration touchpoints.
+- **#45**: Progress indicators extending existing `[N/6]` markers, "light mode" definition, per-type threshold config, documentation. Enhances existing flow steps rather than adding new ones.
+- **#46**: Compose step (Step 4) enhancement with four named editorial rules, reference material addition, Review Gate criteria update. Changes are confined to the Compose step and review criteria.
+
+All changes are scoped to `delivery-team/skills/presentation/` (SKILL.md, references, scripts). No new top-level directories. No cross-skill modifications. The constraint section reinforces this: existing 4 types, 6-step flow, and 3 output formats must continue working. This is enhancement, not rewrite.
 
 ### [PASS] [blocking] Out of scope defined
 
-Eight explicit exclusions: changes to other skills, config schema changes, new pipeline stages, routing changes, and retroactive fixes to past artifacts. Each exclusion prevents a natural scope-creep vector. The boundary between "fix the architect skill's behavior" and "redesign cross-skill interactions" is drawn clearly.
+Seven explicit exclusions, each preventing a natural scope-creep vector:
+
+1. No custom/user-defined type framework -- prevents the "just one more type" expansion.
+2. No real-time collaboration -- the skill remains batch generation.
+3. No custom `.potx` template design -- programmatic layouts only, custom branding is future work.
+4. No AI-generated images or diagrams -- slides reference existing assets only.
+5. No changes to other delivery-team skills -- contributing roles are unchanged.
+6. No fundamental speed optimization of sub-agent dispatch -- #45 addresses degradation UX, not framework performance.
+7. No internationalization -- English-only.
+
+Each exclusion is a boundary that a team member might reasonably try to cross during development. Naming them up front saves cycles.
 
 ### [PASS] [blocking] Brief sufficient for downstream stages
 
 The brief provides everything downstream needs:
-- **Refine** has a clear problem to decompose into stories and acceptance criteria.
-- **Architect** knows exactly which files to modify and which constraints to respect (the irony of the Architect fixing its own behavior is not lost on this wizard).
-- **Development** has a bounded change set (architect skill directory only).
-- **Quality/UAT** can verify each of the four goals with concrete test scenarios: provide a spec, run the architect, check the output.
 
-No downstream stage needs to guess at intent, scope, or success criteria.
+- **Refine** has four issues, each with a clear problem, scope, and measurable goal. Epic decomposition into stories is straightforward -- each issue is already near-epic granularity with named deliverables.
+- **Design/Architect** knows the existing skill structure, the single new dependency (python-pptx), the config schema extension protocol to follow, and the backward compatibility requirement.
+- **Development** has bounded file changes per issue, a named dependency (python-pptx), and explicit constraints (no new top-level directories, no cross-skill changes).
+- **Quality/UAT** can derive test cases directly from the measurable targets: run each new type end-to-end, open generated `.pptx` files, trigger degradation thresholds, have TW+UX review narrative quality.
+- **Dogfooding** is explicitly required in the constraints section -- each enhancement must be validated by actual pipeline use before shipping.
+
+No downstream stage needs to guess at intent, scope, or success criteria. The four-issue structure maps cleanly to parallel work streams with independent acceptance.
 
 ---
 
 ## Summary
 
-All we had to decide was whether this brief tells the team what to build with the clarity that is given to us -- and it does, precisely.
+"Four roads stretch before us, and the brief has mapped each one with the care of a cartographer who has walked the path."
 
-The brief identifies a specific behavioral defect (Architect overrides user specs instead of building on them), names who it affects (spec-providing plugin developers and pipeline users), sets four measurable goals, scopes the fix to a single skill directory, and explicitly excludes the natural scope-creep paths. The dogfooding constraint ensures the team will eat what it cooks.
+This idea brief covers a four-issue enhancement batch for the presentation skill. Each issue has a specific problem, named users, measurable goals, bounded scope, and explicit exclusions. The constraints section preserves backward compatibility, enforces plugin structure conventions, limits new dependencies to python-pptx, and requires dogfooding. The scope is ambitious but decomposable -- four issues that can be refined, developed, and tested independently.
 
 A product owner is never late, nor early. They prioritize precisely when they mean to. This brief is ready to advance.

@@ -154,6 +154,67 @@ Defines slide types, density rules, and recommended sequencing for each presenta
 6. Metrics Slide -- Results or benchmarks (performance, quality, adoption data)
 7. Call-to-Action Slide -- Q&A / next steps
 
+### Investor Pitch
+
+1. Title Slide
+2. Content Slide -- Traction / Problem Validation (evidence that the problem is real and users care)
+3. Content Slide -- Market Opportunity (TAM/SAM/SOM or market sizing, growth trends)
+4. Content Slide -- Solution / Product (what we build, how it solves the validated problem)
+5. Content Slide -- Business Model (revenue model, unit economics, pricing strategy)
+6. Metrics Slide -- Metrics / Traction Proof (growth metrics, adoption data, revenue trajectory)
+7. Content Slide -- Team *(optional)* (key team members, relevant experience, why this team wins)
+8. Content Slide -- The Ask (funding amount, use of funds, timeline to milestones)
+9. Call-to-Action Slide -- Next Steps (follow-up meeting, due diligence process, contact)
+
+### Roadmap
+
+1. Title Slide
+2. Content Slide -- Strategic Context (vision, goals, why this roadmap matters now)
+3. Content Slide -- Now (current sprint/phase work, active deliverables)
+4. Content Slide -- Next (upcoming 1-2 sprints/phases, planned deliverables)
+5. Content Slide -- Later (horizon items, exploratory, tentative)
+6. Comparison Slide -- Dependencies / Risks (dependency vs mitigation, risk vs contingency)
+7. Timeline Slide -- Timeline Overview (milestones across Now/Next/Later with dates)
+8. Call-to-Action Slide -- Decisions Needed (approvals, resource asks, priority calls)
+
+**Note**: Now/Next/Later slides are structural backbone slides. Their positions are locked during narrative tension passes -- the Composer must not reorder them.
+
+### Product Demo
+
+1. Title Slide
+2. Content Slide -- The Hook (attention-grabbing problem or user story that sets up the demo)
+3. Demo/Screenshot Slide -- Feature Demo 1 (`[DEMO]` placeholder + presenter timing notes in speaker notes)
+4. Demo/Screenshot Slide -- Feature Demo 2 *(optional, repeat as needed)* (`[DEMO]` placeholder)
+5. Metrics Slide -- Impact (adoption metrics, performance improvements, user feedback data)
+6. Content Slide -- What's Next (upcoming features, iteration plans)
+7. Call-to-Action Slide -- Try It / Next Steps (access instructions, feedback channels)
+
+**`[DEMO]` placeholder conventions**:
+- Use `[DEMO: description of what to show]` in slide body where a live demo occurs
+- Add `**Timing**: ~N minutes` in speaker notes for each demo slide
+- Add `**Fallback**: [SCREENSHOT: description]` in speaker notes in case live demo fails
+- When `project.type: GAME_DEV`: replace "Feature Demo" titles with "Gameplay Demo", structure around mechanics not feature lists, use "publisher milestone" vocabulary
+
+### Onboarding
+
+1. Title Slide
+2. Content Slide -- Project Context (why this project exists, business problem, users served)
+3. Architecture Slide -- System Landscape (high-level architecture overview, key components)
+4. Content Slide -- Key Decisions (important ADRs, design rationale, constraints accepted)
+5. Content Slide -- Development Pathways (how to start contributing, dev setup, workflow)
+6. Content Slide -- Resources / Links (documentation, team contacts, tools, glossary)
+7. Call-to-Action Slide -- First Tasks (specific onboarding actions with owners and timelines)
+
+### Retrospective Summary
+
+1. Title Slide
+2. Content Slide -- Celebrate (wins, achievements, team highlights)
+3. Content Slide -- Learn (key lessons, what surprised us, process discoveries)
+4. Content Slide -- Commit (action items with owners and deadlines)
+5. Metrics Slide -- Trends *(optional)* (velocity trends, defect trends, improvement metrics over time)
+6. Comparison Slide -- Previous Actions Review *(optional)* (last retro actions: planned vs actual progress)
+7. Call-to-Action Slide -- Next Steps (top 3 commitments for next sprint/period)
+
 ---
 
 ## Density Rules

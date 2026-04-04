@@ -1,375 +1,461 @@
-# PRD: MTG Commander Deck Builder Plugin
+# PRD: Presentation Skill v1.1 Enhancement Batch
 
-**Version**: 1.1
-**Date**: 2026-04-01
+**Version**: 1.0
+**Date**: 2026-04-04
 **Author**: Product Owner (Gandalf)
-**Project Type**: GREENFIELD
+**Status**: DRAFT
+**Project Type**: FEATURE
 **Pipeline Routing**: Idea > Refine > Design > Architect > Plan > Development > UAT
+**Source Issues**: #43, #44, #45, #46 (P47Phoenix/Claude-Plugins)
+**Skill Under Enhancement**: `delivery-team/skills/presentation/`
 
 ---
 
-## 1. Purpose
+> *"A product owner is never late, nor early. They prioritize precisely when they mean to."*
 
-This document specifies the functional and non-functional requirements for the MTG Commander Deck Builder — a new Claude Code plugin that produces format-legal, synergy-dense, structurally sound, budget-compliant Commander decklists through a multi-agent pipeline.
+The presentation skill shipped with four types, three output formats, and a six-step collaboration flow. It works -- the Fellowship has its foundation. But Middle-earth is wider than the Shire. Five presentation types have no home, stakeholders need branded PowerPoint files they can carry into meetings, the flow offers no counsel when generation runs long, and the Composer assembles slides without exercising the editorial judgment that turns competent decks into compelling ones.
 
-The core philosophy: **Synergy first. Always.** Every non-land card must interact meaningfully with 3+ other cards. Popularity is a tiebreaker, never a selection criterion. This is a deck *construction* pipeline with built-in quality gates — not a card recommendation engine.
-
----
-
-## 2. Goals
-
-| ID | Goal | Metric | Baseline | Target | Measurement |
-|----|------|--------|----------|--------|-------------|
-| G-01 | Produce format-legal 100-card Commander decklists | Dogfooding test cases producing fully legal decklists | 0/5 | 5/5 | Rules Judge returns PASS on all 5 test cases (Section 8) |
-| G-02 | Enforce synergy-first card selection | Average synergy score across dogfooding decks | 0 | >= 3.0 | Optimization Reviewer synergy score output per deck |
-| G-03 | Meet structural minimums by power level | Test case decks passing structural validation | 0/5 | 5/5 | Optimization Reviewer structural check PASS on all 5 test cases |
-| G-04 | Enforce budget compliance with real pricing | Test case decks within stated budget | 0/5 | 5/5 | Price Evaluator PASS on all 5 test cases |
-| G-05 | Complete pipeline in a single session | Pipeline runs completing without manual user intervention between agents | 0% | 100% (5/5 test cases) | End-to-end run logs show no user prompts between agent handoffs |
-| G-06 | Ship as a valid Claude Code plugin | Plugin validator errors and warnings | N/A (new plugin) | 0 errors, 0 warnings | `plugin-validator` output on `mtg-commander/` directory |
+This PRD addresses all four gaps as a single coordinated delivery. The existing skill remains stable -- this is enhancement, not rewrite. The four current types, six-step flow, and three output formats continue to work exactly as they do today.
 
 ---
 
-## 3. Target Users
+## 1. Goals
 
-| Persona | Experience | Primary Need | Key Constraint |
-|---------|-----------|--------------|----------------|
-| Experienced player, new commander | Veteran (5+ years) | Build around an unfamiliar commander without 6 hours of card research | Time |
-| New-to-Commander player | Intermediate (knows Magic, new to Commander) | Structurally sound 100-card list that actually functions | Knowledge gap (does not know structural requirements) |
-| Budget-conscious brewer | Any level | Competitive deck within a hard budget ceiling ($50-200 range) | Budget must shape selection, not just filter |
-| Returning player | Lapsed (1-3 year gap) | Current-pool deck without outdated assumptions | Currency (card pool expanded, banned list changed) |
-
----
-
-## 4. Functional Requirements
-
-### FR-01: Plugin Structure
-
-The plugin ships as a top-level directory in the Claude-Plugins repo following established conventions.
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-01.1 | Plugin directory is `mtg-commander/` (kebab-case) |
-| FR-01.2 | `SKILL.md` exists at root with primary skill instructions: intake orchestration, agent sequencing, output format specification |
-| FR-01.3 | `LICENSE.txt` exists at plugin root |
-| FR-01.4 | Plugin is registered in `.claude-plugin/marketplace.json` with unique name `mtg-commander`, display description, source path, and skill paths |
-| FR-01.5 | Directory structure includes `agents/`, `references/`, and `scripts/` subdirectories |
-| FR-01.6 | Plugin passes `plugin-validator` with zero errors |
-| FR-01.7 | `api.scryfall.com` is documented as a required WebFetch domain in setup instructions within SKILL.md |
-
-### FR-02: Deck Builder Agent
-
-The Deck Builder handles user intake and produces the initial 100-card decklist.
-
-**Intake Flow:**
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-02.1 | Agent presents 7 intake questions in sequence: (1) color identity, (2) commander name, (3) strategy archetype, (4) power level (1-10 scale), (5) meta alignment, (6) total budget in USD, (7) card restrictions (must-include / must-exclude) |
-| FR-02.2 | User may provide all 7 answers upfront (inline) or answer interactively one at a time |
-| FR-02.3 | Commander name is validated against Scryfall before proceeding — invalid names halt intake with an error message and prompt for correction |
-| FR-02.3a | Commander name is validated against the Commander banned list before proceeding. A banned commander halts intake with an error message naming the ban and prompting for an alternative. |
-| FR-02.4 | Color identity is derived from the validated commander card, not user input alone (user-specified colors serve as a cross-check) |
-
-**Deck Output:**
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-02.5 | Output is exactly 100 cards including the commander |
-| FR-02.6 | Every card is assigned to exactly one category: Commander (1), Lands (34-40), Ramp (10+), Card Draw (10+), Removal (5+), Board Wipes (2+), Win Conditions (3+), Synergy Pieces (remaining). **Disambiguation rule**: When a card serves multiple category functions, assign it to the category with the greatest structural deficit (i.e., the category furthest below its minimum). If no deficit exists, assign based on the card's primary function relative to the deck's strategy archetype. This ensures FR-04.3 structural minimums are deterministically verifiable. |
-| FR-02.7 | Output format lists cards grouped by category with card name, mana cost, and a one-sentence synergy rationale for each non-land card |
-| FR-02.8 | Agent documents the deck's primary game plan in 2-3 sentences before the card list |
-| FR-02.9 | The Deck Builder SHOULD validate each card name against Card Finder (FR-06.7) during construction. Cards that fail name validation MUST NOT appear in the output list. This reduces hallucinated names reaching the Rules Judge and preserves correction cycles for legality and synergy issues. |
-| FR-02.10 | If a user specifies a partner commander (a card with the "Partner" keyword), the intake flow informs the user that partner commanders are not supported in v1 and prompts for a single commander. |
-
-### FR-03: Rules Judge Agent
-
-The Rules Judge validates format legality. It makes no creative decisions — pure rules enforcement.
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-03.1 | Validates exactly 100 cards in the decklist (including commander) |
-| FR-03.2 | Validates every card name exists in Scryfall (zero tolerance for hallucinated names) |
-| FR-03.3 | Validates every card's color identity is within the commander's color identity |
-| FR-03.4 | Validates no card appears on the Commander banned list |
-| FR-03.5 | Validates singleton rule: no duplicate card names except basic lands |
-| FR-03.6 | Validates each card's format legality status is "legal" in Commander format per Scryfall data |
-| FR-03.7 | When a card interaction is claimed in synergy rationale, validates that the interaction is mechanically possible based on oracle text (e.g., a card described as "triggers on creature death" must actually have oracle text referencing creature death) |
-| FR-03.8 | Outputs a structured verdict: PASS (all checks clear) or FAIL with a list of specific violations. Each violation includes the card name, the rule violated, and a suggested correction. |
-| FR-03.9 | Legality decisions are deterministic — based on authoritative Scryfall data, never AI-inferred |
-
-### FR-04: Optimization Reviewer Agent
-
-The Optimization Reviewer enforces the synergy-first philosophy and structural soundness.
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-04.1 | For every non-land card, identifies and lists the other cards it interacts with. Interactions are classified using the **Synergy Interaction Taxonomy** (see below). Only interactions that match a defined category count toward the 3-card threshold. |
-| FR-04.2 | Flags any non-land card that interacts with fewer than 3 other cards in the deck as "isolated" |
-| FR-04.3 | Validates structural minimums: 10+ ramp sources, 10+ card draw sources, 5+ targeted removal, 2+ board wipes, 3+ win conditions |
-| FR-04.4 | Validates land count is between 34 and 40 (inclusive), adjusted for power level and average mana value |
-| FR-04.5 | Produces a mana curve distribution (0-1, 2, 3, 4, 5, 6, 7+) and flags if the curve is front-loaded or top-heavy relative to the strategy archetype |
-| FR-04.6 | For each isolated card flagged, suggests 1-2 replacement candidates that have 3+ interactions with existing cards |
-| FR-04.7 | Outputs a structured verdict: PASS (zero isolated cards, all structural minimums met) or FAIL with specific violations and replacement suggestions |
-| FR-04.8 | Calculates a deck synergy score: (total synergy connections across all non-land cards) / (number of non-land cards). Reports this score in the verdict. |
-
-**Synergy Interaction Taxonomy**
-
-An interaction between two cards counts toward the 3-card threshold only if it falls into one of these categories:
-
-| Category | Definition | Example | Exclusion |
-|----------|-----------|---------|-----------|
-| **Triggers** | Card A's effect causes Card B's triggered ability to fire | Viscera Seer sacrificing a creature triggers Blood Artist | — |
-| **Enables** | Card A provides a resource or condition that Card B specifically requires | Urborg, Tomb of Yawgmoth enables Cabal Coffers | Generic mana enablement alone does NOT count (Sol Ring does not "enable" every 2+ cost card) |
-| **Protects** | Card A shields Card B from removal, counters, or adverse effects | Lightning Greaves protecting a voltron commander | — |
-| **Combos-with** | Cards A and B form part of a defined combo (2-4 card combination producing a win condition or overwhelming advantage) | Sanguine Bond + Exquisite Blood | — |
-| **Amplifies** | Card A increases the output or effectiveness of Card B's ability by a measurable factor | Panharmonicon doubling Solemn Simulacrum's ETB | — |
-| **Feeds** | Card A produces tokens, cards, or resources that Card B specifically consumes | Bitterblossom producing tokens for Skullclamp | — |
-
-**Exclusions** (do NOT count as interactions):
-- Sharing a creature type alone (two Elves do not interact unless one references the Elf type)
-- Generic mana enablement (ramp enabling expensive cards is the ramp category's role, not synergy)
-- Both being "good cards" in the same strategy without mechanical connection
-
-**Design stage responsibility**: The Design stage MAY refine, extend, or restructure this taxonomy. If the taxonomy changes, it must remain deterministic and enforceable by the Optimization Reviewer. OQ-1 (structured tags vs. free text) directly affects how interactions are recorded and counted.
-
-### FR-05: Price Evaluator Agent
-
-The Price Evaluator enforces budget compliance using live Scryfall pricing data.
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-05.1 | Retrieves current USD pricing for each card via Scryfall API (using the cheapest available printing) |
-| FR-05.2 | Calculates total deck cost as the sum of all 100 cards' cheapest printing prices |
-| FR-05.3 | Validates total deck cost does not exceed the user-specified budget |
-| FR-05.4 | If a per-card cap is specified (or defaults to 15% of total budget), flags any card exceeding the cap |
-| FR-05.5 | For each over-budget or over-cap card, suggests 1-2 budget-friendly alternatives that maintain synergy (via Card Finder) |
-| FR-05.6 | Outputs a structured verdict: PASS (within budget, no cap violations) or FAIL with specific violations, the current total cost, the budget ceiling, and replacement suggestions |
-| FR-05.7 | Reports a price breakdown by category (lands, ramp, draw, removal, synergy pieces, etc.) |
-| FR-05.8 | When Scryfall returns null USD price for a card, Card Finder uses the card's cheapest non-foil printing price. If no printing has a USD price, the card is flagged as "price unavailable" and excluded from budget calculations with a warning in the Price Evaluator verdict. |
-
-### FR-06: Card Finder Utility
-
-The Card Finder is a shared utility available to all agents for on-demand card lookup.
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-06.1 | Queries the Scryfall API search endpoint (`/cards/search`) with support for: card name, oracle text substring, color identity filter, type line filter, mana value filter, Commander format legality filter |
-| FR-06.2 | Returns structured card data: name, mana cost, type line, oracle text, color identity, USD price (cheapest printing), set name |
-| FR-06.3 | Supports "budget replacement" queries: given a card name and a price ceiling, returns functionally similar cards under the price ceiling |
-| FR-06.4 | Implements Scryfall rate limiting: minimum 50ms delay between consecutive API requests |
-| FR-06.5 | Handles Scryfall API errors gracefully: returns clear error messages for 404 (card not found), 422 (bad query), and 429 (rate limited — back off and retry) |
-| FR-06.6 | Implemented as a Python script (`scripts/card_lookup.py`) using only `urllib` (no external dependencies) |
-| FR-06.7 | Provides a card name validation function that returns True/False for whether a given name exactly matches a card in Scryfall |
-| FR-06.8 | Supports batch card lookup via Scryfall's `/cards/collection` endpoint, accepting up to 75 card identifiers per request and returning structured data for all matched cards. Agents SHOULD use batch lookup when validating or pricing complete decklists. |
-| FR-06.9 | When a search query returns zero results, Card Finder returns an empty result set with the query parameters echoed back. Consuming agents (Optimization Reviewer, Price Evaluator) must include a "no replacement found" note in their verdict for that card. |
-
-### FR-07: Orchestration Flow
-
-The SKILL.md orchestrates the agent pipeline from intake through final output.
-
-| AC | Acceptance Criterion |
-|----|---------------------|
-| FR-07.1 | Pipeline executes agents in sequence: Deck Builder > Rules Judge > Optimization Reviewer > Price Evaluator |
-| FR-07.2 | If any agent returns FAIL, the pipeline cycles back to the Deck Builder with the specific violations and replacement suggestions from the failing agent. After each correction cycle, the resulting decklist must satisfy FR-02.5 (exactly 100 cards). The Rules Judge re-validates card count on every cycle. |
-| FR-07.3 | Correction cycles use the existing pipeline config mechanism (`pipeline.max_self_correction` in `.delivery/config.yml`) — no new iteration limit mechanism is introduced |
-| FR-07.4 | If max correction cycles are exhausted, the pipeline outputs the best-effort decklist with a clear warning listing remaining violations. **Constraint priority rule**: When budget and synergy constraints conflict irreconcilably, budget compliance takes priority. Cards replaced solely due to budget constraints have their synergy threshold relaxed to 2 interactions (instead of 3). The output warns which cards were included with reduced synergy due to budget constraints. |
-| FR-07.5 | Final output is a formatted decklist with: deck summary (commander, strategy, power level, total cost), cards grouped by category, synergy score, budget breakdown, and any remaining warnings |
-| FR-07.6 | Final output includes an export-ready card list (one card name per line, no annotations) suitable for copy-paste into deck building tools |
-| FR-07.7 | Each agent's verdict (PASS/FAIL + details) is preserved in the output for transparency |
+| # | Issue | Goal | Measurable Target | Baseline | Measurement |
+|---|-------|------|-------------------|----------|-------------|
+| G-01 | #43 | All 5 new types fully functional with slide sequencing, narrative arc, and content gate rules | Each new type passes end-to-end flow with zero `[TBD]` artifacts and zero "Unknown type" errors | 0/5 types functional | Dogfooding: each type exercised with real pipeline artifacts |
+| G-02 | #44 | python-pptx script produces branded `.pptx` files from structured output | Given a composed artifact, script produces a valid `.pptx` that opens in PowerPoint/LibreOffice with correct slide mapping | No `.pptx` path exists | Manual validation on both platforms |
+| G-03 | #45 | Progress indication and graceful degradation when 90-second target is exceeded | Progress indicators display during generation; light mode activates for simple types; per-type thresholds configurable | No fallback behavior exists | Timed dogfooding runs |
+| G-04 | #46 | Composer applies editorial judgment: emphasis, cutting, framing, tension | TW + UX reviewers confirm active reorder, slide removal, audience framing, and climax positioning | Composer normalizes tone but does not make editorial choices | A/B comparison across audience modes during dogfooding |
 
 ---
 
-## 5. Non-Functional Requirements
+## 2. User Personas
+
+| Persona | Role | Primary Need | Relevant Issues |
+|---------|------|-------------|-----------------|
+| **Priya** | Startup CTO | Investor pitch decks in 10 minutes -- "If I can go from 'we have an investor meeting Thursday' to 'here's a first draft pitch deck,' that's game-changing." | #43, #46 |
+| **Marcus** | Enterprise Tech Lead | Quarterly roadmap presentations for VPs. Branded `.pptx` files that meet corporate template standards. "It has to produce output I can get into our corporate .pptx template." | #43, #44 |
+| **Chen** | Consultant | Client-facing onboarding and handoff presentations. Each client has different branding. Format flexibility is essential. High-stakes -- the lasting artifact of an entire engagement. | #43, #44, #46 |
+| **Jake** | Game Dev Lead | Monthly product demo presentations for publisher milestone meetings. Regular cadence means generation speed matters. | #43, #45 |
+
+---
+
+## 3. Functional Requirements
+
+### Group A: Deferred Presentation Types (Issue #43)
+
+#### FR-01: Investor Pitch Type Definition
+
+The presentation skill shall support an "Investor Pitch" presentation type with keyword detection, pipeline auto-detection mapping, slide sequencing, narrative framework, and content gate configuration.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-01.1 | **Given** a user says "investor pitch", "fundraising deck", or "pitch to investors", **When** the presentation skill processes the request, **Then** it detects the Investor Pitch type and begins the 6-step flow. |
+| FR-01.2 | **Given** the pipeline is at UAT stage with `audience: investor` in context, **When** presentation type is not explicit, **Then** the skill auto-detects Investor Pitch. |
+| FR-01.3 | **Given** an Investor Pitch is requested, **When** the Content Gate (Step 2) runs, **Then** it validates required artifacts (idea brief or PRD, traction/metrics data) and enhancing artifacts (competitive analysis, financial projections, team bios). |
+| FR-01.4 | **Given** an Investor Pitch is composed, **When** the Composer applies the narrative arc, **Then** it uses a Traction-Opportunity-Ask framework as defined in `narrative-patterns.md`. |
+| FR-01.5 | **Given** an Investor Pitch, **When** slide sequencing is applied, **Then** it follows: Title, Traction/Problem Validation, Market Opportunity, Solution/Product, Business Model, Metrics/Traction Proof, Team (optional), The Ask, Call-to-Action. |
+
+#### FR-02: Roadmap Type Definition
+
+The presentation skill shall support a "Roadmap" presentation type distinct from Stakeholder Update, focused on multi-sprint/quarter planning visibility.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-02.1 | **Given** a user says "roadmap", "quarterly plan", or "what's coming next", **When** the presentation skill processes the request, **Then** it detects the Roadmap type. |
+| FR-02.2 | **Given** a Roadmap is requested, **When** the Content Gate runs, **Then** it validates required artifacts (sprint plan or backlog, pipeline state) and enhancing artifacts (architecture roadmap, risk register, resource allocation). |
+| FR-02.3 | **Given** a Roadmap is composed, **When** the Composer applies the narrative arc, **Then** it uses a Now-Next-Later framework with timeline slides as the structural backbone. |
+| FR-02.4 | **Given** a Roadmap presentation, **When** slide sequencing is applied, **Then** it includes: Title, Strategic Context, Now (current sprint/phase), Next (upcoming 1-2 sprints), Later (horizon items), Dependencies/Risks, Timeline Overview, Call-to-Action. |
+
+#### FR-03: Product Demo Type Definition
+
+The presentation skill shall support a "Product Demo" presentation type optimized for feature showcase with visual placeholders.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-03.1 | **Given** a user says "product demo", "feature demo", "show what we built", or "demo for publisher", **When** the presentation skill processes the request, **Then** it detects the Product Demo type. |
+| FR-03.2 | **Given** a Product Demo is requested, **When** the Content Gate runs, **Then** it validates required artifacts (at least 1 feature artifact: FKC, implementation doc, or UAT report) and enhancing artifacts (screenshots, user feedback, metrics). |
+| FR-03.3 | **Given** a Product Demo is composed, **When** the Composer applies the narrative arc, **Then** it uses a Hook-Show-Impact framework (attention hook, live demonstration flow, measured impact). |
+| FR-03.4 | **Given** a Product Demo presentation, **When** slide sequencing is applied, **Then** it includes Demo/Screenshot slides with `[DEMO]` placeholders and presenter timing notes in speaker notes. |
+| FR-03.5 | **Given** a Product Demo with GAME_DEV project type, **When** the Composer composes slides, **Then** it uses "publisher milestone" vocabulary and structures the demo around gameplay mechanics, not feature lists. |
+
+#### FR-04: Onboarding Type Definition
+
+The presentation skill shall support an "Onboarding" presentation type for project handoff and team onboarding contexts.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-04.1 | **Given** a user says "onboarding", "project handoff", "team orientation", or "getting started", **When** the presentation skill processes the request, **Then** it detects the Onboarding type. |
+| FR-04.2 | **Given** an Onboarding is requested, **When** the Content Gate runs, **Then** it validates required artifacts (architecture overview or system documentation, at least 1 ADR or design decision doc) and enhancing artifacts (team topology, dev environment setup, glossary). |
+| FR-04.3 | **Given** an Onboarding is composed, **When** the Composer applies the narrative arc, **Then** it uses a Context-Landscape-Pathways framework (why this project exists, what the system looks like, how to start contributing). |
+| FR-04.4 | **Given** an Onboarding presentation, **When** the audience mode is not explicitly set, **Then** the default audience is "technical" (the most common onboarding scenario). |
+| FR-04.5 | **Given** an Onboarding presentation, **When** slide sequencing is applied, **Then** it includes: Title, Project Context (why it exists), System Landscape (architecture overview), Key Decisions (ADRs/design rationale), Development Pathways (how to contribute), Resources/Links, Call-to-Action (first tasks). |
+
+#### FR-05: Retrospective Summary Type Definition
+
+The presentation skill shall support a "Retrospective Summary" presentation type with dual-audience handling for sensitive team feedback content.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-05.1 | **Given** a user says "retro summary", "retrospective presentation", or "what we learned", **When** the presentation skill processes the request, **Then** it detects the Retrospective Summary type. |
+| FR-05.2 | **Given** a Retrospective Summary is requested, **When** the Content Gate runs, **Then** it validates required artifacts (retrospective notes or action items) and enhancing artifacts (velocity trends, defect data, previous retro actions). |
+| FR-05.3 | **Given** a Retrospective Summary is composed, **When** the Composer applies the narrative arc, **Then** it uses a Celebrate-Learn-Commit framework (wins, lessons, action commitments). |
+| FR-05.4 | **Given** a Retrospective Summary with audience mode "executive" or "client-facing", **When** the Composer composes slides, **Then** it applies a sensitivity filter: generalizes individual feedback to team patterns, omits names from specific feedback, frames challenges as process improvements not personnel issues. |
+| FR-05.5 | **Given** a Retrospective Summary, **When** the skill outputs the presentation, **Then** it displays a disclaimer: "This presentation summarizes team retrospective themes. Individual feedback has been anonymized and generalized." |
+| FR-05.6 | **Given** a Retrospective Summary with audience mode "technical" or "casual", **When** the Composer composes slides, **Then** the sensitivity filter does not apply -- full detail from retro notes is preserved (team-internal audiences). |
+
+#### FR-06: Error Handling Update for New Types
+
+The error handling table shall no longer return "Unknown type" for the five new presentation types.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-06.1 | **Given** a user requests any of the 5 new types, **When** the skill processes the request, **Then** it proceeds with the 6-step flow instead of returning an "Unknown type" error. |
+| FR-06.2 | **Given** a user requests a type that is genuinely unsupported (not one of the 9 types), **When** the skill processes the request, **Then** the error message lists all 9 supported types. |
+
+---
+
+### Group B: python-pptx Branded Output (Issue #44)
+
+#### FR-07: PPTX Generation Script
+
+A Python script in `delivery-team/skills/presentation/scripts/` shall generate a `.pptx` file from the presentation skill's structured output (composed draft artifact).
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-07.1 | **Given** a composed presentation artifact at `.delivery/artifacts/presentations/.drafts/composed-draft.md`, **When** the script is executed, **Then** it produces a valid `.pptx` file that opens without error in PowerPoint and LibreOffice Impress. |
+| FR-07.2 | **Given** a composed draft with N content slides, **When** the script generates `.pptx`, **Then** each markdown slide maps to exactly one PowerPoint slide with correct title and content placement. |
+| FR-07.3 | **Given** the script is run, **When** `python-pptx` is not installed, **Then** it exits with a clear error message: "python-pptx is required. Install with: pip install python-pptx" and does not crash with an unhandled ImportError. |
+
+#### FR-08: Slide Layout Mapping
+
+The PPTX generation script shall map presentation slide types to appropriate PowerPoint slide layouts.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-08.1 | **Given** a Title Slide in the composed draft, **When** mapped to `.pptx`, **Then** it uses the "Title Slide" layout (layout index 0) with title and subtitle placeholders populated. |
+| FR-08.2 | **Given** a Content Slide, **When** mapped to `.pptx`, **Then** it uses a "Title and Content" layout with the slide title as heading and bullets as body content. |
+| FR-08.3 | **Given** a Metrics Slide, **When** mapped to `.pptx`, **Then** it uses a layout with the headline finding as title and data points as formatted body content with trend indicators preserved as text. |
+| FR-08.4 | **Given** a Comparison Slide, **When** mapped to `.pptx`, **Then** it renders a two-column table with headers, rows, and optional summary row. |
+| FR-08.5 | **Given** a Call-to-Action Slide, **When** mapped to `.pptx`, **Then** it uses a content layout with action items formatted as a numbered list with owners bolded. |
+| FR-08.6 | **Given** a Timeline Slide, **When** mapped to `.pptx`, **Then** it renders milestones as a table or sequential list with status indicators preserved as text. |
+| FR-08.7 | **Given** an Architecture Slide containing a Mermaid diagram, **When** mapped to `.pptx`, **Then** it renders the diagram annotations as bullet points and includes a text note: "[Mermaid diagram -- render separately or paste as image]". Mermaid rendering to image is out of scope. |
+
+#### FR-09: Template Support
+
+The PPTX generation script shall accept an optional user-provided `.pptx` template file for branding.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-09.1 | **Given** a user provides a `.pptx` template path via `--template` argument, **When** the script generates output, **Then** it uses the template's slide masters, fonts, and color scheme. |
+| FR-09.2 | **Given** no template is provided, **When** the script generates output, **Then** it uses sensible defaults: Calibri font, a neutral color palette (#2d5aa0 accent), and standard slide layouts. |
+| FR-09.3 | **Given** a template with custom slide layouts, **When** the script maps slides, **Then** it attempts to match layout names (Title Slide, Title and Content, etc.) and falls back to layout-by-index if names do not match. |
+
+#### FR-10: PPTX as Output Format Option
+
+The presentation skill shall support `pptx` as a fourth output format alongside structured-markdown, Marp, and paste-ready.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-10.1 | **Given** a user says `present --format pptx`, **When** the 6-step flow completes and the user approves, **Then** the skill invokes the PPTX generation script and saves the `.pptx` file to `.delivery/artifacts/presentations/{type}-{date}.pptx`. |
+| FR-10.2 | **Given** `presentation.default_format: pptx` in config, **When** a user says `present` without explicit format, **Then** the flow uses PPTX as the default output format. |
+| FR-10.3 | **Given** the user commands list, **When** `present --format` help is invoked, **Then** `pptx` appears as a valid format option alongside structured-markdown, marp, and paste-ready. |
+| FR-10.4 | **Given** PPTX format is selected but `python-pptx` is not installed, **When** the flow reaches the output step, **Then** it outputs the structured markdown version with a warning: "PPTX output requires python-pptx. Install with: pip install python-pptx. Falling back to structured-markdown." |
+
+#### FR-11: Font and Color Configuration
+
+The PPTX generation script shall support font and color customization via config or command-line arguments.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-11.1 | **Given** `presentation.pptx_font` is set in config, **When** the script generates `.pptx`, **Then** it uses the specified font family for all text elements. |
+| FR-11.2 | **Given** `presentation.pptx_accent_color` is set in config, **When** the script generates `.pptx`, **Then** it uses the specified hex color for headings and accent elements. |
+| FR-11.3 | **Given** neither config key is set and no template is provided, **When** the script generates `.pptx`, **Then** it defaults to Calibri font and #2d5aa0 accent color. |
+
+---
+
+### Group C: 90-Second Fallback Plan (Issue #45)
+
+#### FR-12: Enhanced Progress Indicators
+
+The presentation skill shall display enhanced progress indicators at each step of the 6-step flow.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-12.1 | **Given** the 6-step flow is executing, **When** each step begins, **Then** the skill outputs `[N/6] {Step name}...` with a description of what is happening (e.g., "[3/6] Drafting slide content... (3 roles contributing)"). |
+| FR-12.2 | **Given** a step completes, **When** the next step begins, **Then** the previous step's completion status is shown (e.g., "Draft complete: PO, Developer, Architect contributed 9 slides"). |
+
+#### FR-13: Light Mode for Simpler Types
+
+The presentation skill shall support a "light mode" that reduces sub-agent dispatch for presentation types with fewer contributing roles.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-13.1 | **Given** a presentation type that requires 3 or fewer contributing roles, **When** `presentation.light_mode` is "auto" (default) and the flow reaches Step 3, **Then** light mode activates: only required roles are dispatched and remaining role slots are skipped. |
+| FR-13.2 | **Given** light mode is active, **When** the flow reaches Step 5 (Review Gate), **Then** the review uses a single reviewer (Technical Writer) instead of two (TW + UX). |
+| FR-13.3 | **Given** a user explicitly requests `present --full`, **When** the flow executes, **Then** light mode is disabled regardless of type complexity, and all roles and both reviewers are dispatched. |
+| FR-13.4 | **Given** `presentation.light_mode: always` in config, **When** any presentation type is requested, **Then** light mode activates regardless of type complexity. |
+| FR-13.5 | **Given** `presentation.light_mode: never` in config, **When** any presentation type is requested, **Then** light mode never activates (equivalent to `--full`). |
+
+#### FR-14: Per-Type Threshold Configuration
+
+The presentation skill shall support configurable generation thresholds per presentation type.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-14.1 | **Given** `presentation.thresholds` is defined in config as a map of type to seconds (e.g., `sprint-review: 120`, `feature-pitch: 60`), **When** the flow executes for that type, **Then** the threshold for that type is used instead of the global default. |
+| FR-14.2 | **Given** no per-type threshold is configured, **When** the flow executes, **Then** the global threshold of 90 seconds (or `presentation.thresholds_default` if set) applies. |
+| FR-14.3 | **Given** a per-type threshold is configured as 0, **When** the flow executes, **Then** no threshold warning is issued for that type (effectively unlimited). |
+
+#### FR-15: Degradation Behavior When Threshold Exceeded
+
+The presentation skill shall degrade gracefully when generation exceeds the configured threshold.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-15.1 | **Given** the flow has exceeded 75% of the configured threshold, **When** the next step begins, **Then** the skill outputs a warning: "Approaching generation target. Remaining steps will use simplified processing." |
+| FR-15.2 | **Given** the flow has exceeded 100% of the threshold and Step 5 (Review Gate) has not started, **When** the flow reaches Step 5, **Then** it uses a single reviewer instead of two and limits review scope to MUST-FIX items only (no SUGGESTION items). |
+| FR-15.3 | **Given** the flow completes beyond the threshold, **When** Step 6 (User Review) presents results, **Then** it includes a notice: "Generation exceeded the {N}s target ({actual}s). Consider using `--light` or adjusting `presentation.thresholds` for this type." |
+
+---
+
+### Group D: Deeper Narrative Intelligence (Issue #46)
+
+#### FR-16: Emphasis Selection
+
+The Composer (Step 4) shall evaluate the relative importance of slides and reorder for maximum impact.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-16.1 | **Given** a presentation with multiple feature slides from Step 3, **When** the Composer assembles the final deck, **Then** it ranks features by impact signals (user-facing vs internal, breadth of usage, complexity resolved) and leads with the highest-impact feature. |
+| FR-16.2 | **Given** a Sprint Review with 5 delivered features, **When** the Composer orders the feature slides, **Then** it does not use chronological order by default; it uses impact-ranked order. |
+| FR-16.3 | **Given** the user says "no reorder" or "keep chronological", **When** the Composer assembles the deck, **Then** it preserves the original slide order from the outline. |
+| FR-16.4 | **Given** `presentation.narrative_reorder: false` in config, **When** the Composer assembles any presentation, **Then** emphasis-based reordering is disabled globally. |
+
+#### FR-17: Information Cutting
+
+The Composer shall identify and remove or condense low-value slides to maintain narrative density.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-17.1 | **Given** a draft with slides that contain only obvious information (no trade-offs, no data, no decisions), **When** the Composer evaluates slides during Step 4, **Then** it flags these slides as candidates for cutting and merges their key points into adjacent slides. |
+| FR-17.2 | **Given** the Composer removes or merges slides, **When** Step 6 (User Review) presents results, **Then** it includes a "Narrative Cuts" section listing what was condensed and why: "{Slide title} merged into {target slide} -- reason: {rationale}." |
+| FR-17.3 | **Given** any slide removal, **When** the user reviews the presentation, **Then** the user can say "restore {slide title}" to reinsert the cut slide. |
+| FR-17.4 | **Given** `presentation.narrative_cutting: false` in config, **When** the Composer assembles any presentation, **Then** information cutting is disabled globally. |
+
+#### FR-18: Audience-Specific Framing
+
+The Composer shall restructure slide arguments based on audience mental models, beyond vocabulary swaps.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-18.1 | **Given** audience mode is "investor", **When** the Composer frames a feature slide, **Then** it leads with market opportunity or traction impact, not technical implementation. |
+| FR-18.2 | **Given** audience mode is "executive", **When** the Composer frames a feature slide, **Then** it leads with business value or cost impact, not technical details. |
+| FR-18.3 | **Given** audience mode is "technical", **When** the Composer frames a feature slide, **Then** it leads with architecture decisions, patterns, and trade-offs. |
+| FR-18.4 | **Given** a presentation type and audience mode, **When** the Composer applies framing, **Then** it uses framing rules from a new "Audience Framing Rules" section in `narrative-patterns.md`. |
+
+#### FR-19: Narrative Tension
+
+The Composer shall build narrative tension toward a climax point in the presentation.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-19.1 | **Given** a presentation with 6+ slides, **When** the Composer applies narrative tension, **Then** it identifies the single most important insight/decision/result and positions it at the 60-70% point of the presentation (the climax), with preceding slides building toward it. |
+| FR-19.2 | **Given** a Feature Pitch, **When** the Composer builds tension, **Then** it escalates from problem severity through failed alternatives to the proposed solution as the climax, followed by evidence and the ask. |
+| FR-19.3 | **Given** a Sprint Review, **When** the Composer builds tension, **Then** it builds from goals and challenges to the key achievement as the climax, followed by quality validation and next steps. |
+| FR-19.4 | **Given** a presentation with fewer than 6 slides, **When** the Composer processes it, **Then** narrative tension rules do not apply (too few slides for meaningful arc). |
+
+#### FR-20: Review Gate Narrative Quality Criteria
+
+The Review Gate (Step 5) reviewers shall validate narrative quality, not just formatting and clarity.
+
+**Acceptance Criteria:**
+
+| AC | Criterion |
+|----|-----------|
+| FR-20.1 | **Given** the Technical Writer reviews the composed draft, **When** evaluating quality, **Then** the review criteria include: "Does each slide earn its place? Could any slide be cut without losing the argument?" |
+| FR-20.2 | **Given** the UX Designer reviews the composed draft, **When** evaluating quality, **Then** the review criteria include: "Does the presentation build toward a clear climax? Is the strongest content positioned for maximum impact?" |
+| FR-20.3 | **Given** a reviewer identifies a narrative quality issue, **When** it is classified as MUST-FIX, **Then** the Composer fixes it automatically before Step 6 (same as existing formatting MUST-FIX behavior). |
+
+---
+
+## 4. Non-Functional Requirements
 
 | ID | Requirement | Acceptance Criterion |
 |----|------------|---------------------|
-| NFR-01 | Scryfall API rate limiting | Card Finder enforces minimum 50ms delay between requests. Bulk endpoints preferred over individual lookups where possible. |
-| NFR-02 | No external Python dependencies | All scripts use only Python standard library (`urllib`, `json`, `time`). No pip install required. |
-| NFR-03 | Card name accuracy | Zero hallucinated card names in final output. Every card name verified against Scryfall. Rules Judge gates this with zero tolerance. |
-| NFR-04 | Plugin validation | Plugin passes `plugin-validator` with zero errors and zero warnings. |
-| NFR-05 | Internet required | Plugin requires internet access for Scryfall API. This is documented in setup instructions. No offline mode in v1. |
-| NFR-06 | Scryfall error resilience | Card Finder retries on 429 (rate limit) with exponential backoff (max 3 retries). Returns meaningful error on persistent failure. |
-| NFR-07 | Session completion | Full pipeline (intake through final output) completes within a single Claude Code session. No multi-session workflows. |
+| NFR-01 | Backward compatibility | All changes are additive. The 4 existing types, 6-step flow, 3 existing output formats, and existing `presentation.*` config keys function identically. Users who do not use new features see zero behavior change. |
+| NFR-02 | Generation speed (light mode) | Simple types (3 or fewer contributing roles) complete the full 6-step flow under 60 seconds. |
+| NFR-03 | Generation speed (full mode) | Complex types (4-5 roles, 10+ slides) complete under 120 seconds. Per-type thresholds allow teams to tune targets. |
+| NFR-04 | Single new dependency | `python-pptx` is the only new dependency. It is optional -- core skill operation (all 9 types, 3 text formats) works without it. No other new libraries. |
+| NFR-05 | Plugin structure compliance | All changes live within `delivery-team/skills/presentation/`. New files in `scripts/` (Python), `references/` (documentation), and SKILL.md. No new top-level directories. |
+| NFR-06 | Config schema extension | New `presentation.*` config keys follow the extension protocol in `config-schema.md` v2.3. Keys are optional with sensible defaults. Config version bump required. |
+| NFR-07 | Dogfooding validation | Each enhancement validated by actually using it within the delivery pipeline before shipping. Code review alone is not sufficient. Each new type must produce a complete presentation from real pipeline artifacts. |
+| NFR-08 | PPTX output quality | Generated `.pptx` files are "good enough to edit" -- correct structure, readable layout, proper content placement. Pixel-perfect design is not expected. User disclaimer communicates this limitation. |
 
 ---
 
-## 6. v1 Scope Boundary
+## 5. New Config Keys
 
-### In Scope
+These keys extend the existing `presentation.*` namespace. All are optional with defaults. Addition follows the config-schema.md v2.3 extension protocol.
 
-- Plugin skeleton (`mtg-commander/`) with SKILL.md, agents, references, scripts, LICENSE.txt
-- 4 agents: Deck Builder, Rules Judge, Optimization Reviewer, Price Evaluator
-- 1 utility: Card Finder (Scryfall API client)
-- 7 intake questions with validation
-- Sequential pipeline with correction loops
-- Scryfall API as sole external data source (card data + pricing)
-- Reference files: Commander format rules, banned list, archetype patterns, structural targets, API patterns
-- 5 test cases for dogfooding validation (see Section 8)
+| Key | Type | Default | Valid Values | Purpose |
+|-----|------|---------|-------------|---------|
+| `presentation.pptx_font` | string | "Calibri" | Any font name | Font family for `.pptx` output |
+| `presentation.pptx_accent_color` | string | "#2d5aa0" | Hex color | Accent/heading color for `.pptx` output |
+| `presentation.pptx_template` | string | "" | File path or empty | Path to custom `.pptx` template |
+| `presentation.thresholds` | map | {} | type-name → seconds | Per-type generation threshold overrides |
+| `presentation.thresholds_default` | integer | 90 | 30-300 | Global threshold when no per-type value is set |
+| `presentation.light_mode` | string | "auto" | auto, always, never | Light mode behavior |
+| `presentation.narrative_reorder` | boolean | true | true/false | Enable emphasis-based slide reordering |
+| `presentation.narrative_cutting` | boolean | true | true/false | Enable low-value slide removal/merging |
 
-### Out of Scope (Deferred to v2+)
+---
+
+## 6. Success Metrics
+
+| Metric | Target | Measurement Method |
+|--------|--------|--------------------|
+| New type coverage | All 5 types produce end-to-end presentations with zero `[TBD]` artifacts and zero "Unknown type" errors | Dogfooding: each type exercised with real pipeline artifacts |
+| PPTX output validity | Generated `.pptx` opens without error in PowerPoint and LibreOffice | Manual validation on both platforms |
+| PPTX slide mapping accuracy | Each markdown slide maps to exactly one `.pptx` slide with correct content | Visual comparison: markdown vs rendered `.pptx` |
+| Generation time (light) | Simple types complete under 60 seconds | Timed dogfooding runs |
+| Generation time (full) | Complex types complete under 120 seconds | Timed dogfooding runs |
+| Narrative emphasis | Feature slides are impact-ranked, not chronological, in dogfooding outputs | TW + UX review criteria checklist |
+| Narrative cutting | At least 1 low-value slide identified and merged in presentations with 10+ draft slides | "Narrative Cuts" section present in User Review output |
+| Narrative framing | Same feature described differently for investor vs technical vs executive audience | A/B comparison across audience modes |
+| User satisfaction | Approved on first pass (no "changes" loop) for at least 3 of 5 new types during dogfooding | Dogfooding session logs |
+
+---
+
+## 7. Out of Scope
 
 | Item | Rationale |
 |------|-----------|
-| Recommander integration | Needs API investigation. Scryfall + heuristic synergy sufficient for v1. |
-| EDHREC integration | No official API. Tiebreaker-only value does not justify scraping complexity. |
-| Multi-source pricing (TCGPlayer, Card Kingdom) | Scryfall pricing covers v1. Multi-source adds API key management. |
-| Moxfield / Archidekt export | Export-ready text list covers v1. Platform-specific export is convenience. |
-| Deck modification mode ("improve my deck") | Different intake flow required. v1 focuses on new builds. |
-| Persistent card database (SQLite cache) | Scryfall API is fast enough for v1 volumes. |
-| Hooks (automated validation) | Agents themselves provide validation. Hooks add CI-style value but are not needed for v1 correctness. |
-| Meta-game analysis | Requires additional data sources and ongoing maintenance. |
-| MCP server for Scryfall | Python script via Card Finder is sufficient for v1. MCP adds value when multiple plugins need Scryfall access. |
-| Partner commanders | Requires revised intake flow (2 names), combined color identity derivation, 98-card deck structure, and structural minimum adjustments. Rejected at intake with clear message (FR-02.10). |
+| Custom/user-defined presentation type framework | No type extensibility in this batch. All 9 types are hardcoded. Future enhancement. |
+| Real-time collaboration or live editing | The skill remains a batch generation flow. |
+| Custom `.potx` PowerPoint template design | The `.pptx` script uses programmatic layouts. Template *authoring* tools are future work. Template *consumption* (FR-09) is in scope. |
+| AI-generated images or diagrams | Slides reference existing Mermaid diagrams. No new image generation. |
+| Changes to contributing delivery-team roles | PO, Developer, Architect, QA, TW, UX skills unchanged. Only the Composer and its references are modified. |
+| Fundamental speed optimization of sub-agent dispatch | Issue #45 addresses user feedback and degradation, not agent framework performance. |
+| Internationalization / localization | Presentations remain English-only. |
+| Automated `.pptx` template extraction from corporate decks | Users provide a template manually. No automated brand inference. |
+| Mermaid-to-image rendering in `.pptx` | Architecture slides in `.pptx` include annotations as text. Diagram rendering requires external tooling. |
 
 ---
 
-## 7. Reference Files Required
+## 8. Constraints
 
-These reference documents support the agents and must be authored during the Development stage.
-
-| File | Location | Purpose | Content |
-|------|----------|---------|---------|
-| Commander Rules | `references/commander-rules.md` | Rules Judge source of truth | Format rules, color identity rules, singleton rule, commander tax, combat damage, partner rules |
-| Banned List | `references/banned-list.md` | Rules Judge banned card check | Current Commander banned list (sourced from mtgcommander.net). Updated manually on ban announcements. |
-| Archetype Patterns | `references/archetype-patterns.md` | Deck Builder archetype knowledge | Common archetypes (aristocrats, voltron, spellslinger, tribal, combo, stax, group hug, mill, etc.) with typical card categories and synergy patterns |
-| Structural Minimums | `references/structural-minimums.md` | Optimization Reviewer targets | Ramp, draw, removal, board wipe, land count targets by power level (casual 1-4, mid 5-7, high 8-9, cEDH 10) |
-| Intake Questions | `references/intake-questions.md` | Deck Builder intake flow | The 7 questions with valid input ranges, default values, and validation rules |
-| API Reference | `references/api-reference.md` | Card Finder implementation guide | Scryfall endpoints, query syntax, rate limits, response schemas, error codes |
+1. **Existing skill stability**: The 4 current types, 6-step flow, and 3 output formats must continue to work exactly as they do today. Every change is additive.
+2. **Plugin structure**: All changes live within `delivery-team/skills/presentation/`. No new top-level directories.
+3. **python-pptx is the only new dependency**: Optional, only needed for `.pptx` output. Core skill has zero new dependencies.
+4. **Config schema protocol**: New `presentation.*` keys follow the extension protocol in config-schema.md v2.3.
+5. **Narrative intelligence is rule-based**: Emphasis, cutting, and tension rules are documented in `narrative-patterns.md` and deterministic for a given input. The Composer applies rules, not ad-hoc judgment.
+6. **Retrospective sensitivity**: Retro Summary type must anonymize and generalize individual feedback for non-team audiences. This is a hard constraint, not optional.
+7. **Dogfooding before shipping**: Every new type and every narrative intelligence rule must be exercised with real pipeline artifacts before the PR is merged.
 
 ---
 
-## 8. Test Cases (Dogfooding Gate)
+## 9. Risks
 
-All 3 test cases must produce valid decklists before UAT passes. The team builds these decks before users do.
-
-### Test Case 1: Mono-Black Graveyard
-
-| Field | Value |
-|-------|-------|
-| Commander | K'rrik, Son of Yawgmoth |
-| Color Identity | Black |
-| Strategy | Graveyard recursion / reanimator |
-| Power Level | 7 |
-| Meta Alignment | Mid-power casual |
-| Budget | $150 |
-| Restrictions | None |
-
-**Pass criteria**: 100 legal cards, synergy score >= 3.0, total cost <= $150, 10+ ramp, 10+ draw, zero banned cards, zero hallucinated names.
-
-### Test Case 2: Orzhov Lifegain
-
-| Field | Value |
-|-------|-------|
-| Commander | Karlov of the Ghost Council |
-| Color Identity | White/Black |
-| Strategy | Lifegain/drain |
-| Power Level | 6 |
-| Meta Alignment | Casual |
-| Budget | $100 |
-| Restrictions | No cards over $10 each |
-
-**Pass criteria**: 100 legal cards, synergy score >= 3.0, total cost <= $100, no card > $10, all cards within WB color identity, 10+ ramp, 10+ draw, zero banned cards, zero hallucinated names.
-
-### Test Case 3: Mono-Blue Mill
-
-| Field | Value |
-|-------|-------|
-| Commander | Bruvac the Grandiloquent |
-| Color Identity | Blue |
-| Strategy | Mill / library depletion |
-| Power Level | 5 |
-| Meta Alignment | Casual / fun |
-| Budget | $75 |
-| Restrictions | No infinite combos |
-
-**Pass criteria**: 100 legal cards, synergy score >= 3.0, total cost <= $75, all cards within U color identity, 10+ ramp, 10+ draw, no infinite combo pieces flagged, zero banned cards, zero hallucinated names.
-
-### Test Case 4: Multi-Color Stress Test (3+ Colors)
-
-| Field | Value |
-|-------|-------|
-| Commander | Korvold, Fae-Cursed King |
-| Color Identity | Black/Red/Green (Jund) |
-| Strategy | Sacrifice / aristocrats |
-| Power Level | 8 |
-| Meta Alignment | High-power |
-| Budget | $200 |
-| Restrictions | None |
-
-**Pass criteria**: 100 legal cards, synergy score >= 3.0, total cost <= $200, all cards within BRG color identity (no white, no blue cards), 10+ ramp, 10+ draw, zero banned cards, zero hallucinated names. This test exercises multi-color identity validation and higher power structural targets.
-
-### Test Case 5: Budget Stress Test (4-Color, $50)
-
-| Field | Value |
-|-------|-------|
-| Commander | Atraxa, Praetors' Voice |
-| Color Identity | White/Blue/Black/Green |
-| Strategy | +1/+1 counters / proliferate |
-| Power Level | 7 |
-| Meta Alignment | Mid-power casual |
-| Budget | $50 |
-| Restrictions | No cards over $5 each |
-
-**Pass criteria**: 100 legal cards, synergy score >= 3.0 (budget-relaxed threshold of >= 2.0 acceptable per FR-07.4 constraint priority rule if budget forces substitutions), total cost <= $50, no card > $5, all cards within WUBG color identity (no red cards), 10+ ramp, 10+ draw, zero banned cards, zero hallucinated names. This test exercises the correction loop and budget/synergy constraint negotiation.
+| # | Risk | Impact | Likelihood | Mitigation |
+|---|------|--------|-----------|------------|
+| R1 | Narrative intelligence rules produce worse output for edge cases | Medium | Medium | All rules are overridable (`narrative_reorder: false`, `narrative_cutting: false`). User can say "no reorder" or "restore" cut slides. |
+| R2 | python-pptx slide mapping loses formatting nuance | Low | High | Accept "good enough to edit" not "pixel-perfect." User disclaimer in output message (FR-10.4 fallback, NFR-08). |
+| R3 | 5 new types dilute testing coverage | Medium | Medium | Each type has explicit dogfooding ACs. No type ships without a real end-to-end run (NFR-07). |
+| R4 | Light mode produces noticeably lower quality than full mode | Medium | Low | Light mode reduces quantity (fewer roles, single reviewer), not quality. Review Gate still runs. User can force `--full` (FR-13.3). |
+| R5 | Retro Summary sensitivity filter over-generalizes | Medium | Medium | Filter applies only for non-team audiences (FR-05.4/FR-05.6). Technical/casual get full detail. Disclaimer always shown (FR-05.5). |
+| R6 | Per-type threshold config adds complexity | Low | Low | Thresholds are optional. Defaults work without config. Only power users touch this (FR-14.2). |
+| R7 | Audience framing rules are too prescriptive | Medium | Medium | Framing rules are guidance, not rigid templates. Review Gate validates the result (FR-20). User can override with "changes" feedback. |
 
 ---
 
-## 9. Marketplace Registration
+## 10. Dependencies
 
-The plugin entry in `.claude-plugin/marketplace.json` follows the established pattern:
-
-```json
-{
-  "name": "mtg-commander",
-  "description": "MTG Commander deck builder with multi-agent pipeline. Synergy-first card selection, Scryfall API integration, format legality validation, structural optimization, and budget enforcement. Produces complete 100-card decklists.",
-  "source": "./",
-  "strict": false,
-  "skills": [
-    "./mtg-commander"
-  ]
-}
-```
+| Dependency | Type | Status |
+|------------|------|--------|
+| `delivery-team/skills/presentation/SKILL.md` | Existing file (modify) | Stable, v1 shipped |
+| `delivery-team/skills/presentation/references/slide-structure.md` | Existing file (modify) | Stable |
+| `delivery-team/skills/presentation/references/narrative-patterns.md` | Existing file (modify) | Stable |
+| `delivery-team/skills/presentation/references/data-visualization.md` | Existing file (no change) | Stable |
+| `delivery-team/skills/presentation/references/marp-templates.md` | Existing file (no change) | Stable |
+| `delivery-team/skills/presentation/scripts/` | Directory (create + new files) | Does not exist yet |
+| `python-pptx` library | External dependency (optional) | Available on PyPI, pure Python |
+| `delivery-flow/references/config-schema.md` | Existing file (modify -- add keys) | v2.3, extension protocol defined |
 
 ---
 
-## 10. Open Questions for Design/Architect Stages
+## 11. Delivery Sequence
+
+The four groups have natural ordering based on dependencies:
+
+1. **Group A (Deferred Types)** first -- unblocks dogfooding of new types with existing output formats.
+2. **Group D (Narrative Intelligence)** second -- enhances Compose step for all 9 types (including new ones from Group A).
+3. **Group C (Fallback Plan)** third -- requires all types to be defined so per-type thresholds are meaningful.
+4. **Group B (PPTX Output)** last -- independent output path, can be developed in parallel but validated last since it depends on composed output from all types.
+
+Groups A and B can be developed in parallel. Groups C and D can be developed in parallel after A completes.
+
+---
+
+## 12. Scope Limitations Disclaimer
+
+> **Known limitations users should be aware of:**
+> - The `.pptx` output is programmatic, not pixel-perfect. Users should expect to make minor formatting adjustments in PowerPoint after generation. This is "90% done in 10 minutes" not "100% done automatically."
+> - Narrative intelligence rules (emphasis, cutting, tension) are heuristic. They improve most presentations but may make suboptimal choices for unusual content. All rules are overridable via config or inline commands.
+> - The Retrospective Summary sensitivity filter generalizes individual feedback for non-team audiences. Some nuance may be lost. The raw retro notes remain the source of truth.
+> - Light mode reduces generation time by reducing collaboration depth. Presentations generated in light mode may have less polish than full-mode equivalents.
+> - Mermaid diagrams in `.pptx` output are rendered as text annotations, not as images. Users must render diagrams separately and paste as images if visual diagrams are needed in PowerPoint.
+
+---
+
+## 13. Open Questions for Design/Architect Stages
 
 | # | Question | Relevant Stage |
 |---|----------|---------------|
-| OQ-1 | Should the synergy rationale be a free-text sentence or a structured tag system (e.g., `[TRIGGERS: creature death]`, `[ENABLES: ramp]`)? Structured tags enable automated synergy counting; free text is more readable. | Design |
-| OQ-2 | What is the minimum acceptable synergy score for a deck to pass the Optimization Reviewer? The PRD requires 3+ interactions per card, but a deck-level threshold (e.g., average 3.5) may also be warranted. | Design |
-| OQ-3 | Should the Card Finder use Scryfall's `/cards/search` (flexible query) or `/cards/named` (exact match) for name validation? Exact match is faster but less tolerant of minor input variations. | Architect |
-| OQ-4 | How should the agents handle double-faced cards, split cards, and adventure cards where the card has multiple names? Scryfall returns these with `//` separators. | Architect |
-| OQ-5 | ~~Should partner commanders be supported in v1?~~ **RESOLVED in v1.1**: Partner commanders are explicitly OUT of scope for v1. FR-02.10 specifies that partner commanders are rejected at intake with a clear message. Partner support (2-commander, 98-other-cards, combined color identity) is deferred to v2+. | N/A |
-
----
-
-## 11. Dependencies
-
-| Dependency | Type | Risk | Mitigation |
-|-----------|------|------|-----------|
-| Scryfall API | External service | Low (well-documented, stable, free) | Card Finder implements retry logic and rate limiting. No fallback in v1 — Scryfall downtime blocks deck building. |
-| `api.scryfall.com` WebFetch permission | Configuration | Low | Documented in SKILL.md setup instructions. User must add to allowed domains. |
-| Commander banned list currency | Data freshness | Low (changes quarterly) | Maintained as a reference file. Updated manually when bans are announced. |
-| Scryfall pricing accuracy | Data quality | Medium (Scryfall aggregates, may lag market) | Acceptable for v1. Budget enforcement uses Scryfall as source of truth. |
-
----
-
-## 12. PO Notes
-
-1. **Agent architecture is proposed, not decided.** This PRD specifies WHAT each agent does (inputs, outputs, validation rules). HOW the agents are implemented (sub-agents, tool-use patterns, prompt structure) is a Design/Architect decision.
-
-2. **The correction cycle mechanism already exists.** The delivery pipeline config has `pipeline.max_self_correction: 3` and `pipeline.max_dod_rounds: 3`. The deck builder pipeline should reference this mechanism — do not invent a new iteration limit config.
-
-3. **Synergy scoring is the novel value proposition.** Popularity-based tools already exist (EDHREC). Our differentiation is synergy-first selection with explicit interaction mapping. If we nail nothing else, we nail this.
-
-4. **Dogfooding is P0.** All 5 test cases must produce valid decks that the team reviews before UAT. Code review alone is not sufficient. We play with the tool before users do.
-
-5. **Card name accuracy is the highest-risk failure mode.** AI models hallucinate Magic card names. The Rules Judge exists specifically to catch this. Zero tolerance — every name verified against Scryfall.
-
----
-
-*"Even the smallest plugin can change the course of a game night — provided it knows the difference between a Sol Ring and a hallucinated one. Build the fellowship. Trust the pipeline. Synergy first. Always."*
+| OQ-1 | Should the PPTX generation script parse composed-draft.md directly (regex-based) or should the Composer output an intermediate structured format (JSON/YAML) that the script consumes? Structured intermediate is more robust but adds a new artifact. | Design |
+| OQ-2 | How should narrative tension rules interact with user-specified slide order from Step 1 (Assemble)? If the PO outlines a specific sequence and the Composer reorders for tension, which takes precedence? | Design |
+| OQ-3 | Should the emphasis selection and information cutting rules be type-specific (different criteria per presentation type) or universal? Type-specific is more accurate but increases reference file complexity. | Design |
+| OQ-4 | What is the minimum slide count for light mode to be meaningful? A 4-slide Feature Pitch may not benefit from light mode since it already dispatches minimal roles. | Architect |
+| OQ-5 | Should the PPTX script support speaker notes in the generated PowerPoint? The existing flow supports speaker notes as an optional feature -- should this carry through to `.pptx` output? | Design |
 
 ---
 
@@ -377,11 +463,8 @@ The plugin entry in `.claude-plugin/marketplace.json` follows the established pa
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2026-04-01 | Initial PRD |
-| 1.1 | 2026-04-01 | QA evaluation + adversarial review fixes: Goals table with baselines/targets/metrics (B3 fix). Deterministic commander in Test Case 1 (B2 fix). Category disambiguation rule in FR-02.6 (B2 fix). Synergy Interaction Taxonomy with 6 categories and explicit exclusions (Challenge 1 fix). Budget-vs-synergy constraint priority rule in FR-07.4 (Challenge 4 fix). FR-02.9 card name pre-validation, FR-02.10 partner rejection, FR-02.3a banned commander at intake, FR-05.8 null price handling, FR-06.8 batch lookup, FR-06.9 empty result handling, FR-07.2 100-card invariant during corrections. 2 additional test cases (multi-color, budget stress). OQ-5 resolved as out-of-scope. |
+| 1.0 | 2026-04-04 | Initial PRD for presentation skill v1.1 batch (issues #43, #44, #45, #46). 20 functional requirements across 4 groups, 8 non-functional requirements, 8 new config keys, 5 open questions. |
 
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/02-refine/po/prd.md
-SUMMARY: PRD v1.1 — 13 findings addressed: 3 blocking, 2 must-fix, 4 recommended, 4 warnings. No regressions.
-```
+---
+
+*"All we have to decide is what to do with the features that are given to us." -- And so we have decided. Four enhancements, twenty functional requirements, nine presentation types. The road goes ever on.*
