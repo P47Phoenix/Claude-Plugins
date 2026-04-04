@@ -1,7 +1,7 @@
 # Memory Index
 
 **Last updated**: 2026-04-04
-**Total runs**: 9
+**Total runs**: 10
 
 ## Stage Health (from last 5 runs)
 
@@ -11,8 +11,8 @@
 | Refine | 100% (2/2) | Stable | Only ran in 2 of last 5 |
 | Design | 100% (2/2) | Stable | Ran in 2 of last 5 |
 | Architect | 100% (3/3) | Stable | Ran in 3 of last 5 |
-| Plan | 60% (3/5) | **Improving** | Was 50%, gained 1 first-try pass this run |
-| Development | 100% (5/5) | Stable | Perfect across all run types |
+| Plan | 80% (4/5) | **Improving** | 2 consecutive first-try passes with pre-loaded constraints |
+| Development | 80% (4/5) | Dipped | Source/installed sync correction in run w7m3 |
 | UAT | 100% (5/5) | Stable | 5 consecutive first-try passes |
 
 ## Hot Lessons (top 5 by impact)

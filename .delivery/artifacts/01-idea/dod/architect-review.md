@@ -1,65 +1,101 @@
-## Architect Review -- Gate 1 (Idea)
+# Architect Review -- Gate 1 (Idea)
 
 **Reviewer**: Celebrimbor (Architect DoD Validator)
-**Date**: 2026-04-01
+**Date**: 2026-04-04
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Project Type**: GREENFIELD
-**Verdict**: DONE
+**Project Type**: BUG_FIX
+**Pipeline**: run-2026-04-04-w7m3
+**Source**: GitHub Issue #55
 
 ---
 
-### Criterion 1: Technically Feasible [blocking]
+### Criterion 1: Technically Feasible with Stated Constraints [blocking]
 
 **PASS.**
 
-The proposed architecture maps cleanly onto Claude Code plugin conventions:
+The proposed "Prior Art Analysis" step is a purely instructional change to the architect skill's SKILL.md. I have verified the target file exists at `delivery-team/skills/architect/SKILL.md` (563 lines, well-structured with Phase 1/Phase 2 pattern). The stated constraints are fully compatible:
 
-- **SKILL.md + agent sub-agents**: The 4-agent pipeline (Deck Builder, Rules Judge, Optimization Reviewer, Price Evaluator) follows the established pattern of a primary SKILL.md orchestrating agent sub-agents via markdown frontmatter. Every existing multi-agent plugin in this repo works this way. No novel architecture required.
-- **Card Finder utility as Python script**: `scripts/card_lookup.py` wrapping Scryfall's REST API is straightforward. Scryfall is a well-documented, free, public API with JSON responses. The script needs HTTP requests (urllib or allowed curl via Bash) and JSON parsing -- both available without external dependencies.
-- **Sequential pipeline with feedback loops**: The Builder → Judge → Optimizer → Pricer flow with cycle-back on failure is implementable as orchestrator logic in SKILL.md. The delivery-flow plugin already demonstrates this pattern at greater complexity.
-- **Reference files for rules/archetypes/structure**: Static markdown references for Commander rules, banned list, archetype patterns, and structural minimums are the standard three-level context loading pattern. No new loading mechanisms needed.
-- **WebFetch for Scryfall API**: Requires adding `api.scryfall.com` to allowed WebFetch domains. This is a settings.json change, documented in the brief. Standard procedure.
+| Constraint | Assessment |
+|------------|------------|
+| Changes confined to `delivery-team/skills/architect/` | **Feasible.** SKILL.md and 22 reference files exist in this directory. Modification or addition is straightforward. |
+| No schema changes, no new dependencies | **Feasible.** The change is pure markdown instruction text. No config schema, no Python scripts, no external APIs. |
+| No code changes outside architect skill | **Feasible.** No other skills or hooks depend on the internal instruction structure of this SKILL.md. Zero blast radius. |
+| Backward-compatible with existing pipelines | **Feasible.** The Prior Art Analysis step activates conditionally ("if user-provided spec exists"). Pipelines without specs follow existing behavior unchanged. |
+| Must dogfood the fix | **Feasible.** This pipeline run itself (Issue #55) can serve as the dogfood scenario -- the architect receives the idea brief as a "user-provided spec" and must build on it, not reimagine it. |
 
-No component requires capabilities outside what Claude Code plugins already support.
+The existing "Domain Discovery Before Design" section (SKILL.md lines 132-153) establishes a proven precedent for mandatory pre-design analysis steps, confirming this pattern is already native to the codebase.
 
-### Criterion 2: No Obvious Blockers [blocking]
+### Criterion 2: No Obvious Technical Blockers [blocking]
 
 **PASS.**
 
 | Concern | Assessment |
 |---------|------------|
-| Scryfall API rate limits (10 req/s) | **Not a blocker.** A 100-card deck build needs ~100-200 lookups at most. At 10/s that is 10-20 seconds of API time. Bulk search endpoints can reduce this further. The brief correctly identifies this constraint and the Card Finder must respect it. |
-| Card name hallucination risk | **Not a blocker.** The brief explicitly gates this -- Rules Judge verifies every card name against Scryfall. This is a validation concern, not an architectural blocker. The mitigation is designed into the pipeline. |
-| 100-card output size | **Not a blocker.** Claude Code handles structured outputs of this size routinely. The categorized decklist format (commander, lands, ramp, draw, removal, etc.) keeps it organized. |
-| No local card database | **Not a blocker for v1.** Requires internet access, which is a reasonable constraint for a plugin that depends on live pricing data anyway. Correctly deferred to v2. |
-| Synergy evaluation without Recommander | **Low risk.** The brief acknowledges Recommander is deferred and Scryfall + heuristic synergy is the v1 approach. The model's knowledge of MTG card interactions is substantial. Synergy assessment will be AI-driven (not deterministic), which is appropriate for creative card selection -- distinct from the deterministic legality checks. |
-| Feedback loop termination | **Low risk.** The brief does not specify a max iteration count for correction cycles. Refine should define this (recommend max 3 cycles per gate) to prevent infinite loops. Not a blocker at Idea stage. |
+| SKILL.md structural compatibility | **No blocker.** The Phase 1 / Phase 2 structure accommodates insertion of a new phase or integration into the existing Sub-Agent Prompt Template (lines 47-79). |
+| Sub-Agent Prompt Template impact | **No blocker.** The template's "Context" section already accepts optional inputs (existing architecture, constraints, PRD references). Adding a formal "User-Provided Specifications" field is natural extension. |
+| Reference file addition | **No blocker.** Adding a `prior-art-analysis.md` reference (if warranted) follows the established pattern -- 22 references already exist. |
+| Interaction with Domain Discovery | **No blocker.** Both are "gather context before designing" steps. They compose naturally -- Domain Discovery gathers business context, Prior Art Analysis respects design decisions already made. They should be sequenced, not conflated. |
+| Detection of "user-provided spec" | **Low risk.** The implementation must define how to detect whether a user-provided spec exists (e.g., presence of upstream artifacts with design decisions, explicit user statements). This is a Refine-stage detail, not an Idea-stage blocker. |
 
 No blocker prevents this work from proceeding.
 
-### Criterion 3: Scope Reasonable for GREENFIELD [warning]
+### Criterion 3: Scope Achievable (Not Too Broad, Not Too Narrow) [warning]
 
 **PASS.**
 
-The v1 scope is well-bounded:
+The scope is well-bounded:
 
-- 4 agent definitions (markdown files with clear responsibility boundaries)
-- 1 Python utility script (Scryfall API client)
-- 5 reference documents (rules, archetypes, structural targets, intake questions, API reference)
-- 1 SKILL.md orchestrator
-- 3 test cases for validation
+- **Not too broad**: Four specific goals, all confined to one file/directory. Clear "Out of Scope" section excludes other skills, config schema, pipeline stages, and retroactive fixes.
+- **Not too narrow**: The four goals cover the full behavioral correction:
+  1. Detection -- read and summarize user-provided specs before any design work
+  2. Classification -- distinguish "decisions already made" from "open questions"
+  3. Behavior change -- build architecture ON the existing design
+  4. Escape hatch -- propose alternatives only when clear technical blockers exist
+- **Dogfooding constraint**: Adds validation rigor without expanding implementation scope.
 
-The v2 deferrals are the right calls -- Recommander integration, EDHREC scraping, multi-source pricing, deck modification mode, and SQLite caching all add complexity without blocking v1 value delivery. The scope is a single-purpose plugin with a clear pipeline, not a platform.
+### Criterion 4: Implementable Within delivery-team/skills/architect/ [blocking]
 
-The 3 test cases (Mono-Black Graveyard, Orzhov Lifegain, Mono-Blue Mill) provide adequate coverage across color identity sizes (1-color, 2-color) and archetype diversity (graveyard, lifegain, mill). Good scope for dogfooding validation.
+**PASS.**
+
+Verified via Glob that the target directory contains:
+
+- `delivery-team/skills/architect/SKILL.md` -- primary modification target
+- `delivery-team/skills/architect/references/` -- 22 reference files; a new `prior-art-analysis.md` could be added if instructions warrant extraction
+
+All proposed changes fall entirely within this directory boundary. No files outside this path require modification.
 
 ---
 
-*A new ring to forge -- not from the fires of Orodruin, but from the careful craft of agents who each know their domain. The metal is Scryfall's data, the mold is the plugin architecture, and the smith has wisely limited v1 to what can be forged without exotic alloys. The foundation is sound.*
+## Implementation Observations for Downstream Stages
+
+As one who has forged systems that must endure, I note these considerations:
+
+1. **Integration with Domain Discovery**: The Prior Art Analysis step should compose with the existing Domain Discovery flow (SKILL.md lines 132-153), not create a parallel pre-design phase. Sequence: Prior Art Analysis first (respect what exists), then Domain Discovery (fill gaps).
+
+2. **Sub-Agent Prompt Template update**: The template (lines 47-79) should include an explicit "User-Provided Specifications" section in the Context block, making prior art a first-class input.
+
+3. **Conditional activation**: Use presence-detection ("if user-provided spec exists, THEN Prior Art Analysis is mandatory") to preserve backward compatibility.
+
+4. **Guardrail addition**: Consider adding an Architecture Guardrail (lines 436-458) such as: "User-provided design decisions are constraints, not suggestions -- propose alternatives only with documented technical justification."
+
+---
+
+## Verdict
+
+| Criterion | Result |
+|-----------|--------|
+| Technically feasible with stated constraints | **PASS** |
+| No obvious technical blockers | **PASS** |
+| Scope is achievable | **PASS** |
+| Implementable within architect directory | **PASS** |
+
+*The Rings were beautiful and powerful, but a flaw in their making brought ruin. Here, the flaw is clear: the Architect overrides rather than builds upon the designs entrusted to it. This idea correctly identifies the defect and proposes a precise correction. The metal is sound, the mold is ready. Let us forge something that will endure beyond the ages.*
+
+**DONE**
 
 ```
 STATUS: DONE
 REVIEWER: Celebrimbor (Architect)
 GATE: 1 (Idea)
-CRITERIA_MET: 3/3 (2 blocking PASS, 1 warning PASS)
+CRITERIA_MET: 4/4 (3 blocking PASS, 1 warning PASS)
 ```

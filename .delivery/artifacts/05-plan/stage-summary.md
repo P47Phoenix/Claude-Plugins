@@ -1,30 +1,17 @@
-## Stage 5: Plan -- Summary
+## Stage 5: Plan (light) — Summary
 
-**Pipeline**: run-2026-04-02-k3r9
-**Date**: 2026-04-02
-**Depth**: full
-**DoD Rounds**: 2 (SM rejected ceiling violation + QA rejected missing test strategy → both fixed)
+**Pipeline**: run-2026-04-04-w7m3
+**Date**: 2026-04-04
+**Status**: COMPLETE (first-try pass)
 
 ### Agents Invoked
 | Agent | Role | Status | Artifact |
 |-------|------|--------|----------|
-| PO (Gandalf) | User stories | DONE | 05-plan/po/user-stories.md |
-| SM (Aragorn) | Sprint plan v1 → v2 | DONE | 05-plan/sm/sprint-plan.md |
-| QA (Legolas) | Test strategy | DONE | 05-plan/qa/test-strategy.md |
-| Challenger | Adversarial review | 4/5 confidence | 05-plan/challenger/challenge.md |
+| Gandalf (PO) | User story | DONE | 05-plan/po/stories.md |
+| Aragorn (SM) | Sprint plan | DONE | 05-plan/sm/sprint-plan.md |
 
-### DoD Validators
-| Validator | Round 1 | Round 2 |
-|-----------|---------|---------|
-| SM (Aragorn) | NOT_DONE (ceiling) | DONE |
-| PO (Gandalf) | DONE | — |
-| QA (Legolas) | NOT_DONE (no test strategy) | DONE |
-
-### Plan Summary
-- 8 stories, 42 SP, 4 sprints (10+13+10+9)
-- Sprint 1: scaffold + Scryfall client
-- Sprint 2: references + orchestrator
-- Sprint 3: Rules Judge + Optimizer (parallel)
-- Sprint 4: Price Evaluator + dogfooding
-- Test strategy: 3 methods (structural, script exec, dogfooding), 85 ACs covered
-- Adversarial: plan is executable, YELLOW risk (not GREEN)
+### DoD Validation (Round 1 — PASSED)
+| Validator | Status | Summary |
+|-----------|--------|---------|
+| Aragorn (SM) | DONE | Capacity 3 SP under 4 SP ceiling, all criteria pass |
+| Legolas (QA) | DONE | 7/7 ACs traceable, empirical AC-07 has 5 checkpoints |

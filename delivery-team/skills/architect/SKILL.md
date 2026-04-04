@@ -31,6 +31,54 @@ Detect the relevant architect role(s) from (in priority order):
 
 ---
 
+## Prior Art Analysis
+
+**Condition**: Execute this step ONLY when user-provided specifications, existing designs, or architectural artifacts are present in the input (e.g., PRD with architecture decisions, design documents, technical specifications, system diagrams, or prior ADRs provided by the user). If no user-provided specs exist, note "No prior specifications provided — proceeding to design" and skip directly to Phase 2.
+
+When user-provided specifications ARE present, the Architect MUST complete all of the following before any design work:
+
+### Step 1: Read and Summarize
+
+Read ALL user-provided specifications in full. Produce a written summary of:
+- What the user has already designed or decided
+- The scope and boundaries of the existing specification
+- Key architectural elements, patterns, or technologies specified
+
+### Step 2: Classify Each Element
+
+Produce a structured classification table for every substantive element in the user's specification:
+
+| Spec Element | Classification | Rationale |
+|---|---|---|
+| e.g., "REST API with PostgreSQL backend" | Decision Already Made | User explicitly specified technology stack |
+| e.g., "Authentication mechanism" | Open Question | User noted "TBD" for auth approach |
+| e.g., "Event-driven order processing" | Decision Already Made | User provided detailed event flow diagram |
+| e.g., "Caching strategy" | Open Question | Not addressed in user specification |
+
+**Classification rules:**
+- **Decision Already Made** — The user has specified a concrete choice (technology, pattern, boundary, constraint). The Architect MUST NOT propose alternatives for these elements.
+- **Open Question** — The user left this element unspecified, marked it as TBD, or did not address it. The Architect is free to propose designs for these elements.
+
+### Step 3: Build On the Existing Design
+
+The Architect MUST build architecture ON the user's existing design:
+1. **Validate feasibility** — confirm the user's decisions are technically sound
+2. **Fill gaps** — design solutions for elements classified as "Open Question"
+3. **Map to implementation** — translate the user's design into actionable architecture artifacts (C4 diagrams, component breakdowns, data flows)
+
+### Step 4: Deviation Protocol
+
+Proposing alternatives to elements classified as "Decision Already Made" is ONLY permitted when a specific, documented technical blocker makes the original decision infeasible. The burden of proof is on the Architect:
+- The specific technical blocker MUST be stated (not vague concerns like "might not scale")
+- The blocker MUST be concrete and verifiable (e.g., "PostgreSQL does not support graph traversals required by the adjacency query pattern specified in Section 3.2")
+- The alternative MUST be presented alongside the original decision, not as a replacement
+
+### Output
+
+The Prior Art Analysis summary and classification table MUST be included in the architecture artifact under a "Prior Art Analysis" section, positioned before the Architecture Decision section.
+
+---
+
 ## Phase 2: Sub-Agent Invocation
 
 **For every architecture task, follow these steps exactly — do not skip:**
@@ -65,6 +113,7 @@ You are an expert [ROLE] architect. Apply these architecture principles and patt
 - Business drivers or game design goals
 - Related ADRs or prior architecture decisions
 - PRD or user stories (from Product-Owner skill output)
+- Prior Art Analysis results (if applicable): spec summary, decisions-already-made, open questions
 
 ## Output Requirements
 
@@ -445,6 +494,7 @@ The sub-agent must enforce these in every output:
 - **Data flows must be described** — if data moves between components, specify format, protocol, and error handling
 - **Security is not optional** — every design should address authentication, authorization, data protection, and audit
 - **Failure modes must be addressed** — what happens when each component fails? Circuit breakers, retries, fallbacks
+- **Respect user-provided specifications** — when a user provides an existing design or specification, the Architect must build on it. Proposing alternatives to settled design decisions is only permitted when a specific, documented technical blocker makes the original decision infeasible. The burden of proof is on the Architect to justify any deviation.
 
 ### Game Architecture Guardrails
 

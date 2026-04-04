@@ -1,29 +1,28 @@
-## Stage 6: Development -- Summary
+## Stage 6: Development — Summary
 
-**Pipeline**: run-2026-04-02-k3r9
-**Date**: 2026-04-02
-**Depth**: full
-**DoD Rounds**: N/A (CODE_COMPLETE — empirical validation pending)
+**Pipeline**: run-2026-04-04-w7m3
+**Date**: 2026-04-04
+**Status**: CODE_COMPLETE (first-try pass with source sync correction)
 
-### Stories Implemented
-| Story | SP | Sprint | Status |
-|-------|:--:|:------:|--------|
-| US-01 | 2 | S1 | DONE |
-| US-02 | 8 | S1 | DONE |
-| US-03 | 5 | S2 | DONE |
-| US-04 | 8 | S2 | DONE |
-| US-05 | 5 | S3 | DONE |
-| US-06 | 5 | S3 | DONE |
-| US-07 | 4 | S4 | DONE |
-| US-08 | 5 | S4 | PENDING (empirical) |
+### Agents Invoked
+| Agent | Role | Status | Artifact |
+|-------|------|--------|----------|
+| Gimli (Developer) | Implementation | CODE_COMPLETE | 06-dev/developer/story-01.md |
+| Legolas (QA) | Evaluator-Optimizer R1 | DONE | 06-dev/qa-evaluator/story-01-round-1.md |
 
-### Plugin Structure (13 files)
-- SKILL.md orchestrator with 4 agent templates
-- card_lookup.py (481 lines, stdlib Python, 6 CLI commands)
-- 10 reference files (domain knowledge)
-- LICENSE.txt + marketplace registration
+### DoD Validation (Round 1)
+| Validator | Status | Summary |
+|-----------|--------|---------|
+| Gimli (Developer) | NOT_DONE (R1) → resolved | Source/installed sync gap — synced in correction |
+| Legolas (QA) | CODE_COMPLETE | 6/6 structural pass, AC-07 dogfooding pending |
+| Celebrimbor (Architect) | DONE | All 5 criteria pass, no drift |
+| Bilbo (Tech Writer) | DONE | 6/6 docs criteria pass |
 
-### Notes
-- All structural stories DONE, smoke tests pass against live Scryfall API
-- US-08 dogfooding (5 end-to-end test cases) requires skill installation — carried to UAT
-- DoD validators not run for individual stories due to GREENFIELD nature — full validation at UAT
+### Self-Correction
+- Round 1: Synced source repo file with installed plugin file (3 edits applied, diff verified clean)
+
+### Pending Empirical Validations (carry to UAT)
+- AC-07: Dogfooding — invoke updated architect skill with user-provided spec scenario
+
+### Commit Suggestion
+`fix(architect): add Prior Art Analysis step to respect user-provided specs (#55)`

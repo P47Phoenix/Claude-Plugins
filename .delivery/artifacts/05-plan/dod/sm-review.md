@@ -1,33 +1,96 @@
-# SM Review: Sprint Plan v2.0 -- MTG Commander Deck Builder Plugin
+# SM Review: Sprint Plan -- Architect Prior Art Analysis
 
 **Reviewer**: Aragorn (Scrum Master)
-**Date**: 2026-04-01
-**Artifact**: `.delivery/artifacts/05-plan/sm/sprint-plan.md` (v2.0)
-**Stories**: `.delivery/artifacts/05-plan/po/user-stories.md` (v1.0)
-**Mode**: FULL / GREENFIELD
+**Date**: 2026-04-04
+**Pipeline**: run-2026-04-04-w7m3
+**Artifact**: `.delivery/artifacts/05-plan/sm/sprint-plan.md`
+**Stories**: `.delivery/artifacts/05-plan/po/stories.md`
+**Mode**: LIGHT / BUG_FIX
 
-> *"Four steady marches. Every one within the fellowship's strength. This is the plan I asked for."*
+> *"The road is short but the discipline is the same. Let us walk it with care."*
 
 ---
 
-## Gate 5: Plan Readiness -- SM Criteria
+## Gate 5: Plan Readiness -- SM Criteria (Light Mode BUG_FIX)
 
-### Blocking Criteria
+### 1. Process: Story exists with clear acceptance criteria
 
-- [x] **Capacity declaration present (velocity baseline, 80% ceiling, commitment %)**
-  - PASS. Section 2 declares velocity baseline (16 SP/sprint), 80% ceiling (13 SP, derived from 16 x 0.80 = 12.8 rounded to 13), and per-sprint commitments with ceiling percentages. Sprint count derived correctly (42 / 13 = 3.23, rounded up to 4). All numbers internally consistent and traceable.
+**PASS**
 
-- [x] **No sprint exceeds 80% ceiling**
-  - PASS. All four sprints are at or below the 13 SP ceiling:
-    - **Sprint 1**: 10 SP (77% ceiling) -- scaffold + API client
-    - **Sprint 2**: 13 SP (100% ceiling) -- references + orchestrator, sequential execution
-    - **Sprint 3**: 10 SP (77% ceiling) -- Rules Judge + Optimization Reviewer
-    - **Sprint 4**: 9 SP (69% ceiling) -- Price Evaluator + dogfooding
+The PO story in `stories.md` is well-formed:
+- User story follows standard As-a / I-want / So-that format
+- 7 acceptance criteria (AC-01 through AC-07), each with clear Given/When/Then structure
+- 7 test cases (TC-01 through TC-07), each mapped to its corresponding AC with specific step-by-step verification and expected results
+- AC classification distinguishes structural (AC-01 through AC-06, inspectable) from empirical (AC-07, requires live run)
+- INVEST validation passes all 6 criteria
+- Definition of Ready checklist complete
 
-  The v1.0 ceiling violations (Sprint 1 at 115%, Sprint 2 at 138%) are fully resolved. The parallelism-as-capacity argument has been correctly retired -- parallelism remains an execution optimization (Sprint 3), not a capacity justification. Sprint 2 at exactly 100% ceiling leaves zero buffer, but the plan mitigates this with pure sequential execution (no parallelism gamble) and identifies descoping US-04 correction routing as the fallback if estimation proves optimistic.
+The sprint plan references the story correctly and its sprint goal aligns with the story's intent. No ambiguity in what "done" looks like.
 
-- [x] **Stories have clear ACs and test cases**
-  - PASS. All 8 stories carry acceptance criteria (72 total) and test cases (46 total). Every AC has source traceability (FR/NFR/PRD/Architecture references). Every test case has specific expected results. Dogfooding story (US-08) has 5 end-to-end test cases with quantitative pass criteria.
+### 2. Capacity: Velocity baseline stated, 80% ceiling calculated, commitment does not exceed ceiling
+
+**PASS**
+
+From the sprint plan's Capacity Declaration:
+
+| Metric | Declared Value | Verification |
+|--------|---------------|--------------|
+| Velocity baseline | 5 SP/sprint | Stated. Reasonable for markdown-only BUG_FIX work. |
+| Sprint ceiling (80%) | 4 SP | 5 x 0.80 = 4.0 SP. Math is correct. |
+| Sprint commitment | 3 SP | 3 SP < 4 SP ceiling. Does not exceed. |
+| Utilization | 60% | Correctly calculated (3/5 = 60%). |
+
+Note: The story is sized at 2 SP by the PO, but the sprint plan totals 3 SP across T1-T3 (1 + 0.5 + 0.5 = 2 SP for implementation, plus T4 dogfooding at 1 SP = 3 SP total). The discrepancy is because the PO sized the implementation work at 2 SP while the SM correctly accounts for the dogfooding validation effort as additional sprint work. This is acceptable -- the SM's 3 SP total is more accurate as it includes the P0 dogfooding gate. Both are under ceiling. No issue.
+
+### 3. Sprint plan includes task breakdown with estimates
+
+**PASS**
+
+The task breakdown contains 4 tasks:
+
+| Task | Estimate | Scope |
+|------|----------|-------|
+| T1: Add Prior Art Analysis section to SKILL.md | S (1 SP) | New mandatory step |
+| T2: Update Sub-Agent Prompt Template | XS (0.5 SP) | Context block addition |
+| T3: Add guardrail to Architecture Guardrails section | XS (0.5 SP) | Single rule addition |
+| T4: Dogfooding validation | S (1 SP) | Manual execution, P0 gate |
+
+Estimates use T-shirt sizing mapped to SP. Total: 3 SP. Each task identifies specific files and scope boundaries. Estimate calibration note correctly flags markdown-only edits as one tier lower than code changes, consistent with pre-loaded constraints and memory lessons.
+
+Execution sequence is defined: T1 -> T2 -> T3 -> T4 -> UAT. Sequential dependency chain is appropriate given single-file modification scope.
+
+### 4. Definition of Done is defined for the sprint
+
+**PASS**
+
+The sprint plan includes an 8-item Definition of Done checklist covering:
+- Structural presence of Prior Art Analysis section
+- Correct ordering (between Phase 1 and Phase 2)
+- Prompt template updated
+- Guardrail added
+- Backward compatibility confirmed
+- Dogfooding executed (P0 gate)
+- Scope boundary enforced (architect directory only)
+- PR with conventional commit referencing Issue #55
+
+Each DoD item is verifiable and maps to one or more acceptance criteria from the story.
+
+### 5. Risk assessment is present
+
+**PASS**
+
+Four risks identified with Impact/Likelihood/Mitigation columns:
+
+1. Prior art instructions too vague (High/Medium) -- mitigated by explicit conditional logic and MUST language
+2. Conflict with existing Domain Discovery section (Medium/Low) -- mitigated by ordering Prior Art Analysis before Domain Discovery
+3. Backward compatibility break (Medium/Low) -- mitigated by conditional instructions
+4. Dogfooding inconclusive (Medium/Medium) -- mitigated by defining specific observable outputs
+
+Risk assessment is proportionate to the scope. The highest-impact risk (vague instructions) has the most concrete mitigation. The dogfooding inconclusiveness risk is particularly well-identified for markdown-only changes where behavioral verification is inherently indirect.
+
+### 6. Capacity/coverage matrices
+
+**WAIVED** (light mode BUG_FIX)
 
 ---
 
@@ -35,6 +98,12 @@
 
 **STATUS: DONE**
 
-All three blocking criteria pass. The four-sprint redistribution eliminates every ceiling violation from v1.0. Critical path (28 SP) is unchanged but better distributed. Dogfooding is correctly positioned last with generous headroom for integration surprises.
+All five applicable Gate 5 criteria pass. The sprint plan is sound: capacity is declared and commitment (3 SP) sits comfortably below the 80% ceiling (4 SP) with a 1 SP buffer for iteration. The task breakdown is concrete with calibrated estimates. The DoD is verifiable and maps cleanly to the story's acceptance criteria. Risks are identified and mitigated proportionately.
 
-*"The road is one march longer, but every march is within the fellowship's strength. We move."*
+The fellowship marches with 3 points against a 4-point ceiling. One point of buffer stands between us and overcommitment. The road through `delivery-team/skills/architect/SKILL.md` is well-mapped.
+
+*"I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall. Three points. One file. We hold the line."*
+
+---
+
+*Reviewed by Scrum Master (Aragorn) -- delivery-team:product-delivery*
