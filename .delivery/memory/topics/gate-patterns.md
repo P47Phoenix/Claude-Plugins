@@ -1,6 +1,6 @@
 # Gate Failure Patterns
 
-**Entries**: 10 | **Last updated**: 2026-04-01
+**Entries**: 11 | **Last updated**: 2026-04-03
 
 ## Common Failure Patterns
 
@@ -14,3 +14,4 @@
 - **Capacity overcommitment**: Plan stage fails when total commitment exceeds 80% ceiling. Markdown-only edits need calibrated estimates (one tier lower than code changes). SM always checks this. (validated: 1, last: run-2026-03-29-h3k7)
 - **Adversarial target adjustment**: Adversarial reviewer at Refine can productively adjust targets (e.g., Design 80%→70%) based on thin baseline data. Trust challenger confidence ratings when data is sparse. (validated: 1, last: run-2026-03-29-h3k7)
 - **Gate-patterns memory injection yields compound returns**: Run r4x2 achieved 100% first-try DoD (6/6 stages) -- the first perfect run. Injecting gate-patterns lessons before stages with <80% historical pass rate is the strongest correlate. (validated: 1, last: run-2026-03-30-r4x2)
+- **Plan stage is a systemic weak point (57% first-try, 4/7 runs)**: Three failures in seven runs — ceiling violations and missing artifacts. Root cause: planning agents lack pre-loaded constraints. Fix: inject sprint ceiling + mandatory artifact list into planning agent prompts, not just validators. (validated: 1, last: run-2026-04-02-k3r9)

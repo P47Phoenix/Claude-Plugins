@@ -1,12 +1,12 @@
-# Retrospective: run-2026-04-01-m7v3
+# Retrospective: run-2026-04-02-k3r9
 
 **Scrum Master**: Aragorn
-**Date**: 2026-04-01
-**Pipeline**: run-2026-04-01-m7v3
-**Type**: BUG_FIX (Pipeline Integrity Fixes)
-**Issues**: #54, IA-1, IA-4
+**Date**: 2026-04-03
+**Pipeline**: run-2026-04-02-k3r9
+**Type**: GREENFIELD (MTG Commander Deck Builder Plugin)
+**Feature**: `mtg-commander/` plugin
 
-> *"A single session, a single sprint, and every gate held on first approach. The mortar Gimli spoke of -- it holds now. I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall. Today, it did not even wobble."*
+> *"We set out to forge a thing that did not yet exist -- no map, no road, only the vision Gandalf brought us and the will to see it built. Two days, two sessions, thirteen files, and a deck builder that stands on its own legs. The road was not without stumbling. Two defects found their way past our gates, and that is a wound I will not forget. But the fellowship caught them before they reached the user, and that is what matters."*
 
 ---
 
@@ -14,79 +14,105 @@
 
 | Item | Value |
 |------|-------|
-| Pipeline ID | run-2026-04-01-m7v3 |
-| Type | BUG_FIX |
-| Started | 2026-04-01 |
-| Completed | 2026-04-01 |
-| Sessions | 1 (no session loss) |
-| Stages Executed | Idea (full), Plan (light), Dev (full), UAT (full) -- 4 of 7; Refine/Design/Architect skipped per BUG_FIX routing |
-| Total Stories | 1 (US-01) |
-| Total ACs | 13 |
-| Total SP | 2 |
-| Sprints | 1 |
-| Sprint Capacity Used | 33% (2 SP / 6 SP ceiling) |
+| **Pipeline ID** | run-2026-04-02-k3r9 |
+| **Type** | GREENFIELD |
+| **Feature** | MTG Commander Deck Builder Plugin |
+| **Started** | 2026-04-02 |
+| **Completed** | 2026-04-03 |
+| **Sessions** | 2 (0 session losses) |
+| **Stages Executed** | All 7 (Idea, Refine, Design, Architect, Plan, Dev, UAT) -- full depth |
+| **Total Stories** | 8 (US-01 through US-08) |
+| **Total SP** | 42 |
+| **Sprints** | 4 (10+13+10+9 SP) |
+| **DoD First-Try Pass** | 5/7 stages (71%) |
+| **Defects Found** | 2 (DEFECT-001 Critical, DEFECT-002 Major) |
+| **Dogfooding** | 5/5 test cases passed (post-fix) |
 
 ---
 
 ## 2. What Went Well
 
-### 2.1 Perfect DoD First-Try Pass Rate Sustained (4/4 stages)
+### 2.1 Full 7-Stage GREENFIELD Completed in 2 Sessions
 
-This is the second consecutive pipeline with 100% first-try DoD passes. The gate-patterns memory injection hypothesis is now reinforced across two different project types (FEATURE and BUG_FIX) and two different stage counts (6 and 4). The pattern holds regardless of pipeline shape.
+This is the first GREENFIELD pipeline through the delivery-flow system. All seven stages executed at full depth, producing a complete plugin with 13 files, 4 sub-agents, and a working Scryfall API client -- from idea brief to dogfooded acceptance in two calendar days. No stages were skipped, no stages ran light. The pipeline carried its full weight and delivered.
 
-**Evidence**: All 4 stage summaries report "DoD Rounds: 1 (first-try pass)."
+**Evidence**: All 7 stage summaries show Depth: full. Dev notes: 13 files created, 5/5 smoke tests pass.
 
-### 2.2 IA-1 and IA-4 from Previous Retro Were Delivered as Fixes
+### 2.2 Idea Through Architect: Four Consecutive First-Try DoD Passes
 
-The improvement actions from run-2026-03-30-r4x2 -- confidence cap for structural-only validation (IA-1) and FEATURE refactoring sub-type routing (IA-4) -- were implemented as actual pipeline rule changes rather than just process notes. AC-2.1 caps confidence at 4/5 without empirical evidence. AC-3.1 through AC-3.4 add refactoring sub-type detection with 8 signals and adjusted skip conditions. The retro-to-fix loop closed in a single session.
+Stages 1 through 4 all passed DoD on the first attempt. The upstream quality was strong enough that each gate held without rework. This extends the streak from previous runs and demonstrates that gate-patterns memory injection continues to pay dividends even on a new project type.
 
-**Evidence**: Dev notes: AC-2.1 (confidence cap in quality-gates.md), AC-3.1-3.4 (refactoring sub-type in project-types.md).
+**Evidence**: Stage summaries 01-04 all report "DoD Rounds: 1 (first-try pass)."
 
-### 2.3 Single-Session Completion with Zero Session Loss
+### 2.3 Adversarial Reviews Added Real Value Without Blocking
 
-The entire pipeline -- Idea through UAT including retrospective -- completed in one session. This eliminates the calendar spread and momentum loss flagged as a problem in the previous retrospective (section 3.2). For a 2 SP BUG_FIX, this is the expected throughput.
+The Challenger ran in both Refine (3/5 confidence) and Architect (3/5 confidence), and again in Plan (4/5 confidence, YELLOW risk). None were blockers, but the Architect adversarial review flagged session loss risk and attention degradation for synergy tags -- both are genuine risks for a context-heavy multi-agent plugin. The Challenger earned its keep by naming risks the team would carry forward knowingly rather than discovering them in production.
 
-**Evidence**: All stage dates are 2026-04-01. Session count: 1.
+**Evidence**: Architect stage summary: 3 adversarial conditions noted (session loss, attention degradation, correction counter cascade).
+
+### 2.4 Dogfooding Caught Both Defects Before Release
+
+All 5 end-to-end test cases (TC-1 through TC-5) were executed during UAT. TC-2 (Karlov Orzhov Lifegain) surfaced both DEFECT-001 (color identity violation missed by Rules Judge) and DEFECT-002 (Card Kingdom price divergence). The defects were found, documented, root-caused, and fixed -- all before the pipeline closed. Dogfooding proved its worth as a P0 gate.
+
+**Evidence**: DEFECT-001.md, DEFECT-002.md. 5/5 test cases passed after fixes.
+
+### 2.5 Architecture Decisions Were Crisp and Traceable
+
+Four ADRs were produced and each resolved a genuine fork in the road. ADR-001 (single SKILL.md orchestrator) and ADR-002 (Python script via Bash, not MCP) shaped the entire implementation. All 5 open questions from the PRD were resolved at the Architect stage. No architecture ambiguity leaked into Development.
+
+**Evidence**: Architect stage summary: 4 ADRs, all 5 PRD open questions resolved. Dev notes show zero architecture rework.
 
 ---
 
 ## 3. What Didn't Go Well
 
-### 3.1 Tech Writer False Negative at UAT
+### 3.1 Plan Stage Required 2 DoD Rounds (Ceiling Violation + Missing Test Strategy)
 
-The Tech Writer (Bilbo) initially returned a false negative during UAT DoD -- searching the repo source files instead of the installed plugin files. This required a re-validation pass. While the final outcome was correct (GO), the false negative added friction and could have cascaded into an unnecessary NOT_DONE round in a less attentive review.
+Plan was the only stage to fail DoD on the first attempt, and it failed on two separate validator findings: the SM (myself) rejected a sprint ceiling violation, and QA rejected the absence of a test strategy artifact. Both were legitimate catches, but they should not have been necessary -- the Plan stage agents should know the sprint ceiling constraint and that a test strategy is a mandatory artifact.
 
-**Evidence**: UAT stage summary: "Tech Writer false negative corrected on re-validation."
+**Evidence**: Plan stage summary: "DoD Rounds: 2 (SM rejected ceiling violation + QA rejected missing test strategy -> both fixed)."
 
-### 3.2 Enforcement Path Coverage Gap Remains
+### 3.2 Rules Judge Agent Relied on LLM Knowledge Instead of Deterministic API Validation (DEFECT-001)
 
-Dogfooding validated the exemption paths (`auto_branch: false`, bash available), but the enforcement path (`auto_branch: true`, branch creation mandatory) was not exercised in a live pipeline. This is a known gap carried forward as a P1 follow-up. The fixes are structurally verified but not empirically proven for the primary enforcement scenario.
+The Rules Judge checked color identity using LLM card knowledge rather than programmatic Scryfall API calls. This allowed Sejiri Refuge (W/U) into a W/B deck -- a format legality violation that undermines the plugin's core guarantee. The root cause is an agent prompt gap: the Rules Judge guide did not mandate batch API validation for color identity.
 
-**Evidence**: UAT stage summary: "P1 follow-up: enforcement path validation (auto_branch: true scenario)."
+**Evidence**: DEFECT-001.md. Sejiri Refuge `color_identity: ['U', 'W']` included in Karlov (W/B) deck. Rules Judge reported PASS.
+
+### 3.3 Single-Source Pricing Was a Known Scope Limit That Still Surprised the User (DEFECT-002)
+
+The PRD explicitly scoped v1 to Scryfall-only pricing (TCGPlayer market). The user's original spec listed Card Kingdom as an expected source. The 50%+ price divergence between TCGPlayer and Card Kingdom means "budget compliant" is vendor-specific -- a fact the Price Evaluator output did not disclose. This is not a code bug but a UX gap: the PRD team knew the limitation but failed to mandate a user-facing disclaimer.
+
+**Evidence**: DEFECT-002.md. TC-2 reported $97.37 (TCGPlayer) vs $150+ (Card Kingdom) for the same deck.
 
 ---
 
 ## 4. Lessons Learned
 
-| # | Lesson | Evidence |
-|---|--------|----------|
-| L-1 | **Retro improvement actions are highest-value BUG_FIX candidates.** Bundling IA-1 and IA-4 from the previous retro with issue #54 created a coherent, focused pipeline that closed the feedback loop in one session. Retro findings should be triaged as backlog items immediately. | IA-1 became AC-2.1/2.2; IA-4 became AC-3.1-3.4; all delivered same day. |
-| L-2 | **Tech Writer validator needs scoping guidance for plugin repos.** The false negative occurred because the validator searched repo source instead of installed plugin files. For plugin development, the "installed" artifact IS the source file -- this distinction should be clarified in the validator's instructions. | UAT stage summary: false negative on first Tech Writer pass. |
-| L-3 | **BUG_FIX routing (4 stages) is well-calibrated for markdown-only changes.** Skipping Refine/Design/Architect was appropriate -- no requirements ambiguity, no design decisions, no architectural changes. The 33% sprint capacity usage confirms the sizing was right. Light Plan was sufficient. | 4 stages, 2 SP, 1 session, 0 defects, all first-try passes. |
+| # | Lesson | Evidence | New? |
+|---|--------|----------|:----:|
+| L-1 | **Agent validation of format-critical rules must be deterministic (API-driven), not LLM-inferred.** When correctness is binary (legal/illegal), the agent prompt must mandate programmatic validation. LLM card knowledge is unreliable for exhaustive checks across 100 cards. | DEFECT-001: Rules Judge missed color identity violation using LLM knowledge. Fix: mandate `card_lookup.py` batch validation. | Yes |
+| L-2 | **Known scope limitations need explicit user-facing disclaimers in output.** If a capability is scoped to a single source (pricing, data, etc.), the output artifact must state the limitation clearly. The PRD team knowing about it is not sufficient -- the user must know. | DEFECT-002: Price Evaluator showed $97.37 without noting it was TCGPlayer-only. User expected Card Kingdom parity. | Yes |
+| L-3 | **Plan stage agents need pre-loaded constraints (sprint ceiling, mandatory artifacts).** The SM and QA validators should not be catching constraint violations that the planning agents already know about. Inject constraints into the planning agent prompts, not just the validator prompts. | Plan stage: 2 DoD rounds due to ceiling violation and missing test strategy -- both are known constraints. | Yes |
+| L-4 | **GREENFIELD pipelines benefit from all 7 stages at full depth.** No stage felt unnecessary. Idea established scope, Refine tightened ACs from 3 to 5 test cases and added synergy taxonomy, Design mapped all 7 FRs, Architect resolved all open questions, Plan caught sizing issues, Dev delivered clean, UAT found real defects. | All 7 stages ran full depth. 2 defects caught at UAT that originated in Refine (scope) and Architect (agent design). | Yes |
 
 ---
 
 ## 5. Stage Health
 
-| Stage | Depth | DoD Round | First-Try Pass | Cumulative Baseline | Trend |
-|-------|-------|:---------:|:--------------:|:-------------------:|:-----:|
-| Idea | Full | 1 | Yes | 100% (all runs) | Stable |
-| Plan | Light | 1 | Yes | 67% (2/3 runs) | Improving |
-| Dev | Full | 1 | Yes | 100% (2/2 tracked) | Stable |
-| UAT | Full | 1 | Yes | 67% (2/3 runs) | Improving |
+| Stage | Depth | DoD Rounds | First-Try Pass | Cumulative Baseline (8 runs) | Trend |
+|-------|-------|:----------:|:--------------:|:----------------------------:|:-----:|
+| Idea | Full | 1 | Yes | 100% (6/6) | Stable |
+| Refine | Full | 1 | Yes | 100% (3/3) | Stable |
+| Design | Full | 1 | Yes | 100% (2/2) | Stable |
+| Architect | Full | 1 | Yes | 100% (4/4) | Stable |
+| Plan | Full | 2 | **No** | 57% (4/7) | Declining |
+| Dev | Full | N/A | N/A (empirical) | N/A | -- |
+| UAT | Full | 1 | Yes | 75% (3/4) | Stable |
 
-**Overall first-try pass rate this run**: 100% (4/4 stages)
-**Consecutive 100% runs**: 2
+**Overall first-try pass rate this run**: 71% (5/7 stages, excluding Dev N/A)
+**Consecutive 100% runs**: 0 (streak broken by Plan stage)
+
+**Plan stage note**: Plan has the lowest first-try pass rate in the pipeline. Three of seven runs required rework. This is now a pattern, not an incident. L-3 (pre-loaded constraints) targets the root cause.
 
 ---
 
@@ -94,24 +120,41 @@ Dogfooding validated the exemption paths (`auto_branch: false`, bash available),
 
 | Metric | Value |
 |--------|-------|
-| **Velocity** | 2 SP / 1 sprint |
-| **Stories completed** | 1/1 (100%) |
-| **ACs verified** | 13/13 (100%) |
-| **Test cases passed** | 5/5 (100%) |
-| **DoD first-try pass rate** | 100% (4/4 stages) |
-| **Blocking defects** | 0 |
-| **INFO-level observations** | 0 |
-| **Session count** | 1 (0 session losses) |
-| **Calendar days** | 1 |
-| **Files modified** | 4 (SKILL.md, git-integration.md, quality-gates.md, project-types.md) |
-| **Review board decision** | Unanimous GO (QA 5/5, DevOps 4/5, Tech Writer 4/5) |
-| **Retro IAs closed** | 2 (IA-1, IA-4 from run-2026-03-30-r4x2) |
-| **P1 follow-ups** | 1 (enforcement path validation) |
+| **Velocity** | 42 SP / 4 sprints (10.5 SP/sprint avg) |
+| **Stories completed** | 8/8 (100%) |
+| **ACs verified** | 85/85 (100%, per test strategy) |
+| **Dogfooding test cases** | 5/5 passed (post-fix) |
+| **DoD first-try pass rate** | 71% (5/7 stages) |
+| **Defects found** | 2 (1 Critical, 1 Major) |
+| **Defects fixed** | 2/2 (100%) |
+| **Session count** | 2 (0 session losses) |
+| **Calendar days** | 2 |
+| **Files created** | 13 (plugin total) |
+| **ADRs produced** | 4 |
+| **PRD findings addressed** | 13 (3 blocking, 2 must-fix, 4 recommended, 4 warnings) |
+| **Adversarial reviews** | 3 (Refine 3/5, Architect 3/5, Plan 4/5) |
+| **Plugin improvement issues** | 1 (Issue #55: architect skill) |
 
 ---
 
-> *"Two pipelines now, and not a single DoD has fallen on first contact. The lessons of the last road sharpened our blades for this one -- Legolas's confidence cap, the refactoring sub-type, the branch enforcement Gimli forged into the gates. One session, one sprint, one story, thirteen criteria met. The fellowship rests tonight, but we carry forward one task still undone: the enforcement path must be walked, not merely mapped. Until then, friends. The backlog waits."*
+## Improvement Actions
+
+| # | Action | Owner | Priority | Target |
+|---|--------|-------|----------|--------|
+| IA-1 | Add `validate-deck` command to `card_lookup.py` for batch color identity + legality checking. Update Rules Judge guide to mandate API validation over LLM inference. | Developer | P0 | Next pipeline |
+| IA-2 | Add pricing source disclaimer to Price Evaluator output template. Short-term fix for DEFECT-002. | Developer | P1 | Next pipeline |
+| IA-3 | Inject sprint ceiling and mandatory artifact list into Plan stage agent prompts (not just validator prompts). | SM / Pipeline | P1 | Next pipeline |
 
 ---
 
-**Retrospective complete.** Pipeline run-2026-04-01-m7v3 is closed.
+> *"Forty-two story points. Eight stories. Thirteen files forged from nothing. And two defects that slipped past our gates -- one a quiet betrayal of color identity, the other a price we quoted without naming the merchant. Gimli built well, but the Rules Judge trusted its own memory when it should have trusted the Scryfall scrolls. That lesson is carved in stone now.*
+>
+> *The Plan stage stumbled again -- the third time in seven runs. I will not call it a weakness of the fellowship. I will call it what it is: we ask our planners to work without the walls they need. We will give them those walls before the next march.*
+>
+> *But hear this: every defect was found by our own hands, in our own dogfooding, before any user walked the road we built. That is the covenant of this team. We do not ship what we have not walked ourselves.*
+>
+> *Rest now. The next road will come soon enough."*
+
+---
+
+**Retrospective complete.** Pipeline run-2026-04-02-k3r9 is closed.
