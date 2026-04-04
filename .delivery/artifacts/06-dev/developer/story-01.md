@@ -1,72 +1,91 @@
-# Dev Notes: Story-01 — Prior Art Analysis in Architect Skill
+# Development Artifact: US-01 — Orchestrator Theme Surfacing
 
-**Pipeline**: run-2026-04-04-w7m3
+**Story**: US-01 (Orchestrator Theme Surfacing)
+**Issue**: #59
 **Developer**: Gimli
 **Date**: 2026-04-04
-**Issue**: #55
 
-> "Three cuts, three clean joints. That module was built by dwarf-craft. It will hold."
+> "I said I'd carve this stone, and carved it is. Every chisel stroke accounted for. And my code!"
+
+---
+
+## File Modified
+
+`delivery-team/skills/delivery-flow/SKILL.md`
 
 ---
 
 ## Changes Made
 
-**File modified**: `/home/meconnelly/.claude/plugins/marketplaces/mec-claude-agent-skills/delivery-team/skills/architect/SKILL.md`
+### 1. Theme-Gated Reporting Protocol (new section, after Two-Channel Communication)
 
-### T1 — Prior Art Analysis Section (lines 34-80)
+Inserted a new `### Theme-Gated Reporting Protocol` section between "Two-Channel Communication" and "Plan-Mode Delegation" in Phase 4. This section defines:
 
-Added a new `## Prior Art Analysis` section between Phase 1 (Role Detection) and Phase 2 (Sub-Agent Invocation). The section includes:
+- **Theme detection guard**: All themed behavior gated on `aliases.theme != business`. Business or unset = zero behavior change.
+- **Three output slots** where theme surfaces:
+  1. Stage Announcements (Step 1) — character name + thematic voice
+  2. Human Checkpoint Summaries (Step 9) — quoted agent artifact line (max 280 chars)
+  3. Stage Transitions (Step 10) — themed STATE ANCHOR with routing signals preserved
+- **Quote format**: blockquote with character attribution (`> "text" — Character Name`)
+- **Partial theme fallback**: roles missing from theme's `roles` map fall back to neutral format
 
-1. **Condition gate**: Executes ONLY when user-provided specs exist. When absent, notes "No prior specifications provided" and proceeds to Phase 2 (backward-compatible).
-2. **Step 1: Read and Summarize** — Mandatory full read of all user-provided specs with written summary.
-3. **Step 2: Classify Each Element** — Structured table with two classifications: "Decision Already Made" and "Open Question". Includes concrete examples showing both categories.
-4. **Step 3: Build On the Existing Design** — Three mandatory actions: validate feasibility, fill gaps, map to implementation.
-5. **Step 4: Deviation Protocol** — Alternatives to settled decisions ONLY permitted with specific, documented technical blockers. Burden of proof on the Architect. Concrete example provided.
-6. **Output requirement** — Summary and classification table MUST appear in the architecture artifact under a "Prior Art Analysis" section.
+### 2. Neutrality Preservation (sub-section within Theme-Gated Reporting Protocol)
 
-Uses MUST language throughout for mandatory steps.
+Explicit rules that themed content NEVER appears in:
+- `.delivery/state.md`
+- `stage-summary.md` files
+- Agent Invocation Template prompts (ALIAS block handles personality)
+- DoD validator prompts
+- Signal blocks (STATUS/ARTIFACT/SUMMARY format unchanged)
 
-### T2 — Sub-Agent Prompt Template Update (line 116)
+### 3. Step 1: Announce (conditional block added)
 
-Added to the `## Context` section of the Sub-Agent Prompt Template:
-```
-- Prior Art Analysis results (if applicable): spec summary, decisions-already-made, open questions
-```
+Added conditional logic:
+- **Non-business theme + role in `roles` map**: Reference character name, use thematic vocabulary/tone per `personality_strength`
+- **Business/unset/unmapped role**: Use existing neutral format (`## Stage [N]: [NAME]\nPurpose: ...`)
 
-This ensures sub-agents receive the prior art context when spawned.
+### 4. Step 9: Check for Human Checkpoint (conditional block added)
 
-### T3 — Software Architecture Guardrail (line 497)
+Added conditional logic:
+- **Non-business theme**: Read primary agent artifact, select one themed quote (max 280 chars), include in checkpoint summary. Read scoped to quote selection only — no content forwarding to downstream agents. Omit quote if no themed language found.
+- **Business/unset**: Standard neutral checkpoint summary, no artifact quotes.
 
-Added to Software Architecture Guardrails:
-```
-- **Respect user-provided specifications** — when a user provides an existing design or specification, the Architect must build on it. Proposing alternatives to settled design decisions is only permitted when a specific, documented technical blocker makes the original decision infeasible. The burden of proof is on the Architect to justify any deviation.
-```
+### 5. Step 10: Advance (conditional block added)
 
----
-
-## AC Traceability
-
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-01 | MET | Prior Art Analysis section exists at lines 34-80, positioned before Phase 2 |
-| AC-02 | MET | Step 1 requires reading and summarizing ALL user-provided specs; output section is mandatory |
-| AC-03 | MET | Step 2 requires structured classification table with "Decision Already Made" / "Open Question" |
-| AC-04 | MET | Step 3 requires building ON existing design; Step 2 prohibits alternatives for "Decision Already Made" |
-| AC-05 | MET | Step 4 Deviation Protocol requires specific, documented technical blockers with concrete example |
-| AC-06 | MET | Condition gate: "If no user-provided specs exist, note and skip to Phase 2" |
-| AC-07 | PENDING | Requires dogfooding validation (T4) |
+Added conditional logic:
+- **Non-business theme**: STATE ANCHOR carries thematic voice. Stage number, stage name, and continuation directive MUST be present.
+- **Business/unset**: Neutral STATE ANCHOR format (unchanged from pre-feature behavior).
 
 ---
 
-## Backward Compatibility
+## Acceptance Criteria Coverage
 
-All new instructions are conditional on user-provided spec presence. The condition gate at the top of the section explicitly handles the absence case with a skip-to-Phase-2 path. Existing pipelines without user specs will see no behavioral change.
+| AC | Status | Notes |
+|----|--------|-------|
+| AC-01 | MET | Step 1 references character name from `roles` map |
+| AC-02 | MET | Step 1 carries thematic vocabulary/tone per `personality_strength` |
+| AC-03 | MET | Step 1 neutral format when business/unset |
+| AC-04 | MET | Step 1 falls back to neutral when role not in `roles` map |
+| AC-05 | MET | Step 9 includes quoted line (max 280 chars) from artifact |
+| AC-06 | MET | Step 9 quote read scoped to user-facing output only, two-channel preserved |
+| AC-07 | MET | Step 9 no quotes when business/unset |
+| AC-08 | MET | Step 9 omits quote when no themed language found |
+| AC-09 | MET | Step 10 STATE ANCHOR carries thematic voice |
+| AC-10 | MET | Step 10 routing signals always present in themed message |
+| AC-11 | MET | Step 10 neutral format when business/unset |
+| AC-12 | MET | Neutrality Preservation: state.md excluded |
+| AC-13 | MET | Neutrality Preservation: stage-summary.md excluded |
+| AC-14 | MET | Neutrality Preservation: Agent Invocation Templates excluded |
+| AC-15 | MET | Neutrality Preservation: DoD validator prompts excluded |
+| AC-16 | MET | Neutrality Preservation: signal block format unchanged |
+| AC-17 | MET | Neutrality Preservation: signal extraction logic unchanged |
 
 ---
 
-## Notes
+## Source vs Installed Diff
 
-- No reference files were modified — Prior Art Analysis is an orchestration concern that lives in SKILL.md
-- The classification table example uses realistic scenarios to reduce ambiguity for the AI agent
-- The Deviation Protocol uses concrete PostgreSQL example to set the bar for what constitutes a valid technical blocker
-- Seventeen commits I have made today. How many has the QA engineer found fault with? ... Do not answer that.
+Source file (`delivery-team/skills/delivery-flow/SKILL.md`) contains the new changes. Installed file (`~/.claude/plugins/marketplaces/.../delivery-team/skills/delivery-flow/SKILL.md`) reflects the pre-feature baseline. Diff confirms exactly the expected additions (Theme-Gated Reporting Protocol section + conditional blocks in Steps 1, 9, 10) with no unintended changes. The installed copy updates on next plugin sync after merge.
+
+---
+
+> "Every acceptance criterion met, every neutrality rule carved in mountain stone. The axe does not waver."

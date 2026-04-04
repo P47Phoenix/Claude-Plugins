@@ -294,6 +294,33 @@ The orchestrator uses two communication channels:
 
 **The rule**: If information is longer than 200 characters, it belongs in a file. The orchestrator passes the file path. The downstream agent reads the file. The orchestrator NEVER reads an artifact and pastes its content into another agent's prompt.
 
+### Theme-Gated Reporting Protocol
+
+When `aliases.theme` is set to a non-business theme (e.g., `lotr`, `star-wars`), the orchestrator adapts its **user-facing chat output** to reflect the active theme's personality. When `aliases.theme` is `business` or unset, all orchestrator output uses the current neutral format with zero behavior change.
+
+Theme surfacing applies to three output slots:
+
+1. **Stage Announcements** (Step 1): Reference the agent's character name from the theme's `roles` map and carry thematic voice in phrasing. If the dispatched role has no entry in the theme's `roles` map (partial theme), fall back to the neutral announcement format for that stage only.
+
+2. **Human Checkpoint Summaries** (Step 9): Include one brief quoted line (max 280 characters) from the primary agent's artifact that demonstrates themed voice. The orchestrator reads the artifact ONLY to select a representative quote -- this is user-facing output, NOT inter-agent content forwarding. The two-channel rule is preserved. If the artifact contains no clearly themed language (agent did not stay in character), omit the quote and present the standard summary format.
+
+3. **Stage Transitions** (Step 10): The STATE ANCHOR message carries thematic voice (e.g., "The Fellowship advances to the Architect stage. Gandalf's counsel is complete. Gimli prepares to build."). The essential routing information (stage number, stage name, continuation directive) MUST always be present within the themed message -- personality augments, it does not replace, the routing signal.
+
+**Quote format** (when quoting agent artifact lines at checkpoints):
+```
+> "quoted text from agent artifact" — Character Name
+```
+
+#### Neutrality Preservation
+
+Themed content NEVER appears in any of these internal routing surfaces, regardless of theme:
+
+- **`.delivery/state.md`** — contains only structured routing data (stage numbers, artifact paths, timestamps)
+- **`stage-summary.md` files** — contain agent signals (STATUS, ARTIFACT, SUMMARY) with no themed embellishment
+- **Agent Invocation Template prompts** — the ALIAS block handles agent personality injection; the orchestrator does not add themed language to the template itself, and INPUT ARTIFACTS contains only file paths
+- **DoD validator prompts** — validators evaluate quality, not character consistency; no themed language in gate criteria
+- **Signal blocks** — format remains exactly `STATUS: {DONE | NOT_DONE | CODE_COMPLETE}\nARTIFACT: {path}\nSUMMARY: {text}` with no themed additions; signal extraction logic is unchanged
+
 ### Plan-Mode Delegation
 
 When exiting plan mode with an approved plan that involves delivery-team work, invoke `delivery-team:delivery-flow`. Do NOT implement the plan directly.
@@ -302,8 +329,15 @@ For each active stage (not skipped), execute this protocol in order:
 
 ### Step 1: Announce
 
-Output a stage header with the stage number, name, and a brief statement of purpose:
+Output a stage header with the stage number, name, and a brief statement of purpose.
 
+**If `aliases.theme` is non-business AND the primary agent's role has an entry in the theme's `roles` map:**
+Reference the agent's character name and carry the theme's voice in phrasing. The announcement should use thematic vocabulary and tone consistent with the theme's `personality_strength`.
+
+Example (lotr theme): `## Stage 2: Refine — Gandalf shall examine the product requirements and distill them into counsel the Fellowship can act upon.`
+
+**Otherwise (business theme, unset, or role not in theme's `roles` map):**
+Use the neutral format:
 ```
 ## Stage [N]: [NAME]
 Purpose: [one-line description of what this stage produces]
@@ -455,6 +489,14 @@ This ensures state survives session loss. If the session dies after this point, 
 If this stage has a scheduled human checkpoint, present a summary of the artifact and
 wait for the user to approve, request changes, or abort.
 
+**If `aliases.theme` is non-business:** Read the primary agent's artifact to select one representative themed quote (max 280 characters) that demonstrates the agent's character voice. Include it in the checkpoint summary using blockquote format:
+
+> "quoted text from agent artifact" — Character Name
+
+This read is scoped to quote selection for user-facing output only. Do NOT forward any artifact content to downstream agent prompts. If the artifact contains no clearly themed language, omit the quote and present the standard summary.
+
+**If `aliases.theme` is `business` or unset:** Present the standard neutral checkpoint summary with no artifact quotes.
+
 After checkpoint approval, also update `.delivery/state.md`:
 - Add the checkpoint name to `human_checkpoints_passed`
 - Update `last_updated` timestamp
@@ -465,7 +507,15 @@ After checkpoint approval, also update `.delivery/state.md`:
 
 Move to the next active stage in the routing matrix. Pass the artifact downstream.
 
-**STATE ANCHOR**: After advancing, emit: "Entering Stage [N+1]: [NAME]. Previous stage [N] complete. CONTINUING pipeline protocol from Step 1." Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
+**If `aliases.theme` is non-business:** The STATE ANCHOR carries thematic voice while preserving all routing signals. The stage number, stage name, and continuation directive MUST be present in the message.
+
+Example (lotr theme): "The Fellowship advances to Stage 4: Architect. Gandalf's counsel is complete. Gimli prepares to forge the design. CONTINUING pipeline protocol from Step 1."
+
+**If `aliases.theme` is `business` or unset:** Use the neutral format:
+
+**STATE ANCHOR**: "Entering Stage [N+1]: [NAME]. Previous stage [N] complete. CONTINUING pipeline protocol from Step 1."
+
+Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 
 ---
 
