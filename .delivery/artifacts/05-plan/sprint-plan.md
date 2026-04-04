@@ -1,9 +1,15 @@
-# Sprint Plan: Fix Pipeline Orchestrator Stalls (Issue #49)
+# Sprint Plan: Fix Alias Theme Not Injected into Agent Prompts (Issue #58)
 
 **Project Type**: BUG_FIX (light mode)
-**Date**: 2026-03-27
-**GitHub Issue**: #49
+**Date**: 2026-04-04
+**GitHub Issue**: #58
 **Inputs**: Idea Brief v1.0
+
+---
+
+## Sprint Goal
+
+Ensure every agent dispatched by the orchestrator -- primary, supporting, and DoD validator -- receives the `--- ALIAS ---` block when an alias theme is active, by adding a standardized Agent Invocation Template to `pipeline-stages.md`.
 
 ---
 
@@ -13,129 +19,124 @@
 |--------|-------|
 | Velocity baseline | 8 pts/sprint |
 | 80% ceiling | 6 pts |
-| Committed this sprint | 3 pts |
-| Buffer | 3 pts (reserved for investigation variance) |
+| Committed this sprint | 2 pts |
+| Buffer | 4 pts (conservative; markdown-only change) |
+
+> **Calibration note**: This is a markdown-only edit to `pipeline-stages.md`. Per team convention, markdown-only estimates are one tier lower than code changes. A comparable code fix would be 3 pts; this is 2 pts.
 
 ---
 
-## Story: Fix Orchestrator Stalls After Agent Completion
+## Story: Add Alias Injection Template to Pipeline Stages
 
-**ID**: BUG-49
-**Points**: 3
-**Priority**: P0
+**ID**: BUG-58
+**Points**: 2
+**Priority**: P1
 
 ### User Story
 
-**As a** delivery-flow user,
-**I want** the pipeline orchestrator to immediately continue execution after sub-agents return results,
-**So that** the pipeline runs autonomously through all stages without requiring manual nudge messages.
+**As a** delivery-team user who has configured an alias theme (e.g., `aliases.theme: lotr`),
+**I want** every agent the orchestrator dispatches to receive the `--- ALIAS ---` personality block in its prompt,
+**So that** the configured personality is consistently applied across the entire pipeline run, not just a handful of agents.
 
 ### Acceptance Criteria
 
-#### AC-1: Immediate continuation after parallel DoD validators complete
+#### AC-1: Primary agent dispatch includes alias block
 
-**Given** multiple parallel DoD validators have been dispatched
-**When** all validators return their DONE/NOT_DONE signals
-**Then** the orchestrator immediately aggregates results and either advances (all DONE) or triggers self-correction (any NOT_DONE), with no pause requiring user intervention
+**Given** a user has configured `aliases.theme: lotr` and `personality_strength: full` in `.delivery/config.yml`
+**When** the orchestrator dispatches a primary agent for any pipeline stage
+**Then** the agent prompt includes an `--- ALIAS ---` block matching the configured theme and personality strength
 
-#### AC-2: Immediate stage advancement after stage completion
+#### AC-2: Supporting agent dispatch includes alias block
 
-**Given** the current stage has completed all its steps and produced its artifacts
-**When** the stage is marked complete
-**Then** the orchestrator immediately emits a state anchor and begins the next stage, with no stall between stages
+**Given** an active alias theme is configured
+**When** the orchestrator dispatches a supporting agent (e.g., secondary research, analysis, or review agents)
+**Then** the agent prompt includes the `--- ALIAS ---` block
 
-#### AC-3: Immediate continuation after checkpoint approval
+#### AC-3: DoD validator dispatch includes alias block
 
-**Given** the orchestrator has presented a checkpoint for user review
-**When** the user approves the checkpoint
-**Then** the orchestrator immediately continues to the next step or stage, with no stall after approval
+**Given** an active alias theme is configured
+**When** the orchestrator dispatches DoD validator agents
+**Then** the validator prompt includes the `--- ALIAS ---` block
 
-#### AC-4: Full pipeline completion without stalls
+#### AC-4: Template references personality_strength protocol
 
-**Given** a pipeline run of 5 or more stages (e.g., FEATURE or GREENFIELD project type)
+**Given** the Agent Invocation Template has been added to `pipeline-stages.md`
+**When** the template's alias block is reviewed
+**Then** it references the `personality_strength` protocol from SKILL.md Phase 4 Step 4, supporting light, moderate, and full levels
+
+#### AC-5: Dogfooding validation
+
+**Given** a BUG_FIX pipeline run with `aliases.theme: lotr` and `personality_strength: full`
 **When** the pipeline executes from start to finish
-**Then** all stage transitions occur without stalling, and the pipeline completes without requiring any manual nudge messages
-
-#### AC-5: Self-recovery from stalled state
-
-**Given** the orchestrator has received all agent results but has not taken the next action
-**When** the orchestrator detects it has not progressed (no tool call, no output, no stage transition)
-**Then** it re-reads the current pipeline state and immediately continues execution
+**Then** all dispatched agents display LOTR personality consistent with the theme
 
 ---
 
 ### Test Cases
 
-#### TC-1: Parallel DoD validator continuation (covers AC-1)
+#### TC-1: Primary agent alias injection (covers AC-1)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Trigger a stage that dispatches 3+ parallel DoD validators | Validators are dispatched in parallel |
-| 2 | All validators return DONE | Orchestrator emits aggregation result within its next output block |
-| 3 | Observe orchestrator behavior | Orchestrator advances to next stage without user sending a message |
-| 4 | Repeat with one validator returning NOT_DONE | Orchestrator triggers self-correction loop immediately |
+| 1 | Configure `aliases.theme: lotr`, `personality_strength: full` | Config accepted |
+| 2 | Start a pipeline run; observe the first primary agent dispatch | Agent prompt contains `--- ALIAS ---` block |
+| 3 | Grep `pipeline-stages.md` for `--- ALIAS ---` in primary agent template | Match found in primary agent invocation template |
+| 4 | Verify alias block content | Block includes role name, style, catchphrase, and examples per LOTR theme |
 
-#### TC-2: Stage transition without stall (covers AC-2)
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Run a BUG_FIX pipeline (stages: Idea, Refine, Design, Plan, Development, UAT) | Pipeline starts at Stage 1 |
-| 2 | Complete Stage 2 (Refine) | Orchestrator emits state anchor showing "Entering Stage 3: Design" |
-| 3 | Observe transition timing | No gap where orchestrator stops producing output between stages |
-| 4 | Verify state anchor content | State anchor includes: current stage, current step, pending actions |
-
-#### TC-3: Post-checkpoint continuation (covers AC-3)
+#### TC-2: Supporting agent alias injection (covers AC-2)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Pipeline reaches a checkpoint (e.g., end of Refine) | Orchestrator presents checkpoint summary to user |
-| 2 | User approves checkpoint | Orchestrator immediately continues to next stage |
-| 3 | Observe orchestrator output | Next stage begins in the same response or immediately following response |
+| 1 | With active theme, trigger a stage that dispatches supporting agents | Supporting agents are dispatched |
+| 2 | Inspect the supporting agent prompt | Prompt contains `--- ALIAS ---` block |
+| 3 | Grep `pipeline-stages.md` for `--- ALIAS ---` in supporting agent template | Match found in supporting agent invocation template |
 
-#### TC-4: Full pipeline run without stalls (covers AC-4)
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Start a FEATURE pipeline (7 stages) | Pipeline begins at Idea stage |
-| 2 | Allow pipeline to run through all stages | Each stage transition occurs without manual intervention |
-| 3 | Count any stalls requiring user nudge | Stall count = 0 |
-| 4 | Verify all 7 stages completed | Pipeline reaches UAT and completes |
-
-#### TC-5: Self-recovery mechanism (covers AC-5)
+#### TC-3: DoD validator alias injection (covers AC-3)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Observe a pipeline run under context pressure (large artifacts, many agent returns) | Pipeline is mid-execution |
-| 2 | If orchestrator pauses after receiving agent results | Self-recovery instruction triggers |
-| 3 | Observe recovery behavior | Orchestrator re-reads pipeline state and continues without user message |
-| 4 | Verify recovery output | Orchestrator emits a continuation signal indicating self-recovery activated |
+| 1 | With active theme, reach a DoD validation point | DoD validators are dispatched |
+| 2 | Inspect the DoD validator prompt | Prompt contains `--- ALIAS ---` block |
+| 3 | Grep `pipeline-stages.md` for `--- ALIAS ---` in validator template | Match found in validator invocation template |
 
-#### TC-6: Dogfooding validation (covers AC-1 through AC-5)
+#### TC-4: Personality strength protocol reference (covers AC-4)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Use delivery-flow to run this bug fix (issue #49) through the pipeline | Pipeline executes on its own codebase |
-| 2 | Monitor for any stalls throughout the run | Zero stalls requiring manual nudge |
-| 3 | Verify all stage transitions are smooth | Each transition includes a state anchor |
-| 4 | Confirm fix does not regress other orchestrator behaviors | Checkpoint presentation, DoD validation, and self-correction all work correctly |
+| 1 | Open `pipeline-stages.md` Agent Invocation Template | Template is present |
+| 2 | Review alias block instructions | Block references SKILL.md Phase 4 Step 4 personality_strength protocol |
+| 3 | Verify light/moderate/full levels are documented | All three levels described or referenced |
+
+#### TC-5: Dogfooding -- full pipeline with LOTR theme (covers AC-5)
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Run this BUG_FIX pipeline with `aliases.theme: lotr`, `personality_strength: full` | Pipeline starts with LOTR theme loaded in Phase 0 |
+| 2 | Monitor each dispatched agent (primary, supporting, validator) | Every agent speaks in LOTR personality |
+| 3 | Check for agents reverting to default professional tone | Zero agents use default tone when theme is active |
+| 4 | Confirm personality includes role name, style, catchphrase, and examples | Full personality_strength contract met |
 
 ---
 
 ### Implementation Scope
 
-All changes target `delivery-team/delivery-flow/SKILL.md`:
+All changes target `delivery-team/delivery-flow/references/pipeline-stages.md`:
 
-1. **Continuation directives** -- Add explicit "IMMEDIATELY DO X NEXT" instructions after every agent return point in Phase 4 execution protocol
-2. **State anchoring blocks** -- Add compact state re-emission pattern at stage transitions (current stage, current step, pending actions)
-3. **Self-recovery instructions** -- Add fallback instruction: "If you have received all agent results but have not taken the next action, re-read pipeline state and continue immediately"
-4. **Token impact measurement** -- Measure SKILL.md token count before and after; directive additions must not exceed ~500 tokens net increase
+1. **Agent Invocation Template** -- Add a standardized template section that all agent dispatches (primary, supporting, validator) must follow, including the `--- ALIAS ---` placeholder block
+2. **Alias block structure** -- Mirror the pattern already established in `team-patterns.md` collaboration templates
+3. **Personality strength reference** -- Include a reference to SKILL.md Phase 4 Step 4 so the orchestrator applies the correct level (light/moderate/full)
+
+### Test Approach
+
+- **Structural verification** (TC-1 through TC-4): Grep-based confirmation that `--- ALIAS ---` blocks exist in all three dispatch template types within `pipeline-stages.md`
+- **Behavioral verification** (TC-5): Dogfooding via live pipeline execution with an active LOTR theme at full personality strength
 
 ### Definition of Done
 
 - [ ] All 5 acceptance criteria verified via test cases
-- [ ] Dogfooding gate passed (TC-6)
-- [ ] SKILL.md token count delta measured and documented
-- [ ] No regression in existing pipeline behaviors
+- [ ] Dogfooding gate passed (TC-5)
+- [ ] Template aligns with existing `--- ALIAS ---` pattern in `team-patterns.md`
+- [ ] No regression in pipeline behavior for runs without an alias theme
 
 ---
 
@@ -143,8 +144,8 @@ All changes target `delivery-team/delivery-flow/SKILL.md`:
 
 | Item | Detail |
 |------|--------|
-| Sprint goal | Fix pipeline orchestrator stalls after agent completion (issue #49) |
-| Stories committed | 1 (BUG-49: 3 pts) |
-| Capacity used | 3 / 6 pts (50%) |
-| Risk | Prompt bloat worsening context pressure; mitigated by 500-token ceiling on additions |
-| Validation gate | Dogfooding (P0) |
+| Sprint goal | Fix alias injection across all agent dispatch types in pipeline-stages.md (issue #58) |
+| Stories committed | 1 (BUG-58: 2 pts) |
+| Capacity used | 2 / 6 pts (33%) |
+| Risk | Low -- markdown-only change to a single file; pattern already proven in team-patterns.md |
+| Validation gate | Dogfooding with LOTR theme at full personality strength (P0) |

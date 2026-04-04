@@ -18,6 +18,155 @@ Each sub-flow step below is annotated with:
 
 ---
 
+## Agent Invocation Templates
+
+All agent dispatches -- primary, supporting, and DoD validator -- use the templates below. These templates ensure every agent receives the full prompt context including personality injection when an alias theme is active.
+
+> **ALIAS block protocol**: The `--- ALIAS ---` section is populated using the personality_strength protocol from SKILL.md Phase 4 Step 4. The orchestrator looks up the agent's role ID in the active theme's `roles` map and injects the personality block at the configured strength level:
+> - **light**: `You are {character}. {personality}`
+> - **moderate**: `You are {character}. {personality} Style: {style}. Example: "{examples[0]}"`
+> - **full**: `You are {character}. {personality} Style: {style}. Catchphrase: "{catchphrase}". Examples: "{examples[0]}" / "{examples[1]}". Stay in character throughout your response.`
+>
+> The `--- ALIAS ---` block is **omitted entirely** when:
+> - The theme is `business` (no personality injection)
+> - The agent's role has no entry in the active theme (partial theme -- falls back to default professional tone)
+
+### Primary Agent Dispatch Template
+
+Used when invoking the main worker for a stage (e.g., PO for Refine, Architect for Stage 4, Developer for Stage 6).
+
+```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {primary_skill}
+TASK_TYPE: {task_type}
+ROLE: {role}
+
+Begin your response with "SKILL_LOADED: {primary_skill}" to confirm skill activation.
+
+--- TASK ---
+{task_description}
+
+--- INPUT ARTIFACTS (read these files) ---
+{for each upstream artifact:}
+- {artifact_file_path}: {description}
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+{stage_lessons_if_loaded}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your artifact to: {output_file_path}
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | NOT_DONE | CODE_COMPLETE}
+ARTIFACT: {output_file_path}
+SUMMARY: {one sentence, max 200 characters}
+{if NOT_DONE: FINDINGS: {bullet list of specific issues}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
+```
+
+### Supporting Agent Dispatch Template
+
+Used when invoking supplementary workers (e.g., Data Analyst in Refine, DevOps in Plan, Tech Writer in Development). Supporting agents receive the same prompt structure as primary agents but are dispatched alongside or after the primary agent.
+
+```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {supporting_skill}
+TASK_TYPE: {task_type}
+ROLE: {role}
+
+Begin your response with "SKILL_LOADED: {supporting_skill}" to confirm skill activation.
+
+--- TASK ---
+{task_description}
+
+--- INPUT ARTIFACTS (read these files) ---
+{for each upstream artifact:}
+- {artifact_file_path}: {description}
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+{stage_lessons_if_loaded}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your artifact to: {output_file_path}
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | NOT_DONE}
+ARTIFACT: {output_file_path}
+SUMMARY: {one sentence, max 200 characters}
+{if NOT_DONE: FINDINGS: {bullet list of specific issues}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
+```
+
+### DoD Validator Dispatch Template
+
+Used when invoking DoD validators at the end of each stage. All validators for a stage are dispatched in parallel in a single message. Each validator writes to its own namespaced path under `{stage}/dod/`.
+
+```
+AGENT INVOCATION TEMPLATE
+=========================
+
+SKILL: {validator_skill}
+TASK_TYPE: dod-validation
+ROLE: {validator_role}
+
+Begin your response with "SKILL_LOADED: {validator_skill}" to confirm skill activation.
+
+--- TASK ---
+Validate the stage artifacts against the Definition of Done criteria for your
+domain. For each criterion, state PASS or FAIL. If FAIL: cite the specific
+artifact section, explain WHY it fails, and provide an actionable fix.
+ALL validators must say DONE for the stage to advance.
+
+{role_specific_dod_criteria}
+
+--- INPUT ARTIFACTS (read these files) ---
+{for each stage artifact:}
+- {artifact_file_path}: {description}
+
+--- MEMORY LESSONS (apply these) ---
+{hot_lessons_from_index}
+{stage_lessons_if_loaded}
+
+--- ALIAS ---
+{alias_personality_block OR "No alias active."}
+
+--- OUTPUT ---
+Write your review to: {stage}/dod/{role}-review.md
+
+When complete, respond with ONLY this signal block:
+STATUS: {DONE | NOT_DONE}
+ARTIFACT: {stage}/dod/{role}-review.md
+SUMMARY: {one sentence, max 200 characters}
+{if NOT_DONE: FINDINGS: {bullet list of specific failures}}
+
+--- ISOLATION RULES ---
+- Read artifacts from the file paths above. Do not reference any prior conversation.
+- Do not assume knowledge of other agents' work unless an artifact path is listed above.
+- Your SKILL.md and references are your only guidance. Load them yourself.
+```
+
+---
+
 ## Stage 1: Idea
 
 ### Purpose

@@ -1,24 +1,20 @@
 ## Stage 1: Idea -- Summary
 
-**Pipeline**: run-2026-04-02-k3r9
-**Date**: 2026-04-02
+**Pipeline**: run-2026-04-04-j8f2
+**Date**: 2026-04-04
 **Depth**: full
 **DoD Rounds**: 1 (first-try pass)
 
-### Agents Invoked
-| Agent | Role | Status | Artifact |
-|-------|------|--------|----------|
-| PO (Gandalf) | Idea brief | DONE | 01-idea/po/idea-brief.md |
+### Agents
+| Agent | Role | Status |
+|-------|------|--------|
+| Gandalf | PO (primary + validator) | DONE |
+| Celebrimbor | Architect (validator) | DONE |
 
-### DoD Validators
-| Validator | Status | Review |
-|-----------|--------|--------|
-| PO (Gandalf) | DONE | 01-idea/dod/po-review.md |
-| Architect (Celebrimbor) | DONE | 01-idea/dod/architect-review.md |
+### Artifact
+- `.delivery/artifacts/01-idea/idea-brief.md`
 
 ### Notes
-- GREENFIELD: MTG Commander Deck Builder plugin
-- 4 agents + Card Finder utility, Scryfall API, synergy-first philosophy
-- v1: 8 deliverables. v2 deferred: multi-source pricing, Recommander, EDHREC, improve-existing mode
-- PO note: Agent Architecture in Section 3 is proposed, not decided (Refine to finalize)
-- Architect note: Define max iteration count for correction cycles
+- BUG_FIX: #58 — Alias theme not injected into agent prompts
+- Root cause: `pipeline-stages.md` has no Agent Invocation Template with `--- ALIAS ---` block
+- Fix scope: add templates to pipeline-stages.md for primary, supporting, and validator dispatch

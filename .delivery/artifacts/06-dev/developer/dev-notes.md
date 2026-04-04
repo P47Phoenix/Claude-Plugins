@@ -1,61 +1,75 @@
-# Dev Notes: MTG Commander Deck Builder Plugin (GREENFIELD)
+# Dev Notes: BUG-58 -- Add Agent Invocation Templates with ALIAS Blocks
 
-**Developer**: Gimli
-**Date**: 2026-04-02
+**Story**: BUG-58
+**Date**: 2026-04-04
+**Developer**: Gimli (Developer)
 **Status**: CODE_COMPLETE
-**Stories**: US-01 through US-07 (7 implemented, US-08 dogfooding pending)
-**Sprint Plan**: v2.0 (4 sprints, 42 SP total)
 
-> "Seventeen files forged. One plugin to build them all."
+> "That template was built by dwarf-craft. It will hold."
 
 ---
 
-## Implementation Summary
+## What Was Done
 
-| Sprint | Stories | SP | Status |
-|--------|---------|:--:|--------|
-| S1 | US-01 (scaffold), US-02 (Scryfall client) | 10 | DONE |
-| S2 | US-03 (references), US-04 (orchestrator) | 13 | DONE |
-| S3 | US-05 (Rules Judge), US-06 (Optimizer) | 10 | DONE |
-| S4 | US-07 (Price Evaluator) | 4 | DONE |
-| S4 | US-08 (dogfooding) | 5 | PENDING (empirical) |
+Added three Agent Invocation Templates to `pipeline-stages.md` in a new "Agent Invocation Templates" section inserted between the Dispatch Annotations and Stage 1 definitions.
 
-## Files Created (13 total)
+### Templates Added
 
-| File | Lines | Purpose |
-|------|------:|---------|
-| `SKILL.md` | ~400 | Orchestrator + 4 agent templates |
-| `LICENSE.txt` | 201 | Apache 2.0 |
-| `scripts/card_lookup.py` | 481 | Scryfall API client (6 commands, stdlib only) |
-| `references/commander-rules.md` | ~80 | Format rules + color identity |
-| `references/banned-list.md` | ~60 | 44 banned cards (live-fetched) |
-| `references/archetype-patterns.md` | ~300 | 13 strategy archetypes |
-| `references/structural-minimums.md` | ~150 | Category targets by power tier |
-| `references/synergy-taxonomy.md` | ~120 | 6 interaction categories |
-| `references/intake-questions.md` | ~100 | 7 intake questions with modes |
-| `references/api-reference.md` | ~100 | Scryfall API + CLI reference |
-| `references/rules-judge-guide.md` | ~200 | 7 legality checks |
-| `references/optimizer-guide.md` | ~250 | 14-step synergy + structural eval |
-| `references/price-evaluator-guide.md` | ~280 | Budget enforcement + replacements |
+1. **Primary Agent Dispatch Template** -- for main stage workers (PO, Architect, Developer, etc.)
+2. **Supporting Agent Dispatch Template** -- for supplementary workers (Data Analyst, DevOps, Tech Writer, etc.)
+3. **DoD Validator Dispatch Template** -- for end-of-stage DoD validators dispatched in parallel
 
-## Smoke Test Results
+All three templates include the `--- ALIAS ---` block with the placeholder `{alias_personality_block OR "No alias active."}`, matching the existing pattern in `team-patterns.md`.
 
-| Test | Result |
-|------|--------|
-| `card_lookup.py validate --name "Sol Ring"` | PASS — returns full card data |
-| `card_lookup.py price --name "Sol Ring"` | PASS — returns $1.43 (cheapest printing) |
-| `card_lookup.py validate --name "K'rrik, Son of Yawgmoth"` | PASS — commander legal, color_identity: [B] |
-| `card_lookup.py batch --names "Sol Ring" "Dark Ritual"` | PASS — returns data array |
-| `card_lookup.py search "o:draw c:b t:creature"` | PASS — returns search results |
+### Personality Strength Protocol
 
-## Empirical Validations Pending (US-08)
+The section header includes a blockquote documenting the personality_strength protocol from SKILL.md Phase 4 Step 4, with all three levels:
+- **light**: character + personality only
+- **moderate**: adds style + one example
+- **full**: adds catchphrase + two examples + "stay in character" instruction
 
-| Test Case | What Needs Validating |
-|-----------|----------------------|
-| TC-1 | K'rrik Mono-B Graveyard, $150 budget |
-| TC-2 | Karlov Orzhov Lifegain, $100 + $10/card cap |
-| TC-3 | Bruvac Mono-U Mill, $75 + no infinite combos |
-| TC-4 | Korvold Jund Multi-color, $200 |
-| TC-5 | Atraxa 4-color Budget Stress, $50 |
+### Omission Rules
 
-These require the full skill to be installed and invoked end-to-end.
+Documented that the ALIAS block is omitted entirely when:
+- Theme is `business` (no personality injection by design)
+- Agent's role has no entry in the active theme (partial theme coverage)
+
+### Consistency with team-patterns.md
+
+The templates mirror the structural pattern used in `team-patterns.md` collaboration templates (Evaluator, Challenger, Reviewer, Debate PRO/CON/JUDGE, Consensus R1/R2/R3). All templates share:
+- `AGENT INVOCATION TEMPLATE` header
+- SKILL / TASK_TYPE / ROLE fields
+- SKILL_LOADED confirmation line
+- `--- TASK ---`, `--- INPUT ARTIFACTS ---`, `--- MEMORY LESSONS ---`, `--- ALIAS ---`, `--- OUTPUT ---`, `--- ISOLATION RULES ---` sections
+- Signal block at the end
+
+### Differences Between Dispatch Types
+
+| Field | Primary | Supporting | DoD Validator |
+|-------|---------|------------|---------------|
+| STATUS values | DONE, NOT_DONE, CODE_COMPLETE | DONE, NOT_DONE | DONE, NOT_DONE |
+| TASK_TYPE | stage-specific | stage-specific | `dod-validation` |
+| Output path | stage/role/artifact.md | stage/role/artifact.md | stage/dod/role-review.md |
+| Task description | stage-specific work | stage-specific work | DoD criteria evaluation |
+
+## File Modified
+
+- `delivery-team/skills/delivery-flow/references/pipeline-stages.md` -- added ~120 lines in new "Agent Invocation Templates" section
+
+## Derived Artifacts
+
+- No derived artifacts require regeneration. `pipeline-stages.md` is a source reference document consumed directly by the orchestrator at runtime.
+
+## Acceptance Criteria Verification
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| AC-1: Primary agent template has ALIAS block | PASS | Template contains `--- ALIAS ---` section |
+| AC-2: Supporting agent template has ALIAS block | PASS | Template contains `--- ALIAS ---` section |
+| AC-3: DoD validator template has ALIAS block | PASS | Template contains `--- ALIAS ---` section |
+| AC-4: Templates reference personality_strength protocol | PASS | Blockquote documents light/moderate/full levels with reference to SKILL.md Phase 4 Step 4 |
+| AC-5: Dogfooding | DEFERRED | To be validated during UAT with live LOTR theme pipeline run |
+
+## Known Scope Limitation
+
+AC-5 (dogfooding validation) cannot be verified by structural inspection alone. It requires a live pipeline run with an active alias theme to confirm agents actually receive and display the personality. This is deferred to UAT (TC-5).

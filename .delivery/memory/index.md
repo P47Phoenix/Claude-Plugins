@@ -1,26 +1,26 @@
 # Memory Index
 
-**Last updated**: 2026-04-03
-**Total runs**: 8
+**Last updated**: 2026-04-04
+**Total runs**: 9
 
 ## Stage Health (from last 5 runs)
 
 | Stage | First-Try Pass Rate | Trend | Notes |
 |-------|-------------------|-------|-------|
-| Idea | 100% (5/5) | Stable | Perfect since run 4 |
-| Refine | 100% (2/2) | Stable | Only ran in 2 of last 5 (BUG_FIX+SPIKE skipped) |
+| Idea | 100% (5/5) | Stable | Perfect streak continues |
+| Refine | 100% (2/2) | Stable | Only ran in 2 of last 5 |
 | Design | 100% (2/2) | Stable | Ran in 2 of last 5 |
 | Architect | 100% (3/3) | Stable | Ran in 3 of last 5 |
-| Plan | 50% (2/4) | **Declining** | 3 failures in 7 total runs — systemic weak point |
+| Plan | 60% (3/5) | **Improving** | Was 50%, gained 1 first-try pass this run |
 | Development | 100% (5/5) | Stable | Perfect across all run types |
-| UAT | 100% (4/4) | Stable | Includes GREENFIELD with 2 in-flight defect fixes |
+| UAT | 100% (5/5) | Stable | 5 consecutive first-try passes |
 
 ## Hot Lessons (top 5 by impact)
 
 1. ALL work routes through delivery-flow pipeline — never implement directly → topics/human-preferences.md
 2. Gate-patterns memory injection yields compound returns — but Plan stage needs pre-loaded constraints → topics/gate-patterns.md
 3. Dogfooding is a P0 UAT gate, not a follow-up — execute before DoD submission → stages/uat.md
-4. Agent validation of format-critical rules must be deterministic (API-driven), not LLM-inferred → stages/uat.md
+4. Installed↔source file sync is mandatory — Dev must commit to source, validators must check installed → stages/uat.md
 5. Plan stage agents need pre-loaded constraints (sprint ceiling, mandatory artifacts) → stages/plan.md
 
 ## Topic Files (read when relevant)
