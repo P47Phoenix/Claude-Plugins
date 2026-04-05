@@ -1,106 +1,119 @@
-# User Stories: Orchestrator Theme Surfacing
+# User Stories: Comprehensive Documentation Site
 
 **Version**: 1.0
 **Date**: 2026-04-04
 **Author**: Product Owner (Gandalf)
-**PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.0
-**Source Issue**: #59
-**Scope**: `delivery-team/skills/delivery-flow/SKILL.md` (single file)
+**Idea Brief**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Source Issue**: #48
+**Pipeline Type**: DOCS_ONLY
 
 ---
 
-> *"A wizard's voice is not a decoration — it is a signal. When the theme speaks through every agent yet the orchestrator remains silent, the Fellowship hears a gap where continuity should be."*
+> *"I will not say: do not weep; for not all docs are an evil. But this one shall be a beacon — a single flame of knowledge where before there were only scattered embers."*
 
 ---
 
-## US-01: Orchestrator Theme Surfacing
+## US-01: Comprehensive Documentation Site for delivery-team Plugin
 
-**As a** delivery pipeline user with a non-business alias theme configured,
-**I want** the orchestrator to surface the active theme's personality in stage announcements, checkpoint summaries, and stage transitions — while preserving neutral output for the `business` theme and keeping internal routing personality-free,
-**So that** the themed experience feels woven through the entire pipeline interaction, not just buried in artifact files I must open separately.
+**As a** delivery-team plugin user (new user, power user, or contributor),
+**I want** a comprehensive, searchable documentation site hosted on GitHub Pages using MkDocs Material that covers all 11 skills, the 7-stage pipeline, configuration reference, hooks, alias themes, and contributor guide,
+**So that** I can discover, learn, and use the full capability of the delivery-team plugin without reading AI-facing SKILL.md files or navigating scattered reference directories.
 
-**Issue**: #59
-**FRs Covered**: FR-01, FR-02, FR-03, FR-04, FR-05
-**Tier**: Markdown-only (SKILL.md edits)
-**Story Points**: 5
+**Issue**: #48
+**Tier**: DOCS_ONLY (markdown + YAML config)
+**Story Points**: 13
 
 ---
 
 ### Acceptance Criteria
 
-#### Group A: Theme-Gated Reporting Protocol
+#### Group A: MkDocs Setup & Deployment
 
-| AC | Criterion | FR |
-|----|-----------|-----|
-| AC-01 | **Given** `aliases.theme` is set to a non-business theme (e.g., `lotr`), **When** the orchestrator announces a stage that dispatches a primary agent, **Then** the stage header references the agent's character name from the theme's `roles` map (e.g., "Gandalf shall examine the product requirements" instead of "Product Owner will refine requirements"). | FR-01.1 |
-| AC-02 | **Given** `aliases.theme` is set to a non-business theme, **When** the orchestrator announces a stage, **Then** the announcement carries the theme's voice in its phrasing (thematic vocabulary, tone consistent with the theme's `personality_strength`). | FR-01.2 |
-| AC-03 | **Given** `aliases.theme` is `business` or unset, **When** the orchestrator announces a stage, **Then** the announcement uses the current neutral format: `## Stage [N]: [NAME]\nPurpose: [one-line description]` with no character names or thematic language. | FR-01.3 |
-| AC-04 | **Given** a non-business theme where the primary agent's role has no entry in the theme's `roles` map (partial theme), **When** the orchestrator announces that stage, **Then** it falls back to the neutral announcement format for that stage only. | FR-01.4 |
-| AC-05 | **Given** a non-business theme is active and a stage reaches a human checkpoint, **When** the orchestrator presents the checkpoint summary, **Then** it includes at least one brief quoted line (max 280 characters) from the primary agent's artifact that demonstrates the agent's themed voice. | FR-02.1 |
-| AC-06 | **Given** a non-business theme is active and a stage reaches a human checkpoint, **When** the orchestrator reads the primary agent's artifact to extract a quote, **Then** it reads ONLY to select a representative quote — it does NOT paste artifact content into downstream agent prompts. The two-channel rule is preserved. | FR-02.2 |
-| AC-07 | **Given** `aliases.theme` is `business` or unset, **When** the orchestrator presents a checkpoint summary, **Then** no artifact quotes are included — the summary remains a neutral status report. | FR-02.3 |
-| AC-08 | **Given** a non-business theme is active but the primary agent's artifact contains no clearly themed language, **When** the orchestrator prepares the checkpoint summary, **Then** it omits the quote rather than quoting neutral prose, and presents the standard summary format. | FR-02.4 |
-| AC-09 | **Given** a non-business theme is active, **When** the orchestrator advances from one stage to the next (Step 10), **Then** the STATE ANCHOR message carries thematic voice (e.g., "The Fellowship advances to the Architect stage. Gandalf's counsel is complete. Gimli prepares to build."). | FR-03.1 |
-| AC-10 | **Given** a non-business theme is active, **When** the orchestrator emits a transition message, **Then** the essential routing information (stage number, stage name, continuation directive) is still present within the themed message — personality augments, it does not replace, the routing signal. | FR-03.2 |
-| AC-11 | **Given** `aliases.theme` is `business` or unset, **When** the orchestrator advances between stages, **Then** the STATE ANCHOR message uses the current neutral format. | FR-03.3 |
+| AC | Criterion |
+|----|-----------|
+| AC-01 | **Given** the repo root, **When** `mkdocs build` is run, **Then** the site builds without errors from a valid `mkdocs.yml` using the Material theme. |
+| AC-02 | **Given** a push to the `main` branch that modifies files under `docs/` or `mkdocs.yml`, **Then** a GitHub Actions workflow automatically builds and deploys the site to GitHub Pages. |
+| AC-03 | **Given** the deployed site, **When** a user visits the GitHub Pages URL, **Then** the site loads with Material theme, dark mode toggle, full-text search, and responsive navigation. |
 
-#### Group B: Orchestrator Neutrality Preservation
+#### Group B: Getting Started
 
-| AC | Criterion | FR |
-|----|-----------|-----|
-| AC-12 | **Given** any theme (business or non-business), **When** the orchestrator writes to `.delivery/state.md`, **Then** the state file contains no themed language — only structured routing data (stage numbers, artifact paths, timestamps). | FR-04.1 |
-| AC-13 | **Given** any theme, **When** the orchestrator writes `stage-summary.md`, **Then** the summary contains agent signals (STATUS, ARTIFACT, SUMMARY) with no themed embellishment. | FR-04.2 |
-| AC-14 | **Given** any theme, **When** the orchestrator constructs an Agent Invocation Template for a downstream agent, **Then** the template's INPUT ARTIFACTS section contains only file paths — no quoted content from upstream artifacts, themed or otherwise. | FR-04.3 |
-| AC-15 | **Given** any theme, **When** the orchestrator dispatches DoD validators (Step 7), **Then** validator prompts contain no themed language. Validators evaluate quality, not character consistency. | FR-04.4 |
-| AC-16 | **Given** any theme, **When** a sub-agent responds to an invocation, **Then** the signal block format remains: `STATUS: {DONE | NOT_DONE | CODE_COMPLETE}\nARTIFACT: {path}\nSUMMARY: {text}` with no themed additions. | FR-05.1 |
-| AC-17 | **Given** a non-business theme is active, **When** the orchestrator verifies an agent signal (Step 4 post-response), **Then** it checks for `SKILL_LOADED` and extracts STATUS/ARTIFACT/SUMMARY using the same parsing logic as today — themed content in the agent's response body does not interfere with signal extraction. | FR-05.2 |
+| AC | Criterion |
+|----|-----------|
+| AC-04 | **Given** a new user on the docs home page, **When** they navigate to Getting Started, **Then** they find: installation instructions, quick-start wizard walkthrough, and a step-by-step first pipeline run guide. |
+| AC-05 | **Given** the Getting Started content, **When** compared to `getting-started.md` and `setup-wizard.md` source files, **Then** the content is derived from those sources — restructured for user-facing clarity, not invented. |
+
+#### Group C: User Guide (Pipeline)
+
+| AC | Criterion |
+|----|-----------|
+| AC-06 | **Given** the User Guide section, **When** a user navigates to Pipeline Stages, **Then** they find documentation for all 7 stages (Idea, Refine, Design, Architect, Plan, Development, UAT) with purpose, inputs, outputs, and human checkpoints for each. |
+| AC-07 | **Given** the User Guide section, **When** a user navigates to Project Types, **Then** they find documentation for all 6 project types (GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY) with stage routing rules. |
+| AC-08 | **Given** the User Guide section, **When** a user navigates to Collaboration Patterns, **Then** they find documentation for all 6 patterns (evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus). |
+| AC-09 | **Given** the User Guide section, **When** a user navigates to Quality Gates, **Then** they find documentation for the Team DoD validation process and quality gate criteria. |
+
+#### Group D: Skills Reference
+
+| AC | Criterion |
+|----|-----------|
+| AC-10 | **Given** the Skills Reference section, **When** a user browses it, **Then** they find a dedicated page for each of the 11 skills: delivery-flow, product-delivery, developer, godot, architect, quality, operations, ui, user-feedback, alias-creator, presentation. |
+| AC-11 | **Given** any skill reference page, **When** a user reads it, **Then** it includes: skill name, roles/capabilities, supported task types, invocation syntax, and at least one usage example. |
+| AC-12 | **Given** skill content, **When** compared to the corresponding SKILL.md, **Then** the content is derived from the source — distilled for user-facing clarity, not copy-pasted verbatim or invented. |
+
+#### Group E: Configuration Reference
+
+| AC | Criterion |
+|----|-----------|
+| AC-13 | **Given** the Configuration Reference page, **When** a user searches for a config key, **Then** all 70+ keys from `config-schema.md` are documented with: key name, type, default value, valid values, and description. |
+| AC-14 | **Given** the Configuration Reference, **When** a user wants to see a complete example, **Then** a full annotated `config.yml` example is provided. |
+
+#### Group F: Hooks Reference
+
+| AC | Criterion |
+|----|-----------|
+| AC-15 | **Given** the Hooks Reference page, **When** a user reads it, **Then** all 7 hooks are documented with: hook name, event type (SessionStart, Stop, PreToolUse, PostToolUse, SubagentStop), purpose, behavior, and any customization options. |
+
+#### Group G: Alias Themes
+
+| AC | Criterion |
+|----|-----------|
+| AC-16 | **Given** the Alias Themes page, **When** a user browses it, **Then** all 13 built-in themes are listed with: theme name, character-to-role mappings, and personality description. |
+| AC-17 | **Given** the Alias Themes page, **When** a user wants to create a custom theme, **Then** instructions for custom theme creation are provided (derived from `alias-creator/SKILL.md` and `theme-format.md`). |
+
+#### Group H: Architecture & Contributing
+
+| AC | Criterion |
+|----|-----------|
+| AC-18 | **Given** the Architecture section, **When** a user reads it, **Then** they find: pipeline architecture overview, memory system, artifact contracts, defect tracking, and Feature Knowledge System documentation. |
+| AC-19 | **Given** the Contributing section, **When** a contributor reads it, **Then** they find: plugin structure conventions, skill/hook creation guidance, PR process, and the requirement to use plugin-dev skills. |
+
+#### Group I: Navigation & Discoverability
+
+| AC | Criterion |
+|----|-----------|
+| AC-20 | **Given** the site navigation, **When** a user starts from the home page, **Then** any feature/page is reachable within 3 clicks. |
+| AC-21 | **Given** the site, **When** a user types a search query (e.g., "config key", "architect skill", "lotr theme"), **Then** MkDocs Material search returns relevant results. |
 
 ---
 
 ### Test Cases
 
-#### Group A: Theme-Gated Reporting Protocol
-
 | TC | Covers AC | Test | Expected Result |
 |----|-----------|------|-----------------|
-| TC-01 | AC-01, AC-02 | Configure `aliases.theme: lotr` in `.delivery/config.yml`. Run pipeline through Stage 2 (Refine). Inspect the stage announcement output in the chat transcript. | Stage header references "Gandalf" (or the mapped character name for the PO role) and uses thematic vocabulary (e.g., counsel, fellowship, journey). |
-| TC-02 | AC-03 | Configure `aliases.theme: business` (or leave unset). Run pipeline through Stage 2. Inspect stage announcement. | Stage header reads `## Stage 2: Refine\nPurpose: [description]` with no character names or themed language. Output identical to pre-feature behavior. |
-| TC-03 | AC-04 | Create a custom theme YAML that maps only 3 of 7 roles (omitting the role dispatched at Stage 4). Run pipeline through Stage 4. | Stages with mapped roles show themed announcements. Stage 4 (unmapped role) falls back to neutral format. No errors or crashes. |
-| TC-04 | AC-05, AC-06 | Configure `aliases.theme: lotr`. Run pipeline to a human checkpoint (e.g., post-Refine). Inspect checkpoint summary in chat output. | Summary includes a quoted line (max 280 chars) from the PO agent's artifact that demonstrates themed voice. No artifact content appears in any subsequent agent invocation template. |
-| TC-05 | AC-07 | Configure `aliases.theme: business`. Run pipeline to a human checkpoint. Inspect checkpoint summary. | Summary is a neutral status report with no artifact quotes. Identical to pre-feature behavior. |
-| TC-06 | AC-08 | Configure a non-business theme. Manually ensure the primary agent's artifact contains only neutral prose (no character names, no themed language). Run to checkpoint. | Checkpoint summary omits the quote section and presents the standard summary format. No neutral prose is quoted. |
-| TC-07 | AC-09, AC-10 | Configure `aliases.theme: lotr`. Run pipeline from Stage 2 to Stage 3. Inspect the transition/STATE ANCHOR message. | Transition carries thematic voice AND includes stage number, stage name, and continuation directive. Both personality and routing data are present. |
-| TC-08 | AC-11 | Configure `aliases.theme: business`. Run pipeline from Stage 2 to Stage 3. Inspect transition message. | STATE ANCHOR uses current neutral format. Identical to pre-feature behavior. |
-
-#### Group B: Orchestrator Neutrality Preservation
-
-| TC | Covers AC | Test | Expected Result |
-|----|-----------|------|-----------------|
-| TC-09 | AC-12 | Configure `aliases.theme: lotr`. Run pipeline through 2+ stages. Inspect `.delivery/state.md`. | State file contains only structured routing data (stage numbers, artifact paths, timestamps). Zero themed language. |
-| TC-10 | AC-13 | Configure `aliases.theme: lotr`. Complete a stage. Inspect `stage-summary.md`. | Summary contains agent signals (STATUS, ARTIFACT, SUMMARY) with no themed embellishment. |
-| TC-11 | AC-14 | Configure `aliases.theme: lotr`. Run pipeline. Inspect the Agent Invocation Template dispatched to the Stage 3 agent. | INPUT ARTIFACTS section contains only file paths. No quoted content from Stage 2's artifact. |
-| TC-12 | AC-15 | Configure `aliases.theme: lotr`. Reach a DoD validation step. Inspect validator prompts. | Validator prompts contain quality criteria only. No themed language, character names, or personality injection. |
-| TC-13 | AC-16 | Configure `aliases.theme: lotr`. Complete a stage. Inspect the sub-agent's signal block. | Signal block is exactly `STATUS: {value}\nARTIFACT: {path}\nSUMMARY: {text}`. No themed additions to the signal format. |
-| TC-14 | AC-17 | Configure `aliases.theme: lotr`. Complete a stage where the agent writes heavily themed content in the response body (around the signal block). Inspect orchestrator's signal extraction. | Orchestrator correctly extracts STATUS, ARTIFACT, and SUMMARY values. Themed content in the response body does not interfere with parsing. |
-
----
-
-### Task Breakdown
-
-| Task | Description | Tier | Est |
-|------|-------------|------|-----|
-| T-01 | Add "Theme-Gated Reporting Protocol" sub-section to Phase 4 of SKILL.md with theme detection guard (`aliases.theme != business`) | Markdown | 0.5 SP |
-| T-02 | Add theme-aware stage announcement logic to Step 1 (conditional block: if non-business theme, reference character name from `roles` map, apply thematic voice; else use neutral format) | Markdown | 0.5 SP |
-| T-03 | Add partial-theme fallback rule: if role has no entry in theme's `roles` map, fall back to neutral announcement for that stage | Markdown | 0.25 SP |
-| T-04 | Add theme-aware checkpoint summary logic to Step 9 (read primary agent artifact, select representative themed quote max 280 chars, include in checkpoint output; omit if no themed language found) | Markdown | 0.75 SP |
-| T-05 | Add two-channel enforcement clause: quote extraction is for user-facing output only, never forwarded to downstream agent prompts | Markdown | 0.25 SP |
-| T-06 | Add theme-aware transition logic to Step 10 (STATE ANCHOR carries thematic voice while preserving routing signals: stage number, name, continuation directive) | Markdown | 0.5 SP |
-| T-07 | Add explicit neutrality preservation rules for internal routing (state.md, stage-summary.md, Agent Invocation Templates, DoD validator prompts) | Markdown | 0.5 SP |
-| T-08 | Add signal block format invariance rule (signal format unchanged regardless of theme; extraction logic unchanged) | Markdown | 0.25 SP |
-| T-09 | Dogfood: run pipeline end-to-end with `lotr` theme, verify all 3 themed output slots (announcements, checkpoints, transitions) carry theme voice | Validation | 0.75 SP |
-| T-10 | Dogfood: run pipeline with `business` theme, verify zero behavior change vs. pre-feature baseline | Validation | 0.5 SP |
-| T-11 | Dogfood: run pipeline with partial custom theme (missing roles), verify graceful fallback to neutral | Validation | 0.25 SP |
-| **Total** | | | **5 SP** |
+| TC-01 | AC-01 | Run `mkdocs build` from repo root | Build succeeds with zero errors, site output in `site/` directory |
+| TC-02 | AC-02 | Push a change to `docs/index.md` on `main` | GitHub Actions workflow triggers, site deploys to GitHub Pages |
+| TC-03 | AC-03 | Visit deployed site URL | Material theme renders, dark mode toggle visible, search bar functional, navigation tabs present |
+| TC-04 | AC-04, AC-05 | Navigate to Getting Started > First Pipeline Run | Step-by-step guide present, content traceable to `getting-started.md` and `setup-wizard.md` |
+| TC-05 | AC-06 | Navigate to User Guide > Pipeline Stages | All 7 stages documented with purpose, inputs, outputs, checkpoints |
+| TC-06 | AC-07 | Navigate to User Guide > Project Types | All 6 project types documented with stage routing |
+| TC-07 | AC-08 | Navigate to User Guide > Collaboration Patterns | All 6 patterns documented with description and when to use |
+| TC-08 | AC-10, AC-11 | Navigate to Skills Reference, click each of the 11 skills | Each skill page has: name, roles, task types, invocation syntax, usage example |
+| TC-09 | AC-13, AC-14 | Navigate to Configuration Reference, search for `aliases.theme` | Key found with type, default, valid values, description. Full example config present. |
+| TC-10 | AC-15 | Navigate to Hooks Reference | All 7 hooks documented with event type, purpose, behavior |
+| TC-11 | AC-16, AC-17 | Navigate to Alias Themes | 13 themes listed with role mappings. Custom theme creation instructions present. |
+| TC-12 | AC-18 | Navigate to Architecture | Pipeline architecture, memory system, artifact contracts documented |
+| TC-13 | AC-19 | Navigate to Contributing | Plugin structure, skill/hook guidance, PR process documented |
+| TC-14 | AC-20 | From home page, attempt to reach the `godot` skill page | Reachable in <=3 clicks (Home > Skills > Godot) |
+| TC-15 | AC-21 | Use search bar to search "retrospective" | Search returns relevant results from appropriate pages |
 
 ---
 
@@ -108,24 +121,29 @@
 
 | Dependency | Type | Status |
 |------------|------|--------|
-| `aliases.theme` config key | Existing | In config schema v2.3 |
-| Phase 0 theme loading (roles map, personality_strength) | Existing | Already loads at pipeline init |
-| Two-channel communication protocol | Existing | Preserved, not modified |
-| Theme YAML files in `references/aliases/` | Existing | 13 built-in themes available |
+| MkDocs + Material theme | External (pip install) | Available, well-maintained |
+| GitHub Pages | External (GitHub) | Available, repo-level setting |
+| GitHub Actions | External (GitHub) | Available, workflow to be created |
+| Existing SKILL.md files (x11) | Internal | Complete, content source |
+| Existing reference files (80+) | Internal | Complete, content source |
+| Alias theme YAMLs (x13) | Internal | Complete, content source |
 
 ---
 
-### Risks
+### Estimation Rationale
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Themed STATE ANCHOR confuses downstream routing | Low | High | AC-10 requires routing signals always present. TC-07 validates both personality and routing data coexist. |
-| Quote extraction leaks content to downstream agents | Low | High | AC-06/AC-14 explicitly prohibit it. TC-11 validates agent templates contain only paths. |
-| Custom themes with unusual voice break readability | Low | Medium | AC-04 provides fallback to neutral. TC-03 validates partial theme graceful degradation. |
+**13 story points** — This is a significant content project:
+- ~30-36 documentation pages to write
+- Each page requires reading the source SKILL.md/reference files and distilling user-facing content
+- MkDocs configuration (mkdocs.yml with full nav tree, theme settings, plugins)
+- GitHub Actions workflow for deployment
+- All content must be derived from source, not invented — requires careful reading of ~28,000 lines
+
+This is not a code project. No tests to write, no APIs to implement. But the volume of content extraction and restructuring is substantial.
 
 ---
 
-> *"One story. Five requirements. Seventeen acceptance criteria. Fourteen test cases. The path is clear, the burden is light, and the single file we must touch is well-known to us. Let us walk it wisely."*
+> *"Thirteen points for a project that gathers scattered wisdom into a single tome. Not a small task — but a necessary one. And when it is done, no traveler shall wander our lands without a map."*
 
 ---
 

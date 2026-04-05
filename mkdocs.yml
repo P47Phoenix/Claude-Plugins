@@ -1,0 +1,82 @@
+site_name: "Claude Plugins - Delivery Team"
+site_description: "Comprehensive documentation for the delivery-team plugin — a full delivery pipeline with 11 skills, 7 stages, and 13 alias themes."
+site_url: https://p47phoenix.github.io/Claude-Plugins/
+
+repo_name: P47Phoenix/Claude-Plugins
+repo_url: https://github.com/P47Phoenix/Claude-Plugins
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Commands: getting-started/commands.md
+  - User Guide:
+    - Pipeline Stages: user-guide/pipeline.md
+    - Project Types: user-guide/project-types.md
+    - Collaboration Patterns: user-guide/collaboration.md
+    - Configuration: user-guide/config.md
+  - Skills:
+    - Overview: skills/index.md
+    - Delivery Flow: skills/delivery-flow.md
+    - Product Delivery: skills/product-delivery.md
+    - Developer: skills/developer.md
+    - Architect: skills/architect.md
+    - Quality: skills/quality.md
+    - Operations: skills/operations.md
+    - UI/UX: skills/ui.md
+    - User Feedback: skills/user-feedback.md
+    - Godot: skills/godot.md
+    - Alias Creator: skills/alias-creator.md
+    - Presentation: skills/presentation.md
+  - Reference:
+    - Hooks: reference/hooks.md
+    - Alias Themes: reference/aliases.md
+    - Memory System: reference/memory.md
+  - Architecture:
+    - Overview: architecture/overview.md
+  - Contributing:
+    - Guide: contributing/index.md

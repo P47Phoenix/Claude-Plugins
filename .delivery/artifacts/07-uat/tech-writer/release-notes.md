@@ -1,79 +1,143 @@
-# Release Notes — Orchestrator Theme Surfacing
+# Release Notes — Comprehensive Documentation Site
 
-**Version**: 2.16.0 (Feature Release)
+**Version**: 2.17.0 (Documentation Release)
 **Date**: 2026-04-04
-**Project Type**: FEATURE
-**Source Issue**: [#59](https://github.com/P47Phoenix/Claude-Plugins/issues/59)
-**Skill**: `delivery-team/skills/delivery-flow/`
+**Project Type**: DOCS_ONLY
+**Source Issue**: [#48](https://github.com/P47Phoenix/Claude-Plugins/issues/48)
+**Skill**: `delivery-team:operations` (Technical Writer)
 
 ---
 
-*"I am no mere messenger. I carry the voice of the Fellowship itself."*
+*"There's a great deal of wisdom in this Fellowship -- scattered across eighty files, mind you, and none of it easy to find without a very long walk and a bit of luck. This release, if I may say so, builds the road."*
 
-When you configure a non-business alias theme -- `lotr`, `star-wars`, `breaking-bad`, or any of the 13 built-in themes -- your agents already write artifacts in character. Gandalf counsels on priorities, Gimli builds with dwarven directness, Aragorn rallies the standup. But until now, the orchestrator wrapped all of that personality in clinical status updates. The theme felt bolted on rather than woven through.
-
-This release fixes that. The orchestrator now surfaces the active theme in its user-facing chat output: stage announcements, checkpoint summaries, and transition messages all carry the configured theme's voice. The `business` theme (and unset themes) produce identical output to before -- not a word changed.
+Twenty-eight thousand lines of knowledge lived in SKILL.md files, reference documents, and YAML configs -- all written for the AI, none of it navigable by a human traveler. New users hit a wall after the setup wizard. Power users hunted through internals for config keys. Contributors reverse-engineered plugin structure from existing code. This release gives them all a proper front door.
 
 ---
 
 ## What's New
 
-### Theme-Aware Stage Announcements
+### MkDocs Material Documentation Site (25 Pages)
 
-When a non-business theme is active, stage headers reference the agent's character name and carry the theme's voice. Instead of "Product Owner will refine requirements," you see "Gandalf shall examine the product requirements." If a role has no entry in the theme's `roles` map, that stage falls back to the neutral format -- no crashes, no garbled output.
+A complete, searchable documentation site covering the full delivery-team plugin, built with MkDocs Material and deployed automatically to GitHub Pages at [p47phoenix.github.io/Claude-Plugins](https://p47phoenix.github.io/Claude-Plugins/).
 
-### Agent Voice at Human Checkpoints
+Every page is distilled from existing source material -- SKILL.md files, reference documents, config schemas, and theme YAMLs. Nothing invented; everything restructured for human readers.
 
-At each of the 4 human checkpoints, the orchestrator now reads the primary agent's artifact and quotes a brief, memorable line (max 280 characters) that demonstrates the agent's themed voice. This gives you a taste of the personality without opening the full artifact. If the agent did not stay in character or no clearly themed line is found, the quote is omitted and the standard summary appears.
+### Getting Started (3 pages)
 
-### Themed Stage Transitions
+- **Installation** -- From `claude plugin add` to first confirmed load
+- **Quick Start** -- Install-to-first-completed-pipeline-run walkthrough, fulfilling Goal #2 from the idea brief
+- **Commands** -- Slash commands reference for triggering skills and pipeline operations
 
-Transition messages between stages now carry thematic flavor. The essential routing information -- stage number, stage name, continuation directive -- is always present. Personality augments the signal; it never replaces it.
+### User Guide (4 pages)
+
+- **Pipeline Stages** -- All 7 stages (Idea through UAT) with entry conditions, sub-flows, DoD validators, and output artifacts
+- **Project Types** -- The 6 auto-detected types (GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY) with stage routing tables
+- **Collaboration Patterns** -- All 6 patterns: evaluator-optimizer, adversarial review, review board, decision ownership, debate, and consensus
+- **Configuration Reference** -- All 70+ config keys from config-schema v2.3, searchable and categorized
+
+### Skills Reference (12 pages)
+
+- **Skills Overview** -- Catalog of all 11 skills with role mappings and trigger phrases
+- **Individual skill pages** (11) -- Each skill documented with roles, capabilities, trigger phrases, and key behaviors. Covers delivery-flow, product-delivery, developer, architect, quality, operations, UI/UX, user-feedback, godot, alias-creator, and presentation
+
+### Reference (3 pages)
+
+- **Hooks** -- All 7 hooks across 5 event types with trigger conditions and behavior
+- **Alias Themes** -- Gallery of all 13 built-in themes with character-to-role mappings
+- **Memory System** -- Tiered chunked retrieval, memory structure, and self-learning protocol
+
+### Architecture (1 page)
+
+- **Overview** -- Two-channel architecture, agent isolation model, orchestrator routing, and artifact flow
+
+### Contributing (1 page)
+
+- **Guide** -- Plugin structure conventions, skill/hook/theme creation process, PR workflow
+
+### Zero-Touch Deployment
+
+A GitHub Actions workflow (`.github/workflows/docs.yml`) auto-deploys the site on every push to `main` that touches `docs/**` or `mkdocs.yml`. No manual publish step. Fulfills Goal #5.
+
+---
+
+## Site Features
+
+| Feature | Details |
+|---------|---------|
+| **Full-text search** | Built-in MkDocs search with suggestions and highlighting |
+| **Dark mode** | Toggle between light (default) and slate dark scheme |
+| **Navigation tabs** | Top-level sections accessible via tabs with expandable side nav |
+| **Code highlighting** | Syntax highlighting with copy-to-clipboard on all code blocks |
+| **Admonitions** | Info, warning, and tip callouts throughout |
+| **Permalink anchors** | Every heading gets a permalink for direct linking |
+| **3-click discovery** | Any feature reachable within 3 clicks from the home page (Goal #4) |
+| **Responsive** | Full mobile and tablet support via Material theme |
 
 ---
 
 ## What Did Not Change
 
-- **Business theme behavior**: When `aliases.theme` is `business` or unset, all orchestrator output is identical to previous behavior. Zero regressions.
-- **Two-channel architecture**: Artifact content still never flows through the orchestrator to downstream agents. Quote extraction at checkpoints is scoped to user-facing output only.
-- **Internal routing**: State files, stage summaries, and agent invocation templates remain personality-free. DoD validators remain neutral.
-- **Signal block format**: `STATUS` / `ARTIFACT` / `SUMMARY` parsing is unchanged.
-- **Agent invocation templates**: The ALIAS block injection (Phase 4 Step 4) is unchanged.
-- **Config schema**: No new config keys. `aliases.theme` and `aliases.custom_path` already exist in config schema v2.3.
+- **Plugin behavior**: Zero changes to any SKILL.md, hook, config schema, or pipeline logic. This is a purely additive documentation layer.
+- **README.md**: The existing README remains as-is. The docs site supplements it; it does not replace it.
+- **CLAUDE.md**: AI-facing repo context is unchanged. The docs site is for humans; CLAUDE.md is for Claude.
+- **Config schema**: Remains at v2.3. No new keys.
 
 ---
 
 ## Breaking Changes
 
-**None.** This is a purely additive change gated on `aliases.theme != business`. Users who do not configure a non-business theme see zero behavior change.
+**None.** This release adds documentation files and a deployment workflow. No existing behavior is modified.
 
 ---
 
-## Files Modified
+## Files Added
 
-| File | Change |
-|------|--------|
-| `delivery-team/skills/delivery-flow/SKILL.md` | Added theme-gated reporting protocol to Phase 4. Stage announcements (Step 1), checkpoint summaries (Step 9), and transition messages (Step 10) now adapt to the active theme when non-business. Includes partial-theme fallback and business-theme guard. |
+| Path | Purpose |
+|------|---------|
+| `mkdocs.yml` | Site configuration: theme, navigation, extensions, plugins |
+| `docs/index.md` | Home page with at-a-glance summary and quick links |
+| `docs/getting-started/*.md` (3 files) | Installation, quick start, commands |
+| `docs/user-guide/*.md` (4 files) | Pipeline, project types, collaboration, config reference |
+| `docs/skills/*.md` (12 files) | Skills overview + 11 individual skill pages |
+| `docs/reference/*.md` (3 files) | Hooks, alias themes, memory system |
+| `docs/architecture/overview.md` | Architecture overview |
+| `docs/contributing/index.md` | Contributor guide |
+| `.github/workflows/docs.yml` | GitHub Actions auto-deploy on push to main |
+
+**Total**: 25 documentation pages + 1 config file + 1 workflow = 27 new files, ~2,261 lines of user-facing documentation.
+
+---
+
+## Goals Achieved
+
+| # | Goal | Status |
+|---|------|--------|
+| 1 | Single navigable home for all delivery-team documentation | Achieved -- hosted on GitHub Pages |
+| 2 | Clear onboarding path (install to first pipeline run) | Achieved -- 3-page Getting Started section |
+| 3 | Searchable reference (70+ config keys, 11 skills, 7 hooks, 13 themes) | Achieved -- full-text search + dedicated reference pages |
+| 4 | 3-click discovery | Achieved -- tab navigation + expandable sections |
+| 5 | Zero-touch deployment | Achieved -- GitHub Actions on push to main |
+| 6 | Derived from source | Achieved -- all content distilled from existing files |
 
 ---
 
 ## Known Limitations
 
-- **Partial themes**: If a custom theme only maps some roles, unmapped stages fall back to neutral announcements. The pipeline does not stall.
-- **Quote selection is heuristic**: The orchestrator selects quotes based on character name presence, catchphrase keywords, or strong thematic vocabulary. Agents that do not stay in character may produce no quotable line.
-- **No new agent invocations**: Theme surfacing adds no additional sub-agent dispatches. The only new I/O is a single read of the primary agent's artifact at checkpoint time.
+- **Staleness detection**: No CI job yet to detect when source files drift from documentation. Noted as a follow-up in the idea brief.
+- **Single version**: No versioned docs. The site reflects the current state of `main`.
+- **Scope**: Covers delivery-team plugin only. Other marketplace plugins (agentic-flow-builder, prompt-engineer, prd-quality-gate-flow, research-agent) are not documented here.
 
 ---
 
 ## References
 
-- **Issue #59**: [Orchestrator Theme Surfacing](https://github.com/P47Phoenix/Claude-Plugins/issues/59)
-- **PRD**: `.delivery/artifacts/02-refine/po/prd.md`
+- **Issue #48**: [Comprehensive Documentation Site](https://github.com/P47Phoenix/Claude-Plugins/issues/48)
 - **Idea Brief**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+- **Site URL**: [https://p47phoenix.github.io/Claude-Plugins/](https://p47phoenix.github.io/Claude-Plugins/)
 
 ---
 
-*"The road goes ever on, and now the voice goes with it. The Fellowship speaks not only in the scrolls they leave behind, but in every herald's call along the way. A far warmer journey, if you ask this particular hobbit."*
+*"Now, I won't pretend that writing twenty-five pages of documentation is quite as thrilling as burgling a dragon's hoard. But I will say this: a well-organized table of contents is its own kind of treasure map. And unlike Smaug's gold, this one is meant to be shared."*
 
 ---
 

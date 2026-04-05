@@ -1,128 +1,118 @@
-# UAT Report: Orchestrator Theme Surfacing
+# UAT Report: Documentation Site (Issue #48)
 
-**Issue**: #59
 **Date**: 2026-04-04
-**Tester**: QA Engineer (Legolas)
-**Artifact Under Test**: `delivery-team/skills/delivery-flow/SKILL.md`
-**PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.0
-**Stories**: `.delivery/artifacts/05-plan/po/stories.md` v1.0
+**Tester**: Legolas (QA Engineer)
+**Pipeline Type**: DOCS_ONLY
+**Source**: `.delivery/artifacts/05-plan/po/stories.md`
 
 ---
 
-> *"My eye does not wander. Each line was read as an arrow follows its mark."*
+> *"That bug still only counts as one."* -- but today, no bugs were found.
 
 ---
 
-## Test Method
+## Test Case Results
 
-Static analysis of `delivery-team/skills/delivery-flow/SKILL.md`. Each FR was verified by locating the implementing text, confirming it satisfies all acceptance criteria from the PRD and stories, and checking for regressions against the neutrality preservation requirements.
-
----
-
-## FR-01: Theme-Aware Stage Announcements — PASS
-
-**Section**: "Theme-Gated Reporting Protocol" (line 297), Step 1: Announce (line 330)
-
-| AC | Verdict | Evidence |
-|----|---------|----------|
-| AC-01 (FR-01.1) | PASS | Step 1 (line 334): "If `aliases.theme` is non-business AND the primary agent's role has an entry in the theme's `roles` map: Reference the agent's character name and carry the theme's voice in phrasing." Example provided: `## Stage 2: Refine — Gandalf shall examine the product requirements...` |
-| AC-02 (FR-01.2) | PASS | Step 1 (line 335): "The announcement should use thematic vocabulary and tone consistent with the theme's `personality_strength`." |
-| AC-03 (FR-01.3) | PASS | Step 1 (line 339): "Otherwise (business theme, unset, or role not in theme's `roles` map): Use the neutral format: `## Stage [N]: [NAME]\nPurpose: [one-line description]`" |
-| AC-04 (FR-01.4) | PASS | Step 1 (line 339): Fallback to neutral format explicitly covers "role not in theme's `roles` map". Also stated in the protocol section (line 303): "If the dispatched role has no entry in the theme's `roles` map (partial theme), fall back to the neutral announcement format for that stage only." |
-
----
-
-## FR-02: Theme-Aware Checkpoint Summaries — PASS
-
-**Section**: "Theme-Gated Reporting Protocol" (line 305), Step 9 (line 489)
-
-| AC | Verdict | Evidence |
-|----|---------|----------|
-| AC-05 (FR-02.1) | PASS | Step 9 (line 492): "Read the primary agent's artifact to select one representative themed quote (max 280 characters) that demonstrates the agent's character voice. Include it in the checkpoint summary using blockquote format." Quote format defined at line 309: `> "quoted text from agent artifact" — Character Name` |
-| AC-06 (FR-02.2) | PASS | Step 9 (line 492): "This read is scoped to quote selection for user-facing output only. Do NOT forward any artifact content to downstream agent prompts." Also in protocol section (line 305): "this is user-facing output, NOT inter-agent content forwarding. The two-channel rule is preserved." |
-| AC-07 (FR-02.3) | PASS | Step 9 (line 498): "If `aliases.theme` is `business` or unset: Present the standard neutral checkpoint summary with no artifact quotes." |
-| AC-08 (FR-02.4) | PASS | Step 9 (line 496): "If the artifact contains no clearly themed language, omit the quote and present the standard summary." Also in protocol section (line 305): "If the artifact contains no clearly themed language (agent did not stay in character), omit the quote and present the standard summary format." |
-
-**280-char cap**: Confirmed at line 305 and line 492 — both specify "max 280 characters".
-
-**Blockquote format**: Confirmed at lines 309-312 — explicit format block with `> "quoted text" — Character Name`.
+| TC | Covers AC | Test | Result | Notes |
+|----|-----------|------|--------|-------|
+| TC-01 | AC-01 | `mkdocs build` from repo root | PASS | Build succeeds in 0.23s, `site/` directory created with all expected subdirectories (skills/, user-guide/, reference/, architecture/, contributing/, getting-started/, search/). Material theme configured. Zero errors. |
+| TC-02 | AC-02 | `.github/workflows/docs.yml` exists and triggers on docs/mkdocs.yml changes | PASS | Workflow triggers on push to `main` for paths `docs/**` and `mkdocs.yml`. Uses `actions/checkout@v4`, `actions/setup-python@v5`, installs `mkdocs-material`, runs `mkdocs gh-deploy --force`. |
+| TC-03 | AC-03 | Material theme config in `mkdocs.yml` | PASS | Dark mode toggle (scheme: default/slate), deep purple primary, amber accent, `navigation.tabs`, `search.suggest`, `search.highlight`, `content.code.copy` features enabled. Live rendering requires push to main -- verified structurally. |
+| TC-04 | AC-04, AC-05 | Getting Started section: installation, quick-start, commands | PASS | `docs/getting-started/installation.md` (prerequisites + install), `quick-start.md` (3-question wizard walkthrough), `commands.md` all present. Content derived from source files. |
+| TC-05 | AC-06 | Pipeline Stages page documents all 7 stages | PASS | `docs/user-guide/pipeline.md` documents all 7 stages (Idea, Refine, Design, Architect, Plan, Development, UAT) with purpose, primary agent, human checkpoint indicators, and DoD validators per stage. |
+| TC-06 | AC-07 | Project Types page documents all 6 types | PASS | `docs/user-guide/project-types.md` documents GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY with stage routing. |
+| TC-07 | AC-08 | Collaboration Patterns page documents all 6 patterns | PASS | `docs/user-guide/collaboration.md` documents evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus. |
+| TC-08 | AC-10, AC-11 | 11 skill pages in `docs/skills/` with required sections | PASS | All 11 skill pages exist: delivery-flow, product-delivery, developer, architect, quality, operations, ui, user-feedback, godot, alias-creator, presentation. Each includes roles/capabilities, task types, and at least one usage example. Skills overview index page also present (12 files total). |
+| TC-09 | AC-13, AC-14 | Configuration Reference completeness | PASS | `docs/user-guide/config.md` documents 70+ config keys across 14 sections (Core, Tech Stack, Architecture, Team/Deployment, Compliance, Pipeline, Enforcement, DoD Validators, Personas, Aliases, Git/GitHub, Monorepo, Notifications, Presentation). Full annotated example config included. Defaults-by-project-type table present. Schema version 2.6. |
+| TC-10 | AC-15 | Hooks Reference documents all 7 hooks | PASS | `docs/reference/hooks.md` documents all 7 hooks: Config Check (SessionStart), Retrospective Enforcement (Stop), Pipeline Bypass Detection (PreToolUse/Skill), Agent Prompt Audit (PreToolUse/Agent), GDScript Validation (PostToolUse/Write|Edit), Skill Load Verification (PostToolUse/Agent), Empirical Validation (SubagentStop). Each has event type, matcher, type, timeout, purpose, behavior, and configuration notes. |
+| TC-11 | AC-16, AC-17 | Alias Themes: 13 themes + custom creation | PASS | `docs/reference/aliases.md` lists all 13 themes (business, lotr, star-wars, mandalorian, marvel, the-office, breaking-bad, dilbert, funny, snl, bulls-jordan, nfl, mtg) with display name, personality strength, and description. LOTR example with full role mappings. Custom theme creation instructions (interactive, quick, partial modes). Theme file locations documented. |
+| TC-12 | AC-18 | Architecture section | PASS | `docs/architecture/overview.md` covers pipeline architecture (delegation model), two-channel communication (signal vs artifact), and context isolation. Memory system documented in `docs/reference/memory.md`. |
+| TC-13 | AC-19 | Contributing section | PASS | `docs/contributing/index.md` covers plugin directory structure, required development skills (use plugin-dev skills), and contribution process. |
+| TC-14 | AC-20 | 3-click reachability (Home > Skills > Godot) | PASS | Nav structure: Home (tab) > Skills (tab) > Godot (nav item). `navigation.tabs` and `navigation.sections` enabled. All pages reachable within 2-3 clicks. |
+| TC-15 | AC-21 | Search functionality | PASS | MkDocs `search` plugin enabled, `search.suggest` and `search.highlight` features active. `site/search/` directory generated with search index. Live search requires browser -- verified structurally. |
 
 ---
 
-## FR-03: Theme-Aware Stage Transitions — PASS
+## Summary
 
-**Section**: "Theme-Gated Reporting Protocol" (line 307), Step 10 (line 507)
-
-| AC | Verdict | Evidence |
-|----|---------|----------|
-| AC-09 (FR-03.1) | PASS | Step 10 (line 510): "If `aliases.theme` is non-business: The STATE ANCHOR carries thematic voice while preserving all routing signals." Example: "The Fellowship advances to Stage 4: Architect. Gandalf's counsel is complete. Gimli prepares to forge the design. CONTINUING pipeline protocol from Step 1." |
-| AC-10 (FR-03.2) | PASS | Step 10 (line 510): "The stage number, stage name, and continuation directive MUST be present in the message." Protocol section (line 307): "personality augments, it does not replace, the routing signal." Example includes stage number (4), stage name (Architect), and continuation directive (CONTINUING pipeline protocol from Step 1). |
-| AC-11 (FR-03.3) | PASS | Step 10 (line 514): "If `aliases.theme` is `business` or unset: Use the neutral format: STATE ANCHOR: 'Entering Stage [N+1]: [NAME]. Previous stage [N] complete. CONTINUING pipeline protocol from Step 1.'" |
-
----
-
-## FR-04: Internal Routing Remains Personality-Free — PASS
-
-**Section**: Neutrality Preservation (line 314)
-
-| AC | Verdict | Evidence |
-|----|---------|----------|
-| AC-12 (FR-04.1) | PASS | Line 318: "`.delivery/state.md` — contains only structured routing data (stage numbers, artifact paths, timestamps)" |
-| AC-13 (FR-04.2) | PASS | Line 319: "`stage-summary.md` files — contain agent signals (STATUS, ARTIFACT, SUMMARY) with no themed embellishment" |
-| AC-14 (FR-04.3) | PASS | Line 320: "Agent Invocation Template prompts — the ALIAS block handles agent personality injection; the orchestrator does not add themed language to the template itself, and INPUT ARTIFACTS contains only file paths" |
-| AC-15 (FR-04.4) | PASS | Line 321: "DoD validator prompts — validators evaluate quality, not character consistency; no themed language in gate criteria" |
+| Metric | Value |
+|--------|-------|
+| Total Test Cases | 15 |
+| Passed | 15 |
+| Failed | 0 |
+| Blocked | 0 |
+| Pass Rate | **100%** |
 
 ---
 
-## FR-05: Signal Block Format Unchanged — PASS
+## Verification Matrix
 
-**Section**: Neutrality Preservation (line 322), Step 4 (line 384)
+### Infrastructure (Group A: AC-01 to AC-03)
 
-| AC | Verdict | Evidence |
-|----|---------|----------|
-| AC-16 (FR-05.1) | PASS | Line 322: "Signal blocks — format remains exactly `STATUS: {DONE | NOT_DONE | CODE_COMPLETE}\nARTIFACT: {path}\nSUMMARY: {text}` with no themed additions; signal extraction logic is unchanged." Step 4 signal block (line 386) unchanged from baseline format. |
-| AC-17 (FR-05.2) | PASS | Step 4 post-response verification (lines 392-394) unchanged: checks `SKILL_LOADED`, extracts STATUS/ARTIFACT/SUMMARY. No theme-dependent parsing logic introduced. |
+| Item | Status |
+|------|--------|
+| `mkdocs.yml` exists | YES |
+| Material theme configured | YES |
+| Dark/light toggle | YES |
+| Search plugin enabled | YES |
+| `mkdocs build` succeeds | YES (0.23s, zero errors) |
+| `.github/workflows/docs.yml` exists | YES |
+| Workflow triggers on docs/** changes | YES |
+| `site/` output directory | YES (index.html + all subdirectories) |
 
----
+### Content Completeness (Groups B-H: AC-04 to AC-19)
 
-## Additional Verification
+| Section | Expected Pages | Actual Pages | Status |
+|---------|---------------|--------------|--------|
+| Home | 1 | 1 (index.md) | Complete |
+| Getting Started | 3 | 3 (installation, quick-start, commands) | Complete |
+| User Guide | 4 | 4 (pipeline, project-types, collaboration, config) | Complete |
+| Skills | 12 | 12 (index + 11 skill pages) | Complete |
+| Reference | 3 | 3 (hooks, aliases, memory) | Complete |
+| Architecture | 1 | 1 (overview) | Complete |
+| Contributing | 1 | 1 (index) | Complete |
+| **Total** | **25** | **25** | **All present** |
 
-### Business theme guard in all conditional blocks — PASS
+### Navigation (Group I: AC-20 to AC-21)
 
-All conditional blocks use the same guard pattern:
-
-| Location | Guard Text | Line |
-|----------|-----------|------|
-| Protocol section | "When `aliases.theme` is `business` or unset, all orchestrator output uses the current neutral format with zero behavior change" | 299 |
-| Step 1 | "If `aliases.theme` is non-business AND..." / "Otherwise (business theme, unset, or role not in theme's `roles` map)" | 334, 339 |
-| Step 9 | "If `aliases.theme` is non-business" / "If `aliases.theme` is `business` or unset" | 492, 498 |
-| Step 10 | "If `aliases.theme` is non-business" / "If `aliases.theme` is `business` or unset" | 510, 514 |
-
-The guard is consistent: non-business activates theming; business/unset preserves neutral output. No conditional block omits the guard.
-
-### Steps 1, 9, 10 have conditional themed output — PASS
-
-- **Step 1** (lines 334-345): Conditional block with themed announcement vs neutral format.
-- **Step 9** (lines 492-498): Conditional block with themed quote extraction vs neutral summary.
-- **Step 10** (lines 510-517): Conditional block with themed STATE ANCHOR vs neutral format.
-
-All three steps implement the if-non-business/else-neutral pattern.
-
-### No themed content leaks into routing metadata — PASS
-
-Verified the following surfaces contain zero themed language:
-
-1. **state.md writes** (lines 479-483, 500-502): Only structured fields (current_stage, stages_completed, artifacts map, timestamps, checkpoints). No themed content.
-2. **stage-summary.md writes** (lines 473-475): "routing metadata, not domain content" — agent signals only.
-3. **Agent Invocation Templates** (lines 368-388): ALIAS block handles personality injection separately via the theme's roles map. INPUT ARTIFACTS contains file paths only. Template structure unchanged.
-4. **DoD validator invocations** (lines 443-448): Validators receive artifact path and gate criteria only. No personality injection in validator prompts.
-5. **Signal blocks** (lines 384-388, 322): Format invariant. No themed additions.
+| Item | Status |
+|------|--------|
+| Nav tree covers all 25 pages | YES (6 top-level sections) |
+| `navigation.tabs` enabled | YES |
+| `navigation.sections` enabled | YES |
+| `navigation.expand` enabled | YES |
+| Max click depth | 2-3 clicks |
+| Search plugin + suggest + highlight | YES |
 
 ---
 
-## Section Placement Verification — PASS
+## AC Coverage Matrix
 
-"Theme-Gated Reporting Protocol" (line 297) is placed immediately after "Two-Channel Communication" (line 288) and before "Plan-Mode Delegation" (line 324). This matches the PRD's implementation guidance (Section 10): "between 'Two-Channel Communication' and 'Plan-Mode Delegation'."
+| AC | Description | Verdict |
+|----|-------------|---------|
+| AC-01 | mkdocs build succeeds with Material theme | PASS |
+| AC-02 | GitHub Actions deploys on push | PASS |
+| AC-03 | Site loads with Material theme features | PASS (structural) |
+| AC-04 | Getting Started content present | PASS |
+| AC-05 | Content derived from source files | PASS |
+| AC-06 | All 7 pipeline stages documented | PASS |
+| AC-07 | All 6 project types documented | PASS |
+| AC-08 | All 6 collaboration patterns documented | PASS |
+| AC-09 | Quality gates / Team DoD documented | PASS |
+| AC-10 | 11 dedicated skill pages | PASS |
+| AC-11 | Skill pages have required sections | PASS |
+| AC-12 | Content derived from SKILL.md sources | PASS |
+| AC-13 | 70+ config keys documented | PASS |
+| AC-14 | Full annotated config example | PASS |
+| AC-15 | All 7 hooks documented | PASS |
+| AC-16 | All 13 alias themes listed | PASS |
+| AC-17 | Custom theme creation instructions | PASS |
+| AC-18 | Architecture documented | PASS |
+| AC-19 | Contributing guide present | PASS |
+| AC-20 | 3-click reachability | PASS |
+| AC-21 | Search returns relevant results | PASS (structural) |
+
+**21/21 acceptance criteria: PASS**
 
 ---
 
@@ -132,26 +122,20 @@ None found.
 
 ---
 
-## Summary
+## Notes
 
-| FR | Description | Verdict |
-|----|-------------|---------|
-| FR-01 | Theme-Aware Stage Announcements | PASS |
-| FR-02 | Theme-Aware Checkpoint Summaries | PASS |
-| FR-03 | Theme-Aware Stage Transitions | PASS |
-| FR-04 | Internal Routing Remains Personality-Free | PASS |
-| FR-05 | Signal Block Format Unchanged | PASS |
+1. **AC-03, AC-15, AC-21** verified structurally (config + build output), not via live browser. Full functional verification requires a push to `main` and browser access to the deployed GitHub Pages site.
+2. **AC-09** (Quality Gates) is covered within `docs/user-guide/pipeline.md` rather than as a standalone page. The "Quality Gates" section documents the self-correction loop and DoD validation process with all validators per stage.
+3. **AC-12** spot-checked: skill page content is distilled from source SKILL.md files, not copy-pasted verbatim or invented.
 
-**17/17 acceptance criteria: PASS**
-**All additional verification checks: PASS**
-**Defects found: 0**
+---
 
 ## Final Verdict: **PASS**
 
-> *"The arrow flew true. Every target struck."*
+> *"My eyes have swept every corridor and every page. Each arrow struck true. The documentation stands ready for all who would seek its knowledge."*
 
 ---
 
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/07-uat/qa/uat-report.md
-SUMMARY: All 5 FRs passed (17/17 ACs), theme guards consistent, no routing leaks detected.
+SUMMARY: All 15 TCs pass, 21/21 ACs verified, mkdocs build succeeds, 25 pages complete, zero defects.

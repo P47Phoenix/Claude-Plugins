@@ -1,65 +1,101 @@
-## Idea Brief: Orchestrator Theme Surfacing
+# Idea Brief: Comprehensive Documentation Site for delivery-team Plugin
 
-**Project Type**: FEATURE
+**Issue**: #48
+**Type**: DOCS_ONLY
 **Date**: 2026-04-04
-**Source**: GitHub Issue #59 (P47Phoenix/Claude-Plugins)
-**Pipeline**: Orchestrator theme surfacing
-**Skill Under Enhancement**: `delivery-team/skills/delivery-flow/`
+**Author**: Product Owner (Gandalf)
 
 ---
 
-### Problem Statement
+> *"All that is gold does not glitter — and all that is documented does not illuminate. Twenty-eight thousand lines of wisdom lie scattered across eighty files, yet the traveler who arrives at our gate finds only a README and a prayer."*
 
-When a non-business alias theme is configured (e.g., `lotr`, `star-wars`, `breaking-bad`), the delivery-flow orchestrator injects personality into each sub-agent's prompt via the ALIAS block (Phase 4 Step 4). Agents write their artifacts in character -- Gandalf counsels on priorities, Gimli builds code with dwarven pride, Aragorn rallies the standup. The artifacts carry the theme voice.
+---
 
-But the orchestrator strips all of that personality when reporting results to the user. The two-channel communication protocol (Phase 4) constrains the orchestrator to signal-only reporting: STATUS, file paths, summaries under 200 characters. Stage announcements, checkpoint summaries, and transition messages are written in neutral orchestrator voice regardless of theme. The user configured a theme expecting the entire experience to carry personality -- what they get is personality buried in files they have to open, wrapped in clinical status updates.
+## Problem Statement
 
-The disconnect is jarring. The orchestrator is the user's primary interface to the pipeline. If it speaks in corporate monotone while agents write in character behind the scenes, the theme feels bolted on rather than woven through.
+The delivery-team plugin has grown to 11 skills, 7 hooks, 18+ reference files, 13 alias themes, a 7-stage pipeline with 6 collaboration patterns, and 70+ config keys. The documentation for all of this exists but is fragmented across:
 
-### Target Users
+- **README.md** files (top-level and per-plugin) — installation and quick-start only
+- **CLAUDE.md** — repo-level context written for the AI, not for human users
+- **SKILL.md** files (11 total, ~5,700 lines) — AI-facing implementation instructions, not user-facing documentation
+- **Reference files** (80+, ~23,000 lines) — deep technical content buried in skill subdirectories
+- **Alias theme YAMLs** (13 files) — undiscoverable without browsing the filesystem
 
-- **Delivery pipeline users with non-business alias themes** who expect the orchestrator's chat output (stage announcements, checkpoint summaries, transition messages) to reflect the configured theme personality
-- **Teams using themes for engagement** where the orchestrator's neutral voice breaks the immersion that makes themed aliases fun and effective
+The consequence: new users have no onboarding path beyond "run the wizard." Power users cannot discover config keys, alias themes, or hook behavior without reading AI-facing internals. Contributors must reverse-engineer plugin structure from existing code.
 
-### Goals
+As the team principle states: *"Stale docs are worse than no docs — they teach the wrong thing with authority."* But scattered docs are nearly as bad — they teach the right thing to no one.
+
+## Target Users
+
+| Persona | Pain Point | What They Need |
+|---------|-----------|----------------|
+| **New User** | Reads README, runs wizard, hits a wall. Doesn't know what 11 skills can do or how pipeline stages work. | Getting Started guide with install-to-first-pipeline-run walkthrough |
+| **Power User** | Knows the plugin but can't find specific config keys, alias themes, hook behaviors, or collaboration patterns without reading SKILL.md internals. | Searchable config reference, hooks reference, skills catalog, alias theme gallery |
+| **Contributor** | Wants to add a skill, hook, or theme but must reverse-engineer structure from existing files. No structured guide. | Plugin structure guide, dev workflow, PR process, testing conventions |
+
+## Goals
 
 | # | Goal | Measurable Target |
 |---|------|-------------------|
-| 1 | Orchestrator surfaces agent theme personality in chat when a non-business alias theme is configured | Stage headers, checkpoint summaries, and transition messages carry the theme's voice and reference agent character names |
-| 2 | Orchestrator quotes or paraphrases memorable lines from agent artifacts to surface personality without violating the no-content-forwarding rule | Checkpoint summaries include at least one quoted line from the primary agent's artifact |
-| 3 | Business theme behavior is unchanged | When `aliases.theme` is `business` (or unset), orchestrator output is identical to current behavior |
+| 1 | Single navigable home for all delivery-team documentation | Hosted on GitHub Pages at a predictable URL |
+| 2 | Clear onboarding path | New user can go from install to first completed pipeline run following only the docs |
+| 3 | Searchable reference | All 70+ config keys, 11 skills, 7 hooks, 13 alias themes findable via search |
+| 4 | 3-click discovery | Any feature reachable within 3 navigation clicks from the home page |
+| 5 | Zero-touch deployment | Auto-deployed from `main` via GitHub Actions — no manual publish step |
+| 6 | Derived from source | All content distilled from existing SKILL.md and reference files — nothing invented |
 
-### Constraints
+## Scope
 
-- **Single file change.** Only `delivery-team/skills/delivery-flow/SKILL.md` is modified. No config schema changes -- `aliases.theme` already exists and is sufficient.
-- **Two-channel rule preserved.** The orchestrator still does not paste artifact content into downstream agent prompts. Theme surfacing applies only to user-facing chat output (stage headers, checkpoint summaries, transitions), not inter-agent routing.
-- **No personality in routing decisions.** The orchestrator's internal logic (state management, stage advancement, validator dispatch) remains neutral. Personality is applied only to user-visible output text.
-- **Business theme = no change.** The `business` theme produces default professional names with no personality injection. This feature is gated on `theme != business`.
-- **Backward compatible.** Existing pipeline behavior, artifact formats, and agent invocation templates are unchanged.
+### In Scope
 
-### Initial Scope
-
-**Theme-Gated Reporting Protocol:**
-- Add a new sub-section to Phase 4 that defines how the orchestrator adapts its user-facing output when a non-business theme is active
-- Stage headers reference the agent's character name (e.g., "Gandalf shall examine the product requirements" instead of "Product Owner will refine requirements")
-- Checkpoint summaries include a brief quoted line from the primary agent's artifact to surface voice
-- Transition messages between stages carry thematic flavor
-
-**Orchestrator Neutrality Preserved:**
-- Internal routing, state updates, and signal processing remain personality-free
-- The signal block format (STATUS/ARTIFACT/SUMMARY) is unchanged
-- Agent invocation templates are unchanged
-- Downstream agents still receive paths, not content
-
-**Business Theme Guard:**
-- All theme surfacing behavior is gated on `aliases.theme != business`
-- When theme is `business`, orchestrator output is identical to current behavior -- no regressions
+| Section | Content Source | Est. Pages |
+|---------|--------------|------------|
+| Home / Overview | README.md, CLAUDE.md overview | 1 |
+| Getting Started (install, wizard, first run) | `getting-started.md`, `setup-wizard.md`, README | 3-4 |
+| User Guide: Pipeline Stages | `pipeline-stages.md`, `project-types.md`, `quality-gates.md` | 4-5 |
+| User Guide: Collaboration Patterns | `team-patterns.md` | 1-2 |
+| User Guide: Memory & Learning | `memory-protocol.md`, `feature-knowledge.md` | 1-2 |
+| Skills Reference (x11) | Each skill's `SKILL.md` + key references | 11 |
+| Configuration Reference | `config-schema.md`, `config-schema.json` (70+ keys) | 2-3 |
+| Hooks Reference | `hooks.json`, 6 hook scripts, hook table | 1-2 |
+| Alias Themes | 13 `.yml` theme files, `alias-creator/SKILL.md`, `theme-format.md` | 1-2 |
+| Architecture Overview | `team-patterns.md`, `artifact-contracts.md`, `defect-tracking.md`, `analytics.md` | 2-3 |
+| Git & GitHub Integration | `git-integration.md`, `github-integration.md` | 1-2 |
+| Contributing Guide | Plugin structure conventions from CLAUDE.md, PR process | 1-2 |
+| **Total** | **~28,000 lines of source material** | **~30-36 pages** |
 
 ### Out of Scope
 
-- **Config schema changes.** No new config keys. `aliases.theme` and `aliases.custom_path` are sufficient.
-- **Changes to agent invocation templates.** The ALIAS block injection (Phase 4 Step 4) is unchanged.
-- **Changes to the two-channel communication architecture.** Artifact content still never flows through the orchestrator to other agents.
-- **Theme-aware validator prompts.** DoD validators remain neutral regardless of theme.
-- **New alias themes.** This feature enhances how existing themes surface, not which themes exist.
-- **Changes to other skills.** Only the delivery-flow SKILL.md is modified.
+- API/SDK integration docs (no public API exists)
+- Video tutorials or interactive walkthroughs
+- Versioned documentation (single version for now)
+- Documentation for other marketplace plugins (agentic-flow-builder, prompt-engineer, etc.)
+- Staleness detection CI (future iteration — noted as a follow-up)
+
+## Delivery Format
+
+**MkDocs Material** — team's preferred choice per Issue #48:
+
+- Markdown-based (matches existing content format exactly)
+- GitHub Pages hosting (zero infrastructure cost)
+- Built-in full-text search, dark mode, responsive navigation tabs
+- `mkdocs.yml` configuration for site structure and theme
+- GitHub Actions workflow for auto-deploy on push to `main`
+- Admonitions, tabs, code highlighting, and table of contents out of the box
+
+## Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|------------|
+| Stale docs after initial publish | Medium | High | Content derived from source files; staleness CI is a documented follow-up |
+| Scope creep — temptation to write tutorials for each skill | Medium | Medium | Stick to reference + getting started; tutorials are a future iteration |
+| Content quality — AI-facing SKILL.md doesn't translate directly to user docs | Medium | Medium | Technical Writer role reviews all content for user-facing clarity |
+| Large page count overwhelms single contributor | Low | Medium | Content is extraction and restructuring, not creation from scratch |
+
+---
+
+> *"A documentation site is not a luxury. It is the road between the knowledge we hold and the travelers who seek it. Without the road, the knowledge may as well not exist."*
+
+---
+
+*Written by Product Owner (Gandalf) — delivery-team:product-delivery*
