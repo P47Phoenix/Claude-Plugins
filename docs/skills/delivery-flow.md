@@ -4,6 +4,10 @@
 
 The pipeline orchestrator that coordinates the full delivery team through 7 stages. This is the entry point for all structured delivery work.
 
+## Architecture
+
+The delivery-flow SKILL.md serves as the high-level orchestration guide. Stage sub-flows, agent invocation details, artifact output paths, and DoD Validator Dispatch Templates are defined in `references/pipeline-stages.md`, which is the single source of truth (SSOT) for stage details. The SKILL.md contains routing and orchestration context; when executing a stage, the orchestrator always loads the full definition from `pipeline-stages.md`.
+
 ## What It Does
 
 - Coordinates 11 specialized skills through a 7-stage pipeline
@@ -13,6 +17,7 @@ The pipeline orchestrator that coordinates the full delivery team through 7 stag
 - Learns from every run via self-learning memory
 - Supports 6 collaboration patterns for structured quality assurance
 - Manages alias themes for agent personality injection
+- Surfaces active theme in user-facing output (stage announcements, checkpoint summaries, stage transitions) while preserving neutrality in all internal routing surfaces (state files, signals, agent prompts, DoD validators)
 
 ## How to Trigger
 

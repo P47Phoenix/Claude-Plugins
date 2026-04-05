@@ -1,40 +1,80 @@
-## Idea Brief
+# Idea Brief: Batched Documentation Fix (Issues #63 + #64)
 
-**Project Type**: BUG_FIX
 **Date**: 2026-04-04
-**Source Issues**: #60, #61, #62
+**Author**: Product Owner
+**Type**: DOCS_ONLY
+**Priority**: High
 
-### Problem Statement
+---
 
-The delivery-flow SKILL.md file duplicates approximately 400 lines of stage definitions that also exist in `references/pipeline-stages.md`. Over time, these two copies have drifted out of sync, creating two observable defects:
+## Problem Statement
 
-1. **Wrong artifact paths (Issue #60)**: SKILL.md uses flat artifact paths (e.g., `.delivery/artifacts/01-idea-brief.md`) while pipeline-stages.md uses the correct namespaced paths (e.g., `.delivery/artifacts/01-idea/po/idea-brief.md`). Agents following SKILL.md write artifacts to the wrong locations, breaking downstream pipeline stages that look for namespaced paths.
+The documentation has fallen behind the code -- a map drawn before the mountains moved. Two related gaps have opened, and a wise team mends both at once rather than traversing the same ground twice.
 
-2. **DoD template violates two-channel rule (Issue #61)**: SKILL.md's Team Definition of Done Protocol section contains a validator prompt template that pastes artifact content inline (`[ARTIFACT CONTENT]`). This violates the two-channel communication principle established in Phase 4. The correct template in pipeline-stages.md uses file-path references, letting validators read artifacts from disk.
+### Issue #63 — Config Reference Gap
 
-3. **Root cause -- content duplication (Issue #62)**: Both symptoms stem from SKILL.md duplicating detailed stage definitions (agent invocations, artifact paths, DoD templates) that should exist in a single authoritative source: `references/pipeline-stages.md`.
+The docs site config reference (`docs/user-guide/config.md`) is missing 13 config keys added across schema versions v2.4 through v2.6. Users consulting this page cannot find:
 
-### Target Users
+- PPTX branding keys (`presentation.pptx_template`, `presentation.pptx_font`, `presentation.pptx_accent_color`)
+- Narrative intelligence toggles (`presentation.narrative.emphasis`, `.cutting`, `.framing`, `.tension`)
+- Light mode setting (`presentation.light_mode`)
+- Per-type threshold overrides (`presentation.thresholds`, `presentation.thresholds_default`)
+- Presentation operational keys (`presentation.save_to_artifacts`, `presentation.marp_theme`, `presentation.staleness_warning_days`, `presentation.vocabulary_overrides`)
+- Pipeline retry key (`pipeline.required_agent_retry_max`)
 
-- The delivery-flow orchestrator (the primary consumer of SKILL.md)
-- All delivery-team sub-agents that receive artifact paths from the orchestrator
-- Plugin maintainers who need a single source of truth for stage definitions
+The source of truth (`delivery-team/skills/delivery-flow/references/config-schema.md` v2.6) has all these keys. The docs page does not.
 
-### Goals
+### Issue #64 — Stale Documentation
 
-1. Establish `references/pipeline-stages.md` as the single source of truth for detailed stage sub-flows, agent invocations, artifact output paths, and DoD validator templates.
-2. Remove duplicated detailed definitions from SKILL.md while preserving its role as the high-level orchestration guide.
-3. Fix the artifact path inconsistency so all agents write to the correct namespaced locations.
-4. Fix the DoD validator template so artifact content is never pasted inline.
-5. Ensure the pipeline continues to function correctly after the refactoring.
+Multiple docs pages and CLAUDE.md contain outdated information after recent feature work:
 
-### Constraints
+| What is Wrong | Where | Correct State |
+|--------------|-------|--------------|
+| Presentation skill says "4 types, 3 formats" | `CLAUDE.md` line 51 | 9 types, 4 formats (PPTX added) |
+| Config version says v2.3 | `CLAUDE.md` line 124 | v2.6 |
+| Architect Prior Art Analysis (#55) not mentioned | `docs/skills/architect.md` | Architect SKILL.md has full Prior Art Analysis section |
+| Orchestrator theme surfacing (#59) not mentioned | `docs/skills/delivery-flow.md` | pipeline-stages.md references theme surfacing |
+| SKILL.md deduplication (#62) changed delivery-flow structure | `docs/skills/delivery-flow.md` | Delivery-flow now uses single SKILL.md + references pattern |
 
-- Single file modified: `delivery-team/skills/delivery-flow/SKILL.md`
-- Markdown-only edits (no code changes)
-- Must not break existing pipeline execution (backward compatible)
-- SKILL.md must retain: Stage Routing Matrix, high-level stage descriptions, collaboration pattern assignments, human checkpoint assignments
+---
 
-### Initial Scope
+## Scope
 
-Remove ~400 lines of duplicated stage definitions from SKILL.md and replace them with explicit cross-references to `references/pipeline-stages.md`. Replace the inline DoD validator template with a reference to the correct template in pipeline-stages.md.
+Five files require updates:
+
+| # | File | Changes |
+|---|------|---------|
+| 1 | `CLAUDE.md` | Update presentation description (9 types, 4 formats), bump config version to v2.6, add Prior Art Analysis to architect description, mention theme surfacing in delivery-flow |
+| 2 | `docs/user-guide/config.md` | Add 13 missing config keys from v2.4-v2.6 to Presentation section, add `pipeline.required_agent_retry_max` to Pipeline section, update full example config |
+| 3 | `docs/skills/presentation.md` | Update to reflect current state: 9 types, 4 formats (PPTX), narrative intelligence editorial passes, light mode, per-type thresholds |
+| 4 | `docs/skills/architect.md` | Add Prior Art Analysis section documenting the conditional spec-examination step |
+| 5 | `docs/skills/delivery-flow.md` | Update to reflect deduplication refactor: SKILL.md as high-level orchestration guide, pipeline-stages.md as authoritative source for stage details |
+
+## Out of Scope
+
+- No changes to SKILL.md files or runtime code
+- No schema changes (v2.6 is current)
+- No new features
+
+---
+
+## Value
+
+- Users and contributors get accurate, trustworthy documentation
+- Config reference becomes complete -- every key a user can set is documented
+- New features (Prior Art Analysis, PPTX output, narrative intelligence) become discoverable
+- Reduces contributor confusion from stale information
+
+## Risks
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| Partial update leaves some docs still stale | Low | Batch all 5 files in one PR; verify cross-file consistency before merge |
+| Docs drift again after next feature | Medium | Consider adding docs-update checklist to pipeline DoD (future improvement) |
+
+## Success Criteria
+
+1. All 5 files updated and internally consistent
+2. Config reference matches `config-schema.md` v2.6 exactly -- zero missing keys
+3. No stale version numbers, feature counts, or missing feature mentions remain
+4. PR passes review with no factual inaccuracies found

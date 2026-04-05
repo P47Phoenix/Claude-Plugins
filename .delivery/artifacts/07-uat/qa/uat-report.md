@@ -1,13 +1,14 @@
-# UAT Report: SKILL.md Refactoring (Issues #60, #61, #62)
+# UAT Report: Issues #63 + #64 (Docs Staleness Fix)
 
 **Date**: 2026-04-04
-**Tester**: Legolas (QA Engineer)
-**Artifact Under Test**: `delivery-team/skills/delivery-flow/SKILL.md`
-**Stories**: BF-62-001 (covers Issues #60, #61, #62)
+**QA Engineer**: Legolas
+**Sprint**: Docs Fix Sprint
+**Type**: DOCS_ONLY
+**Stories**: DOC-63-001, DOC-64-001
 
 ---
 
-> *"The eye of the archer misses nothing. Ten arrows loosed, nine struck the heart, one grazed the mark but drew no blood."*
+> *"Twelve arrows, twelve strikes. The wind favored precision today."*
 
 ---
 
@@ -15,9 +16,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Test Cases | 10 |
-| Passed | 9 |
-| Warning | 1 |
+| Total Test Cases | 12 |
+| Passed | 12 |
 | Failed | 0 |
 | Overall Verdict | **PASS** |
 
@@ -25,194 +25,231 @@
 
 ## Test Results
 
-### TC-1: Stage Definitions section no longer contains detailed sub-flow steps
+### Story 1: DOC-63-001 (Update Config Reference with Missing v2.4-v2.6 Keys)
 
-**Covers**: AC-1, AC-5
-**Verdict**: PASS (with warning)
-
-The Stage Definitions section (lines 522-654) contains only concise summary metadata per stage: purpose, runs-for, primary agent, upstream artifacts, collaboration patterns, DoD validators, human checkpoint, max self-correction, output path, and a closing reference to `pipeline-stages.md`. No detailed sub-flow steps (numbered agent invocation sequences, procedural Input/Output blocks) are present. Each stage ends with: *"See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates."*
-
-**WARNING**: The stage summaries retain `**Primary agent**:` and `**Output**:` as metadata fields. This is correct per AC-2 (retain high-level orchestration context) but conflicts with TC-1 as literally written in the stories ("zero matches for Primary agent:, Output: in Stage Definitions"). The intent of AC-1 -- eliminate detailed sub-flow steps -- is fully satisfied. These metadata fields serve routing/orchestration purposes, not procedural sub-flows. Recommend rewording TC-1 in the story to clarify the distinction between metadata fields and sub-flow procedure steps.
-
----
-
-### TC-2: Grep for flat artifact paths -- zero matches
-
-**Covers**: AC-3
-**Verdict**: PASS
-
-Searched SKILL.md for all legacy flat artifact paths:
-- `01-idea-brief.md` -- 0 matches
-- `02-prd.md` -- 0 matches
-- `03-ux-design.md` -- 0 matches
-- `04-architecture.md` -- 0 matches
-- `05-sprint-plan.md` -- 0 matches
-- `06-dev-notes.md` -- 0 matches
-- `07-uat-report.md` -- 0 matches
-
-**Total: 0 matches.** All legacy flat artifact path names have been eliminated.
-
----
-
-### TC-3: DoD Protocol section contains no `[ARTIFACT CONTENT]` block
-
-**Covers**: AC-4
-**Verdict**: PASS
-
-Searched entire SKILL.md for `[ARTIFACT CONTENT]`. Zero matches. The Team Definition of Done Protocol section (lines 656-690) references `references/pipeline-stages.md` for the DoD Validator Dispatch Template (lines 667-668) and explicitly states: *"the orchestrator NEVER pastes artifact content into validator prompts."*
-
----
-
-### TC-4: Stage Routing Matrix present and unmodified
-
-**Covers**: AC-7
-**Verdict**: PASS
-
-Stage Routing Matrix table found at line 249. Contains all 7 stages with correct routing for all 6 project types (GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+, SPIKE, DOCS_ONLY). Values verified:
-
-| Stage | GREENFIELD | FEATURE | BUG_FIX | GAME_DEV+ | SPIKE | DOCS_ONLY |
-|-------|-----------|---------|---------|-----------|-------|-----------|
-| 1. Idea | full | full | full | full | full | full |
-| 2. Refine | full | full | skip | full | skip | skip |
-| 3. Design | full | full | skip | full+game | skip | skip |
-| 4. Architect | full | light-or-skip | skip | full+game | full | skip |
-| 5. Plan | full | full | light | full | skip | light |
-| 6. Dev | full | full | full | full+game | full | full |
-| 7. UAT | full | full | full | full | skip | full |
-
-Depth definitions (Full, Light, Skip, Full+Game) present. FEATURE/Architect decision criteria present. Critical Light-vs-Skip guardrail present.
-
----
-
-### TC-5: All 7 stages have required metadata fields
-
-**Covers**: AC-2
-**Verdict**: PASS
-
-Verified each stage (1-7) contains all 7 required fields:
-
-| Field | S1 | S2 | S3 | S4 | S5 | S6 | S7 |
-|-------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Purpose | Y | Y | Y | Y | Y | Y | Y |
-| Runs for | Y | Y | Y | Y | Y | Y | Y |
-| Primary agent | Y | Y | Y | Y | Y | Y | Y |
-| Collaboration patterns | Y | Y | Y | Y | Y | Y | Y |
-| DoD validators | Y | Y | Y | Y | Y | Y | Y |
-| Checkpoint | Y | Y | Y | Y | Y | Y | Y |
-| Max iterations | Y | Y | Y | Y | Y | Y | Y |
-
-**49/49 cells populated.** All 7 stages have all 7 required metadata fields.
-
----
-
-### TC-6: Namespaced artifact paths used in Stage Definitions
-
-**Covers**: AC-3
-**Verdict**: PASS
-
-All artifact paths in Stage Definitions use the namespaced convention `.delivery/artifacts/{NN}-{stage-name}/{role}/{artifact-name}.md`. Examples verified across all stages:
-
-- Stage 1: `.delivery/artifacts/01-idea/po/idea-brief.md`
-- Stage 2: `.delivery/artifacts/02-refine/po/prd.md`
-- Stage 3: `.delivery/artifacts/03-design/ux/user-flows.md`, `.delivery/artifacts/03-design/ui/component-specs.md`
-- Stage 4: `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/04-architect/adrs/ADR-001.md`
-- Stage 5: `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/05-plan/sm/sprint-plan.md`
-- Stage 6: `.delivery/artifacts/06-dev/developer/{story-id}.md`
-- Stage 7: `.delivery/artifacts/07-uat/qa/test-plan.md`, `.delivery/artifacts/07-uat/devops/release-plan.md`
-
-Zero flat paths found in the entire file. Every `artifacts/` reference follows the `{NN}-{stage-name}/{role}/` namespace pattern.
-
----
-
-### TC-7: Phase 4 Step 3 references pipeline-stages.md
-
-**Covers**: AC-7
-**Verdict**: PASS
-
-Phase 4, Step 3 ("Load Stage Definition") at line 361 reads:
-
-> *"Read the stage sub-flow from `references/pipeline-stages.md`. This defines the specific agents to invoke, their task types, and the sub-flow sequence."*
-
-Reference is present and correctly directs the orchestrator to load stage definitions from the authoritative source during execution.
-
----
-
-### TC-8: Cross-Stage Artifact Flow table uses namespaced/generic paths
-
-**Covers**: AC-6
-**Verdict**: PASS
-
-Cross-Stage Artifact Flow table (lines 741-757) uses generic artifact names without paths:
-
-| Stage | Upstream Reference |
-|-------|-------------------|
-| Idea | (none) |
-| Refine | "Idea brief" |
-| Design | "PRD" |
-| Architect | "PRD + design artifacts" |
-| Plan | "PRD + architecture + ADRs" |
-| Dev | "PRD + architecture + stories + design artifacts" |
-| UAT | "All prior artifacts" |
-
-Line 757 explicitly defers to the authoritative source: *"Exact artifact file paths for each stage are defined in `references/pipeline-stages.md`."* No flat artifact paths appear in this section.
-
----
-
-### TC-9: Line count of Stage Definitions section significantly reduced
+#### TC-1: Count presentation.* keys in Presentation table
 
 **Covers**: AC-1
 **Verdict**: PASS
 
-Stage Definitions section: **135 lines** (lines 522-656).
-Original (pre-refactoring): **~400 lines**.
-Reduction: **~66%** (265 lines removed).
+Counted 17 `presentation.*` keys in the Presentation section of `docs/user-guide/config.md` (lines 143-161):
 
-The result falls within the target range of ~100-150 lines specified in the stories.
+1. `presentation.default_format`
+2. `presentation.default_audience`
+3. `presentation.speaker_notes`
+4. `presentation.save_to_artifacts`
+5. `presentation.marp_theme`
+6. `presentation.staleness_warning_days`
+7. `presentation.vocabulary_overrides`
+8. `presentation.pptx_template`
+9. `presentation.pptx_font`
+10. `presentation.pptx_accent_color`
+11. `presentation.narrative.emphasis`
+12. `presentation.narrative.cutting`
+13. `presentation.narrative.framing`
+14. `presentation.narrative.tension`
+15. `presentation.light_mode`
+16. `presentation.thresholds`
+17. `presentation.thresholds_default`
+
+Cross-checked against `config-schema.md` v2.6 (lines 83-99): 17 presentation keys in schema. **Match confirmed.**
 
 ---
 
-### TC-10: Each stage references pipeline-stages.md as authoritative source
+#### TC-2: Grep required_agent_retry_max in config.md
+
+**Covers**: AC-2
+**Verdict**: PASS
+
+2 matches found:
+- Line 74: Pipeline settings table row with type (integer), default (2), valid values (1-5), description
+- Line 228: Example YAML `required_agent_retry_max: 2`
+
+---
+
+#### TC-3: Parse example YAML and verify all keys present
+
+**Covers**: AC-3
+**Verdict**: PASS
+
+Example YAML block (lines 167-283) contains all keys from config-schema.md. Verified every section:
+- Core: `config_version`, `project_type` -- present
+- Tech stack: all 9 keys -- present
+- Architecture: all 4 keys -- present
+- Enforcement: all 3 keys -- present
+- Team: 2 keys -- present
+- Deployment: 2 keys -- present
+- Timeline: 2 keys -- present
+- Compliance: 1 key -- present
+- Pipeline: all 15 keys -- present
+- DoD validators: all 7 stages -- present
+- Personas: all 6 keys -- present
+- Aliases: 2 keys -- present
+- Notifications: 2 keys -- present
+- Monorepo: 3 keys -- present
+- Git: 4 keys -- present
+- GitHub: 3 keys -- present
+- Presentation: all 17 keys (including nested narrative.* and pptx_*) -- present
+- `wizard_completed` -- present
+
+**All keys accounted for. No omissions.**
+
+---
+
+#### TC-4: Spot-check 5 new keys for type/default accuracy
+
+**Covers**: AC-4
+**Verdict**: PASS
+
+| Key | config.md | config-schema.md | Match |
+|-----|-----------|-----------------|-------|
+| `presentation.pptx_template` | string / "" / file path to .pptx template (empty = blank) | string / "" / file path to .pptx template (empty = blank presentation) | YES |
+| `presentation.narrative.emphasis` | boolean / true / true/false / Enable emphasis selection editorial pass | boolean / true / true/false | YES |
+| `presentation.thresholds_default` | integer / 90 / 0-600 (0 = unlimited) / Global threshold override (seconds) | integer / 90 / 0-600 (0 = unlimited) | YES |
+| `presentation.light_mode` | string / "auto" / auto, always, never / Light mode activation strategy | string / "auto" / auto, always, never | YES |
+| `pipeline.required_agent_retry_max` | integer / 2 / 1-5 / Retry for required agents in parallel groups | integer / 2 / 1-5 | YES |
+
+**5/5 keys match the source of truth exactly.**
+
+---
+
+### Story 2: DOC-64-001 (Fix Stale Documentation)
+
+#### TC-5: CLAUDE.md presentation row contains "9" types
+
+**Covers**: AC-1
+**Verdict**: PASS
+
+Line 51 of CLAUDE.md:
+> `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (...). **9 types** (Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary), **4 formats** (structured-markdown, marp, paste-ready, pptx), narrative intelligence (4 editorial passes), light mode
+
+All 9 types listed. All 4 formats listed.
+
+---
+
+#### TC-6: Grep CLAUDE.md for "v2.3"
+
+**Covers**: AC-2
+**Verdict**: PASS
+
+**0 matches.** No stale v2.3 references remain in CLAUDE.md.
+
+---
+
+#### TC-7: Grep CLAUDE.md for "v2.6"
+
+**Covers**: AC-2
+**Verdict**: PASS
+
+1 match at line 124:
+> `**Config schema**: The single source of truth for .delivery/config.yml format is delivery-flow/references/config-schema.md (currently v2.6).`
+
+Config schema version correctly updated.
+
+---
+
+#### TC-8: Grep CLAUDE.md for "Prior Art"
+
+**Covers**: AC-3
+**Verdict**: PASS
+
+1 match at line 45:
+> `| architect/ | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis |`
+
+Architect row correctly mentions Prior Art Analysis.
+
+---
+
+#### TC-9: Count presentation type rows in docs/skills/presentation.md
+
+**Covers**: AC-4
+**Verdict**: PASS
+
+9 type rows in the Presentation Types table (lines 24-32):
+
+1. Sprint Review
+2. Feature Pitch
+3. Stakeholder Update
+4. Technical Deep-Dive
+5. Investor Pitch
+6. Roadmap
+7. Product Demo
+8. Onboarding
+9. Retrospective Summary
+
+---
+
+#### TC-10: Grep docs/skills/presentation.md for "PPTX"
 
 **Covers**: AC-5
 **Verdict**: PASS
 
-**Section-level directive** (lines 524-527):
-> *"`references/pipeline-stages.md` is the single source of truth for stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD Validator Dispatch Templates. The summaries below provide routing and orchestration context only. When executing a stage, ALWAYS load the full definition from `references/pipeline-stages.md`."*
+1 match at line 48:
+> `- **PPTX** -- PowerPoint output with configurable template and branding`
 
-**Per-stage references** -- each stage closes with:
-- Stage 1 (line 542): `See references/pipeline-stages.md...`
-- Stage 2 (line 560): `See references/pipeline-stages.md...`
-- Stage 3 (line 578): `See references/pipeline-stages.md...`
-- Stage 4 (line 596): `See references/pipeline-stages.md...`
-- Stage 5 (line 614): `See references/pipeline-stages.md...`
-- Stage 6 (line 633): `See references/pipeline-stages.md...`
-- Stage 7 (line 652): `See references/pipeline-stages.md...`
-
-**7/7 stages reference pipeline-stages.md.** Directive + per-stage references = complete coverage.
+PPTX format documented in the Output Formats section.
 
 ---
 
-## Additional Verification: No phantom "architecture Section N" references
+#### TC-11: Grep docs/skills/architect.md for "Prior Art Analysis"
 
+**Covers**: AC-8
 **Verdict**: PASS
 
-Searched SKILL.md for pattern `architecture Section \d` (case-insensitive). Zero matches found. No phantom references to numbered architecture sections remain.
+Section heading at line 35:
+> `## Prior Art Analysis`
+
+Full section (lines 35-43) describes the conditional spec-examination step with 4 phases:
+1. Read and Summarize
+2. Classify Each Element
+3. Build On Existing Design
+4. Deviation Protocol
+
+Includes condition: "When user-provided specifications, existing designs, or architectural artifacts are present in the input."
+
+---
+
+#### TC-12: Grep docs/skills/delivery-flow.md for "pipeline-stages" and "theme"
+
+**Covers**: AC-9, AC-10
+**Verdict**: PASS
+
+**"pipeline-stages"** -- 2 matches:
+- Line 9: Architecture section describing SSOT pattern with `pipeline-stages.md` as authoritative source for stage details
+- Line 57: Per-stage protocol Step 3: "Load stage definition from pipeline-stages reference"
+
+**"theme"** -- 3 matches:
+- Line 19: "Manages alias themes for agent personality injection"
+- Line 20: "Surfaces active theme in user-facing output (stage announcements, checkpoint summaries, stage transitions) while preserving neutrality in all internal routing surfaces"
+- Line 111: `aliases.theme` in configuration table
 
 ---
 
 ## AC Coverage Matrix
 
-| AC | Description | Verdict |
-|----|-------------|---------|
-| AC-1 | Stage Definitions replaced with concise summaries referencing pipeline-stages.md | PASS |
-| AC-2 | Retains routing matrix, purpose, runs-for, collaboration, checkpoints, max iterations | PASS |
-| AC-3 | All artifact paths use namespaced convention; zero flat paths | PASS |
-| AC-4 | No `[ARTIFACT CONTENT]` in DoD Protocol; references pipeline-stages.md template | PASS |
-| AC-5 | Explicit directive naming pipeline-stages.md as authoritative source | PASS |
-| AC-6 | Cross-Stage Artifact Flow uses generic names, defers to pipeline-stages.md | PASS |
-| AC-7 | Phase 4 Step 3 references pipeline-stages.md; Stage Routing Matrix intact | PASS |
+### Story 1: DOC-63-001
 
-**7/7 acceptance criteria: PASS**
+| AC | Description | TCs | Verdict |
+|----|-------------|-----|---------|
+| AC-1 | Presentation section includes all 13 missing keys | TC-1 | PASS |
+| AC-2 | Pipeline section includes `required_agent_retry_max` | TC-2 | PASS |
+| AC-3 | Full example YAML includes all new keys with defaults | TC-3 | PASS |
+| AC-4 | Every key matches config-schema.md v2.6 exactly | TC-4 | PASS |
+
+### Story 2: DOC-64-001
+
+| AC | Description | TCs | Verdict |
+|----|-------------|-----|---------|
+| AC-1 | CLAUDE.md presentation row: 9 types, 4 formats | TC-5 | PASS |
+| AC-2 | CLAUDE.md config schema: v2.6, not v2.3 | TC-6, TC-7 | PASS |
+| AC-3 | CLAUDE.md architect row: Prior Art Analysis | TC-8 | PASS |
+| AC-4 | presentation.md: 9 types | TC-9 | PASS |
+| AC-5 | presentation.md: PPTX format | TC-10 | PASS |
+| AC-8 | architect.md: Prior Art Analysis section | TC-11 | PASS |
+| AC-9 | delivery-flow.md: SSOT deduplication pattern | TC-12 | PASS |
+| AC-10 | delivery-flow.md: theme surfacing | TC-12 | PASS |
+
+**12/12 acceptance criteria: PASS**
 
 ---
 
@@ -224,20 +261,22 @@ None found.
 
 ## Observations
 
-1. The refactoring successfully eliminates all duplication between SKILL.md and `pipeline-stages.md`. SKILL.md now serves purely as an orchestration reference with routing context, while detailed sub-flows live in a single authoritative source.
+1. Documentation is internally consistent across all verified files. The presentation skill description in CLAUDE.md aligns exactly with `docs/skills/presentation.md` (9 types, 4 formats).
 
-2. TC-1 as written in the stories has a minor specification conflict with AC-2 regarding metadata field names (`Primary agent:`, `Output:`). The implementation correctly prioritizes AC-2 intent over the overly literal TC-1 wording. Recommend updating TC-1 wording to: *"Search for numbered procedural steps (1., 2., 3.) or 'Sub-flow:' headers within Stage Definitions"* to avoid false positives on retained metadata fields.
+2. The config reference (`docs/user-guide/config.md`) is now fully synchronized with `config-schema.md` v2.6. All 17 presentation keys, plus `pipeline.required_agent_retry_max`, are documented with accurate types, defaults, and valid values.
 
-3. Total `pipeline-stages.md` references in SKILL.md: **15** (1 section directive + 7 per-stage references + 4 in execution protocol + 1 in DoD protocol + 1 in cross-stage flow + 1 in references table). The authoritative-source pattern is thoroughly reinforced.
+3. The architect Prior Art Analysis is documented at both the summary level (CLAUDE.md row) and the detail level (`docs/skills/architect.md` section), providing appropriate progressive disclosure.
+
+4. The delivery-flow documentation correctly captures both the SSOT deduplication refactor and the theme surfacing capability without conflating internal routing with user-facing output.
 
 ---
 
 ## Final Verdict: **PASS**
 
-> *"Every shaft flew true. The fortress of duplication has fallen, and a single tower of truth stands in its place."*
+> *"The quiver is empty, and every shaft found its mark. The documentation stands true."*
 
 ---
 
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/07-uat/qa/uat-report.md
-SUMMARY: All 10 TCs pass (9 clean, 1 warning on TC-1 spec wording vs AC-2), 7/7 ACs verified, zero defects.
+SUMMARY: All 12 TCs pass, 12/12 ACs verified across both stories, zero defects found.

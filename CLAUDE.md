@@ -42,13 +42,13 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 | `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
 | `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading from config) + foundational clean code standards (always-on, configurable guide) |
 | `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) + foundational clean code standards |
-| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies |
+| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis |
 | `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
 | `operations/` | DevOps, Release Manager, Technical Writer |
 | `ui/` | UX Designer, UI Designer, Game UI Designer |
 | `user-feedback/` | Simulated persona-based testing (20+ built-in personas across gamers, web users, enterprise, demographics) |
 | `alias-creator/` | Creates personality-injected aliases from 13 built-in themes |
-| `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (Assemble, Content Gate, Draft, Compose, Review Gate, User Review). 4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive |
+| `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (Assemble, Content Gate, Draft, Compose, Review Gate, User Review). 9 types (Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary), 4 formats (structured-markdown, marp, paste-ready, pptx), narrative intelligence (4 editorial passes), light mode |
 
 ### delivery-team Hooks (7 hooks across 5 event types)
 
@@ -100,7 +100,7 @@ No build step, linting config, or test runner is configured.
 - Session keepalive: cross-platform companion process for long-running sessions
 - Pipeline state persistence and resume across sessions
 - Git/GitHub integration: branching strategies, conventional commits, automated issue/PR creation
-- 13 alias themes with personality injection (via alias-creator skill)
+- 13 alias themes with personality injection (via alias-creator skill) and theme surfacing in orchestrator output (stage announcements, checkpoint summaries, transitions)
 - Config validation toolchain: JSON Schema generation + validation scripts
 - Pipeline analytics dashboard for delivery metrics
 
@@ -121,7 +121,7 @@ No build step, linting config, or test runner is configured.
 - After creating a skill → use `plugin-dev:skill-reviewer` to review it
 - After creating a plugin → use `plugin-dev:plugin-validator` to validate it
 
-**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.3). When adding new config keys, follow the extension protocol documented there.
+**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.6). When adding new config keys, follow the extension protocol documented there.
 
 ## Permissions
 

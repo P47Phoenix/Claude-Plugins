@@ -71,6 +71,7 @@ All configuration lives in `.delivery/config.yml` (pure YAML, no frontmatter). T
 | `pipeline.isolation_audit` | string | "warn" | off, warn, block | Agent prompt audit level |
 | `pipeline.metadata_max_chars` | integer | 200 | 50-500 | Signal summary character limit |
 | `pipeline.agent_timeout` | integer | 120 | 30-600 | Per-agent timeout (seconds) |
+| `pipeline.required_agent_retry_max` | integer | 2 | 1-5 | Retry for required agents in parallel groups |
 
 ### Enforcement
 
@@ -144,8 +145,20 @@ All configuration lives in `.delivery/config.yml` (pure YAML, no frontmatter). T
 | `presentation.default_format` | string | "structured-markdown" | structured-markdown, marp, paste-ready, pptx | Output format |
 | `presentation.default_audience` | string | "technical" | technical, executive, investor, client-facing, casual | Audience mode |
 | `presentation.speaker_notes` | boolean | false | true/false | Include speaker notes |
-| `presentation.light_mode` | string | "auto" | auto, always, never | Light mode strategy |
-| `presentation.thresholds_default` | integer | 90 | 0-600 | Generation threshold (seconds) |
+| `presentation.save_to_artifacts` | boolean | true | true/false | Save approved output to `.delivery/artifacts/presentations/` |
+| `presentation.marp_theme` | string | "default" | default, gaia, uncover, custom path | Marp theme |
+| `presentation.staleness_warning_days` | integer | 7 | 1-30 | Days before staleness warning on source artifacts |
+| `presentation.vocabulary_overrides` | map | {} | term: replacement pairs | Custom jargon translations |
+| `presentation.pptx_template` | string | "" | file path to .pptx template (empty = blank) | PPTX template for branding |
+| `presentation.pptx_font` | string | "Calibri" | font family name | PPTX font override |
+| `presentation.pptx_accent_color` | string | "#2d5aa0" | hex color string (#RRGGBB) | PPTX accent color override |
+| `presentation.narrative.emphasis` | boolean | true | true/false | Enable emphasis selection editorial pass |
+| `presentation.narrative.cutting` | boolean | true | true/false | Enable information cutting editorial pass |
+| `presentation.narrative.framing` | boolean | true | true/false | Enable audience-specific framing editorial pass |
+| `presentation.narrative.tension` | boolean | true | true/false | Enable narrative tension editorial pass |
+| `presentation.light_mode` | string | "auto" | auto, always, never | Light mode activation strategy |
+| `presentation.thresholds` | map | {} | type-name: seconds pairs (e.g., sprint-review: 120). 0 = unlimited. | Per-type threshold overrides |
+| `presentation.thresholds_default` | integer | 90 | 0-600 (0 = unlimited) | Global threshold override (seconds) |
 
 ---
 
@@ -207,6 +220,12 @@ pipeline:
   max_parallel_agents: 3
   parallel_stories: true
   parallel_validators: true
+  verify_skill_loading: true
+  delegation_retry_max: 2
+  isolation_audit: warn
+  metadata_max_chars: 200
+  agent_timeout: 120
+  required_agent_retry_max: 2
 dod_validators:
   idea: [po, architect]
   refine: [po, architect, qa]
@@ -245,8 +264,21 @@ presentation:
   default_format: structured-markdown
   default_audience: technical
   speaker_notes: false
+  save_to_artifacts: true
+  marp_theme: default
+  staleness_warning_days: 7
+  vocabulary_overrides: {}
+  narrative:
+    emphasis: true
+    cutting: true
+    framing: true
+    tension: true
   light_mode: auto
+  thresholds: {}
   thresholds_default: 90
+  pptx_template: ""
+  pptx_font: Calibri
+  pptx_accent_color: "#2d5aa0"
 wizard_completed: 2026-03-22
 ```
 

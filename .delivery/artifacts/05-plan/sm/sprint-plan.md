@@ -1,68 +1,112 @@
-## Sprint Plan
+# Sprint Plan: Batched Documentation Fix (Issues #63 + #64)
 
-**Sprint Goal**: Eliminate SKILL.md stage definition duplication, fixing artifact path drift and DoD template violation (Issues #60, #61, #62)
+**Sprint Goal**: Bring all documentation into alignment with the current codebase -- config reference complete to v2.6, presentation docs updated to v1.1, architect and delivery-flow docs reflecting recent features.
+**Type**: DOCS_ONLY
 **Velocity Ceiling**: 80%
-**Sprint Capacity**: 1 story, 2 SP
-**Load**: 2 / 2.5 available = 80% (at ceiling)
+**Sprint Capacity**: 2 stories, 5 SP
+**Load**: 5 / 6.25 available = 80% (at ceiling)
 
 ---
 
-### Story Sequence
+## Story Sequence
 
-| Order | Story ID | Title | SP | Dependencies |
-|-------|----------|-------|----|-------------|
-| 1 | BF-62-001 | Remove Duplicated Stage Definitions from SKILL.md | 2 | None |
+| Order | Story ID | Title | SP | Dependencies | Assignee |
+|-------|----------|-------|----|-------------|----------|
+| 1 | DOC-63-001 | Update Config Reference with Missing v2.4-v2.6 Keys | 2 | None | Technical Writer |
+| 2 | DOC-64-001 | Fix Stale Documentation Across CLAUDE.md and Docs Site | 3 | None (parallel-safe) | Technical Writer |
 
----
-
-### Implementation Approach
-
-**Single file**: `delivery-team/skills/delivery-flow/SKILL.md`
-
-**Sections to modify** (in order of operation):
-
-1. **Stage Definitions section (lines ~522-928)**
-   - Remove detailed agent invocations, input/output specifications, supporting agent details
-   - Keep per stage: purpose (1-2 lines), "Runs for" with depth, collaboration patterns, human checkpoint, max self-correction, game dev additions (summary only)
-   - Add per stage: explicit reference to `references/pipeline-stages.md` for detailed sub-flow, agent invocations, and artifact paths
-   - Fix any remaining artifact path references to use namespaced convention
-
-2. **Team Definition of Done Protocol section (lines ~930-980)**
-   - Remove the inline DoD validator template containing `[ARTIFACT CONTENT]`
-   - Replace with reference to the DoD Validator Dispatch Template in `references/pipeline-stages.md`
-   - Keep: the execution steps (identify validators, evaluate votes, self-correction on NOT_DONE, track iterations, escalate on exhaustion)
-
-3. **Cross-Stage Artifact Flow table (lines ~1031-1050)**
-   - Replace flat artifact names (e.g., "idea brief", "PRD") with either namespaced paths or add a note deferring to pipeline-stages.md for exact paths
-
-4. **Any remaining flat artifact paths throughout SKILL.md**
-   - Search and replace all instances of flat paths with namespaced equivalents
-
-**What NOT to change**:
-- Phase 0 (Setup Wizard) -- no stage definitions here
-- Phase 1 (Project Type Detection) -- no stage definitions here
-- Phase 2 (Memory Retrieval) -- no stage definitions here
-- Phase 3 (Stage Routing) -- the Stage Routing Matrix table stays as-is
-- Phase 4 (Pipeline Execution Protocol) -- the step-by-step protocol stays; only Step 3 is verified (already references pipeline-stages.md)
-- Guardrails section -- stays as-is
-- User Commands section -- stays as-is
-- References table -- stays as-is
+Both stories are independent and may execute in parallel. However, the Technical Writer should complete DOC-63-001 first, since the config key additions inform what the presentation docs page (DOC-64-001) references.
 
 ---
 
-### Risk Assessment
+## Implementation Plan
+
+### Story 1: DOC-63-001 — Config Reference Update
+
+**File**: `docs/user-guide/config.md`
+
+**Tasks**:
+
+1. **Add missing Presentation keys to Presentation table** (13 keys)
+   - PPTX branding: `pptx_template`, `pptx_font`, `pptx_accent_color`
+   - Narrative intelligence: `narrative.emphasis`, `narrative.cutting`, `narrative.framing`, `narrative.tension`
+   - Operational: `save_to_artifacts`, `marp_theme`, `staleness_warning_days`, `vocabulary_overrides`
+   - Thresholds: `thresholds` (map), `thresholds_default` (integer) -- note: `thresholds_default` already exists but `thresholds` (per-type map) is missing
+   - Light mode: `light_mode` -- verify already present (was added but verify completeness)
+   - Source of truth: `delivery-team/skills/delivery-flow/references/config-schema.md` lines 83-99
+
+2. **Add missing Pipeline key**
+   - `pipeline.required_agent_retry_max` (integer, default 2, range 1-5, description: "Retry for required agents in parallel groups")
+   - Source: config-schema.md line 39
+
+3. **Update full example config YAML**
+   - Add all new presentation keys with defaults
+   - Add `pipeline.required_agent_retry_max: 2`
+
+**Verification**: Run AC-1 through AC-4, TC-1 through TC-4.
+
+---
+
+### Story 2: DOC-64-001 — Stale Documentation Fix
+
+**Files**: 4 files, ordered by dependency.
+
+#### Task 2a: Update `CLAUDE.md`
+
+| Line/Section | Current | Updated |
+|-------------|---------|---------|
+| Line 45 (architect row) | "11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies" | Add "+ Prior Art Analysis" |
+| Line 51 (presentation row) | "4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive" | "9 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary. 4 formats: structured-markdown, Marp, paste-ready, PPTX" |
+| Line 41 (delivery-flow row) | Current description | Add mention of theme surfacing |
+| Line 124 (config schema) | "currently v2.3" | "currently v2.6" |
+
+#### Task 2b: Update `docs/skills/presentation.md`
+
+- Update intro text to mention 9 types and 4 formats
+- Presentation Types table: already has 9 types (verify)
+- Output Formats: add PPTX with description of configurable template and branding
+- Add Narrative Intelligence section: 4 editorial passes (emphasis, cutting, framing, tension) in the Compose step
+- Add/verify Light Mode section with auto/always/never table
+- Update Configuration example YAML to include new keys
+
+#### Task 2c: Update `docs/skills/architect.md`
+
+- Add "Prior Art Analysis" section after the Task Types table
+- Document: condition (user-provided specs present), two phases (examine then classify), output (summary + classification table in architecture artifact)
+- Source: `delivery-team/skills/architect/SKILL.md` Prior Art Analysis section
+
+#### Task 2d: Update `docs/skills/delivery-flow.md`
+
+- Update "What It Does" to mention single-source-of-truth pattern (SKILL.md + pipeline-stages.md)
+- Add bullet about theme surfacing in pipeline orchestration
+- Update structural description to reflect deduplication: SKILL.md is high-level orchestration guide, `references/pipeline-stages.md` is authoritative source for detailed stage sub-flows, agent invocations, and artifact paths
+
+**Verification**: Run AC-1 through AC-10, TC-1 through TC-12.
+
+---
+
+## Risk Assessment
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Removing too much from stage definitions, breaking orchestrator flow | Low | Medium | Keep all routing-relevant info (runs-for, depth, checkpoints, collaboration patterns). Only remove what is duplicated in pipeline-stages.md |
-| Missing a flat artifact path in a non-Stage-Definitions section | Low | Low | Run TC-2 and TC-3 grep tests to catch all occurrences |
-| Cross-Stage Artifact Flow table changes confuse orchestrator | Low | Low | Table already uses generic names; just ensure no flat paths leak in |
+| Missing a key in config docs | Low | Medium | Diff config-schema.md keys against docs/user-guide/config.md keys programmatically |
+| Introducing new factual error while fixing old ones | Low | Medium | Cross-reference every claim against source SKILL.md files |
+| Forgetting to update the example YAML | Low | Low | TC-3 catches this explicitly |
 
 ---
 
-### Definition of Done
+## Branch Strategy
 
-- All 7 ACs pass (structural verification)
-- All 9 TCs pass
-- SKILL.md still loads and parses correctly (no broken markdown)
-- `references/pipeline-stages.md` is NOT modified (single-file change)
+- Branch: `docs/fix-63-64-stale-docs`
+- Conventional commit: `docs: update config reference and fix stale docs (#63, #64)`
+- Single PR batching both issues
+
+---
+
+## Definition of Done
+
+- [ ] All 14 ACs pass across both stories (4 from DOC-63-001 + 10 from DOC-64-001)
+- [ ] All 16 TCs pass (4 + 12)
+- [ ] No stale version numbers, feature counts, or missing features remain in any of the 5 files
+- [ ] Config reference key count matches config-schema.md v2.6 exactly
+- [ ] PR reviewed and merged

@@ -1,86 +1,93 @@
-# Development Artifact: BF-62-001 — Remove Duplicated Stage Definitions from SKILL.md
+# Developer Notes: DOC-63-001 + DOC-64-001
 
-**Story**: BF-62-001
-**Issues**: #60, #61, #62
-**Developer**: Gimli
+**Date**: 2026-04-04
+**Developer**: Gimli (delivery-team:developer)
+**Stories**: DOC-63-001 (config key docs), DOC-64-001 (staleness fixes)
 
-## Implementation Summary
+---
 
-And my code! Refactored `delivery-team/skills/delivery-flow/SKILL.md` to remove ~270 lines of duplicated stage definitions, fix flat artifact paths, and fix the DoD template violation. The stone was heavy with duplication, but a Dwarf's axe knows how to carve it clean.
+## Story DOC-63-001: Config Reference Update
 
-## Changes Made
+### Changes Made
 
-### 1. Stage Definitions Section (lines 522-652)
+**File: `docs/user-guide/config.md`**
 
-Replaced ~400 lines of detailed stage definitions with ~130 lines of concise summaries. Each stage now contains ONLY orchestrator-level routing information:
+1. **Presentation section** -- Added 13 missing config keys to the Presentation table:
+   - `presentation.save_to_artifacts` (boolean, default true)
+   - `presentation.marp_theme` (string, default "default")
+   - `presentation.staleness_warning_days` (integer, default 7)
+   - `presentation.vocabulary_overrides` (map, default {})
+   - `presentation.pptx_template` (string, default "")
+   - `presentation.pptx_font` (string, default "Calibri")
+   - `presentation.pptx_accent_color` (string, default "#2d5aa0")
+   - `presentation.narrative.emphasis` (boolean, default true)
+   - `presentation.narrative.cutting` (boolean, default true)
+   - `presentation.narrative.framing` (boolean, default true)
+   - `presentation.narrative.tension` (boolean, default true)
+   - `presentation.light_mode` (string, default "auto") -- was present but updated with full valid values
+   - `presentation.thresholds` (map, default {})
+   - `presentation.thresholds_default` (integer, default 90) -- was present but updated valid values description
 
-- Stage name and number
-- Runs for / Skipped for (project types)
-- Purpose (one line)
-- Primary agent (skill + role, brief)
-- Upstream artifacts (namespaced paths)
-- Collaboration patterns assigned
-- DoD validators (role list)
-- Human checkpoint (if any)
-- Max self-correction iterations
-- Output artifact path(s) using namespaced format
-- Game dev additions (brief note)
-- Reference directive to `references/pipeline-stages.md`
+2. **Pipeline section** -- Added `pipeline.required_agent_retry_max` (integer, default 2, range 1-5)
 
-**Removed** from each stage:
-- Detailed sub-flow steps (Input/Output per agent)
-- Supporting agent descriptions with Input/Output details
-- Inline content duplicating pipeline-stages.md
+3. **Full example YAML** -- Updated to include all new presentation keys and missing pipeline keys (verify_skill_loading, delegation_retry_max, isolation_audit, metadata_max_chars, agent_timeout, required_agent_retry_max) matching config-schema.md v2.6 template exactly.
 
-**Added** authoritative-source directive at the top of Stage Definitions:
-> `references/pipeline-stages.md` is the single source of truth for stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD Validator Dispatch Templates.
+### Verification
 
-### 2. DoD Template Fix (Team Definition of Done Protocol)
+- All key types, defaults, and valid values match config-schema.md v2.6 exactly
+- Example YAML matches the Config File Template in config-schema.md
 
-Replaced the inline validator prompt template that contained `[ARTIFACT CONTENT]` with a reference to the DoD Validator Dispatch Template in `references/pipeline-stages.md`. The validator now reads the artifact from the file path -- the orchestrator never pastes artifact content into validator prompts.
+---
 
-### 3. Artifact Path Migration (flat -> namespaced)
+## Story DOC-64-001: Staleness Fixes
 
-All artifact paths converted from flat format to namespaced format:
+### Changes Made
 
-| Old (flat) | New (namespaced) |
-|-----------|-----------------|
-| `.delivery/artifacts/01-idea-brief.md` | `.delivery/artifacts/01-idea/po/idea-brief.md` |
-| `.delivery/artifacts/02-prd.md` | `.delivery/artifacts/02-refine/po/prd.md` |
-| `.delivery/artifacts/03-ux-design.md` | `.delivery/artifacts/03-design/ux/user-flows.md` (+ wireframes, component-specs, accessibility) |
-| `.delivery/artifacts/04-architecture.md` | `.delivery/artifacts/04-architect/solution/architecture.md` |
-| `.delivery/artifacts/04a-adrs/ADR-001.md` | `.delivery/artifacts/04-architect/adrs/ADR-001.md` |
-| `.delivery/artifacts/05-sprint-plan.md` | `.delivery/artifacts/05-plan/po/stories.md`, `sm/sprint-plan.md`, `qa/test-strategy.md`, `devops/deploy-plan.md` |
-| `.delivery/artifacts/06-dev-notes.md` | `.delivery/artifacts/06-dev/developer/{story-id}.md` |
-| `.delivery/artifacts/07-uat-report.md` | `.delivery/artifacts/07-uat/qa/test-plan.md`, `qa/test-cases.md` |
-| `.delivery/artifacts/07a-release-plan.md` | `.delivery/artifacts/07-uat/devops/release-plan.md` |
-| `.delivery/artifacts/07b-documentation.md` | `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `user-guide.md` |
+**File: `CLAUDE.md`**
 
-### 4. Cross-Stage Artifact Flow Table
+1. Presentation skill row: Updated from "4 types" to "9 types (...), 4 formats (...), narrative intelligence (4 editorial passes), light mode"
+2. Config schema version: Updated from "v2.3" to "v2.6"
+3. Architect skill row: Added "+ Prior Art Analysis"
+4. Delivery-flow pipeline architecture: Added theme surfacing mention to alias themes bullet
 
-Updated to use generic artifact names without hardcoded flat paths. Added footer referencing `references/pipeline-stages.md` for exact file paths.
+**File: `docs/skills/presentation.md`**
 
-## Verification Status
+1. All 9 presentation types were already listed (previous update) -- verified correct
+2. All 4 output formats including PPTX were already listed -- verified correct
+3. Added Narrative Intelligence section with table of 4 editorial passes (emphasis, cutting, framing, tension) and their config keys
+4. Light Mode section was already present -- verified correct
+5. Updated Configuration YAML block to include all 18 presentation config keys
 
-| Check | Result |
-|-------|--------|
-| No `[ARTIFACT CONTENT]` in file | PASS |
-| No flat artifact paths (e.g., `01-idea-brief.md`, `02-prd.md`) | PASS |
-| All 7 stages present in Stage Definitions | PASS (lines 529-652) |
-| Each stage has: purpose, runs-for, collaboration patterns, DoD validators, checkpoint, max iterations, output path | PASS |
-| Each stage references `pipeline-stages.md` | PASS (7/7 stages) |
-| Authoritative-source directive present | PASS (line 524) |
-| Phase 4 Step 3 references pipeline-stages.md | PASS (line 363) |
-| DoD template references pipeline-stages.md | PASS (line 667) |
-| Stage Routing Matrix intact | PASS (lines 251-259) |
-| Cross-Stage Artifact Flow updated | PASS (lines 741-755) |
-| All namespaced paths match pipeline-stages.md | PASS |
-| Line count reduced | PASS (944 lines, down from ~1240 — net reduction of ~296 lines) |
+**File: `docs/skills/architect.md`**
+
+1. Added Prior Art Analysis section before Task Types, describing the 4-step conditional process (Read and Summarize, Classify Each Element, Build On Existing Design, Deviation Protocol)
+
+**File: `docs/skills/delivery-flow.md`**
+
+1. Added Architecture section describing SKILL.md as high-level orchestration guide with pipeline-stages.md as SSOT for stage details
+2. Added theme surfacing bullet to "What It Does" list, noting user-facing output slots and neutrality preservation in internal surfaces
+
+---
+
+## AC Verification Summary
+
+| AC | Status | Notes |
+|----|--------|-------|
+| DOC-63 AC-1 | PASS | 18 presentation keys in docs (5 existing + 13 new) |
+| DOC-63 AC-2 | PASS | `required_agent_retry_max` present in Pipeline table |
+| DOC-63 AC-3 | PASS | Example YAML includes all new keys with defaults |
+| DOC-63 AC-4 | PASS | All types/defaults/valid-values match config-schema.md v2.6 |
+| DOC-64 AC-1 | PASS | CLAUDE.md presentation row has 9 types, 4 formats |
+| DOC-64 AC-2 | PASS | CLAUDE.md says v2.6, not v2.3 |
+| DOC-64 AC-3 | PASS | CLAUDE.md architect row mentions Prior Art Analysis |
+| DOC-64 AC-4 | PASS | docs/skills/presentation.md lists all 9 types |
+| DOC-64 AC-5 | PASS | docs/skills/presentation.md lists all 4 formats including PPTX |
+| DOC-64 AC-6 | PASS | Narrative Intelligence section with 4 editorial passes |
+| DOC-64 AC-7 | PASS | Light Mode section with auto/always/never table |
+| DOC-64 AC-8 | PASS | Prior Art Analysis section in docs/skills/architect.md |
+| DOC-64 AC-9 | PASS | Architecture section in docs/skills/delivery-flow.md references pipeline-stages.md as SSOT |
+| DOC-64 AC-10 | PASS | Theme surfacing mentioned in delivery-flow.md What It Does |
 
 ## Deviation from Plan
 
-None. All acceptance criteria addressed as specified.
-
-## Known Issues
-
-None.
+None. All acceptance criteria addressed as specified. And my code!

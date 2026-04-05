@@ -72,6 +72,19 @@ Output: Structured presentation with slides covering deliverables,
         technical highlights, quality metrics, and next steps
 ```
 
+## Narrative Intelligence
+
+Step 4 (Compose) runs four sequential editorial passes that transform slide content. Order is strict: Emphasis > Cutting > Framing > Tension. Each pass can be individually disabled via config.
+
+| Pass | Config Key | Effect |
+|------|-----------|--------|
+| **Emphasis Selection** | `presentation.narrative.emphasis` | Reorders slides so highest-impact content leads (data-backed results first, user impact over technical achievement) |
+| **Information Cutting** | `presentation.narrative.cutting` | Removes or merges slides that do not earn their place (no data + no decision = cut candidate) |
+| **Audience-Specific Framing** | `presentation.narrative.framing` | Restructures the argument within each slide based on audience values (investor, executive, technical, client-facing, casual) |
+| **Narrative Tension** | `presentation.narrative.tension` | Positions the climax slide at the 60-70% point for maximum impact (requires 6+ slides) |
+
+Step 4 never degrades -- all enabled editorial passes run at full depth regardless of light mode or threshold status.
+
 ## Configuration
 
 ```yaml
@@ -79,6 +92,19 @@ presentation:
   default_format: structured-markdown
   default_audience: technical
   speaker_notes: false
+  save_to_artifacts: true
+  marp_theme: default
+  staleness_warning_days: 7
+  vocabulary_overrides: {}
+  narrative:
+    emphasis: true
+    cutting: true
+    framing: true
+    tension: true
   light_mode: auto
+  thresholds: {}
   thresholds_default: 90
+  pptx_template: ""
+  pptx_font: Calibri
+  pptx_accent_color: "#2d5aa0"
 ```

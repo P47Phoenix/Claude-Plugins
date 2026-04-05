@@ -32,6 +32,17 @@ Architecture agent with 11 specialized roles spanning software and game developm
 - "ECS", "game loop", "netcode", "render pipeline"
 - "compliance checklist", "SOC 2", "GDPR", "incident response"
 
+## Prior Art Analysis
+
+When user-provided specifications, existing designs, or architectural artifacts are present in the input (PRD with architecture decisions, design documents, technical specifications, prior ADRs), the Architect executes a Prior Art Analysis before any design work:
+
+1. **Read and Summarize** -- Read all user-provided specs. Summarize what the user has already designed or decided, the scope and boundaries, and key architectural elements.
+2. **Classify Each Element** -- Produce a classification table categorizing every element as either "Decision Already Made" (Architect must not propose alternatives) or "Open Question" (Architect is free to propose designs).
+3. **Build On Existing Design** -- Validate feasibility of user decisions, fill gaps for open questions, and map the design to implementation artifacts (C4 diagrams, component breakdowns, data flows).
+4. **Deviation Protocol** -- Proposing alternatives to existing decisions is only permitted when a specific, documented technical blocker makes the original decision infeasible. The blocker must be concrete and verifiable.
+
+If no user-provided specs exist, this step is skipped entirely.
+
 ## Task Types
 
 | Type | What It Does |
