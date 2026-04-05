@@ -724,8 +724,8 @@
           "default": 7
         },
         "vocabulary_overrides": {
-          "type": "string",
-          "default": "{}"
+          "type": "object",
+          "default": {}
         },
         "pptx_template": {
           "type": "string",
@@ -771,12 +771,11 @@
           "default": "auto"
         },
         "thresholds": {
-          "type": "string",
-          "enum": [
-            "type-name: seconds pairs (e.g.",
-            "sprint-review: 120). 0 = unlimited."
-          ],
-          "default": "{}"
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "default": {}
         },
         "thresholds_default": {
           "type": "integer",

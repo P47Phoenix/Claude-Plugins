@@ -146,6 +146,7 @@ def populate_title_slide(
         slide.shapes.title.text = slide_data.get("title", "")
         for run in slide.shapes.title.text_frame.paragraphs[0].runs:
             run.font.name = font_name
+            run.font.color.rgb = accent_color
 
     # Set subtitle from body (join bullets) or first body item.
     body_items = slide_data.get("body", [])
@@ -175,7 +176,8 @@ def add_bullets(text_frame, items: list[str], font_name: str, font_size: int = 1
 
 
 def add_table_to_slide(
-    slide, table_data: dict, font_name: str, top: float = 2.5
+    slide, table_data: dict, font_name: str, top: float = 2.5,
+    accent_color: RGBColor | None = None,
 ) -> None:
     """Add a table shape to a slide from structured table data.
 
@@ -212,6 +214,8 @@ def add_table_to_slide(
                 p.font.name = font_name
                 p.font.size = Pt(14)
                 p.font.bold = True
+                if accent_color:
+                    p.font.color.rgb = accent_color
         row_idx = 1
 
     # Populate data rows.
@@ -248,6 +252,7 @@ def populate_content_slide(
         slide.shapes.title.text = slide_data.get("title", "")
         for run in slide.shapes.title.text_frame.paragraphs[0].runs:
             run.font.name = font_name
+            run.font.color.rgb = accent_color
 
     body_items = slide_data.get("body", [])
     table_data = slide_data.get("table")
@@ -262,14 +267,14 @@ def populate_content_slide(
 
     if layout_key == "comparison" and table_data:
         # Render comparison as a table shape.
-        add_table_to_slide(slide, table_data, font_name)
+        add_table_to_slide(slide, table_data, font_name, accent_color=accent_color)
         # Add summary bullets below the table if body items exist.
         if body_items and body_placeholder:
             add_bullets(body_placeholder.text_frame, body_items, font_name)
 
     elif layout_key == "timeline" and table_data:
         # Render timeline as a table.
-        add_table_to_slide(slide, table_data, font_name)
+        add_table_to_slide(slide, table_data, font_name, accent_color=accent_color)
         if body_items and body_placeholder:
             add_bullets(body_placeholder.text_frame, body_items, font_name)
 
@@ -299,7 +304,7 @@ def populate_content_slide(
 
     # If there is table data but no special layout handling, add it below.
     if table_data and layout_key not in ("comparison", "timeline"):
-        add_table_to_slide(slide, table_data, font_name, top=4.0)
+        add_table_to_slide(slide, table_data, font_name, top=4.0, accent_color=accent_color)
 
 
 def add_speaker_notes(slide, notes_text: str | None) -> None:
@@ -338,43 +343,26 @@ def generate_pptx(
         ValueError: If JSON structure is invalid.
     """
     # Parse accent color.
-    try:
-        accent_color = parse_hex_color(accent_color_hex)
-    except ValueError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+    accent_color = parse_hex_color(accent_color_hex)
 
     # Read JSON input.
     input_file = Path(input_path)
     if not input_file.exists():
-        print(f"Error: Input file not found: {input_path}", file=sys.stderr)
-        sys.exit(1)
+        raise FileNotFoundError(f"Input file not found: {input_path}")
 
-    try:
-        with open(input_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in {input_path}: {e}", file=sys.stderr)
-        sys.exit(1)
+    with open(input_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
     # Validate structure.
     slides_data = data.get("slides")
     if not slides_data or not isinstance(slides_data, list):
-        print(
-            'Error: JSON must contain a non-empty "slides" array.',
-            file=sys.stderr,
-        )
-        sys.exit(1)
+        raise ValueError('JSON must contain a non-empty "slides" array.')
 
     # Create presentation -- from template or blank.
     if template_path:
         template_file = Path(template_path)
         if not template_file.exists():
-            print(
-                f"Error: Template file not found: {template_path}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+            raise FileNotFoundError(f"Template file not found: {template_path}")
         prs = pptx.Presentation(template_path)
     else:
         prs = pptx.Presentation()
@@ -461,13 +449,17 @@ def main(argv: list[str] | None = None) -> None:
     """Entry point for CLI invocation."""
     args = parse_args(argv)
 
-    slide_count = generate_pptx(
-        input_path=args.input,
-        output_path=args.output,
-        template_path=args.template,
-        font_name=args.font,
-        accent_color_hex=args.accent_color,
-    )
+    try:
+        slide_count = generate_pptx(
+            input_path=args.input,
+            output_path=args.output,
+            template_path=args.template,
+            font_name=args.font,
+            accent_color_hex=args.accent_color,
+        )
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     print(f"Saved: {args.output} ({slide_count} slides)")
 

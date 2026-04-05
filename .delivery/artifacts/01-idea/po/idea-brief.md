@@ -1,80 +1,72 @@
-# Idea Brief: Batched Documentation Fix (Issues #63 + #64)
+# Idea Brief: Batched BUG_FIX -- generate_pptx.py + config-schema.json (#65, #66)
 
 **Date**: 2026-04-04
 **Author**: Product Owner
-**Type**: DOCS_ONLY
+**Type**: BUG_FIX
 **Priority**: High
 
 ---
 
 ## Problem Statement
 
-The documentation has fallen behind the code -- a map drawn before the mountains moved. Two related gaps have opened, and a wise team mends both at once rather than traversing the same ground twice.
+Two defects have been discovered that compromise library usability and schema correctness. A shadow lies upon these tools -- small in appearance, but troublesome in consequence. Better to mend them together while the forge is hot.
 
-### Issue #63 — Config Reference Gap
+### Issue #65 -- generate_pptx.py library defects
 
-The docs site config reference (`docs/user-guide/config.md`) is missing 13 config keys added across schema versions v2.4 through v2.6. Users consulting this page cannot find:
+The `generate_pptx()` function in `delivery-team/skills/presentation/scripts/generate_pptx.py` has two problems:
 
-- PPTX branding keys (`presentation.pptx_template`, `presentation.pptx_font`, `presentation.pptx_accent_color`)
-- Narrative intelligence toggles (`presentation.narrative.emphasis`, `.cutting`, `.framing`, `.tension`)
-- Light mode setting (`presentation.light_mode`)
-- Per-type threshold overrides (`presentation.thresholds`, `presentation.thresholds_default`)
-- Presentation operational keys (`presentation.save_to_artifacts`, `presentation.marp_theme`, `presentation.staleness_warning_days`, `presentation.vocabulary_overrides`)
-- Pipeline retry key (`pipeline.required_agent_retry_max`)
+1. **sys.exit() inside library function**: Five `sys.exit(1)` calls live inside `generate_pptx()` instead of raising exceptions. Any caller importing this function as a library will have their process terminated on error -- an unacceptable contract for a public API. The function's own docstring promises `FileNotFoundError`, `json.JSONDecodeError`, and `ValueError`, but delivers `SystemExit` instead.
 
-The source of truth (`delivery-team/skills/delivery-flow/references/config-schema.md` v2.6) has all these keys. The docs page does not.
+2. **accent_color is dead code**: The `accent_color_hex` parameter is accepted, parsed into an `RGBColor`, and threaded through to `populate_title_slide()` and `populate_content_slide()` -- but neither function applies it to the title font runs. `add_table_to_slide()` does not receive it at all. The color is passed to `set_text_frame_font()` which does apply it, but that helper is never called for titles or table headers.
 
-### Issue #64 — Stale Documentation
+### Issue #66 -- config-schema.json type errors
 
-Multiple docs pages and CLAUDE.md contain outdated information after recent feature work:
+The generated `config-schema.json` contains two type errors in the `presentation` section:
 
-| What is Wrong | Where | Correct State |
-|--------------|-------|--------------|
-| Presentation skill says "4 types, 3 formats" | `CLAUDE.md` line 51 | 9 types, 4 formats (PPTX added) |
-| Config version says v2.3 | `CLAUDE.md` line 124 | v2.6 |
-| Architect Prior Art Analysis (#55) not mentioned | `docs/skills/architect.md` | Architect SKILL.md has full Prior Art Analysis section |
-| Orchestrator theme surfacing (#59) not mentioned | `docs/skills/delivery-flow.md` | pipeline-stages.md references theme surfacing |
-| SKILL.md deduplication (#62) changed delivery-flow structure | `docs/skills/delivery-flow.md` | Delivery-flow now uses single SKILL.md + references pattern |
+1. **`presentation.vocabulary_overrides`**: Typed as `"type": "string"` with `"default": "{}"`. The source of truth (`config-schema.md`) declares this as `map` -- it should be `{"type": "object"}`.
+
+2. **`presentation.thresholds`**: Typed as `"type": "string"` with an `"enum"` containing description text fragments (`"type-name: seconds pairs (e.g."`, `"sprint-review: 120). 0 = unlimited."`). The source of truth declares this as `map[string, integer]` -- it should be `{"type": "object", "additionalProperties": {"type": "integer"}}`.
+
+**Root cause**: `delivery-team/scripts/generate-schema.py` `parse_type()` handles `map[string, string]` but not bare `map` or `map[string, integer]`. Unrecognized types fall through to the default case which returns `{"type": "string"}`. Then `parse_valid_values()` treats the description text as comma-separated enum candidates.
 
 ---
 
 ## Scope
 
-Five files require updates:
-
 | # | File | Changes |
 |---|------|---------|
-| 1 | `CLAUDE.md` | Update presentation description (9 types, 4 formats), bump config version to v2.6, add Prior Art Analysis to architect description, mention theme surfacing in delivery-flow |
-| 2 | `docs/user-guide/config.md` | Add 13 missing config keys from v2.4-v2.6 to Presentation section, add `pipeline.required_agent_retry_max` to Pipeline section, update full example config |
-| 3 | `docs/skills/presentation.md` | Update to reflect current state: 9 types, 4 formats (PPTX), narrative intelligence editorial passes, light mode, per-type thresholds |
-| 4 | `docs/skills/architect.md` | Add Prior Art Analysis section documenting the conditional spec-examination step |
-| 5 | `docs/skills/delivery-flow.md` | Update to reflect deduplication refactor: SKILL.md as high-level orchestration guide, pipeline-stages.md as authoritative source for stage details |
+| 1 | `delivery-team/skills/presentation/scripts/generate_pptx.py` | Replace 5x sys.exit() with exceptions; apply accent_color to titles and table headers |
+| 2 | `delivery-team/scripts/generate-schema.py` | Add bare `map` and `map[K, V]` regex to parse_type() |
+| 3 | `delivery-team/skills/delivery-flow/references/config-schema.json` | Regenerate from fixed parser |
 
 ## Out of Scope
 
-- No changes to SKILL.md files or runtime code
-- No schema changes (v2.6 is current)
+- No changes to config-schema.md (it is already correct -- it is the source of truth)
 - No new features
+- No CLI behavior changes (main() preserves exit codes)
 
 ---
 
 ## Value
 
-- Users and contributors get accurate, trustworthy documentation
-- Config reference becomes complete -- every key a user can set is documented
-- New features (Prior Art Analysis, PPTX output, narrative intelligence) become discoverable
-- Reduces contributor confusion from stale information
+- `generate_pptx()` becomes safely importable as a library function
+- accent_color actually brands presentations as advertised
+- Config validation correctly accepts map-typed fields and rejects invalid values
+- Schema artifact matches its source of truth
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Partial update leaves some docs still stale | Low | Batch all 5 files in one PR; verify cross-file consistency before merge |
-| Docs drift again after next feature | Medium | Consider adding docs-update checklist to pipeline DoD (future improvement) |
+| Exception types differ from what callers expect | Low | Match the types already documented in the docstring |
+| accent_color applied inconsistently | Low | Audit every populate/add function for font-setting patterns |
+| Schema regeneration introduces unintended drift | Low | Diff-review full JSON output before committing |
 
 ## Success Criteria
 
-1. All 5 files updated and internally consistent
-2. Config reference matches `config-schema.md` v2.6 exactly -- zero missing keys
-3. No stale version numbers, feature counts, or missing feature mentions remain
-4. PR passes review with no factual inaccuracies found
+1. Zero `sys.exit()` calls inside `generate_pptx()` function body
+2. CLI `main()` catches exceptions and calls `sys.exit(1)` -- behavior preserved
+3. accent_color applied to title slide title, content slide title, and table header fonts
+4. `config-schema.json` `vocabulary_overrides` typed as `object`
+5. `config-schema.json` `thresholds` typed as `object` with `additionalProperties: {type: integer}`, no enum
+6. Regenerated schema matches config-schema.md v2.6

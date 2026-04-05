@@ -1,14 +1,14 @@
-# UAT Report: Issues #63 + #64 (Docs Staleness Fix)
+# UAT Report: Issues #65 + #66 (Code Fixes)
 
 **Date**: 2026-04-04
 **QA Engineer**: Legolas
-**Sprint**: Docs Fix Sprint
-**Type**: DOCS_ONLY
-**Stories**: DOC-63-001, DOC-64-001
+**Sprint**: Bug Fix Sprint
+**Type**: BUG_FIX
+**Stories**: BF-65-A, BF-65-B, BF-66-A, BF-66-B
 
 ---
 
-> *"Twelve arrows, twelve strikes. The wind favored precision today."*
+> *"Nineteen arrows loosed, nineteen targets struck. The wind carries no doubt today."*
 
 ---
 
@@ -16,8 +16,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Test Cases | 12 |
-| Passed | 12 |
+| Total Test Cases | 19 |
+| Passed | 19 |
 | Failed | 0 |
 | Overall Verdict | **PASS** |
 
@@ -25,231 +25,248 @@
 
 ## Test Results
 
-### Story 1: DOC-63-001 (Update Config Reference with Missing v2.4-v2.6 Keys)
+### Issue #65: generate_pptx.py
 
-#### TC-1: Count presentation.* keys in Presentation table
+#### Story BF-65-A: Replace sys.exit() with exceptions in generate_pptx()
+
+##### TC-1: AST-walk generate_pptx() for sys.exit calls
+
+**Covers**: AC-6 (TC-6 from stories)
+**Verdict**: PASS
+
+AST analysis of the `generate_pptx()` function body found **0** `sys.exit()` calls. The function raises exceptions (`ValueError`, `FileNotFoundError`, `json.JSONDecodeError`) instead of terminating the process.
+
+##### TC-2: Grep sys.exit across full file
+
+**Covers**: AC-6
+**Verdict**: PASS
+
+2 `sys.exit` occurrences in the entire file, both in expected locations:
+- **Line 53**: Import guard (top-level, outside any function) -- correct behavior for missing dependency
+- **Line 462**: Inside `main()` CLI wrapper -- correct behavior for CLI error handling
+
+Neither is inside the `generate_pptx()` function body.
+
+##### TC-3: main() has try/except wrapping generate_pptx() call
+
+**Covers**: AC-6
+**Verdict**: PASS
+
+AST analysis confirms `main()` contains a `try/except` block that catches:
+- `FileNotFoundError`
+- `ValueError`
+- `JSONDecodeError`
+
+The except handler prints the error to stderr and calls `sys.exit(1)`.
+
+##### TC-4: Docstring documents raised exceptions
+
+**Covers**: AC-7
+**Verdict**: PASS
+
+The `generate_pptx()` docstring contains a `Raises:` section documenting:
+- `FileNotFoundError` -- present
+- `ValueError` -- present
+- `json.JSONDecodeError` -- present
+
+All three match the actual implementation.
+
+##### TC-5: File syntax validity
+
+**Covers**: All ACs
+**Verdict**: PASS
+
+`ast.parse()` on the full file completed without errors. Python syntax is valid.
+
+---
+
+#### Story BF-65-B: Apply accent_color to slide elements
+
+##### TC-6: accent_color applied in populate_title_slide()
 
 **Covers**: AC-1
 **Verdict**: PASS
 
-Counted 17 `presentation.*` keys in the Presentation section of `docs/user-guide/config.md` (lines 143-161):
+Line 149: `run.font.color.rgb = accent_color` -- title slide title runs receive the accent color.
 
-1. `presentation.default_format`
-2. `presentation.default_audience`
-3. `presentation.speaker_notes`
-4. `presentation.save_to_artifacts`
-5. `presentation.marp_theme`
-6. `presentation.staleness_warning_days`
-7. `presentation.vocabulary_overrides`
-8. `presentation.pptx_template`
-9. `presentation.pptx_font`
-10. `presentation.pptx_accent_color`
-11. `presentation.narrative.emphasis`
-12. `presentation.narrative.cutting`
-13. `presentation.narrative.framing`
-14. `presentation.narrative.tension`
-15. `presentation.light_mode`
-16. `presentation.thresholds`
-17. `presentation.thresholds_default`
-
-Cross-checked against `config-schema.md` v2.6 (lines 83-99): 17 presentation keys in schema. **Match confirmed.**
-
----
-
-#### TC-2: Grep required_agent_retry_max in config.md
+##### TC-7: accent_color applied in populate_content_slide()
 
 **Covers**: AC-2
 **Verdict**: PASS
 
-2 matches found:
-- Line 74: Pipeline settings table row with type (integer), default (2), valid values (1-5), description
-- Line 228: Example YAML `required_agent_retry_max: 2`
+Line 255: `run.font.color.rgb = accent_color` -- content slide title runs receive the accent color.
 
----
-
-#### TC-3: Parse example YAML and verify all keys present
+##### TC-8: accent_color applied in add_table_to_slide() headers
 
 **Covers**: AC-3
 **Verdict**: PASS
 
-Example YAML block (lines 167-283) contains all keys from config-schema.md. Verified every section:
-- Core: `config_version`, `project_type` -- present
-- Tech stack: all 9 keys -- present
-- Architecture: all 4 keys -- present
-- Enforcement: all 3 keys -- present
-- Team: 2 keys -- present
-- Deployment: 2 keys -- present
-- Timeline: 2 keys -- present
-- Compliance: 1 key -- present
-- Pipeline: all 15 keys -- present
-- DoD validators: all 7 stages -- present
-- Personas: all 6 keys -- present
-- Aliases: 2 keys -- present
-- Notifications: 2 keys -- present
-- Monorepo: 3 keys -- present
-- Git: 4 keys -- present
-- GitHub: 3 keys -- present
-- Presentation: all 17 keys (including nested narrative.* and pptx_*) -- present
-- `wizard_completed` -- present
+Line 218: `p.font.color.rgb = accent_color` -- table header cell text receives the accent color, guarded by `if accent_color:` check (line 217).
 
-**All keys accounted for. No omissions.**
-
----
-
-#### TC-4: Spot-check 5 new keys for type/default accuracy
+##### TC-9: add_table_to_slide() accepts accent_color parameter
 
 **Covers**: AC-4
 **Verdict**: PASS
 
-| Key | config.md | config-schema.md | Match |
-|-----|-----------|-----------------|-------|
-| `presentation.pptx_template` | string / "" / file path to .pptx template (empty = blank) | string / "" / file path to .pptx template (empty = blank presentation) | YES |
-| `presentation.narrative.emphasis` | boolean / true / true/false / Enable emphasis selection editorial pass | boolean / true / true/false | YES |
-| `presentation.thresholds_default` | integer / 90 / 0-600 (0 = unlimited) / Global threshold override (seconds) | integer / 90 / 0-600 (0 = unlimited) | YES |
-| `presentation.light_mode` | string / "auto" / auto, always, never / Light mode activation strategy | string / "auto" / auto, always, never | YES |
-| `pipeline.required_agent_retry_max` | integer / 2 / 1-5 / Retry for required agents in parallel groups | integer / 2 / 1-5 | YES |
+Line 180: Function signature includes `accent_color: RGBColor | None = None` parameter.
 
-**5/5 keys match the source of truth exactly.**
+##### TC-10: All call sites pass accent_color
+
+**Covers**: AC-3
+**Verdict**: PASS
+
+All 3 call sites of `add_table_to_slide()` pass the `accent_color` keyword argument:
+- Line 270: `add_table_to_slide(slide, table_data, font_name, accent_color=accent_color)` (comparison layout)
+- Line 277: `add_table_to_slide(slide, table_data, font_name, accent_color=accent_color)` (timeline layout)
+- Line 307: `add_table_to_slide(slide, table_data, font_name, top=4.0, accent_color=accent_color)` (generic fallback)
 
 ---
 
-### Story 2: DOC-64-001 (Fix Stale Documentation)
+### Issue #66: generate-schema.py + config-schema.json
 
-#### TC-5: CLAUDE.md presentation row contains "9" types
+#### Story BF-66-A: Fix map type parsing in generate-schema.py
+
+##### TC-11: parse_type("map") returns object
 
 **Covers**: AC-1
 **Verdict**: PASS
 
-Line 51 of CLAUDE.md:
-> `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (...). **9 types** (Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary), **4 formats** (structured-markdown, marp, paste-ready, pptx), narrative intelligence (4 editorial passes), light mode
+```
+parse_type("map") -> {"type": "object"}
+```
 
-All 9 types listed. All 4 formats listed.
+Exact match with expected output.
 
----
-
-#### TC-6: Grep CLAUDE.md for "v2.3"
-
-**Covers**: AC-2
-**Verdict**: PASS
-
-**0 matches.** No stale v2.3 references remain in CLAUDE.md.
-
----
-
-#### TC-7: Grep CLAUDE.md for "v2.6"
+##### TC-12: parse_type("map[string, integer]") returns object with additionalProperties
 
 **Covers**: AC-2
 **Verdict**: PASS
 
-1 match at line 124:
-> `**Config schema**: The single source of truth for .delivery/config.yml format is delivery-flow/references/config-schema.md (currently v2.6).`
+```
+parse_type("map[string, integer]") -> {"type": "object", "additionalProperties": {"type": "integer"}}
+```
 
-Config schema version correctly updated.
+Exact match with expected output.
 
----
-
-#### TC-8: Grep CLAUDE.md for "Prior Art"
+##### TC-13: parse_type("map[string, string]") regression check
 
 **Covers**: AC-3
 **Verdict**: PASS
 
-1 match at line 45:
-> `| architect/ | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis |`
+```
+parse_type("map[string, string]") -> {"type": "object", "additionalProperties": {"type": "string"}}
+```
 
-Architect row correctly mentions Prior Art Analysis.
+No regression. Existing behavior preserved.
 
 ---
 
-#### TC-9: Count presentation type rows in docs/skills/presentation.md
+#### Story BF-66-B: Regenerate config-schema.json
+
+##### TC-14: Generator runs successfully
+
+**Covers**: AC-1
+**Verdict**: PASS
+
+`python generate-schema.py` completed without errors. Parsed 86 schema rows and wrote output.
+
+##### TC-15: vocabulary_overrides has type "object"
+
+**Covers**: AC-2
+**Verdict**: PASS
+
+```json
+"vocabulary_overrides": {
+  "type": "object",
+  "default": {}
+}
+```
+
+Previously was `"type": "string"` with `"default": "{}"` (string). Now correctly `"type": "object"` with `"default": {}` (object).
+
+##### TC-16: thresholds has type "object" with additionalProperties
+
+**Covers**: AC-3
+**Verdict**: PASS
+
+```json
+"thresholds": {
+  "type": "object",
+  "additionalProperties": {
+    "type": "integer"
+  },
+  "default": {}
+}
+```
+
+Previously was `"type": "string"` with a bogus `"enum"` containing description fragments.
+
+##### TC-17: thresholds has no enum field
 
 **Covers**: AC-4
 **Verdict**: PASS
 
-9 type rows in the Presentation Types table (lines 24-32):
+No `"enum"` key present in the `thresholds` property. The old incorrect enum (`["type-name: seconds pairs (e.g.", "sprint-review: 120). 0 = unlimited."]`) has been eliminated.
 
-1. Sprint Review
-2. Feature Pitch
-3. Stakeholder Update
-4. Technical Deep-Dive
-5. Investor Pitch
-6. Roadmap
-7. Product Demo
-8. Onboarding
-9. Retrospective Summary
-
----
-
-#### TC-10: Grep docs/skills/presentation.md for "PPTX"
+##### TC-18: Idempotency check
 
 **Covers**: AC-5
 **Verdict**: PASS
 
-1 match at line 48:
-> `- **PPTX** -- PowerPoint output with configurable template and branding`
+Running `python generate-schema.py` twice produces identical output. No drift.
 
-PPTX format documented in the Output Formats section.
+##### TC-19: Git diff scope
 
----
-
-#### TC-11: Grep docs/skills/architect.md for "Prior Art Analysis"
-
-**Covers**: AC-8
+**Covers**: AC-5
 **Verdict**: PASS
 
-Section heading at line 35:
-> `## Prior Art Analysis`
+`git diff` shows changes confined to exactly two properties:
+1. `vocabulary_overrides`: `"type": "string"` -> `"type": "object"`, `"default": "{}"` -> `"default": {}`
+2. `thresholds`: `"type": "string"` + bogus `"enum"` -> `"type": "object"` + `"additionalProperties": {"type": "integer"}`, `"default": "{}"` -> `"default": {}`
 
-Full section (lines 35-43) describes the conditional spec-examination step with 4 phases:
-1. Read and Summarize
-2. Classify Each Element
-3. Build On Existing Design
-4. Deviation Protocol
-
-Includes condition: "When user-provided specifications, existing designs, or architectural artifacts are present in the input."
-
----
-
-#### TC-12: Grep docs/skills/delivery-flow.md for "pipeline-stages" and "theme"
-
-**Covers**: AC-9, AC-10
-**Verdict**: PASS
-
-**"pipeline-stages"** -- 2 matches:
-- Line 9: Architecture section describing SSOT pattern with `pipeline-stages.md` as authoritative source for stage details
-- Line 57: Per-stage protocol Step 3: "Load stage definition from pipeline-stages reference"
-
-**"theme"** -- 3 matches:
-- Line 19: "Manages alias themes for agent personality injection"
-- Line 20: "Surfaces active theme in user-facing output (stage announcements, checkpoint summaries, stage transitions) while preserving neutrality in all internal routing surfaces"
-- Line 111: `aliases.theme` in configuration table
+No unexpected changes elsewhere in the schema.
 
 ---
 
 ## AC Coverage Matrix
 
-### Story 1: DOC-63-001
+### Story BF-65-A (sys.exit removal)
 
 | AC | Description | TCs | Verdict |
 |----|-------------|-----|---------|
-| AC-1 | Presentation section includes all 13 missing keys | TC-1 | PASS |
-| AC-2 | Pipeline section includes `required_agent_retry_max` | TC-2 | PASS |
-| AC-3 | Full example YAML includes all new keys with defaults | TC-3 | PASS |
-| AC-4 | Every key matches config-schema.md v2.6 exactly | TC-4 | PASS |
+| AC-6 | No sys.exit in generate_pptx(); main() catches exceptions | TC-1, TC-2, TC-3 | PASS |
+| AC-7 | Docstring documents all raised exceptions | TC-4 | PASS |
 
-### Story 2: DOC-64-001
+### Story BF-65-B (accent_color application)
 
 | AC | Description | TCs | Verdict |
 |----|-------------|-----|---------|
-| AC-1 | CLAUDE.md presentation row: 9 types, 4 formats | TC-5 | PASS |
-| AC-2 | CLAUDE.md config schema: v2.6, not v2.3 | TC-6, TC-7 | PASS |
-| AC-3 | CLAUDE.md architect row: Prior Art Analysis | TC-8 | PASS |
-| AC-4 | presentation.md: 9 types | TC-9 | PASS |
-| AC-5 | presentation.md: PPTX format | TC-10 | PASS |
-| AC-8 | architect.md: Prior Art Analysis section | TC-11 | PASS |
-| AC-9 | delivery-flow.md: SSOT deduplication pattern | TC-12 | PASS |
-| AC-10 | delivery-flow.md: theme surfacing | TC-12 | PASS |
+| AC-1 | Title slide title receives accent_color | TC-6 | PASS |
+| AC-2 | Content slide title receives accent_color | TC-7 | PASS |
+| AC-3 | Table headers receive accent_color | TC-8, TC-10 | PASS |
+| AC-4 | add_table_to_slide accepts accent_color param | TC-9 | PASS |
 
-**12/12 acceptance criteria: PASS**
+### Story BF-66-A (map type parsing)
+
+| AC | Description | TCs | Verdict |
+|----|-------------|-----|---------|
+| AC-1 | parse_type("map") -> object | TC-11 | PASS |
+| AC-2 | parse_type("map[K,V]") -> object + additionalProperties | TC-12 | PASS |
+| AC-3 | map[string, string] regression | TC-13 | PASS |
+| AC-5 | No enum on object-typed fields | TC-17 | PASS |
+
+### Story BF-66-B (schema regeneration)
+
+| AC | Description | TCs | Verdict |
+|----|-------------|-----|---------|
+| AC-1 | Generator runs without error | TC-14 | PASS |
+| AC-2 | vocabulary_overrides type is object | TC-15 | PASS |
+| AC-3 | thresholds type is object with integer additionalProperties | TC-16 | PASS |
+| AC-4 | thresholds has no enum | TC-17 | PASS |
+| AC-5 | No unexpected field changes | TC-18, TC-19 | PASS |
+
+**19/19 test cases: PASS**
+**15/15 acceptance criteria: PASS**
 
 ---
 
@@ -261,22 +278,34 @@ None found.
 
 ## Observations
 
-1. Documentation is internally consistent across all verified files. The presentation skill description in CLAUDE.md aligns exactly with `docs/skills/presentation.md` (9 types, 4 formats).
+1. The `generate_pptx()` function is now safe for library use. All error paths raise exceptions rather than calling `sys.exit()`, while the CLI wrapper in `main()` properly catches and converts these to exit codes for command-line consumers.
 
-2. The config reference (`docs/user-guide/config.md`) is now fully synchronized with `config-schema.md` v2.6. All 17 presentation keys, plus `pipeline.required_agent_retry_max`, are documented with accurate types, defaults, and valid values.
+2. The `accent_color` parameter flows cleanly through the entire slide generation pipeline: parsed once in `generate_pptx()`, passed to `populate_title_slide()` and `populate_content_slide()`, and forwarded to all `add_table_to_slide()` call sites. The table function uses a defensive `if accent_color:` guard since the parameter is optional.
 
-3. The architect Prior Art Analysis is documented at both the summary level (CLAUDE.md row) and the detail level (`docs/skills/architect.md` section), providing appropriate progressive disclosure.
+3. The schema generator's `parse_type()` function now handles the full spectrum of map types: bare `map`, explicit `map[string, string]`, and generic `map[K, V]` patterns. The fix is self-correcting for `parse_valid_values()` -- once the type is `object` instead of `string`, the comma-split enum logic no longer fires on description text.
 
-4. The delivery-flow documentation correctly captures both the SSOT deduplication refactor and the theme surfacing capability without conflating internal routing with user-facing output.
+4. **Note**: These fixes exist as uncommitted working-tree changes. The HEAD commit still contains the bugs. Changes must be committed and pushed to close Issues #65 and #66.
+
+---
+
+## Verification Methods
+
+| Method | Purpose |
+|--------|---------|
+| AST analysis (`ast.parse`, `ast.walk`) | Structural verification immune to comments/strings |
+| Grep with line numbers | Content matching with location verification |
+| Direct function invocation | Behavioral tests of parse_type() |
+| Schema regeneration + idempotency | End-to-end integration test |
+| Git diff analysis | Change scope verification |
 
 ---
 
 ## Final Verdict: **PASS**
 
-> *"The quiver is empty, and every shaft found its mark. The documentation stands true."*
+> *"The quiver is spent, and not a single shaft went astray. These fixes stand true -- commit them and let the bugs fall."*
 
 ---
 
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/07-uat/qa/uat-report.md
-SUMMARY: All 12 TCs pass, 12/12 ACs verified across both stories, zero defects found.
+SUMMARY: All 19 TCs pass, 15/15 ACs verified across 4 stories (Issues #65+#66), zero defects found.

@@ -1,87 +1,96 @@
-# Sprint Plan: Batched Documentation Fix (Issues #63 + #64)
+# Sprint Plan: Batched BUG_FIX #65 + #66
 
-**Sprint Goal**: Bring all documentation into alignment with the current codebase -- config reference complete to v2.6, presentation docs updated to v1.1, architect and delivery-flow docs reflecting recent features.
-**Type**: DOCS_ONLY
+**Sprint Goal**: Fix library defects in generate_pptx.py and type-parsing defects in generate-schema.py, then regenerate config-schema.json to restore correctness.
+**Type**: BUG_FIX
 **Velocity Ceiling**: 80%
-**Sprint Capacity**: 2 stories, 5 SP
-**Load**: 5 / 6.25 available = 80% (at ceiling)
+**Sprint Capacity**: 4 stories, all S/XS code-tier
+**Total Estimate**: ~2 hours
 
 ---
 
 ## Story Sequence
 
-| Order | Story ID | Title | SP | Dependencies | Assignee |
-|-------|----------|-------|----|-------------|----------|
-| 1 | DOC-63-001 | Update Config Reference with Missing v2.4-v2.6 Keys | 2 | None | Technical Writer |
-| 2 | DOC-64-001 | Fix Stale Documentation Across CLAUDE.md and Docs Site | 3 | None (parallel-safe) | Technical Writer |
+| Order | Story ID | Title | Size | Estimate | Dependencies | Assignee |
+|-------|----------|-------|------|----------|-------------|----------|
+| 1 | BF-65-A | Replace sys.exit() with exceptions in generate_pptx() | S | 45 min | None | Developer |
+| 2 | BF-65-B | Apply accent_color to slide elements | S | 30 min | None | Developer |
+| 3 | BF-66-A | Fix map type parsing in generate-schema.py | S | 30 min | None | Developer |
+| 4 | BF-66-B | Regenerate config-schema.json | XS | 15 min | BF-66-A | Developer |
 
-Both stories are independent and may execute in parallel. However, the Technical Writer should complete DOC-63-001 first, since the config key additions inform what the presentation docs page (DOC-64-001) references.
+**Parallelizable**: BF-65-A, BF-65-B, and BF-66-A are independent. BF-66-B is blocked by BF-66-A.
 
 ---
 
 ## Implementation Plan
 
-### Story 1: DOC-63-001 — Config Reference Update
+### Phase 1 -- Parallel Fixes (BF-65-A + BF-65-B + BF-66-A)
 
-**File**: `docs/user-guide/config.md`
+#### Track A: generate_pptx.py (BF-65-A + BF-65-B)
 
-**Tasks**:
+**File**: `delivery-team/skills/presentation/scripts/generate_pptx.py`
 
-1. **Add missing Presentation keys to Presentation table** (13 keys)
-   - PPTX branding: `pptx_template`, `pptx_font`, `pptx_accent_color`
-   - Narrative intelligence: `narrative.emphasis`, `narrative.cutting`, `narrative.framing`, `narrative.tension`
-   - Operational: `save_to_artifacts`, `marp_theme`, `staleness_warning_days`, `vocabulary_overrides`
-   - Thresholds: `thresholds` (map), `thresholds_default` (integer) -- note: `thresholds_default` already exists but `thresholds` (per-type map) is missing
-   - Light mode: `light_mode` -- verify already present (was added but verify completeness)
-   - Source of truth: `delivery-team/skills/delivery-flow/references/config-schema.md` lines 83-99
+**BF-65-A Tasks** -- Replace sys.exit() with exceptions:
 
-2. **Add missing Pipeline key**
-   - `pipeline.required_agent_retry_max` (integer, default 2, range 1-5, description: "Retry for required agents in parallel groups")
-   - Source: config-schema.md line 39
+1. **Accent color parse error** (line 345): Replace `sys.exit(1)` with `raise ValueError(...)`. Remove the try/except wrapper since `parse_hex_color()` already raises `ValueError`.
 
-3. **Update full example config YAML**
-   - Add all new presentation keys with defaults
-   - Add `pipeline.required_agent_retry_max: 2`
+2. **Input file not found** (line 351): Replace `sys.exit(1)` with `raise FileNotFoundError(f"Input file not found: {input_path}")`.
 
-**Verification**: Run AC-1 through AC-4, TC-1 through TC-4.
+3. **JSON decode error** (line 358): Remove the try/except block; let `json.JSONDecodeError` propagate naturally from `json.load()`. Or re-raise with added context.
+
+4. **Missing slides array** (line 365): Replace `sys.exit(1)` with `raise ValueError('JSON must contain a non-empty "slides" array.')`.
+
+5. **Template file not found** (line 374): Replace `sys.exit(1)` with `raise FileNotFoundError(f"Template file not found: {template_path}")`.
+
+6. **Update main()**: Wrap `generate_pptx()` call in:
+   ```python
+   try:
+       slide_count = generate_pptx(...)
+   except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
+       print(f"Error: {e}", file=sys.stderr)
+       sys.exit(1)
+   ```
+
+**BF-65-B Tasks** -- Apply accent_color:
+
+1. **populate_title_slide()** (line 148): After `run.font.name = font_name`, add `run.font.color.rgb = accent_color`.
+
+2. **populate_content_slide()** (line 250): After `run.font.name = font_name`, add `run.font.color.rgb = accent_color`.
+
+3. **add_table_to_slide()**: Add `accent_color: RGBColor | None = None` parameter. In header row loop (line 213 area), add `p.font.color.rgb = accent_color` when accent_color is not None.
+
+4. **Update call sites**: All 4 calls to `add_table_to_slide()` (lines 265, 272, 302, and the timeline call) need `accent_color=accent_color` added. This requires threading `accent_color` through `populate_content_slide()` which already receives it.
+
+#### Track B: generate-schema.py (BF-66-A)
+
+**File**: `delivery-team/scripts/generate-schema.py`
+
+1. **Add bare `map` case** to `parse_type()` (after the `map[string, string]` case at line 84):
+   ```python
+   elif t == "map":
+       return {"type": "object"}
+   ```
+
+2. **Add generic `map[K, V]` regex** (before the fallback):
+   ```python
+   map_match = re.match(r"^map\[(\w+),\s*(\w+)\]$", t)
+   if map_match:
+       value_type = map_match.group(2)
+       return {"type": "object", "additionalProperties": {"type": value_type}}
+   ```
+
+3. **Verify self-correction**: Once `vocabulary_overrides` gets type `object`, `parse_valid_values()` will not attempt to parse its Valid Values as enum (the enum logic only fires for `type == "string"`). Same for `thresholds`.
 
 ---
 
-### Story 2: DOC-64-001 — Stale Documentation Fix
+### Phase 2 -- Regenerate (BF-66-B)
 
-**Files**: 4 files, ordered by dependency.
+**Blocked by**: BF-66-A complete.
 
-#### Task 2a: Update `CLAUDE.md`
-
-| Line/Section | Current | Updated |
-|-------------|---------|---------|
-| Line 45 (architect row) | "11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies" | Add "+ Prior Art Analysis" |
-| Line 51 (presentation row) | "4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive" | "9 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary. 4 formats: structured-markdown, Marp, paste-ready, PPTX" |
-| Line 41 (delivery-flow row) | Current description | Add mention of theme surfacing |
-| Line 124 (config schema) | "currently v2.3" | "currently v2.6" |
-
-#### Task 2b: Update `docs/skills/presentation.md`
-
-- Update intro text to mention 9 types and 4 formats
-- Presentation Types table: already has 9 types (verify)
-- Output Formats: add PPTX with description of configurable template and branding
-- Add Narrative Intelligence section: 4 editorial passes (emphasis, cutting, framing, tension) in the Compose step
-- Add/verify Light Mode section with auto/always/never table
-- Update Configuration example YAML to include new keys
-
-#### Task 2c: Update `docs/skills/architect.md`
-
-- Add "Prior Art Analysis" section after the Task Types table
-- Document: condition (user-provided specs present), two phases (examine then classify), output (summary + classification table in architecture artifact)
-- Source: `delivery-team/skills/architect/SKILL.md` Prior Art Analysis section
-
-#### Task 2d: Update `docs/skills/delivery-flow.md`
-
-- Update "What It Does" to mention single-source-of-truth pattern (SKILL.md + pipeline-stages.md)
-- Add bullet about theme surfacing in pipeline orchestration
-- Update structural description to reflect deduplication: SKILL.md is high-level orchestration guide, `references/pipeline-stages.md` is authoritative source for detailed stage sub-flows, agent invocations, and artifact paths
-
-**Verification**: Run AC-1 through AC-10, TC-1 through TC-12.
+1. Run `python delivery-team/scripts/generate-schema.py`.
+2. Diff-review the regenerated `config-schema.json`:
+   - `vocabulary_overrides`: `"type": "string"` -> `"type": "object"`, `"default": "{}"` -> `"default": {}`
+   - `thresholds`: `"type": "string"` + `"enum"` -> `"type": "object"` + `"additionalProperties": {"type": "integer"}`, `"default": "{}"` -> `"default": {}`
+3. Verify no other fields changed unexpectedly.
 
 ---
 
@@ -89,24 +98,33 @@ Both stories are independent and may execute in parallel. However, the Technical
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Missing a key in config docs | Low | Medium | Diff config-schema.md keys against docs/user-guide/config.md keys programmatically |
-| Introducing new factual error while fixing old ones | Low | Medium | Cross-reference every claim against source SKILL.md files |
-| Forgetting to update the example YAML | Low | Low | TC-3 catches this explicitly |
+| map[K,V] regex too greedy or too narrow | Low | Medium | Anchor regex, test with all 3 map variants from config-schema.md |
+| Accent color applied to wrong elements | Low | Low | Trace all font-setting code paths before modifying |
+| Schema regeneration drifts other fields | Low | Medium | Full git diff review before commit |
+| main() exception handling misses a type | Low | Low | Catch broad (FileNotFoundError, ValueError, json.JSONDecodeError) which covers all 5 cases |
 
 ---
 
 ## Branch Strategy
 
-- Branch: `docs/fix-63-64-stale-docs`
-- Conventional commit: `docs: update config reference and fix stale docs (#63, #64)`
+- Branch: `fix/65-66-pptx-schema-bugs`
+- Conventional commits:
+  - `fix: replace sys.exit with exceptions in generate_pptx (#65)`
+  - `fix: apply accent_color to slide titles and table headers (#65)`
+  - `fix: handle bare map and map[K,V] types in generate-schema (#66)`
+  - `chore: regenerate config-schema.json (#66)`
 - Single PR batching both issues
 
 ---
 
 ## Definition of Done
 
-- [ ] All 14 ACs pass across both stories (4 from DOC-63-001 + 10 from DOC-64-001)
-- [ ] All 16 TCs pass (4 + 12)
-- [ ] No stale version numbers, feature counts, or missing features remain in any of the 5 files
-- [ ] Config reference key count matches config-schema.md v2.6 exactly
+- [ ] Zero `sys.exit()` calls inside `generate_pptx()` function body
+- [ ] CLI `main()` catches exceptions and exits with code 1 (behavior preserved)
+- [ ] accent_color applied to: title slide title, content slide title, table header fonts
+- [ ] `parse_type()` handles `map`, `map[string, string]`, `map[string, integer]`
+- [ ] `config-schema.json` `vocabulary_overrides` typed as `object`
+- [ ] `config-schema.json` `thresholds` typed as `object` with `additionalProperties: {type: integer}`, no enum
+- [ ] Git diff of config-schema.json shows only expected changes
+- [ ] All acceptance criteria pass across 4 stories (7 + 4 + 5 + 5 = 21 ACs)
 - [ ] PR reviewed and merged

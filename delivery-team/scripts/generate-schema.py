@@ -82,6 +82,15 @@ def parse_type(raw_type: str) -> dict:
         return {"type": "array", "items": {"type": "object"}}
     elif t == "map[string, string]":
         return {"type": "object", "additionalProperties": {"type": "string"}}
+    elif t == "map":
+        return {"type": "object"}
+    elif t.startswith("map["):
+        # Generic map[K, V] — extract value type for additionalProperties
+        map_match = re.match(r"^map\[\s*\w+\s*,\s*(\w+)\s*\]$", t)
+        if map_match:
+            value_type = map_match.group(1)
+            return {"type": "object", "additionalProperties": {"type": value_type}}
+        return {"type": "object"}
     elif t == "object":
         return {"type": "object"}
     else:
