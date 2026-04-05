@@ -365,8 +365,8 @@ specific agents to invoke, their task types, and the sub-flow sequence.
 
 ### Step 4: Invoke Primary Agent
 
-Construct the prompt using the Agent Invocation Template (see architecture Section 3
-and `references/pipeline-stages.md` for the exact fields per stage). The template requires:
+Construct the prompt using the Agent Invocation Template (see
+`references/pipeline-stages.md` for the exact fields per stage). The template requires:
 
 - **SKILL**, **TASK_TYPE**, **ROLE**: from the stage definition
 - **INPUT ARTIFACTS**: file paths to upstream artifacts -- NOT content. The sub-agent reads artifacts from disk.
@@ -521,409 +521,135 @@ Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 
 ## Stage Definitions
 
+> **Authoritative source**: `references/pipeline-stages.md` is the single source of truth for
+> stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD
+> Validator Dispatch Templates. The summaries below provide routing and orchestration context
+> only. When executing a stage, ALWAYS load the full definition from `references/pipeline-stages.md`.
+
 ### Stage 1: Idea
 
 **Runs for**: all project types (full depth)
+**Purpose**: Capture and structure the raw idea into a brief.
+**Primary agent**: Product Owner (product-delivery skill)
+**Upstream artifacts**: none (first stage)
+**Collaboration patterns**: none
+**DoD validators**: Product Owner, Architect
+**Human checkpoint**: none
+**Max self-correction**: 2 iterations
+**Output**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Self-correction note**: Prefer asking the user for clarification over self-correction — the orchestrator should not invent details for the user's idea.
 
-**Purpose**: Capture and structure the raw idea into a brief that downstream stages
-can work from.
-
-**Primary agent**: Product Owner (product-delivery skill, task_type: user_story) for
-complex or vague ideas. For simple, well-structured input, the orchestrator formats
-the brief directly.
-
-**Upstream artifacts**: none (this is the first stage).
-
-**Collaboration patterns**: none. This is the initial capture stage.
-
-**DoD validators**:
-- Product Owner (product-delivery skill): completeness -- problem statement, target
-  users, and goals are all present and specific.
-- Architect (architect skill): feasibility signal -- is this buildable? Any obvious
-  technical blockers?
-
-**Self-correction note**: At the Idea stage, if the gate fails due to missing
-information, prefer asking the user for clarification over self-correction. The input
-is the user's idea -- the orchestrator should not invent details.
-
-**Output**: `.delivery/artifacts/01-idea-brief.md`
-
-**Human checkpoint**: none.
-
-**Max self-correction**: 2 iterations.
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
 ### Stage 2: Refine
 
-**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full).
-Skipped for: BUG_FIX, SPIKE, DOCS_ONLY.
+**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full)
+**Skipped for**: BUG_FIX, SPIKE, DOCS_ONLY
+**Purpose**: Transform the idea brief into a complete PRD with acceptance criteria and success metrics.
+**Primary agent**: Product Owner (product-delivery skill). Supporting: Data Analyst.
+**Upstream artifacts**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Collaboration patterns**: Evaluator-Optimizer (QA evaluates PRD), Adversarial Review (confidence 1-5, escalate if <= 2)
+**DoD validators**: Product Owner, Architect, QA Engineer
+**Human checkpoint**: CHECKPOINT 1 — present PRD summary for approval
+**Max self-correction**: 3 iterations
+**Output**: `.delivery/artifacts/02-refine/po/prd.md`
+**Game dev additions**: UX Designer reviews for game UX patterns; game-specific NFRs added.
 
-**Purpose**: Transform the idea brief into a complete PRD with acceptance criteria,
-success metrics, and validated requirements.
-
-**Primary agent**: Product Owner (product-delivery skill, task_type: prd).
-- Input: idea brief + relevant memory lessons.
-- Output: draft PRD.
-
-**Supporting agent**: Data Analyst (product-delivery skill, task_type: metrics_definition).
-- Input: PRD goals section.
-- Output: success metrics with targets and measurement approach.
-- Merge metrics into the PRD.
-
-**Upstream artifacts**: `01-idea-brief.md`.
-
-**Collaboration patterns**:
-1. Evaluator-Optimizer: QA Engineer (quality skill) evaluates PRD against Gate 2
-   criteria. If failures, route feedback to PO for revision. Max 3 iterations.
-2. Adversarial Review: Challenger questions requirements assumptions, identifies
-   missing edge cases, rates confidence 1-5. If confidence <= 2, escalate to human
-   immediately.
-
-**DoD validators**:
-- Product Owner (product-delivery skill): business value is clear, stories are
-  valuable, scope is appropriate.
-- Architect (architect skill): technically feasible, no obvious blockers, NFRs are
-  realistic.
-- QA Engineer (quality skill): requirements are testable, acceptance criteria are
-  specific and measurable.
-
-**Output**: `.delivery/artifacts/02-prd.md`
-
-**Human checkpoint**: CHECKPOINT 1 -- present PRD summary for approval.
-User can approve, request changes, or abort.
-
-**Max self-correction**: 3 iterations.
-
-**Game dev additions**: UX Designer also reviews for game UX patterns. Game-specific
-NFRs added (FPS targets, input latency, platform requirements).
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
 ### Stage 3: Design
 
-**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full+game).
-Skipped for: BUG_FIX, SPIKE, DOCS_ONLY.
+**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full+game)
+**Skipped for**: BUG_FIX, SPIKE, DOCS_ONLY
+**Purpose**: Create user experience design — user flows, wireframes, component specs, accessibility.
+**Primary agents**: UX Designer, UI Designer (ui skill)
+**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`
+**Collaboration patterns**: Multi-Perspective Review Board (Architect, PO, QA review; BLOCKs routed via Decision Ownership)
+**DoD validators**: UX Designer, Product Owner, QA Engineer, Architect
+**Human checkpoint**: none (combined with Architect checkpoint if both stages run)
+**Max self-correction**: 3 iterations
+**Output**: `.delivery/artifacts/03-design/ux/user-flows.md`, `.delivery/artifacts/03-design/ux/wireframes.md`, `.delivery/artifacts/03-design/ui/component-specs.md`, `.delivery/artifacts/03-design/ui/accessibility.md`
+**Game dev additions**: Game UI Designer invoked for HUD, menu, inventory UI. Game-specific accessibility review.
 
-**Purpose**: Create user experience design: user flows, wireframes, interaction
-patterns, component specifications, and accessibility considerations.
-
-**Primary agents**:
-1. UX Designer (ui skill, task_type: user-flow).
-   - Input: PRD user stories and personas.
-   - Output: user flows for all key journeys.
-2. UX Designer (ui skill, task_type: wireframe).
-   - Input: user flows.
-   - Output: wireframes for key screens.
-3. UI Designer (ui skill, task_type: component-spec or design-system).
-   - Input: wireframes.
-   - Output: component specifications, design tokens.
-4. UI Designer (ui skill, task_type: accessibility-review).
-   - Input: wireframes + component specs.
-   - Output: accessibility findings.
-
-**Upstream artifacts**: `02-prd.md`.
-
-**Collaboration patterns**:
-1. Multi-Perspective Review Board:
-   - Technical Reviewer (Architect skill): implementability.
-   - Business Reviewer (Product Owner via product-delivery): requirement coverage.
-   - Risk Reviewer (QA Engineer via quality): testability.
-   - Any BLOCK must be resolved via Decision Ownership Routing before advancing.
-
-**DoD validators**:
-- UX Designer (ui skill): flows are complete, follow UX best practices, edge cases
-  addressed (empty states, errors, first-time use).
-- Product Owner (product-delivery skill): all PRD requirements have corresponding
-  design elements.
-- QA Engineer (quality skill): designs are testable with clear states and measurable
-  outcomes.
-- Architect (architect skill): designs are implementable, no impossible interactions
-  or unrealistic technical assumptions.
-
-**Output**: `.delivery/artifacts/03-ux-design.md`
-
-**Human checkpoint**: none (combined with Architect checkpoint if both stages run).
-
-**Max self-correction**: 3 iterations.
-
-**Game dev additions**: Game UI Designer (ui skill) invoked for HUD, menu, inventory
-UI patterns. Game-specific accessibility review (colorblind modes, subtitle systems,
-input remapping).
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
 ### Stage 4: Architect
 
-**Runs for**: GREENFIELD (full), significant FEATURE (light), GAME_DEV+ (full+game),
-SPIKE (full).
-Skipped for: BUG_FIX, DOCS_ONLY, simple FEATURE.
+**Runs for**: GREENFIELD (full), significant FEATURE (light), GAME_DEV+ (full+game), SPIKE (full)
+**Skipped for**: BUG_FIX, DOCS_ONLY, simple FEATURE
+**Purpose**: Create technical architecture — system design, C4 model, ADRs, technology decisions.
+**Primary agent**: Architect (architect skill, role: solution). Supporting: Security Architect, Data Architect.
+**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/03-design/ux/user-flows.md` (if Design ran)
+**Collaboration patterns**: Debate (contested technical decisions → ADRs), Evaluator-Optimizer (QA + DevOps review), Adversarial Review (confidence 1-5)
+**DoD validators**: Architect, QA Engineer, DevOps, Security
+**Human checkpoint**: CHECKPOINT 2 — present architecture summary for approval
+**Max self-correction**: 2 iterations
+**Output**: `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/04-architect/adrs/ADR-001.md` (one per major decision)
+**Game dev additions**: Game Systems Architect, Level/World Designer, Network Architect (if multiplayer), Graphics Specialist (if graphically intensive). Performance budgets required.
 
-**Purpose**: Create technical architecture: system design, C4 model descriptions,
-Architecture Decision Records, and technology decisions.
-
-**Primary agent**: Architect (architect skill, task_type: design, role: solution).
-- Input: PRD + UX design (if available) + memory lessons.
-- Output: system architecture with C4 diagram descriptions.
-
-**Supporting agents**:
-- Security Architect (architect skill, task_type: security-design).
-  - Input: system architecture.
-  - Output: security review findings, threat model.
-- Data Architect (architect skill, task_type: data-design) if data-intensive.
-  - Input: system architecture + PRD data requirements.
-  - Output: data model, data flow design.
-
-**Upstream artifacts**: `02-prd.md`, `03-ux-design.md` (if Design stage ran).
-
-**Collaboration patterns**:
-1. Debate: For contested technical decisions (e.g., microservices vs monolith,
-   framework selection, build vs buy).
-   - Frame the choice with project constraints, NFRs, team context.
-   - PRO agent argues Option A, CON agent argues Option B.
-   - JUDGE (Enterprise Architect) decides with documented rationale.
-   - Produce an ADR for each debate.
-   - If DEADLOCK, escalate to human.
-2. Evaluator-Optimizer: QA reviews for testability, DevOps reviews for deployability.
-   Route findings back to Architect. Max 2 iterations.
-3. Adversarial Review: Challenger questions architecture assumptions, failure modes,
-   security posture. Rates confidence 1-5.
-
-**DoD validators**:
-- Architect (architect skill): design is sound, trade-offs documented, patterns are
-  appropriate for the context.
-- QA Engineer (quality skill): architecture supports testing (observability,
-  component isolation, test environments).
-- DevOps (operations skill): architecture is deployable (CI/CD compatible,
-  environment strategy defined, scaling approach clear).
-- Security (architect skill, role: security): security concerns addressed,
-  authentication/authorization designed, data protection specified.
-
-**Output**:
-- `.delivery/artifacts/04-architecture.md`
-- `.delivery/artifacts/04a-adrs/ADR-001.md` (one per major decision)
-
-**Human checkpoint**: CHECKPOINT 2 -- present architecture summary for approval.
-
-**Max self-correction**: 2 iterations.
-
-**Game dev additions**: Game architecture roles invoked as relevant:
-- Game Systems Architect (ECS, state machines, game loop).
-- Level/World Designer (scene structure, streaming, persistence).
-- Network/Multiplayer Architect (netcode, sync, lobbies) -- only if multiplayer.
-- Graphics/Rendering Specialist (shaders, particles, performance) -- only if
-  graphically intensive.
-Performance budgets required (frame time, memory, bandwidth).
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
 ### Stage 5: Plan
 
-**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full),
-BUG_FIX (light), DOCS_ONLY (light).
-Skipped for: SPIKE.
+**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full), BUG_FIX (light), DOCS_ONLY (light)
+**Skipped for**: SPIKE
+**Purpose**: Create sprint plan with user stories, estimates, test strategy, and deployment approach.
+**Primary agents**: Product Owner, Scrum Bag, QA Engineer, DevOps
+**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/04-architect/solution/architecture.md` + ADRs (if Architect ran)
+**Collaboration patterns**: Consensus (SM, PO, QA, DevOps converge on estimates/risks), Adversarial Review (confidence 1-5)
+**DoD validators**: Scrum Bag, Product Owner, QA Engineer, DevOps
+**Human checkpoint**: CHECKPOINT 3 — present sprint plan for approval
+**Max self-correction**: 2 iterations
+**Output**: `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/05-plan/sm/sprint-plan.md`, `.delivery/artifacts/05-plan/qa/test-strategy.md`, `.delivery/artifacts/05-plan/devops/deploy-plan.md`
+**Light mode** (BUG_FIX, DOCS_ONLY): PO writes single story, SM produces minimal plan, skip consensus/adversarial, QA validates testability, reduced DoD (SM + QA only).
 
-**Purpose**: Create sprint plan with user stories, estimates, test strategy, and
-deployment approach.
-
-**Primary agents**:
-1. Product Owner (product-delivery skill, task_type: user_story).
-   - Input: PRD.
-   - Output: detailed user stories with acceptance criteria.
-2. Scrum Bag (product-delivery skill, task_type: sprint_planning).
-   - Input: user stories + architecture constraints.
-   - Output: sprint plan draft with capacity and sequencing.
-3. QA Engineer (quality skill, task_type: test-strategy).
-   - Input: PRD + architecture + user stories.
-   - Output: test strategy (what to test, how, when).
-4. DevOps (operations skill, task_type: deployment-strategy).
-   - Input: architecture.
-   - Output: deployment plan (how and when completed work ships).
-
-**Upstream artifacts**: `02-prd.md`, `04-architecture.md` + `04a-adrs/` (if Architect
-stage ran).
-
-**Collaboration patterns**:
-1. Consensus Protocol: SM, PO, QA, and DevOps independently analyze estimates, risks,
-   and capacity. Then share positions, respond to disagreements, and converge. 2-3
-   rounds as needed.
-2. Adversarial Review: Challenger questions estimates, risk assessments, and capacity
-   assumptions. Rates confidence 1-5.
-
-**DoD validators**:
-- Scrum Bag (product-delivery skill): process is sound, capacity is realistic,
-  commitment does not exceed 80% of available capacity.
-- Product Owner (product-delivery skill): scope is correct, stories are valuable and
-  properly prioritized.
-- QA Engineer (quality skill): test strategy covers critical paths, test approach is
-  referenced for each story.
-- DevOps (operations skill): deployment approach is viable, environment strategy is
-  clear.
-
-**Output**: `.delivery/artifacts/05-sprint-plan.md`
-
-**Human checkpoint**: CHECKPOINT 3 -- present sprint plan for approval.
-
-**Max self-correction**: 2 iterations.
-
-**Light mode** (BUG_FIX, DOCS_ONLY):
-- PO writes a single story for the fix or documentation task.
-- SM produces a minimal plan (no full sprint plan).
-- Skip consensus protocol and adversarial review.
-- QA still validates testability.
-- Reduced DoD: SM + QA only.
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
 ### Stage 6: Development
 
-**Runs for**: all project types (full depth for all; full+game for GAME_DEV+).
+**Runs for**: all project types (full depth; full+game for GAME_DEV+)
+**Purpose**: Implement code, write tests, produce development documentation. Executes per story.
+**Primary agent**: Developer (developer skill). Supporting: QA Engineer, Technical Writer.
+**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/03-design/ux/user-flows.md` (all available)
+**Collaboration patterns**: Evaluator-Optimizer per story (code → QA review → fix), Decision Ownership Routing as needed
+**DoD validators** (per story): Developer, QA Engineer, Architect, Technical Writer. GAME_DEV+ adds Defect Prevention Gate (godot skill).
+**DoD status options**: DONE, CODE_COMPLETE (empirical validation pending → carried to Stage 7), NOT_DONE
+**Human checkpoint**: none
+**Max self-correction**: 3 iterations per story
+**Output**: code files + `.delivery/artifacts/06-dev/developer/{story-id}.md`, `.delivery/artifacts/06-dev/tech-writer/docs.md` (if applicable)
+**Milestone testing**: After sprint stories pass DoD, run milestone validation per `references/milestone-testing.md` (quality skill).
+**Game dev additions**: Godot skill invoked for engine-specific work. Headless validation, empirical AC classification, performance profiling, playtest scenarios, milestone playtest checkpoint.
 
-**Purpose**: Implement the code, write tests, and produce development documentation.
-
-**Primary agent**: Developer (developer skill, task_type: write).
-- Input: user story + acceptance criteria + architecture constraints.
-- Output: implementation code.
-
-**Supporting agent**: QA Engineer (quality skill) for test writing and code review.
-
-**Upstream artifacts**: `02-prd.md`, `04-architecture.md` (if available),
-`05-sprint-plan.md` (if available), `03-ux-design.md` (if available).
-
-**Execution**: For each story in the sprint plan (or the single story for BUG_FIX):
-
-1. Invoke Developer with the story, acceptance criteria, and architecture constraints.
-2. Evaluator-Optimizer Loop: QA Engineer reviews code against acceptance criteria and
-   coding standards. Route feedback to Developer. Max 3 iterations per story.
-3. Decision Ownership Routing for mid-story issues:
-   - Scope questions -> Product Owner (product-delivery skill).
-   - Technical questions -> Architect (architect skill).
-   - Quality questions -> QA Engineer (quality skill).
-4. Technical Writer (operations skill, task_type: api-docs or runbook) if applicable.
-5. Team DoD Validation per story.
-
-**Collaboration patterns**:
-1. Evaluator-Optimizer per story (code -> QA review -> fix cycle).
-2. Decision Ownership Routing as needed.
-
-**DoD validators** (per story):
-- Developer (developer skill): code is clean, follows language and framework best
-  practices, no hardcoded secrets. Must include "Verification Status" in output.
-- QA Engineer (quality skill): tests pass, coverage is adequate, no critical issues.
-  If developer's Verification Status includes "Requires runtime validation" items,
-  return **CODE_COMPLETE** instead of DONE (see the quality skill's `references/empirical-validation.md`).
-- Architect (architect skill): implementation conforms to architecture decisions, no
-  architectural drift.
-- Technical Writer (operations skill): inline documentation present for non-obvious
-  logic, API docs if applicable.
-- Defect Prevention Gate (godot skill, references/defect-prevention.md): for GAME_DEV
-  projects, run the defect prevention checklist against all modified .gd and .tscn files.
-  Structural checklist failures (mouse_filter missing, convention violations) are NOT_DONE.
-  Empirical checklist items that cannot be verified without the Godot editor (scene
-  instancing test, visual render check) produce CODE_COMPLETE with items carried to Stage 7.
-
-**DoD status options**: DONE, CODE_COMPLETE, or NOT_DONE.
-- **CODE_COMPLETE** means: code passes all structural/inspectable criteria, but empirical
-  validation is pending. The story advances, and pending validations carry forward to
-  Stage 7 (UAT) as mandatory test cases.
-
-**Output**:
-- Code files in the project codebase.
-- `.delivery/artifacts/06-dev-notes.md` (summary of implementation decisions, known
-  issues, deviations from plan, and any CODE_COMPLETE stories with their pending
-  empirical validations).
-
-**Human checkpoint**: none.
-
-**Max self-correction**: 3 iterations per story.
-
-**Milestone testing** (all project types): After each sprint's stories pass DoD, run a
-milestone validation session using the quality skill's `references/milestone-testing.md`.
-Protocol is project-type-specific (Web: responsive/a11y, API: auth/CRUD/errors, Enterprise:
-multi-tenant/RBAC, Mobile: offline/permissions, CLI: pipes/exit codes). Uses role-specific
-checklists and cross-feature interaction questions. Findings classified and routed.
-
-**Game dev additions**: Godot skill (or relevant engine skill) invoked alongside
-Developer for engine-specific work. Game-specific testing:
-- **Headless validation**: After each story, run `godot --headless --path <project> --quit` as part of the evaluator-optimizer loop. Any new ERROR lines trigger a correction cycle.
-- **Empirical AC classification**: Classify each acceptance criterion as "structural" (verifiable by code inspection) or "empirical" (requires runtime). If empirical ACs exist and no validation tool was used, mark story as "code-complete, pending validation" rather than "done".
-- **Performance profiling**: Profile against frame budgets, memory limits, and draw call targets.
-- **Playtest scenarios**: Game feel, difficulty curve, progression balance, and player experience.
-- **Milestone playtest checkpoint**: After each sprint delivering playable features, run a
-  structured playtest (15 min) using the quality skill's `references/exploratory-testing.md`
-  milestone protocol. Role-specific checklists (PO: gameplay/design, QA: cross-story
-  interactions, Dev: performance, Architect: system interactions). Classify findings as
-  Bug/Balance/UX/Narrative/Performance/Spec Gap. Bugs → `.delivery/defects/`, rest → backlog.
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
 ### Stage 7: UAT
 
-**Runs for**: GREENFIELD (full), FEATURE (full), BUG_FIX (full), GAME_DEV+ (full),
-DOCS_ONLY (full).
-Skipped for: SPIKE.
+**Runs for**: GREENFIELD (full), FEATURE (full), BUG_FIX (full), GAME_DEV+ (full), DOCS_ONLY (full)
+**Skipped for**: SPIKE
+**Purpose**: Execute user acceptance testing, prepare release artifacts, get final approval.
+**Primary agents**: QA Engineer (test plan + test cases), DevOps (release plan + rollback), Technical Writer (release notes + user guide)
+**Upstream artifacts**: all prior artifacts
+**Collaboration patterns**: Multi-Perspective Review Board (go/no-go: QA, DevOps, Technical Writer; BLOCKs resolved before checkpoint)
+**DoD validators**: QA Engineer, DevOps, Product Owner, Technical Writer
+**Human checkpoint**: CHECKPOINT 4 — present UAT results, release plan, documentation. CODE_COMPLETE stories shown with pending empirical validations and recommended validation approaches.
+**Max self-correction**: 2 iterations
+**Output**: `.delivery/artifacts/07-uat/qa/test-plan.md`, `.delivery/artifacts/07-uat/qa/test-cases.md`, `.delivery/artifacts/07-uat/devops/release-plan.md`, `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `.delivery/artifacts/07-uat/tech-writer/user-guide.md`
+**Game dev additions**: Playtest scenarios, performance budget validation, input scheme validation, platform-specific checks.
+**Post-acceptance**: Proceed to memory update (Phase 5).
 
-**Purpose**: Execute user acceptance testing, prepare release artifacts, and get
-final approval for delivery.
-
-**Primary agents**:
-1. QA Engineer (quality skill, task_type: test-plan).
-   - Input: PRD acceptance criteria + developed features + **pending empirical
-     validations from Stage 6** (CODE_COMPLETE stories with their runtime
-     verification requirements).
-   - Output: UAT test plan with test cases. Pending empirical validations from
-     Stage 6 MUST be included as mandatory UAT test cases.
-2. QA Engineer (quality skill, task_type: test-cases).
-   - Input: test plan (including empirical validation test cases).
-   - Output: detailed test cases with expected results.
-3. DevOps (operations skill, task_type: release-plan + rollback-procedure).
-   - Input: architecture + deployment strategy.
-   - Output: release plan with rollback procedure.
-4. Technical Writer (operations skill, task_type: release-notes + user-guide).
-   - Input: PRD + dev notes + features implemented.
-   - Output: release notes, user guide updates.
-
-**Upstream artifacts**: all prior artifacts (PRD, architecture, sprint plan, UX
-design, dev notes).
-
-**Collaboration patterns**:
-1. Multi-Perspective Review Board (go/no-go recommendation):
-   - QA (quality skill): test results, defect status.
-   - DevOps (operations skill): release readiness, rollback readiness.
-   - Technical Writer (operations skill): documentation completeness.
-   - Any BLOCK must be resolved before proceeding to human checkpoint.
-
-**DoD validators**:
-- QA Engineer (quality skill): all tests pass (100% critical, 90% overall), no
-  critical defects, test coverage complete.
-- DevOps (operations skill): deployment plan complete, rollback procedure documented
-  and validated.
-- Product Owner (product-delivery skill): delivered features match business
-  expectations, acceptance criteria met.
-- Technical Writer (operations skill): release notes, user guides, and API docs are
-  complete and accurate.
-
-**Output**:
-- `.delivery/artifacts/07-uat-report.md`
-- `.delivery/artifacts/07a-release-plan.md`
-- `.delivery/artifacts/07b-documentation.md`
-
-**Human checkpoint**: CHECKPOINT 4 -- present UAT results, release plan, and
-documentation for accept or reject. If any stories were CODE_COMPLETE from Stage 6,
-explicitly show the **pending empirical validations** that need runtime verification,
-with recommended validation approaches per technology (from
-the quality skill's `references/empirical-validation.md`). The user must confirm these have been
-validated (or accept the risk) before the pipeline marks them DONE.
-
-**Max self-correction**: 2 iterations.
-
-**Game dev additions**: Game-specific test patterns applied:
-- Playtest scenarios (game feel, difficulty curve, progression balance).
-- Performance budgets validated (frame time targets, memory limits, draw call budgets).
-- Input scheme validation (keyboard, controller, touch as applicable).
-- Platform-specific checks (if targeting multiple platforms).
-
-**Post-acceptance**: After human accepts, proceed to memory update (see Phase 5 below).
+See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
 
 ---
 
@@ -938,28 +664,12 @@ without ALL validators saying DONE (unless the human overrides via escalation).
 1. **Identify validators.** Each stage has named validators defined in the stage
    definition above and detailed in `references/quality-gates.md`.
 
-2. **Spawn validator sub-agents.** Each validator is spawned as a sub-agent with the
-   relevant skill and a role-specific review prompt:
-
-   ```
-   You are validating this artifact as the [ROLE] on the delivery team.
-
-   Review the artifact strictly from your perspective. Apply these criteria:
-
-   [ROLE-SPECIFIC CRITERIA from quality-gates.md]
-
-   Artifact:
-   ---
-   [ARTIFACT CONTENT]
-   ---
-
-   Respond with:
-   - DONE or NOT_DONE
-   - If NOT_DONE, list each failing criterion with:
-     - What specifically fails (quote the relevant section)
-     - Why it matters (impact if shipped as-is)
-     - Actionable suggestion to fix it (specific enough to implement)
-   ```
+2. **Spawn validator sub-agents.** Use the DoD Validator Dispatch Template from
+   `references/pipeline-stages.md`. The validator reads the artifact from the file
+   path — the orchestrator NEVER pastes artifact content into validator prompts.
+   Each validator receives only the artifact file path, its role-specific gate
+   criteria (from `references/quality-gates.md`), and an Agent Invocation Template
+   with the GATE CRITERIA section populated.
 
 3. **Evaluate votes.** ALL validators must return DONE for the stage to complete.
 
@@ -1036,13 +746,15 @@ full pipeline state).
 
 | Stage | Receives From Upstream |
 |-------|------------------------|
-| Idea | (none -- first stage) |
-| Refine | idea brief |
+| Idea | (none — first stage) |
+| Refine | Idea brief |
 | Design | PRD |
-| Architect | PRD + UX design (if Design stage ran) |
+| Architect | PRD + design artifacts (if Design ran) |
 | Plan | PRD + architecture + ADRs (if Architect ran) |
-| Dev | PRD + architecture + sprint plan + UX design (all available) |
-| UAT | all prior artifacts |
+| Dev | PRD + architecture + stories + design artifacts (all available) |
+| UAT | All prior artifacts |
+
+Exact artifact file paths for each stage are defined in `references/pipeline-stages.md`.
 
 Worker sub-agents receive ONLY what they need for their specific task. For example,
 a QA Engineer validating a PRD receives the PRD and the gate criteria, but not the

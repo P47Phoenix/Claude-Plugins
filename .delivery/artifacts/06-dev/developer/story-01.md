@@ -1,91 +1,86 @@
-# Development Artifact: US-01 — Orchestrator Theme Surfacing
+# Development Artifact: BF-62-001 — Remove Duplicated Stage Definitions from SKILL.md
 
-**Story**: US-01 (Orchestrator Theme Surfacing)
-**Issue**: #59
+**Story**: BF-62-001
+**Issues**: #60, #61, #62
 **Developer**: Gimli
-**Date**: 2026-04-04
 
-> "I said I'd carve this stone, and carved it is. Every chisel stroke accounted for. And my code!"
+## Implementation Summary
 
----
-
-## File Modified
-
-`delivery-team/skills/delivery-flow/SKILL.md`
-
----
+And my code! Refactored `delivery-team/skills/delivery-flow/SKILL.md` to remove ~270 lines of duplicated stage definitions, fix flat artifact paths, and fix the DoD template violation. The stone was heavy with duplication, but a Dwarf's axe knows how to carve it clean.
 
 ## Changes Made
 
-### 1. Theme-Gated Reporting Protocol (new section, after Two-Channel Communication)
+### 1. Stage Definitions Section (lines 522-652)
 
-Inserted a new `### Theme-Gated Reporting Protocol` section between "Two-Channel Communication" and "Plan-Mode Delegation" in Phase 4. This section defines:
+Replaced ~400 lines of detailed stage definitions with ~130 lines of concise summaries. Each stage now contains ONLY orchestrator-level routing information:
 
-- **Theme detection guard**: All themed behavior gated on `aliases.theme != business`. Business or unset = zero behavior change.
-- **Three output slots** where theme surfaces:
-  1. Stage Announcements (Step 1) — character name + thematic voice
-  2. Human Checkpoint Summaries (Step 9) — quoted agent artifact line (max 280 chars)
-  3. Stage Transitions (Step 10) — themed STATE ANCHOR with routing signals preserved
-- **Quote format**: blockquote with character attribution (`> "text" — Character Name`)
-- **Partial theme fallback**: roles missing from theme's `roles` map fall back to neutral format
+- Stage name and number
+- Runs for / Skipped for (project types)
+- Purpose (one line)
+- Primary agent (skill + role, brief)
+- Upstream artifacts (namespaced paths)
+- Collaboration patterns assigned
+- DoD validators (role list)
+- Human checkpoint (if any)
+- Max self-correction iterations
+- Output artifact path(s) using namespaced format
+- Game dev additions (brief note)
+- Reference directive to `references/pipeline-stages.md`
 
-### 2. Neutrality Preservation (sub-section within Theme-Gated Reporting Protocol)
+**Removed** from each stage:
+- Detailed sub-flow steps (Input/Output per agent)
+- Supporting agent descriptions with Input/Output details
+- Inline content duplicating pipeline-stages.md
 
-Explicit rules that themed content NEVER appears in:
-- `.delivery/state.md`
-- `stage-summary.md` files
-- Agent Invocation Template prompts (ALIAS block handles personality)
-- DoD validator prompts
-- Signal blocks (STATUS/ARTIFACT/SUMMARY format unchanged)
+**Added** authoritative-source directive at the top of Stage Definitions:
+> `references/pipeline-stages.md` is the single source of truth for stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD Validator Dispatch Templates.
 
-### 3. Step 1: Announce (conditional block added)
+### 2. DoD Template Fix (Team Definition of Done Protocol)
 
-Added conditional logic:
-- **Non-business theme + role in `roles` map**: Reference character name, use thematic vocabulary/tone per `personality_strength`
-- **Business/unset/unmapped role**: Use existing neutral format (`## Stage [N]: [NAME]\nPurpose: ...`)
+Replaced the inline validator prompt template that contained `[ARTIFACT CONTENT]` with a reference to the DoD Validator Dispatch Template in `references/pipeline-stages.md`. The validator now reads the artifact from the file path -- the orchestrator never pastes artifact content into validator prompts.
 
-### 4. Step 9: Check for Human Checkpoint (conditional block added)
+### 3. Artifact Path Migration (flat -> namespaced)
 
-Added conditional logic:
-- **Non-business theme**: Read primary agent artifact, select one themed quote (max 280 chars), include in checkpoint summary. Read scoped to quote selection only — no content forwarding to downstream agents. Omit quote if no themed language found.
-- **Business/unset**: Standard neutral checkpoint summary, no artifact quotes.
+All artifact paths converted from flat format to namespaced format:
 
-### 5. Step 10: Advance (conditional block added)
+| Old (flat) | New (namespaced) |
+|-----------|-----------------|
+| `.delivery/artifacts/01-idea-brief.md` | `.delivery/artifacts/01-idea/po/idea-brief.md` |
+| `.delivery/artifacts/02-prd.md` | `.delivery/artifacts/02-refine/po/prd.md` |
+| `.delivery/artifacts/03-ux-design.md` | `.delivery/artifacts/03-design/ux/user-flows.md` (+ wireframes, component-specs, accessibility) |
+| `.delivery/artifacts/04-architecture.md` | `.delivery/artifacts/04-architect/solution/architecture.md` |
+| `.delivery/artifacts/04a-adrs/ADR-001.md` | `.delivery/artifacts/04-architect/adrs/ADR-001.md` |
+| `.delivery/artifacts/05-sprint-plan.md` | `.delivery/artifacts/05-plan/po/stories.md`, `sm/sprint-plan.md`, `qa/test-strategy.md`, `devops/deploy-plan.md` |
+| `.delivery/artifacts/06-dev-notes.md` | `.delivery/artifacts/06-dev/developer/{story-id}.md` |
+| `.delivery/artifacts/07-uat-report.md` | `.delivery/artifacts/07-uat/qa/test-plan.md`, `qa/test-cases.md` |
+| `.delivery/artifacts/07a-release-plan.md` | `.delivery/artifacts/07-uat/devops/release-plan.md` |
+| `.delivery/artifacts/07b-documentation.md` | `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `user-guide.md` |
 
-Added conditional logic:
-- **Non-business theme**: STATE ANCHOR carries thematic voice. Stage number, stage name, and continuation directive MUST be present.
-- **Business/unset**: Neutral STATE ANCHOR format (unchanged from pre-feature behavior).
+### 4. Cross-Stage Artifact Flow Table
 
----
+Updated to use generic artifact names without hardcoded flat paths. Added footer referencing `references/pipeline-stages.md` for exact file paths.
 
-## Acceptance Criteria Coverage
+## Verification Status
 
-| AC | Status | Notes |
-|----|--------|-------|
-| AC-01 | MET | Step 1 references character name from `roles` map |
-| AC-02 | MET | Step 1 carries thematic vocabulary/tone per `personality_strength` |
-| AC-03 | MET | Step 1 neutral format when business/unset |
-| AC-04 | MET | Step 1 falls back to neutral when role not in `roles` map |
-| AC-05 | MET | Step 9 includes quoted line (max 280 chars) from artifact |
-| AC-06 | MET | Step 9 quote read scoped to user-facing output only, two-channel preserved |
-| AC-07 | MET | Step 9 no quotes when business/unset |
-| AC-08 | MET | Step 9 omits quote when no themed language found |
-| AC-09 | MET | Step 10 STATE ANCHOR carries thematic voice |
-| AC-10 | MET | Step 10 routing signals always present in themed message |
-| AC-11 | MET | Step 10 neutral format when business/unset |
-| AC-12 | MET | Neutrality Preservation: state.md excluded |
-| AC-13 | MET | Neutrality Preservation: stage-summary.md excluded |
-| AC-14 | MET | Neutrality Preservation: Agent Invocation Templates excluded |
-| AC-15 | MET | Neutrality Preservation: DoD validator prompts excluded |
-| AC-16 | MET | Neutrality Preservation: signal block format unchanged |
-| AC-17 | MET | Neutrality Preservation: signal extraction logic unchanged |
+| Check | Result |
+|-------|--------|
+| No `[ARTIFACT CONTENT]` in file | PASS |
+| No flat artifact paths (e.g., `01-idea-brief.md`, `02-prd.md`) | PASS |
+| All 7 stages present in Stage Definitions | PASS (lines 529-652) |
+| Each stage has: purpose, runs-for, collaboration patterns, DoD validators, checkpoint, max iterations, output path | PASS |
+| Each stage references `pipeline-stages.md` | PASS (7/7 stages) |
+| Authoritative-source directive present | PASS (line 524) |
+| Phase 4 Step 3 references pipeline-stages.md | PASS (line 363) |
+| DoD template references pipeline-stages.md | PASS (line 667) |
+| Stage Routing Matrix intact | PASS (lines 251-259) |
+| Cross-Stage Artifact Flow updated | PASS (lines 741-755) |
+| All namespaced paths match pipeline-stages.md | PASS |
+| Line count reduced | PASS (944 lines, down from ~1240 — net reduction of ~296 lines) |
 
----
+## Deviation from Plan
 
-## Source vs Installed Diff
+None. All acceptance criteria addressed as specified.
 
-Source file (`delivery-team/skills/delivery-flow/SKILL.md`) contains the new changes. Installed file (`~/.claude/plugins/marketplaces/.../delivery-team/skills/delivery-flow/SKILL.md`) reflects the pre-feature baseline. Diff confirms exactly the expected additions (Theme-Gated Reporting Protocol section + conditional blocks in Steps 1, 9, 10) with no unintended changes. The installed copy updates on next plugin sync after merge.
+## Known Issues
 
----
-
-> "Every acceptance criterion met, every neutrality rule carved in mountain stone. The axe does not waver."
+None.

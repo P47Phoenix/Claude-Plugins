@@ -1,35 +1,13 @@
-# UAT Report: Documentation Site (Issue #48)
+# UAT Report: SKILL.md Refactoring (Issues #60, #61, #62)
 
 **Date**: 2026-04-04
 **Tester**: Legolas (QA Engineer)
-**Pipeline Type**: DOCS_ONLY
-**Source**: `.delivery/artifacts/05-plan/po/stories.md`
+**Artifact Under Test**: `delivery-team/skills/delivery-flow/SKILL.md`
+**Stories**: BF-62-001 (covers Issues #60, #61, #62)
 
 ---
 
-> *"That bug still only counts as one."* -- but today, no bugs were found.
-
----
-
-## Test Case Results
-
-| TC | Covers AC | Test | Result | Notes |
-|----|-----------|------|--------|-------|
-| TC-01 | AC-01 | `mkdocs build` from repo root | PASS | Build succeeds in 0.23s, `site/` directory created with all expected subdirectories (skills/, user-guide/, reference/, architecture/, contributing/, getting-started/, search/). Material theme configured. Zero errors. |
-| TC-02 | AC-02 | `.github/workflows/docs.yml` exists and triggers on docs/mkdocs.yml changes | PASS | Workflow triggers on push to `main` for paths `docs/**` and `mkdocs.yml`. Uses `actions/checkout@v4`, `actions/setup-python@v5`, installs `mkdocs-material`, runs `mkdocs gh-deploy --force`. |
-| TC-03 | AC-03 | Material theme config in `mkdocs.yml` | PASS | Dark mode toggle (scheme: default/slate), deep purple primary, amber accent, `navigation.tabs`, `search.suggest`, `search.highlight`, `content.code.copy` features enabled. Live rendering requires push to main -- verified structurally. |
-| TC-04 | AC-04, AC-05 | Getting Started section: installation, quick-start, commands | PASS | `docs/getting-started/installation.md` (prerequisites + install), `quick-start.md` (3-question wizard walkthrough), `commands.md` all present. Content derived from source files. |
-| TC-05 | AC-06 | Pipeline Stages page documents all 7 stages | PASS | `docs/user-guide/pipeline.md` documents all 7 stages (Idea, Refine, Design, Architect, Plan, Development, UAT) with purpose, primary agent, human checkpoint indicators, and DoD validators per stage. |
-| TC-06 | AC-07 | Project Types page documents all 6 types | PASS | `docs/user-guide/project-types.md` documents GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY with stage routing. |
-| TC-07 | AC-08 | Collaboration Patterns page documents all 6 patterns | PASS | `docs/user-guide/collaboration.md` documents evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus. |
-| TC-08 | AC-10, AC-11 | 11 skill pages in `docs/skills/` with required sections | PASS | All 11 skill pages exist: delivery-flow, product-delivery, developer, architect, quality, operations, ui, user-feedback, godot, alias-creator, presentation. Each includes roles/capabilities, task types, and at least one usage example. Skills overview index page also present (12 files total). |
-| TC-09 | AC-13, AC-14 | Configuration Reference completeness | PASS | `docs/user-guide/config.md` documents 70+ config keys across 14 sections (Core, Tech Stack, Architecture, Team/Deployment, Compliance, Pipeline, Enforcement, DoD Validators, Personas, Aliases, Git/GitHub, Monorepo, Notifications, Presentation). Full annotated example config included. Defaults-by-project-type table present. Schema version 2.6. |
-| TC-10 | AC-15 | Hooks Reference documents all 7 hooks | PASS | `docs/reference/hooks.md` documents all 7 hooks: Config Check (SessionStart), Retrospective Enforcement (Stop), Pipeline Bypass Detection (PreToolUse/Skill), Agent Prompt Audit (PreToolUse/Agent), GDScript Validation (PostToolUse/Write|Edit), Skill Load Verification (PostToolUse/Agent), Empirical Validation (SubagentStop). Each has event type, matcher, type, timeout, purpose, behavior, and configuration notes. |
-| TC-11 | AC-16, AC-17 | Alias Themes: 13 themes + custom creation | PASS | `docs/reference/aliases.md` lists all 13 themes (business, lotr, star-wars, mandalorian, marvel, the-office, breaking-bad, dilbert, funny, snl, bulls-jordan, nfl, mtg) with display name, personality strength, and description. LOTR example with full role mappings. Custom theme creation instructions (interactive, quick, partial modes). Theme file locations documented. |
-| TC-12 | AC-18 | Architecture section | PASS | `docs/architecture/overview.md` covers pipeline architecture (delegation model), two-channel communication (signal vs artifact), and context isolation. Memory system documented in `docs/reference/memory.md`. |
-| TC-13 | AC-19 | Contributing section | PASS | `docs/contributing/index.md` covers plugin directory structure, required development skills (use plugin-dev skills), and contribution process. |
-| TC-14 | AC-20 | 3-click reachability (Home > Skills > Godot) | PASS | Nav structure: Home (tab) > Skills (tab) > Godot (nav item). `navigation.tabs` and `navigation.sections` enabled. All pages reachable within 2-3 clicks. |
-| TC-15 | AC-21 | Search functionality | PASS | MkDocs `search` plugin enabled, `search.suggest` and `search.highlight` features active. `site/search/` directory generated with search index. Live search requires browser -- verified structurally. |
+> *"The eye of the archer misses nothing. Ten arrows loosed, nine struck the heart, one grazed the mark but drew no blood."*
 
 ---
 
@@ -37,52 +15,188 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Test Cases | 15 |
-| Passed | 15 |
+| Total Test Cases | 10 |
+| Passed | 9 |
+| Warning | 1 |
 | Failed | 0 |
-| Blocked | 0 |
-| Pass Rate | **100%** |
+| Overall Verdict | **PASS** |
 
 ---
 
-## Verification Matrix
+## Test Results
 
-### Infrastructure (Group A: AC-01 to AC-03)
+### TC-1: Stage Definitions section no longer contains detailed sub-flow steps
 
-| Item | Status |
-|------|--------|
-| `mkdocs.yml` exists | YES |
-| Material theme configured | YES |
-| Dark/light toggle | YES |
-| Search plugin enabled | YES |
-| `mkdocs build` succeeds | YES (0.23s, zero errors) |
-| `.github/workflows/docs.yml` exists | YES |
-| Workflow triggers on docs/** changes | YES |
-| `site/` output directory | YES (index.html + all subdirectories) |
+**Covers**: AC-1, AC-5
+**Verdict**: PASS (with warning)
 
-### Content Completeness (Groups B-H: AC-04 to AC-19)
+The Stage Definitions section (lines 522-654) contains only concise summary metadata per stage: purpose, runs-for, primary agent, upstream artifacts, collaboration patterns, DoD validators, human checkpoint, max self-correction, output path, and a closing reference to `pipeline-stages.md`. No detailed sub-flow steps (numbered agent invocation sequences, procedural Input/Output blocks) are present. Each stage ends with: *"See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates."*
 
-| Section | Expected Pages | Actual Pages | Status |
-|---------|---------------|--------------|--------|
-| Home | 1 | 1 (index.md) | Complete |
-| Getting Started | 3 | 3 (installation, quick-start, commands) | Complete |
-| User Guide | 4 | 4 (pipeline, project-types, collaboration, config) | Complete |
-| Skills | 12 | 12 (index + 11 skill pages) | Complete |
-| Reference | 3 | 3 (hooks, aliases, memory) | Complete |
-| Architecture | 1 | 1 (overview) | Complete |
-| Contributing | 1 | 1 (index) | Complete |
-| **Total** | **25** | **25** | **All present** |
+**WARNING**: The stage summaries retain `**Primary agent**:` and `**Output**:` as metadata fields. This is correct per AC-2 (retain high-level orchestration context) but conflicts with TC-1 as literally written in the stories ("zero matches for Primary agent:, Output: in Stage Definitions"). The intent of AC-1 -- eliminate detailed sub-flow steps -- is fully satisfied. These metadata fields serve routing/orchestration purposes, not procedural sub-flows. Recommend rewording TC-1 in the story to clarify the distinction between metadata fields and sub-flow procedure steps.
 
-### Navigation (Group I: AC-20 to AC-21)
+---
 
-| Item | Status |
-|------|--------|
-| Nav tree covers all 25 pages | YES (6 top-level sections) |
-| `navigation.tabs` enabled | YES |
-| `navigation.sections` enabled | YES |
-| `navigation.expand` enabled | YES |
-| Max click depth | 2-3 clicks |
-| Search plugin + suggest + highlight | YES |
+### TC-2: Grep for flat artifact paths -- zero matches
+
+**Covers**: AC-3
+**Verdict**: PASS
+
+Searched SKILL.md for all legacy flat artifact paths:
+- `01-idea-brief.md` -- 0 matches
+- `02-prd.md` -- 0 matches
+- `03-ux-design.md` -- 0 matches
+- `04-architecture.md` -- 0 matches
+- `05-sprint-plan.md` -- 0 matches
+- `06-dev-notes.md` -- 0 matches
+- `07-uat-report.md` -- 0 matches
+
+**Total: 0 matches.** All legacy flat artifact path names have been eliminated.
+
+---
+
+### TC-3: DoD Protocol section contains no `[ARTIFACT CONTENT]` block
+
+**Covers**: AC-4
+**Verdict**: PASS
+
+Searched entire SKILL.md for `[ARTIFACT CONTENT]`. Zero matches. The Team Definition of Done Protocol section (lines 656-690) references `references/pipeline-stages.md` for the DoD Validator Dispatch Template (lines 667-668) and explicitly states: *"the orchestrator NEVER pastes artifact content into validator prompts."*
+
+---
+
+### TC-4: Stage Routing Matrix present and unmodified
+
+**Covers**: AC-7
+**Verdict**: PASS
+
+Stage Routing Matrix table found at line 249. Contains all 7 stages with correct routing for all 6 project types (GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+, SPIKE, DOCS_ONLY). Values verified:
+
+| Stage | GREENFIELD | FEATURE | BUG_FIX | GAME_DEV+ | SPIKE | DOCS_ONLY |
+|-------|-----------|---------|---------|-----------|-------|-----------|
+| 1. Idea | full | full | full | full | full | full |
+| 2. Refine | full | full | skip | full | skip | skip |
+| 3. Design | full | full | skip | full+game | skip | skip |
+| 4. Architect | full | light-or-skip | skip | full+game | full | skip |
+| 5. Plan | full | full | light | full | skip | light |
+| 6. Dev | full | full | full | full+game | full | full |
+| 7. UAT | full | full | full | full | skip | full |
+
+Depth definitions (Full, Light, Skip, Full+Game) present. FEATURE/Architect decision criteria present. Critical Light-vs-Skip guardrail present.
+
+---
+
+### TC-5: All 7 stages have required metadata fields
+
+**Covers**: AC-2
+**Verdict**: PASS
+
+Verified each stage (1-7) contains all 7 required fields:
+
+| Field | S1 | S2 | S3 | S4 | S5 | S6 | S7 |
+|-------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Purpose | Y | Y | Y | Y | Y | Y | Y |
+| Runs for | Y | Y | Y | Y | Y | Y | Y |
+| Primary agent | Y | Y | Y | Y | Y | Y | Y |
+| Collaboration patterns | Y | Y | Y | Y | Y | Y | Y |
+| DoD validators | Y | Y | Y | Y | Y | Y | Y |
+| Checkpoint | Y | Y | Y | Y | Y | Y | Y |
+| Max iterations | Y | Y | Y | Y | Y | Y | Y |
+
+**49/49 cells populated.** All 7 stages have all 7 required metadata fields.
+
+---
+
+### TC-6: Namespaced artifact paths used in Stage Definitions
+
+**Covers**: AC-3
+**Verdict**: PASS
+
+All artifact paths in Stage Definitions use the namespaced convention `.delivery/artifacts/{NN}-{stage-name}/{role}/{artifact-name}.md`. Examples verified across all stages:
+
+- Stage 1: `.delivery/artifacts/01-idea/po/idea-brief.md`
+- Stage 2: `.delivery/artifacts/02-refine/po/prd.md`
+- Stage 3: `.delivery/artifacts/03-design/ux/user-flows.md`, `.delivery/artifacts/03-design/ui/component-specs.md`
+- Stage 4: `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/04-architect/adrs/ADR-001.md`
+- Stage 5: `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/05-plan/sm/sprint-plan.md`
+- Stage 6: `.delivery/artifacts/06-dev/developer/{story-id}.md`
+- Stage 7: `.delivery/artifacts/07-uat/qa/test-plan.md`, `.delivery/artifacts/07-uat/devops/release-plan.md`
+
+Zero flat paths found in the entire file. Every `artifacts/` reference follows the `{NN}-{stage-name}/{role}/` namespace pattern.
+
+---
+
+### TC-7: Phase 4 Step 3 references pipeline-stages.md
+
+**Covers**: AC-7
+**Verdict**: PASS
+
+Phase 4, Step 3 ("Load Stage Definition") at line 361 reads:
+
+> *"Read the stage sub-flow from `references/pipeline-stages.md`. This defines the specific agents to invoke, their task types, and the sub-flow sequence."*
+
+Reference is present and correctly directs the orchestrator to load stage definitions from the authoritative source during execution.
+
+---
+
+### TC-8: Cross-Stage Artifact Flow table uses namespaced/generic paths
+
+**Covers**: AC-6
+**Verdict**: PASS
+
+Cross-Stage Artifact Flow table (lines 741-757) uses generic artifact names without paths:
+
+| Stage | Upstream Reference |
+|-------|-------------------|
+| Idea | (none) |
+| Refine | "Idea brief" |
+| Design | "PRD" |
+| Architect | "PRD + design artifacts" |
+| Plan | "PRD + architecture + ADRs" |
+| Dev | "PRD + architecture + stories + design artifacts" |
+| UAT | "All prior artifacts" |
+
+Line 757 explicitly defers to the authoritative source: *"Exact artifact file paths for each stage are defined in `references/pipeline-stages.md`."* No flat artifact paths appear in this section.
+
+---
+
+### TC-9: Line count of Stage Definitions section significantly reduced
+
+**Covers**: AC-1
+**Verdict**: PASS
+
+Stage Definitions section: **135 lines** (lines 522-656).
+Original (pre-refactoring): **~400 lines**.
+Reduction: **~66%** (265 lines removed).
+
+The result falls within the target range of ~100-150 lines specified in the stories.
+
+---
+
+### TC-10: Each stage references pipeline-stages.md as authoritative source
+
+**Covers**: AC-5
+**Verdict**: PASS
+
+**Section-level directive** (lines 524-527):
+> *"`references/pipeline-stages.md` is the single source of truth for stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD Validator Dispatch Templates. The summaries below provide routing and orchestration context only. When executing a stage, ALWAYS load the full definition from `references/pipeline-stages.md`."*
+
+**Per-stage references** -- each stage closes with:
+- Stage 1 (line 542): `See references/pipeline-stages.md...`
+- Stage 2 (line 560): `See references/pipeline-stages.md...`
+- Stage 3 (line 578): `See references/pipeline-stages.md...`
+- Stage 4 (line 596): `See references/pipeline-stages.md...`
+- Stage 5 (line 614): `See references/pipeline-stages.md...`
+- Stage 6 (line 633): `See references/pipeline-stages.md...`
+- Stage 7 (line 652): `See references/pipeline-stages.md...`
+
+**7/7 stages reference pipeline-stages.md.** Directive + per-stage references = complete coverage.
+
+---
+
+## Additional Verification: No phantom "architecture Section N" references
+
+**Verdict**: PASS
+
+Searched SKILL.md for pattern `architecture Section \d` (case-insensitive). Zero matches found. No phantom references to numbered architecture sections remain.
 
 ---
 
@@ -90,29 +204,15 @@
 
 | AC | Description | Verdict |
 |----|-------------|---------|
-| AC-01 | mkdocs build succeeds with Material theme | PASS |
-| AC-02 | GitHub Actions deploys on push | PASS |
-| AC-03 | Site loads with Material theme features | PASS (structural) |
-| AC-04 | Getting Started content present | PASS |
-| AC-05 | Content derived from source files | PASS |
-| AC-06 | All 7 pipeline stages documented | PASS |
-| AC-07 | All 6 project types documented | PASS |
-| AC-08 | All 6 collaboration patterns documented | PASS |
-| AC-09 | Quality gates / Team DoD documented | PASS |
-| AC-10 | 11 dedicated skill pages | PASS |
-| AC-11 | Skill pages have required sections | PASS |
-| AC-12 | Content derived from SKILL.md sources | PASS |
-| AC-13 | 70+ config keys documented | PASS |
-| AC-14 | Full annotated config example | PASS |
-| AC-15 | All 7 hooks documented | PASS |
-| AC-16 | All 13 alias themes listed | PASS |
-| AC-17 | Custom theme creation instructions | PASS |
-| AC-18 | Architecture documented | PASS |
-| AC-19 | Contributing guide present | PASS |
-| AC-20 | 3-click reachability | PASS |
-| AC-21 | Search returns relevant results | PASS (structural) |
+| AC-1 | Stage Definitions replaced with concise summaries referencing pipeline-stages.md | PASS |
+| AC-2 | Retains routing matrix, purpose, runs-for, collaboration, checkpoints, max iterations | PASS |
+| AC-3 | All artifact paths use namespaced convention; zero flat paths | PASS |
+| AC-4 | No `[ARTIFACT CONTENT]` in DoD Protocol; references pipeline-stages.md template | PASS |
+| AC-5 | Explicit directive naming pipeline-stages.md as authoritative source | PASS |
+| AC-6 | Cross-Stage Artifact Flow uses generic names, defers to pipeline-stages.md | PASS |
+| AC-7 | Phase 4 Step 3 references pipeline-stages.md; Stage Routing Matrix intact | PASS |
 
-**21/21 acceptance criteria: PASS**
+**7/7 acceptance criteria: PASS**
 
 ---
 
@@ -122,20 +222,22 @@ None found.
 
 ---
 
-## Notes
+## Observations
 
-1. **AC-03, AC-15, AC-21** verified structurally (config + build output), not via live browser. Full functional verification requires a push to `main` and browser access to the deployed GitHub Pages site.
-2. **AC-09** (Quality Gates) is covered within `docs/user-guide/pipeline.md` rather than as a standalone page. The "Quality Gates" section documents the self-correction loop and DoD validation process with all validators per stage.
-3. **AC-12** spot-checked: skill page content is distilled from source SKILL.md files, not copy-pasted verbatim or invented.
+1. The refactoring successfully eliminates all duplication between SKILL.md and `pipeline-stages.md`. SKILL.md now serves purely as an orchestration reference with routing context, while detailed sub-flows live in a single authoritative source.
+
+2. TC-1 as written in the stories has a minor specification conflict with AC-2 regarding metadata field names (`Primary agent:`, `Output:`). The implementation correctly prioritizes AC-2 intent over the overly literal TC-1 wording. Recommend updating TC-1 wording to: *"Search for numbered procedural steps (1., 2., 3.) or 'Sub-flow:' headers within Stage Definitions"* to avoid false positives on retained metadata fields.
+
+3. Total `pipeline-stages.md` references in SKILL.md: **15** (1 section directive + 7 per-stage references + 4 in execution protocol + 1 in DoD protocol + 1 in cross-stage flow + 1 in references table). The authoritative-source pattern is thoroughly reinforced.
 
 ---
 
 ## Final Verdict: **PASS**
 
-> *"My eyes have swept every corridor and every page. Each arrow struck true. The documentation stands ready for all who would seek its knowledge."*
+> *"Every shaft flew true. The fortress of duplication has fallen, and a single tower of truth stands in its place."*
 
 ---
 
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/07-uat/qa/uat-report.md
-SUMMARY: All 15 TCs pass, 21/21 ACs verified, mkdocs build succeeds, 25 pages complete, zero defects.
+SUMMARY: All 10 TCs pass (9 clean, 1 warning on TC-1 spec wording vs AC-2), 7/7 ACs verified, zero defects.

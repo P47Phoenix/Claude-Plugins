@@ -1,139 +1,156 @@
-# Gate 5 DoD Review: Product Owner
+# Gate 1 + Gate 5 (Light) DoD Review: Product Owner
 
 **Reviewer**: Gandalf (Product Owner)
 **Date**: 2026-04-04
-**Pipeline**: run-2026-04-04-w7m3
-**Stories Version**: 1.0
-**PRD Version**: 1.0
+**Pipeline**: BUG_FIX — Issues #60, #61, #62
+**Artifacts Reviewed**:
+- `.delivery/artifacts/01-idea/po/idea-brief.md` (Gate 1)
+- `.delivery/artifacts/05-plan/po/stories.md` (Gate 5)
+- `.delivery/artifacts/05-plan/sm/sprint-plan.md` (Gate 5)
 **Verdict**: DONE
 
-> *"Twenty requirements. Eight stories. Four groups woven into four sprints. I have walked each thread from its origin in the PRD to its terminus in the plan, and not one has been lost along the way. The map is true."*
+> *"I have examined the brief and the plan with the care one applies to reading ancient scripts -- every line weighed, every omission sought. The problem is clear, the scope is tight, and the plan is sound. There is nothing superfluous, and nothing missing."*
 
 ---
 
-## Criterion: Scope Correct [BLOCKING]
+## GATE 1: Idea Brief Validation
+
+### Criterion: Problem Statement Present and Specific [BLOCKING]
 
 **Result**: PASS
 
-### FR-to-Story Traceability Matrix
+The problem statement identifies three concrete, observable defects with issue numbers (#60, #61, #62). Each defect is described with:
+- **What is wrong**: flat artifact paths vs namespaced paths; inline `[ARTIFACT CONTENT]` vs file-path references; root cause of content duplication.
+- **Where it manifests**: specific sections of SKILL.md (Stage Definitions, Team DoD Protocol).
+- **Observable impact**: agents write artifacts to wrong locations; downstream stages break; two-channel communication principle violated.
 
-All 20 functional requirements from the PRD are mapped to exactly one user story. No FR is orphaned. No story introduces scope beyond the PRD.
+The root cause analysis (Issue #62) correctly identifies content duplication as the upstream fault producing both symptoms (#60, #61). This is well-structured causal reasoning -- not symptom-chasing.
 
-| PRD FR | Description | Story | Sprint | Covered |
-|--------|-------------|-------|--------|---------|
-| FR-01 | Investor Pitch type definition | US-01 | S1 | Yes |
-| FR-02 | Roadmap type definition | US-01 | S1 | Yes |
-| FR-03 | Product Demo type definition | US-01 | S1 | Yes |
-| FR-04 | Onboarding type definition | US-01 | S1 | Yes |
-| FR-05 | Retrospective Summary type definition | US-01 | S1 | Yes |
-| FR-06 | Error handling update for new types | US-02 | S1 | Yes |
-| FR-07 | PPTX generation script | US-03 | S4 | Yes |
-| FR-08 | Slide layout mapping | US-03 | S4 | Yes |
-| FR-09 | Template support | US-03 | S4 | Yes |
-| FR-10 | PPTX as output format option | US-04 | S4 | Yes |
-| FR-11 | Font and color configuration | US-04 | S4 | Yes |
-| FR-12 | Enhanced progress indicators | US-06 | S3 | Yes |
-| FR-13 | Light mode for simpler types | US-05 | S3 | Yes |
-| FR-14 | Per-type threshold configuration | US-05 | S3 | Yes |
-| FR-15 | Degradation behavior when threshold exceeded | US-05 | S3 | Yes |
-| FR-16 | Emphasis selection | US-07 | S2 | Yes |
-| FR-17 | Information cutting | US-07 | S2 | Yes |
-| FR-18 | Audience-specific framing | US-07 | S2 | Yes |
-| FR-19 | Narrative tension | US-07 | S2 | Yes |
-| FR-20 | Review Gate narrative quality criteria | US-08 | S2 | Yes |
+### Criterion: Target Users Identified [BLOCKING]
 
-**Unmapped FRs**: None. 20/20 covered.
+**Result**: PASS
 
-**Scope creep check**: No story introduces requirements beyond the PRD. US-01 through US-08 are strictly traceable to FR-01 through FR-20. The eight new config keys documented in the stories match exactly the eight keys in PRD Section 5.
+Three user groups are named:
+1. The delivery-flow orchestrator (primary consumer of SKILL.md)
+2. All delivery-team sub-agents receiving artifact paths from the orchestrator
+3. Plugin maintainers needing a single source of truth
+
+These are the correct stakeholders. The orchestrator is the direct consumer; sub-agents are downstream victims of wrong paths; maintainers suffer from drift over time. No user group is missing.
+
+### Criterion: Goals Present and Specific [BLOCKING]
+
+**Result**: PASS
+
+Five goals are stated, each actionable and verifiable:
+1. Establish `references/pipeline-stages.md` as single source of truth (measurable: no duplicated definitions in SKILL.md)
+2. Remove duplicated definitions from SKILL.md (measurable: line count reduction)
+3. Fix artifact path inconsistency (measurable: grep for flat paths = 0)
+4. Fix DoD validator template (measurable: no `[ARTIFACT CONTENT]` in SKILL.md)
+5. Ensure pipeline continues to function (measurable: structural verification of routing elements)
+
+Goals are appropriately scoped -- they address both symptoms and root cause without expanding beyond the defect boundary.
+
+### Criterion: Scope Defined [BLOCKING]
+
+**Result**: PASS
+
+Scope is explicitly bounded:
+- **In scope**: Single file modification (`delivery-team/skills/delivery-flow/SKILL.md`), markdown-only edits, removing ~400 lines of duplication, replacing with cross-references.
+- **Constraints**: Must not break pipeline execution; must retain Stage Routing Matrix, high-level descriptions, collaboration patterns, human checkpoints.
+- **Out of scope (implicit)**: No changes to `references/pipeline-stages.md`. No code changes. No new features.
+
+The scope is appropriately narrow for a BUG_FIX project type. The constraint that SKILL.md retains routing-relevant content is critical and correctly identified.
+
+### Gate 1 Verdict: PASS
+
+> *"The brief reads as a map drawn by one who has walked the terrain. The three issues are causally linked, the users are rightly named, and the scope is a surgeon's cut -- no wider than needed."*
 
 ---
 
-## Criterion: Stories Valuable [BLOCKING]
+## GATE 5 (Light): Plan Validation
+
+*Light mode applies: BUG_FIX project type. Validating scope correctness and story value only. Full consensus protocol and adversarial review are skipped per light mode rules.*
+
+### Criterion: Scope Correct [BLOCKING]
 
 **Result**: PASS
 
-### Value Assessment
+#### Idea-to-Story Traceability
 
-Every story has a persona-grounded "As a / I want / So that" statement tied to a concrete user need from the PRD personas (Priya, Marcus, Chen, Jake). No story exists for internal convenience alone.
+The single story (BF-62-001) traces to all three source issues (#60, #61, #62) and covers all five goals from the idea brief:
+
+| Idea Brief Goal | Story AC | Covered |
+|-----------------|----------|---------|
+| G1: pipeline-stages.md as single source of truth | AC-5 (explicit directive in SKILL.md) | Yes |
+| G2: Remove duplicated definitions | AC-1 (Stage Definitions section replaced with summaries) | Yes |
+| G3: Fix artifact path inconsistency | AC-3 (all paths use namespaced convention) | Yes |
+| G4: Fix DoD validator template | AC-4 (no `[ARTIFACT CONTENT]`, reference to pipeline-stages.md template) | Yes |
+| G5: Pipeline continues to function | AC-7 (Phase 4 Step 3 intact, Stage Routing Matrix intact) | Yes |
+
+**Unmapped goals**: None. 5/5 covered.
+
+**Scope creep check**: No AC introduces work beyond the idea brief's scope. All 7 ACs are structural verifications of the single-file refactoring. The story does not expand to modifying pipeline-stages.md or any other file.
+
+#### Constraint Compliance
+
+| Constraint (from idea brief) | Enforced by |
+|-------------------------------|-------------|
+| Single file modified (SKILL.md only) | Sprint plan: "Single file: `delivery-team/skills/delivery-flow/SKILL.md`" |
+| Markdown-only edits | Story: structural ACs only; no code changes referenced |
+| Must not break pipeline execution | AC-7 (Phase 4 Step 3 + Stage Routing Matrix intact) |
+| Retain routing elements | AC-2 (5 elements preserved per stage) |
+
+All four constraints from the idea brief are enforced by specific acceptance criteria or sprint plan statements.
+
+### Criterion: Stories Valuable [BLOCKING]
+
+**Result**: PASS
+
+#### Value Assessment
 
 | Story | Value Justification | Load-Bearing? |
-|-------|-------------------|---------------|
-| US-01 | Unlocks 5 new type definitions; all other stories depend on types existing | Yes -- foundational |
-| US-02 | Completes the type contract (error handling for all 9 types) | Yes -- user contract |
-| US-03 | Headline feature for Issue #44 (Marcus, Chen personas) | Yes -- only code-tier story |
-| US-04 | Completes PPTX user experience (config, format option, fallback) | Yes -- usability |
-| US-05 | Addresses #45 user feedback (Jake persona: generation speed) | Yes -- performance UX |
-| US-06 | Quality-of-life: silent waits become visible progress | Yes -- user trust |
-| US-07 | Core differentiator for v1.1 (Priya, Chen: editorial quality) | Yes -- narrative quality |
-| US-08 | Completes narrative intelligence (config + Review Gate criteria) | Yes -- completeness |
+|-------|---------------------|---------------|
+| BF-62-001 | Eliminates root cause of two active defects (#60, #61) by removing content duplication that caused drift; prevents future recurrence by establishing single source of truth | Yes -- sole story, addresses root cause |
 
-No story is a "nice-to-have." Each delivers traceable value from the PRD goals (G-01 through G-04).
+The story is not a cosmetic cleanup. It fixes two observable defects (wrong artifact paths breaking downstream stages; DoD template violating two-channel rule) by addressing their shared root cause (content duplication). Every AC is necessary -- none is a "nice-to-have."
 
-### Acceptance Criteria Coverage
+#### Acceptance Criteria Quality
 
-The 8 stories contain comprehensive acceptance criteria with both structural (reviewer-inspectable) and empirical (dogfooding) categories. Each story has empirical ACs that enforce dogfooding before shipping, consistent with the team's standard that code review alone is not sufficient.
+All 7 ACs are:
+- **Specific**: each names the exact section, pattern, or element to verify
+- **Measurable**: each has a concrete verification method (grep patterns, structural inspection)
+- **Structural**: all verifiable by document inspection (appropriate for markdown-only BUG_FIX)
 
----
+The 9 test cases cover all 7 ACs with overlap for thoroughness. TC-2 and TC-3 use grep patterns to catch flat paths mechanically -- no reliance on manual scanning.
 
-## Criterion: Properly Prioritized [BLOCKING]
+#### Estimation Calibration
+
+2 SP for markdown refactoring is reasonable. The sprint plan justifies the estimate ("one tier lower than standard BUG_FIX" since it is markdown-only). At 80% velocity ceiling with 2.5 SP available, the 2 SP load is within bounds.
+
+### Criterion: Sprint Plan Sound [NON-BLOCKING, Light Mode]
 
 **Result**: PASS
 
-### Priority Assessment
+The sprint plan provides:
+- Clear implementation approach with 4 ordered modification areas
+- Explicit "What NOT to change" list (6 sections preserved)
+- Risk assessment with 3 identified risks and mitigations
+- Definition of Done referencing all 7 ACs and 9 TCs
 
-| Story | Priority | Justification |
-|-------|----------|---------------|
-| US-01 | P1 Critical | Unblocks all other stories; types must exist first |
-| US-02 | P1 Critical | Completes type contract; paired with US-01 in Sprint 1 |
-| US-07 | P1 High | Core differentiator; applies to all 9 types including new ones |
-| US-08 | P2 Medium | Config + review gate; small but necessary companion to US-07 |
-| US-05 | P2 High | Addresses user feedback; needs types defined first |
-| US-06 | P2 Medium | Quality-of-life; pairs with US-05 in Sprint 3 |
-| US-03 | P1 High | Headline PPTX feature; independent output path |
-| US-04 | P2 Medium | Completes PPTX UX; depends on US-03 |
-
-Priority tiers are correct. P1 stories deliver the core capabilities (types, PPTX script, narrative intelligence). P2 stories complete the experience (config, progress, review criteria). No P2 story blocks a P1 story.
-
-### Sprint Sequencing
-
-| Sprint | Stories | SP | Theme | Rationale |
-|--------|---------|-----|-------|-----------|
-| S1 | US-01, US-02 | 5 | Type foundations | Unblocks everything; must be first |
-| S2 | US-07, US-08 | 6 | Narrative intelligence | Applies to all 9 types (needs S1 complete) |
-| S3 | US-05, US-06 | 5 | Fallback & progress | Per-type thresholds need types defined |
-| S4 | US-03, US-04 | 8 | PPTX output | Independent path; validated last since it consumes all types |
-
-The delivery sequence matches PRD Section 11 recommended ordering: A > D > C > B. Dependencies are respected:
-- US-01/02 have no upstream dependencies (correct for S1)
-- US-07/08 depend on types existing (correct after S1)
-- US-05/06 need types for per-type thresholds (correct after S1)
-- US-03/04 are independent but validated last (correct for S4)
-
-The dependency map in the stories document is clean and acyclic.
-
-### Estimation Calibration
-
-| Tier | SP Range | Stories |
-|------|----------|---------|
-| Code-tier | 5 | US-03 (Python script -- anchor estimate) |
-| Markdown-complex | 3-5 | US-01 (5 types), US-07 (4 editorial passes), US-04 (multi-section) |
-| Markdown-moderate | 2-3 | US-05 (light mode + threshold), US-06 (progress indicators) |
-| Markdown-simple | 1-2 | US-02 (error table), US-08 (review criteria) |
-
-Total: 24 SP across 4 sprints. Velocity assumption of 8 SP/sprint with 80% utilization ceiling (6.4 SP effective) is reasonable. Sprint 4 at ceiling (8 SP) is justified as the final sprint with one code-tier story carrying the bulk.
+The implementation approach is well-ordered: Stage Definitions first (bulk removal), then DoD Protocol (template fix), then Cross-Stage Artifact Flow (path cleanup), then sweep for remaining flat paths. This sequence minimizes rework.
 
 ---
 
 ## Findings Summary
 
-| # | Finding | Severity | Resolution |
-|---|---------|----------|------------|
-| 1 | All 20 FRs mapped to stories with full traceability | N/A | Verification passed |
-| 2 | All 4 PRD goals (G-01 through G-04) addressed by stories | N/A | Verification passed |
-| 3 | Dependency chain is acyclic and sprint ordering respects it | N/A | Verification passed |
-| 4 | Config keys in stories match PRD Section 5 exactly (8 keys) | N/A | Verification passed |
-| 5 | Every story has empirical (dogfooding) ACs | N/A | Verification passed |
-| 6 | NFR-01 (backward compatibility) respected: all changes are additive | N/A | Verification passed |
+| # | Finding | Severity | Gate | Resolution |
+|---|---------|----------|------|------------|
+| 1 | All 5 idea brief goals traced to story ACs | N/A | G1+G5 | Verification passed |
+| 2 | Problem statement correctly identifies causal chain (#62 -> #60, #61) | N/A | G1 | Verification passed |
+| 3 | All 4 constraints enforced by ACs or plan statements | N/A | G5 | Verification passed |
+| 4 | Single story is appropriate for BUG_FIX scope (no artificial splitting) | N/A | G5 | Verification passed |
+| 5 | All ACs are structural and verifiable (correct for markdown-only change) | N/A | G5 | Verification passed |
+| 6 | Flat path count in current SKILL.md confirmed at 9 occurrences (TC-2 baseline) | N/A | G5 | Pre-verification |
 
 **Blocking issues**: None.
 **Non-blocking observations**: None.
@@ -142,13 +159,13 @@ Total: 24 SP across 4 sprints. Velocity assumption of 8 SP/sprint with 80% utili
 
 ## Verdict
 
-**DONE** -- Scope is complete (20 FRs mapped to 8 stories with full AC-level traceability), stories are valuable (each is load-bearing with persona-grounded justification), and prioritization is correct (P1/P2 tiers aligned to dependency graph, sprint sequencing matches PRD Section 11 delivery order). The fellowship may proceed to Development.
+**DONE** -- Gate 1 passes: the idea brief has a specific problem statement with causal analysis, correctly identified users, five verifiable goals, and tightly bounded scope. Gate 5 (light) passes: scope is correct (5/5 goals traced to 7 ACs), the single story is valuable (fixes root cause of two active defects), and the sprint plan is implementable with appropriate risk mitigations. The fellowship may proceed to Development.
 
-> *"The plan is laid. The stories are written. The sprints stretch before us like the road from Rivendell to Mordor -- long, but with clear waypoints. One does not simply skip a sprint. But one does walk each sprint with purpose, and that purpose has been well-defined."*
+> *"A wise plan does not attempt more than it must, nor less than it should. This plan removes the duplication that bred the errors, and does precisely nothing else. That is wisdom, not timidity. You have my blessing to proceed."*
 
 ```
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/05-plan/dod/po-review.md
 REVIEWER: Gandalf (Product Owner)
-VERDICT: DONE — scope correct, stories valuable, properly prioritized
+VERDICT: DONE — Gate 1 (idea brief complete) + Gate 5 light (scope correct, stories valuable)
 ```

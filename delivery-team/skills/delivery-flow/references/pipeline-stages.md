@@ -8,7 +8,7 @@ All stage artifacts are written to `.delivery/artifacts/` using the namespaced c
 .delivery/artifacts/{NN}-{stage-name}/{role}/{artifact-name}.md
 ```
 
-Each sub-agent writes to its own dedicated directory. No two agents share a write path. The orchestrator's only write paths are `stage-summary.md` (routing metadata) and `.delivery/state.md` (pipeline state). See the architecture document Section 6 for the full namespace map.
+Each sub-agent writes to its own dedicated directory. No two agents share a write path. The orchestrator's only write paths are `stage-summary.md` (routing metadata) and `.delivery/state.md` (pipeline state).
 
 ### Dispatch Annotations
 

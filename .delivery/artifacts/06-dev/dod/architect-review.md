@@ -1,115 +1,112 @@
-# Architect DoD Review: Presentation Skill v1.1
+# Architect DoD Review: SKILL.md / pipeline-stages.md Refactoring
 
 **Reviewer**: Celebrimbor (Solution Architect)
 **Date**: 2026-04-04
-**Architecture Reference**: `.delivery/artifacts/04-architect/solution/architecture.md` v1.0
-**Issues**: #43, #44, #45, #46
+**Artifact**: `delivery-team/skills/delivery-flow/SKILL.md`
+**Companion**: `delivery-team/skills/delivery-flow/references/pipeline-stages.md`
 
 ---
 
-## Verdict: DONE
+## 1. Boundary Clarity: Orchestrator vs Sub-Flow
 
-All three ADRs are faithfully implemented. File organization matches the architecture specification exactly. No architectural drift detected.
+| Criterion | Verdict | Notes |
+|-----------|---------|-------|
+| SKILL.md = orchestrator routing decisions | PASS | SKILL.md defines Phases 0-4 (setup, detection, memory, routing, execution protocol), stage summaries with routing metadata only, guardrails, escalation, and commands. It explicitly delegates sub-flow details with "See `references/pipeline-stages.md`" at every stage summary. |
+| pipeline-stages.md = sub-flow execution details | PASS | Contains detailed sub-flows per stage (entry conditions, agent invocations with SKILL/TASK_TYPE/ROLE, artifact paths, DoD validators, game dev additions), plus the three Agent Invocation Templates (Primary, Supporting, DoD Validator). |
+| No duplication between the two files | PASS | SKILL.md Stage Definitions (lines 522-653) contain only routing metadata (runs-for, skipped-for, purpose, primary agent, upstream artifacts, collaboration patterns, DoD validators, checkpoints, max iterations, output paths). pipeline-stages.md contains the procedural sub-flows. The two are complementary, not redundant. |
+| Authority declaration present | PASS | SKILL.md line 524-527 explicitly states: "Authoritative source: `references/pipeline-stages.md` is the single source of truth for stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD Validator Dispatch Templates." |
 
----
-
-## ADR Conformance
-
-### ADR-01: JSON Intermediate Over Direct Markdown Parsing
-
-| Criterion | Status | Evidence |
-|-----------|--------|----------|
-| Composer produces `composed-draft.json` when `format=pptx` | PASS | SKILL.md Step 4 explicitly documents parallel JSON output alongside `.md` (line 312) |
-| JSON schema matches architecture Section 1.2 | PASS | Script reads `slides[].number`, `title`, `layout`, `body`, `table`, `speaker_notes`, `citations`, `mermaid` -- all fields per spec |
-| Script is a pure JSON consumer (never parses markdown) | PASS | `generate_pptx.py` contains zero markdown parsing logic; only `json.load()` is used for input |
-| JSON is cleaned up on approve/abort | PASS | SKILL.md Step 6 documents cleanup of `.drafts/` directory including `.json` intermediate |
-| Error handling for invalid JSON | PASS | Script exits with error on `JSONDecodeError` (line 356-358); SKILL.md error table includes "Invalid JSON intermediate" case |
-
-### ADR-02: Sequential Editorial Passes, Not Parallel
-
-| Criterion | Status | Evidence |
-|-----------|--------|----------|
-| Order is Emphasis > Cutting > Framing > Tension | PASS | SKILL.md Step 4 states: "Order is strict (per architecture ADR-02): Emphasis > Cutting > Framing > Tension" |
-| No parallelism between passes | PASS | SKILL.md: "No parallelism -- each pass depends on the previous pass's output" |
-| Each pass operates on transformed output of previous | PASS | Pass descriptions confirm sequential data flow (emphasis-ranked -> cut-reduced -> framed -> tensioned) |
-| Config toggles per pass match architecture Section 2.4 | PASS | `presentation.narrative.emphasis`, `.cutting`, `.framing`, `.tension` all present in SKILL.md Config Integration and config-schema.md |
-| Framing always on (no config toggle) | NOTE | Architecture Section 2.4 says framing "Cannot be disabled", but SKILL.md adds a config toggle (`presentation.narrative.framing`, default `true`). This is a minor extension -- the default is `true` and behavior is consistent. Acceptable. |
-
-### ADR-03: Step 4 (Compose) Never Degrades
-
-| Criterion | Status | Evidence |
-|-----------|--------|----------|
-| Step 4 never degrades under light mode | PASS | SKILL.md: "Light mode does NOT affect Steps 1, 2, 4, or 6" (line 68) |
-| Step 4 never degrades under threshold pressure | PASS | SKILL.md: "Step 4 **never degrades** -- all enabled editorial passes run at full depth regardless of light mode or threshold status (per ADR-03)" (line 218) |
-| Degradation targets Step 3 and Step 5 only | PASS | Architecture Section 3.2 degradation table matched exactly |
-| Threshold degradation matrix matches architecture | PASS | SKILL.md light mode + threshold interaction matrix (lines 89-98) is identical to architecture Section 3.4 |
+**Assessment**: The boundary is clean and well-defined. The orchestrator knows *what* to invoke and *when*; pipeline-stages.md knows *how* each stage executes internally.
 
 ---
 
-## File Organization Conformance
+## 2. Phantom File References
 
-### Section 4.1: New Files (1 specified, 1 found)
+| Reference | Source File | Exists? | Verdict |
+|-----------|------------|---------|---------|
+| `references/pipeline-stages.md` | SKILL.md | Yes | PASS |
+| `references/project-types.md` | SKILL.md | Yes | PASS |
+| `references/quality-gates.md` | SKILL.md | Yes | PASS |
+| `references/team-patterns.md` | SKILL.md | Yes | PASS |
+| `references/memory-protocol.md` | SKILL.md | Yes | PASS |
+| `references/setup-wizard.md` | SKILL.md | Yes | PASS |
+| `references/config-schema.md` | SKILL.md | Yes | PASS |
+| `references/defect-tracking.md` | SKILL.md | Yes | PASS |
+| `references/git-integration.md` | SKILL.md, pipeline-stages.md | Yes | PASS |
+| `references/github-integration.md` | SKILL.md, pipeline-stages.md | Yes | PASS |
+| `references/getting-started.md` | SKILL.md | Yes | PASS |
+| `references/analytics.md` | SKILL.md | Yes | PASS |
+| `references/artifact-contracts.md` | SKILL.md | Yes | PASS |
+| `references/monorepo.md` | SKILL.md | Yes | PASS |
+| `references/notifications.md` | SKILL.md | Yes | PASS |
+| `references/project-templates.md` | SKILL.md | Yes | PASS |
+| `references/feature-knowledge.md` | SKILL.md, pipeline-stages.md | Yes | PASS |
+| `references/pipeline-scope.md` | SKILL.md | Yes | PASS |
+| `references/domain-discovery.md` | pipeline-stages.md (Stage 4, step 1) | Yes (architect skill) | PASS |
+| quality skill `references/milestone-testing.md` | pipeline-stages.md (Stage 6) | Yes | PASS |
+| quality skill `references/exploratory-testing.md` | pipeline-stages.md (Stage 6, 7) | Yes | PASS |
+| **"architecture Section 3"** | SKILL.md line 368 | **NO** | **FAIL** |
+| **"architecture document Section 6"** | pipeline-stages.md line 11 | **NO** | **FAIL** |
 
-| File | Architecture Says | Actual | Status |
-|------|-------------------|--------|--------|
-| `scripts/generate_pptx.py` | Net-new file, `scripts/` directory must be created | File exists, 477 lines, `scripts/` directory created | PASS |
+### Phantom References Found
 
-### Section 4.2: Modified Files (4 specified, 4 verified)
+Two references cite an "architecture document" with numbered sections that does not exist anywhere in the delivery-flow references directory:
 
-| File | Status | Key Evidence |
-|------|--------|-------------|
-| `SKILL.md` | PASS | 9 types (4 original + 5 new), PPTX format section, JSON intermediate in Step 4, 4 editorial passes, light mode, threshold, 17 config keys, new commands (`--full`, `--light`, `restore`, `no reorder`), 3 new error cases |
-| `references/narrative-patterns.md` | PASS | 23,099 bytes (substantially expanded), new frameworks and audience framing rules present |
-| `references/slide-structure.md` | PASS | 10,809 bytes (expanded), new type sequencing sections present |
-| `config-schema.md` | PASS | 17 total presentation keys, version at 2.6 (extended through 2.4, 2.5, 2.6 per extension protocol) |
+1. **SKILL.md line 368**: `"see architecture Section 3 and references/pipeline-stages.md for the exact fields per stage"` -- There is no architecture document with a Section 3. The Agent Invocation Templates now live in `references/pipeline-stages.md` itself, making the "architecture Section 3" portion a phantom. The `references/pipeline-stages.md` reference alone is sufficient.
 
-### Section 4.3: Unchanged Files (2 specified, 2 verified)
+2. **pipeline-stages.md line 11**: `"See the architecture document Section 6 for the full namespace map"` -- There is no architecture document with a Section 6. The namespace convention is defined inline in pipeline-stages.md itself (lines 1-11), making this a self-referential phantom.
 
-| File | Last Modified | Status |
-|------|--------------|--------|
-| `references/marp-templates.md` | 2026-03-25 (pre-feature) | PASS |
-| `references/data-visualization.md` | 2026-03-25 (pre-feature) | PASS |
-
-### Section 4.4: Directory Structure -- Exact Match
-
-```
-delivery-team/skills/presentation/
-  SKILL.md                              (modified)
-  scripts/
-    generate_pptx.py                    (new)
-  references/
-    slide-structure.md                  (modified)
-    narrative-patterns.md               (modified)
-    data-visualization.md               (unchanged)
-    marp-templates.md                   (unchanged)
-```
-
----
-
-## Script Quality Assessment
-
-| Aspect | Assessment |
-|--------|-----------|
-| Import guard (FR-09) | Correct: `try/except ImportError` at module level, exits with install instructions |
-| Layout mapping (Section 1.5) | Correct: All 7 layout values mapped per architecture table; `DEFAULT_LAYOUT` fallback for unknowns |
-| Layout resolution (FR-08) | Correct: name-first, index-fallback strategy per architecture Section 1.4 |
-| Template handling (Section 1.4) | Correct: `Presentation(template_path)` constructor used; font/color override within template |
-| Branding precedence (Section 1.4) | Correct: CLI flags > config > defaults chain honored |
-| CLI interface (Section 1.3) | Correct: `--input`, `--output`, `--template`, `--font`, `--accent-color` flags match architecture |
-| Slide dimensions | Correct: 16:9 widescreen only for blank presentations; templates retain own dimensions |
-| Output directory creation | Correct: `mkdir(parents=True, exist_ok=True)` ensures path exists |
+**Recommended fix**: Remove the phantom "architecture Section N" references. For SKILL.md line 368, keep only the `references/pipeline-stages.md` reference. For pipeline-stages.md line 11, remove the sentence or replace with "See the namespace convention above."
 
 ---
 
-## Observation (Non-Blocking)
+## 3. Cross-Reference Integrity
 
-The architecture specified config-schema version bump to v2.4. Implementation split changes across three increments (2.4, 2.5, 2.6), each following the extension protocol. This is not drift -- it produces cleaner version history. The framing pass config toggle extends beyond architecture Section 2.4 which states framing "Cannot be disabled," but the default is `true` and the extension is safe.
+| Cross-Reference | Direction | Verdict | Notes |
+|-----------------|-----------|---------|-------|
+| SKILL.md -> pipeline-stages.md | SKILL -> reference | PASS | 10+ references, all valid. Each stage summary links correctly. |
+| pipeline-stages.md -> SKILL.md Phase 4 Step 4 | reference -> SKILL | PASS | Line 25 correctly references SKILL.md's alias personality_strength protocol. |
+| pipeline-stages.md -> SKILL.md (isolation rules) | reference -> SKILL | PASS | Agent templates reference "Your SKILL.md" meaning the invoked agent's own SKILL.md, not delivery-flow's. Correct usage. |
+| defect-tracking.md -> pipeline-stages.md | reference -> reference | PASS | Line 110 references pipeline-stages.md for process gap fixes. |
+| team-patterns.md -> Agent Invocation Template | reference -> reference | PASS | Line 322 references the template, which now lives in pipeline-stages.md where it belongs. |
+| SKILL.md Phase 0 -> pipeline-stages.md aliases | SKILL -> reference | PASS | Phase 0 loads alias theme; pipeline-stages.md documents how aliases are injected into templates. Consistent. |
+
+---
+
+## 4. Architectural Drift Assessment
+
+| Concern | Verdict | Notes |
+|---------|---------|-------|
+| Stage routing matrix consistency | PASS | SKILL.md Phase 3 matrix matches pipeline-stages.md stage definitions. |
+| DoD validator lists consistency | PASS | SKILL.md stage summaries list the same validators as pipeline-stages.md detailed DoD sections. |
+| Artifact path consistency | PASS | Both files use identical namespaced paths (e.g., `.delivery/artifacts/02-refine/po/prd.md`). |
+| Collaboration pattern assignment | PASS | SKILL.md stage summaries match pipeline-stages.md sub-flow pattern invocations. |
+| Human checkpoint numbering | PASS | SKILL.md: Checkpoints 1-4 at Refine/Architect/Plan/UAT. pipeline-stages.md: same stages, same numbering. |
+| Agent Invocation Template ownership | PASS | Templates live in pipeline-stages.md (sub-flow execution detail). SKILL.md references them but does not duplicate their structure. |
+| Post-acceptance protocol | PASS | Both files describe the same 7-step post-acceptance sequence (state cleanup, retro, archive, lessons, index, defect review, FKC update). |
+
+---
+
+## 5. Overall Verdict
+
+| Criterion | Status |
+|-----------|--------|
+| No architectural drift | PASS |
+| Complementary boundary (orchestrator vs sub-flow) | PASS |
+| No phantom file references | **FAIL** (2 phantom "architecture Section N" references) |
+| Cross-reference integrity | PASS |
+
+### Summary
+
+The refactoring achieves clean separation of concerns. SKILL.md governs orchestration routing; pipeline-stages.md governs sub-flow execution. Two phantom references to a nonexistent "architecture document" with numbered sections remain -- one in each file. These are the sole defects. All other file references, cross-references, and architectural invariants are intact and consistent.
 
 ---
 
 ```
-STATUS: DONE
-REVIEWER: Celebrimbor (Solution Architect)
-CRITERIA: 3/3 ADRs PASS, file organization exact match, no architectural drift
-SUMMARY: All 3 ADRs faithfully implemented, 1 new + 4 modified files match architecture spec, no drift detected.
+STATUS: NOT_DONE
+ARTIFACT: .delivery/artifacts/06-dev/dod/architect-review.md
+SUMMARY: Clean boundary, no drift, but 2 phantom "architecture Section N" refs found in SKILL.md:368 and pipeline-stages.md:11.
+FINDINGS:
+- SKILL.md line 368 references "architecture Section 3" which does not exist -- remove phantom, keep pipeline-stages.md reference
+- pipeline-stages.md line 11 references "architecture document Section 6" which does not exist -- remove or replace with inline reference
 ```
