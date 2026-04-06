@@ -1,7 +1,7 @@
 # Memory Index
 
-**Last updated**: 2026-04-04
-**Total runs**: 16
+**Last updated**: 2026-04-05
+**Total runs**: 17
 
 ## Stage Health (from last 5 runs)
 
@@ -12,7 +12,7 @@
 | Design | 100% (2/2) | Stable | Ran in 2 of last 5 |
 | Architect | 100% (3/3) | Stable | Ran in 3 of last 5 |
 | Plan | 80% (4/5) | **Improving** | 2 consecutive first-try passes with pre-loaded constraints |
-| Development | 60% (3/5) | Dipped | Derived artifacts corrections in w7m3 + p5v8 |
+| Development | 80% (4/5) | **Improving** | Clean first-try in 3d92; derived artifacts lesson applied proactively |
 | UAT | 100% (5/5) | Stable | 5 consecutive first-try passes |
 
 ## Hot Lessons (top 5 by impact)

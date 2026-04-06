@@ -81,12 +81,12 @@ monorepo:
   scope: root
 git:
   branch_strategy: github-flow
-  auto_branch: false
+  auto_branch: true
   commit_convention: conventional
   clean_tree_check: true
 github:
   create_issues: true
-  create_pr: false
+  create_pr: true
   link_commits: true
 presentation:
   default_format: structured-markdown

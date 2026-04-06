@@ -339,6 +339,179 @@ If `enforcement.source_code_hook` is true, the wizard installs a PreToolUse comm
 
 ---
 
+### Stale Hook Migration
+
+> **History**: Commit `0ef5070` replaced the prompt-based `enforce_pipeline_scope` hook with a command-based equivalent, but no migration logic was added. Users who installed the plugin before this change may still have the stale prompt hook in their project settings, causing conflicts where both hooks fire on Edit/Write/NotebookEdit events.
+
+The wizard runs stale hook migration during **config upgrade** or **fresh setup** (wizard execution), before hook installation. This step ensures legacy prompt-based hooks that have been superseded by command-based equivalents are detected and removed.
+
+#### When Migration Runs
+
+- On every wizard execution (fresh install, config upgrade, or re-run)
+- Before the "Project-Level Hook Installation" step installs or updates the command hook
+- After Q12 enforcement settings are confirmed but before hooks are written
+
+#### Scan Targets
+
+The wizard scans **both** settings files independently:
+
+1. **`.claude/settings.local.json`** -- User-local settings (git-ignored)
+2. **`.claude/settings.json`** -- Project-shared settings (committed)
+
+If a settings file does not exist, the wizard skips it gracefully with no error. Log: "File not found: [path] -- skipping migration scan."
+
+#### Detection Criteria
+
+For each settings file, scan the `hooks.PreToolUse` array for entries matching **all** of these conditions:
+
+- `type` is `"prompt"` (not `"command"`)
+- `matcher` includes any of: `Edit`, `Write`, or `NotebookEdit`
+
+Hooks that do **not** match these criteria are preserved untouched. For example, a prompt hook with matcher `"Bash"` is not a conflict and must not be removed.
+
+#### Removal Behavior
+
+For each stale prompt hook found:
+
+1. Remove the stale prompt hook entry from the `hooks.PreToolUse` array
+2. If a command hook for `enforce_pipeline_scope.py` already exists alongside the stale prompt hook, preserve the command hook and remove only the prompt hook
+3. If removing the stale hook leaves the `hooks.PreToolUse` array empty, remove the empty array (do not leave `"PreToolUse": []`)
+
+#### Logging
+
+For each stale hook removed, log all three fields:
+
+- **File path**: Which settings file was modified (e.g., `.claude/settings.local.json`)
+- **Matcher removed**: The matcher value of the removed hook (e.g., `"Edit|Write|NotebookEdit"`)
+- **Reason**: `"Superseded by command-based enforce_pipeline_scope.py hook"`
+
+If no stale hooks are found in either file, log: **"No stale hooks detected"** and proceed to hook installation without modification.
+
+If both files contain stale hooks, produce separate log entries for each file.
+
+#### Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| Settings file does not exist | Skip gracefully, log "File not found: [path]" |
+| No stale hooks in either file | Log "No stale hooks detected", proceed |
+| Stale prompt hook + command hook both present for same matcher | Remove prompt hook, preserve command hook |
+| Non-conflicting prompt hook (e.g., matcher `"Bash"`) | Preserve -- only Edit/Write/NotebookEdit matchers trigger removal |
+| Stale hook in only one of the two files | Clean that file, skip the other |
+| Multiple stale prompt hooks in one file | Remove all that match the detection criteria |
+
+---
+
+### Post-Install Hook Validation
+
+After hook installation completes (whether fresh install, migration, or re-run), the wizard validates that all expected hooks are correctly installed and no conflicts remain. This is the final verification step before the wizard announces completion.
+
+#### When Validation Runs
+
+- Immediately after the "Project-Level Hook Installation" step completes
+- After any stale hook migration has been performed
+- On every wizard execution (not skippable)
+
+#### Expected Hooks Table
+
+The wizard validates against this complete table of expected hooks. All plugin hooks come from `hooks.json`; the project-level hook comes from `.claude/settings.json`.
+
+| # | Hook Name | Event Type | Matcher | Hook Type | Command / Prompt | Timeout | Source |
+|---|-----------|------------|---------|-----------|-----------------|---------|--------|
+| 1 | Config check | SessionStart | `*` | command | `check_config.py` | 5 | hooks.json |
+| 2 | Retrospective enforcement | Stop | `*` | prompt | Retrospective completion check | 15 | hooks.json |
+| 3 | Pipeline bypass detection | PreToolUse | `Skill` | prompt | Pipeline scope check for implementation skills | 15 | hooks.json |
+| 4 | Agent prompt audit | PreToolUse | `Agent` | command | `audit_agent_prompt.py` | 10 | hooks.json |
+| 5 | GDScript validation | PostToolUse | `Write\|Edit` | command | `validate_gdscript.py` | 15 | hooks.json |
+| 6 | Skill load verification | PostToolUse | `Agent` | command | `verify_skill_load.py` | 10 | hooks.json |
+| 7 | Empirical validation | SubagentStop | `developer\|godot` | command | `flag_empirical_validation.py` | 30 | hooks.json |
+| 8 | Pipeline scope enforcement | PreToolUse | `Edit\|Write\|NotebookEdit` | command | `enforce_pipeline_scope.py` | 5 | project settings |
+
+> **Note**: Hook 8 is only expected when `enforcement.source_code_hook` is `true` in `.delivery/config.yml`. If the user chose not to install the source code hook (Q12), hook 8 is excluded from validation.
+
+#### Validation Process
+
+For each hook in the expected hooks table:
+
+1. **Locate**: Find the hook by matching event type + matcher pattern
+2. **Verify type**: Confirm the hook type matches (command vs prompt)
+3. **Verify command/prompt**: Confirm the command path or prompt content is correct
+4. **Verify timeout**: Confirm the timeout value matches
+5. **Check source**: Verify the hook exists in the correct file (hooks.json hooks are plugin-managed; hook 8 is in `.claude/settings.json`)
+
+#### Duplicate Detection
+
+After individual validation, scan for **duplicate matcher conflicts**:
+
+- Two hooks sharing the same event type AND matcher pattern but differing in hook type (one `"prompt"`, one `"command"`) constitute a conflict
+- The command-based hook takes precedence -- it is the canonical version
+- The prompt-based hook is the stale entry that should have been caught by migration
+- **Precedence rule**: Command hooks supersede prompt hooks. "Superseded" means the prompt hook was the original implementation and the command hook is the replacement that provides the same functionality with deterministic behavior
+
+#### Cleanup
+
+If duplicate detection finds stale prompt hooks that were missed by migration:
+
+1. Remove the stale prompt hook (same removal behavior as the migration step)
+2. Log the cleanup with file path, matcher, and reason
+3. Mark the hook's status as `CLEANED` in the summary
+
+#### Validation Summary
+
+Output a summary table to the user with the validation results:
+
+| Hook Name | Event Type | Matcher | Hook Type | Timeout | Status |
+|-----------|------------|---------|-----------|---------|--------|
+| Config check | SessionStart | `*` | command | 5 | PASS |
+| Retrospective enforcement | Stop | `*` | prompt | 15 | PASS |
+| Pipeline bypass detection | PreToolUse | `Skill` | prompt | 15 | PASS |
+| Agent prompt audit | PreToolUse | `Agent` | command | 10 | PASS |
+| GDScript validation | PostToolUse | `Write\|Edit` | command | 15 | PASS |
+| Skill load verification | PostToolUse | `Agent` | command | 10 | PASS |
+| Empirical validation | SubagentStop | `developer\|godot` | command | 30 | PASS |
+| Pipeline scope enforcement | PreToolUse | `Edit\|Write\|NotebookEdit` | command | 5 | PASS |
+
+**Status values**:
+
+- **PASS** -- Hook exists with correct configuration
+- **FAIL** -- Hook exists but configuration does not match expected values (wrong type, command, or timeout)
+- **MISSING** -- Hook not found in the expected location; report with full expected configuration so the user can manually install
+- **CLEANED** -- Stale duplicate was found and removed during validation
+
+If all hooks show PASS, announce: "All hooks validated successfully. No conflicts detected."
+
+If any hook shows FAIL or MISSING, announce the specific issues and provide the expected configuration for manual correction.
+
+---
+
+### Conflict Detection Logic
+
+The migration and validation steps work together to handle hook conflicts:
+
+```
+Wizard Execution
+  │
+  ├─ 1. Stale Hook Migration (pre-install)
+  │     └─ Scan settings files for prompt hooks matching Edit/Write/NotebookEdit
+  │     └─ Remove stale prompt hooks, preserve command hooks
+  │     └─ Log actions taken
+  │
+  ├─ 2. Project-Level Hook Installation (install)
+  │     └─ Install or update the command-based enforce_pipeline_scope.py hook
+  │
+  └─ 3. Post-Install Hook Validation (post-install)
+        └─ Validate all 8 expected hooks against installed hooks
+        └─ Detect any remaining duplicate matcher conflicts
+        └─ Clean up anything migration missed
+        └─ Output validation summary table
+```
+
+**Conflict identification**: A conflict exists when two hooks share the same event type and matcher pattern but have different hook types. The wizard resolves conflicts by removing the prompt-based hook and preserving the command-based hook, because command hooks provide deterministic, auditable behavior while prompt hooks are subject to AI interpretation variance.
+
+**Why command hooks take precedence**: Command hooks execute a Python script that reads configuration files and returns a structured decision. Prompt hooks ask the AI to interpret a natural language instruction, which can produce inconsistent results across sessions. The migration from prompt to command hooks (commit `0ef5070`) was specifically made to eliminate this variance.
+
+---
+
 ## Config File Format
 
 The wizard generates `.delivery/config.yml` as a pure YAML configuration file.
