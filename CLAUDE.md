@@ -93,8 +93,9 @@ No build step, linting config, or test runner is configured.
 - Team DoD validation (ALL validators must say DONE)
 - 6 collaboration patterns: evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus
 - Self-learning memory in `.delivery/memory/` (tiered chunked retrieval)
-- Config-driven via `.delivery/config.yml` with versioned schema
-- Setup wizard with 10 questions (auto-detect + smart options)
+- Config-driven via `.delivery/config.yml` with versioned schema (currently v2.7)
+- Project type is **detected per run** (Phase 1 always runs). Config no longer pins it; `routing.force_type` is an opt-in override
+- Setup wizard with 9 questions (auto-detect + smart options). The former Project Type question was removed in v2.7 since the type is a runtime routing decision
 - Defect tracking with plugin self-improvement PR triggers
 - Feature Knowledge System: Feature Knowledge Cards (FKCs), Impact Analysis Gate, decision trail for cross-cutting change tracking
 - Session keepalive: cross-platform companion process for long-running sessions
@@ -121,7 +122,7 @@ No build step, linting config, or test runner is configured.
 - After creating a skill → use `plugin-dev:skill-reviewer` to review it
 - After creating a plugin → use `plugin-dev:plugin-validator` to validate it
 
-**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.6). When adding new config keys, follow the extension protocol documented there.
+**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.7). When adding new config keys, follow the extension protocol documented there. Note: `project_type` was removed in v2.7 — Phase 1 project type detection now runs on every pipeline invocation. Use `routing.force_type` for an opt-in intentional pin.
 
 ## Permissions
 

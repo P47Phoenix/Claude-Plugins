@@ -1,109 +1,130 @@
-# SM Review: Sprint Plan -- Architect Prior Art Analysis
+# SM DoD Review — Stage 5 Plan
 
-**Reviewer**: Aragorn (Scrum Master)
-**Date**: 2026-04-04
-**Pipeline**: run-2026-04-04-w7m3
-**Artifact**: `.delivery/artifacts/05-plan/sm/sprint-plan.md`
-**Stories**: `.delivery/artifacts/05-plan/po/stories.md`
-**Mode**: LIGHT / BUG_FIX
+**Reviewer**: Aragorn, son of Arathorn (SM validator)
+**Stage**: 05 — Plan
+**Artifacts reviewed**:
+- `.delivery/artifacts/05-plan/po/stories.md`
+- `.delivery/artifacts/05-plan/sm/sprint-plan.md`
 
-> *"The road is short but the discipline is the same. Let us walk it with care."*
-
----
-
-## Gate 5: Plan Readiness -- SM Criteria (Light Mode BUG_FIX)
-
-### 1. Process: Story exists with clear acceptance criteria
-
-**PASS**
-
-The PO story in `stories.md` is well-formed:
-- User story follows standard As-a / I-want / So-that format
-- 7 acceptance criteria (AC-01 through AC-07), each with clear Given/When/Then structure
-- 7 test cases (TC-01 through TC-07), each mapped to its corresponding AC with specific step-by-step verification and expected results
-- AC classification distinguishes structural (AC-01 through AC-06, inspectable) from empirical (AC-07, requires live run)
-- INVEST validation passes all 6 criteria
-- Definition of Ready checklist complete
-
-The sprint plan references the story correctly and its sprint goal aligns with the story's intent. No ambiguity in what "done" looks like.
-
-### 2. Capacity: Velocity baseline stated, 80% ceiling calculated, commitment does not exceed ceiling
-
-**PASS**
-
-From the sprint plan's Capacity Declaration:
-
-| Metric | Declared Value | Verification |
-|--------|---------------|--------------|
-| Velocity baseline | 5 SP/sprint | Stated. Reasonable for markdown-only BUG_FIX work. |
-| Sprint ceiling (80%) | 4 SP | 5 x 0.80 = 4.0 SP. Math is correct. |
-| Sprint commitment | 3 SP | 3 SP < 4 SP ceiling. Does not exceed. |
-| Utilization | 60% | Correctly calculated (3/5 = 60%). |
-
-Note: The story is sized at 2 SP by the PO, but the sprint plan totals 3 SP across T1-T3 (1 + 0.5 + 0.5 = 2 SP for implementation, plus T4 dogfooding at 1 SP = 3 SP total). The discrepancy is because the PO sized the implementation work at 2 SP while the SM correctly accounts for the dogfooding validation effort as additional sprint work. This is acceptable -- the SM's 3 SP total is more accurate as it includes the P0 dogfooding gate. Both are under ceiling. No issue.
-
-### 3. Sprint plan includes task breakdown with estimates
-
-**PASS**
-
-The task breakdown contains 4 tasks:
-
-| Task | Estimate | Scope |
-|------|----------|-------|
-| T1: Add Prior Art Analysis section to SKILL.md | S (1 SP) | New mandatory step |
-| T2: Update Sub-Agent Prompt Template | XS (0.5 SP) | Context block addition |
-| T3: Add guardrail to Architecture Guardrails section | XS (0.5 SP) | Single rule addition |
-| T4: Dogfooding validation | S (1 SP) | Manual execution, P0 gate |
-
-Estimates use T-shirt sizing mapped to SP. Total: 3 SP. Each task identifies specific files and scope boundaries. Estimate calibration note correctly flags markdown-only edits as one tier lower than code changes, consistent with pre-loaded constraints and memory lessons.
-
-Execution sequence is defined: T1 -> T2 -> T3 -> T4 -> UAT. Sequential dependency chain is appropriate given single-file modification scope.
-
-### 4. Definition of Done is defined for the sprint
-
-**PASS**
-
-The sprint plan includes an 8-item Definition of Done checklist covering:
-- Structural presence of Prior Art Analysis section
-- Correct ordering (between Phase 1 and Phase 2)
-- Prompt template updated
-- Guardrail added
-- Backward compatibility confirmed
-- Dogfooding executed (P0 gate)
-- Scope boundary enforced (architect directory only)
-- PR with conventional commit referencing Issue #55
-
-Each DoD item is verifiable and maps to one or more acceptance criteria from the story.
-
-### 5. Risk assessment is present
-
-**PASS**
-
-Four risks identified with Impact/Likelihood/Mitigation columns:
-
-1. Prior art instructions too vague (High/Medium) -- mitigated by explicit conditional logic and MUST language
-2. Conflict with existing Domain Discovery section (Medium/Low) -- mitigated by ordering Prior Art Analysis before Domain Discovery
-3. Backward compatibility break (Medium/Low) -- mitigated by conditional instructions
-4. Dogfooding inconclusive (Medium/Medium) -- mitigated by defining specific observable outputs
-
-Risk assessment is proportionate to the scope. The highest-impact risk (vague instructions) has the most concrete mitigation. The dogfooding inconclusiveness risk is particularly well-identified for markdown-only changes where behavioral verification is inherently indirect.
-
-### 6. Capacity/coverage matrices
-
-**WAIVED** (light mode BUG_FIX)
+> *"I have walked the plan end to end. The road is measured, the packs are weighed, and no step is orphaned. Rest easy — the fellowship is ready to march."*
 
 ---
 
-## Verdict
+## 1. Capacity Matrix — PRESENT, utilization calculated
 
-**STATUS: DONE**
+**Location**: sprint-plan.md §3 (Capacity Matrix), backed by §1 (Capacity Declaration).
 
-All five applicable Gate 5 criteria pass. The sprint plan is sound: capacity is declared and commitment (3 SP) sits comfortably below the 80% ceiling (4 SP) with a 1 SP buffer for iteration. The task breakdown is concrete with calibrated estimates. The DoD is verifiable and maps cleanly to the story's acceptance criteria. Risks are identified and mitigated proportionately.
+| Check | Finding | Status |
+|---|---|---|
+| Nominal capacity declared | 40 points (1 dev × 1 sprint, calibrated) | PASS |
+| Ceiling declared | 80% → 32 points | PASS |
+| Commit declared | 32 points | PASS |
+| Utilization calculated | 32/40 = **80.0% exactly at ceiling** | PASS |
+| Breakdown by work type | §3.1: markdown (21 pts / 65.6%), code hook (8 pts / 25.0%), optional hook (3 pts / 9.4%) — sums to 32/100% | PASS |
+| Breakdown by issue | §3.2: #73 (7), #71 (12), #70 (6), #69 (4), cross-cutting (3) — sums to 32 | PASS |
+| Breakdown by priority | §3.3: P0 (25), P1 (4), P2 (3) — sums to 32 | PASS |
+| Burn plan present | §3.4: Day-by-day 7/5/5/9/6 → 32 cumulative | PASS |
+| Calibration rule stated | Markdown tier-reduced one level vs. code (inherited from PO) | PASS |
 
-The fellowship marches with 3 points against a 4-point ceiling. One point of buffer stands between us and overcommitment. The road through `delivery-team/skills/architect/SKILL.md` is well-mapped.
-
-*"I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall. Three points. One file. We hold the line."*
+**Capacity matrix verdict**: PRESENT and complete. Multiple orthogonal breakdowns (work type, issue, priority, burn-day) all reconcile to 32.
 
 ---
 
-*Reviewed by Scrum Master (Aragorn) -- delivery-team:product-delivery*
+## 2. Utilization ≤ 80% check
+
+| Metric | Value | Threshold | Result |
+|---|---|---|---|
+| Committed points | 32 | — | — |
+| Nominal capacity | 40 | — | — |
+| Utilization | **80.0%** | ≤ 80% warn / ≤ 100% block | **AT CEILING — pass, no warn** |
+
+**Finding**: Commitment lands exactly at the 80% ceiling, not above it. Per the DoD rule ("warn > 80%, block > 100%"), 80.0% is a strict pass with no warning trigger. The SM justification for committing at the ceiling is sound and explicit: atomic-merge NFR-08 forces single-sprint delivery, and splitting would introduce worse merge-churn risk than committing at ceiling. A named pressure-relief valve exists (OD-10 drops to 29 pts / 72.5% per §4.4 slip protocol, backed by FR-12 MAY clause).
+
+**Verdict**: PASS. No warning needed.
+
+---
+
+## 3. Coverage Matrix — every FR mapped to ≥1 task
+
+**Location**: sprint-plan.md §5 (Coverage Matrix), §5.1 FR coverage, §5.3 story-to-FR reverse check.
+
+### 3.1 FR → story coverage (every FR must have ≥1 task)
+
+| FR | Stories | ≥1 task? |
+|---|---|---|
+| FR-01 | OD-01, OD-04 | YES |
+| FR-02 (a/b/c) | OD-04, OD-03 | YES |
+| FR-03 | OD-02 | YES |
+| FR-04 | OD-01 | YES |
+| FR-05 | OD-01, OD-02 | YES |
+| FR-06 | OD-05 | YES |
+| FR-07 | OD-06 | YES |
+| FR-08 | OD-05 | YES |
+| FR-09 (a–e) | OD-07 | YES |
+| FR-10 | OD-08 | YES |
+| FR-11 | OD-09 | YES |
+| FR-12 | OD-10 (MAY) | YES (conditional) |
+| FR-13 | OD-11 | YES |
+| FR-14 | OD-12 | YES |
+| FR-15 | OD-04, OD-11, OD-12 | YES |
+| FR-16 | OD-13 | YES |
+
+**All 16/16 FRs have at least one story mapped.** FR-12 is the only FR whose coverage is conditional (OD-10 is MAY); the plan explicitly calls out that if OD-10 drops, FR-12 carries to the next sprint and PO auto-logs a backlog entry (§4.4, §8 DoD item 7). This is an acceptable, PRD-sanctioned pressure-relief path, not a coverage gap.
+
+### 3.2 NFR coverage (bonus check)
+
+All 8/8 NFRs traced in §5.2 (6 via stories, 2 via process enforcement).
+
+### 3.3 Reverse check — no dead-weight stories
+
+§5.3 confirms every committed story (OD-01 through OD-13) traces to ≥1 FR. No orphan work.
+
+**Verdict**: PASS. FR → task coverage is 16/16 with one conditional entry that has an explicit, authorized fallback.
+
+---
+
+## 4. Sprint Goal — value-expressing check
+
+**Location**: sprint-plan.md §2.
+
+**Stated goal**:
+> "Ship the four orchestration discipline fixes (#73, #71, #70, #69) as one cohesive, atomically-merged PR that the orchestrator demonstrably dogfoods, with schema bumped to v2.7 and every consumer-facing doc in parity."
+
+| Criterion | Finding |
+|---|---|
+| States an outcome, not a task list | YES — "ship ... as one cohesive atomically-merged PR that the orchestrator demonstrably dogfoods" |
+| Expresses value / why | YES — restoring orchestration discipline across four linked issues; dogfooding proves the fix works on the team's own workflow; doc parity ensures consumers see one consistent story |
+| Measurable definition of success | YES — "single PR merged; 16/16 FRs traced to passing test cases; OD-13 final grep gates green; dogfood run (NFR-06) executed with every artifact authored by a sub-agent" |
+| Bounded to the sprint | YES — names a concrete PR and a concrete set of four issues |
+| Avoids "do the stories" anti-pattern | YES — frames the goal around cohesion, dogfooding, and doc parity, not "complete OD-01 through OD-13" |
+
+**Verdict**: PASS. The goal expresses value (restored orchestration discipline, proven by dogfooding and doc parity) rather than enumerating tasks. It has a hard, testable definition of success.
+
+---
+
+## 5. Additional SM observations (non-blocking, for the record)
+
+1. **Dependency graph (§4.1) is acyclic and named** — foundation → SKILL.md delegation → reference-docs → hook → optional → doc-parity sweep. Execution order respects every declared dependency.
+2. **Slip protocol (§4.4) is explicit** — OD-10 is first drop, lands at 29 pts / 72.5% utilization, restores 5 pts of Day-5 buffer. Atomic-merge is called out as a harder constraint than sprint boundary, with escalation path if both OD-10 drop and OD-07 slip occur.
+3. **Risk register (§6) is populated** with 7 sprint-level risks, each with likelihood, impact, mitigation, and owner. R1 (OD-07 expansion) and R4 (dogfood forgotten) are the right top risks to surface.
+4. **DoR (§7)** and **sprint-level DoD (§8)** both present and concrete. Sprint-level DoD includes hook performance (NFR-01 p95 ≤ 50ms), dogfood evidence, and plugin-dev skill load verification — all testable at sprint close.
+5. **Open questions from PO stories (§9)** — all four (OQ-2, OQ-4, OQ-7, PQ-1) have an explicit SM disposition with a named verification day or follow-up owner. No dangling PO questions.
+6. **Alias discipline**: both artifacts stay in character (Gandalf for PO, Aragorn for SM) without sacrificing the technical rigor expected at Stage 5 Plan.
+
+No defects. No warnings. No blockers.
+
+---
+
+## 6. SM DoD Decision
+
+| DoD criterion | Result |
+|---|---|
+| Capacity matrix present with utilization calculated | **PASS** |
+| Coverage matrix maps every FR to ≥1 task | **PASS** (16/16) |
+| Capacity ≤ 80% (warn > 80%, block > 100%) | **PASS** (80.0% exactly — at ceiling, not above) |
+| Sprint goal is value-expressing | **PASS** |
+
+**SM DoD Status**: **DONE**
+
+> *"Thirteen stories, thirty-two points, one road. Every footfall accounted for, every burden weighed, every FR walked to its bearer. The plan is sound. Ride."*
+> — Aragorn, SM validator

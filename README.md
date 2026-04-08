@@ -59,7 +59,7 @@ A full software delivery team with 11 specialized skills covering the complete d
 | **Presentation** | Presentation Composer | Team-collaborative presentations with 6-step gated flow. 4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive. 3 output formats (structured markdown, Marp, paste-ready) |
 
 **Key Features:**
-- **Setup wizard**: 10-question config wizard with auto-detection from codebase
+- **Setup wizard**: 9-question config wizard with auto-detection from codebase (project type is detected per-run, not pinned in config; use `routing.force_type` for opt-in pins)
 - **Team DoD**: Every artifact validated by multiple roles before advancing
 - **6 collaboration patterns**: Evaluator-optimizer, adversarial review, review board, decision ownership routing, debate, consensus
 - **Self-learning memory**: Tiered chunked retrieval in `.delivery/memory/`

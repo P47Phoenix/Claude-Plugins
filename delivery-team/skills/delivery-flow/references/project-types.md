@@ -1,5 +1,23 @@
 # Project Type Detection and Routing
 
+> **Runtime detection is mandatory (v2.7+).** Project type is a **per-run**
+> routing decision. Phase 1 detection runs on **every** pipeline invocation
+> against the current user request. The config file does NOT pin the project
+> type — the legacy `project_type` key was removed in schema v2.7. Pinning
+> the type at setup time is explicitly disallowed because it freezes routing
+> across requests whose actual type may differ (the "frozen routing footgun"
+> that v2.7 fixes).
+>
+> **Opt-in override**: If a repo genuinely needs an intentional pin (e.g., a
+> docs-only repo that should never trigger code stages), set
+> `routing.force_type` in `.delivery/config.yml`. Phase 1 detection still runs
+> and is logged, but routing uses the pin. A banner announces the override on
+> every run. This is the ONLY supported way to pin the type, and it is
+> deliberately namespaced under `routing.` so it is a discoverable, intentional
+> act rather than a footgun hiding at the root.
+>
+> See ADR-002 for the full migration rationale.
+
 ## Detection Matrix
 
 Classify every user request into one of the following project types before pipeline execution begins. Classification drives stage routing, agent selection, and gate depth.

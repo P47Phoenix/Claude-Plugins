@@ -47,36 +47,24 @@ For each scan, the orchestrator uses Glob, Grep, Read, and Bash tools to gather 
 
 ## Wizard Questions
 
-The wizard asks 9 questions in order. Each question follows a consistent protocol: auto-detect a smart default, present what was found, offer options, and record the answer. Every question includes a "Custom", "Let's discuss", and "Skip" escape hatch.
+The wizard asks 9 questions in order (down from 10 in v2.6 — Q1 Project Type was
+removed in v2.7 because project type is now a runtime routing decision that is
+detected on every pipeline invocation, not a config setting). Each question
+follows a consistent protocol: auto-detect a smart default, present what was
+found, offer options, and record the answer. Every question includes a
+"Custom", "Let's discuss", and "Skip" escape hatch.
+
+> **v2.7 migration note**: The former Q1 (Project Type) is removed. Question
+> numbers below have been renumbered (former Q2..Q10 are now Q1..Q9). When
+> loading a v≤2.6 config that sets `project_type`, the loader tolerantly drops
+> the key, logs `> Deprecated: bare project_type is ignored in v2.7. Use
+> routing.force_type if you need an intentional pin.` to both the stage banner
+> and `.delivery/state.md` run log, and proceeds. Phase 1 detection runs on
+> every pipeline invocation regardless. See ADR-002.
 
 ---
 
-### Q1: Project Type (single-select)
-
-**Auto-detect**: Use the detection matrix from `references/project-types.md`. Scan the user's initial prompt and codebase signals (existing code, game engine files, error references, documentation-only markers).
-
-**Present**: "Based on [signals], this looks like a [TYPE] project."
-
-**Options**:
-1. GREENFIELD -- New project from scratch, no existing codebase
-2. FEATURE -- Adding capability to an existing system
-3. BUG_FIX -- Fixing a defect in existing code
-4. GAME_DEV+GREENFIELD -- New game project
-5. GAME_DEV+FEATURE -- Adding to an existing game
-6. GAME_DEV+BUG_FIX -- Fixing a game bug
-7. SPIKE -- Time-boxed investigation, throwaway output
-8. DOCS_ONLY -- Documentation changes only, no code
-- **Custom**: User provides their own classification
-- **Let's discuss**: Opens a conversation about project type
-- **Skip**: Use defaults
-
-**Default if skipped**: FEATURE (safest general-purpose default).
-
-**Influences**: Stage routing -- which of the 7 stages run and at what depth (full, light, skip, full+game). See the stage routing matrix in `references/project-types.md`.
-
----
-
-### Q2: Tech Stack (multi-select)
+### Q1: Tech Stack (multi-select)
 
 **Auto-detect**: Languages (file extension counts), frameworks (dependency files), databases (ORM configs, migration directories, `.sql` files).
 
@@ -97,7 +85,7 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q3: Team Size & Composition (single-select)
+### Q2: Team Size & Composition (single-select)
 
 **Auto-detect**: Run `git shortlog -sn` for contributor count. Check for `CODEOWNERS` file. Analyze commit frequency distribution.
 
@@ -118,7 +106,7 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q4: Deployment Environment (single-select)
+### Q3: Deployment Environment (single-select)
 
 **Auto-detect**: Glob for `Dockerfile`, `docker-compose.yml`, `kubernetes/`, `k8s/`, `serverless.yml`, `terraform/`, `*.tf`, `cdk.json`, `pulumi.*`.
 
@@ -140,7 +128,7 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q5: Timeline & Risk Tolerance (single-select)
+### Q4: Timeline & Risk Tolerance (single-select)
 
 **Auto-detect**: Cannot auto-detect. This is purely a team preference.
 
@@ -161,7 +149,7 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q6: Compliance & Regulatory (multi-select)
+### Q5: Compliance & Regulatory (multi-select)
 
 **Auto-detect**: Grep for `HIPAA`, `GDPR`, `CCPA`, `PCI`, `PCI-DSS`, `SOC`, `SOC2`, `ISO 27001` in documentation, code comments, config files, and environment variable names.
 
@@ -184,9 +172,9 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q7: Human Checkpoints (multi-select)
+### Q6: Human Checkpoints (multi-select)
 
-**Auto-detect**: Cannot auto-detect. This is a team preference. Derive smart defaults from the project type selected in Q1.
+**Auto-detect**: Cannot auto-detect. This is a team preference. Derive smart defaults from the runtime-detected project type (Phase 1) at first run. The wizard does not ask for project type — it is detected per-run.
 
 **Present**: "The pipeline supports 4 human checkpoints. Which do you want enabled?"
 
@@ -210,9 +198,9 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q8: Collaboration Patterns (multi-select)
+### Q7: Collaboration Patterns (multi-select)
 
-**Auto-detect**: Derive defaults from the risk tolerance selected in Q5.
+**Auto-detect**: Derive defaults from the risk tolerance selected in Q4.
 
 **Present**: "Based on your risk tolerance ([level]), I recommend these collaboration patterns."
 
@@ -237,7 +225,11 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 ---
 
-### Q9: Existing .delivery/ State (single-select)
+### Pre-Question: Existing .delivery/ State (conditional, single-select)
+
+> **Numbering note**: This is a meta question that runs before Q1 only when an
+> existing `.delivery/` directory is detected. It does not occupy a numbered
+> slot in the 9-question wizard because most invocations skip it entirely.
 
 **Auto-detect**: Check for `.delivery/` directory. If found, read `.delivery/config.yml` for `wizard_completed` date, count memory files in `.delivery/memory/`, check for artifacts in `.delivery/artifacts/`.
 
@@ -257,9 +249,9 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 **Only shown if**: `.delivery/` directory exists. If no existing directory is found, this question is skipped entirely.
 
-### Q10: User Feedback Personas (multi-select)
+### Q8: User Feedback Personas (multi-select)
 
-**Auto-detect**: Derive from project type (Q1) — GAME_DEV suggests gamer personas, web/app suggests web user personas, enterprise suggests B2B personas.
+**Auto-detect**: Derive from the runtime-detected project type (Phase 1) at first run — GAME_DEV suggests gamer personas, web/app suggests web user personas, enterprise suggests B2B personas. The wizard does not ask for project type; it is detected per-run.
 
 **Present**: "Based on your project type ([TYPE]), I recommend these persona categories for simulated user feedback."
 
@@ -282,9 +274,9 @@ The wizard asks 9 questions in order. Each question follows a consistent protoco
 
 **Influences**: Which personas are loaded for simulated user feedback at Stages 2, 3, 6, 7. Which persona library categories are active. Custom personas defined here persist across pipeline runs.
 
-### Q12: Enforcement Settings (single-select for each sub-question)
+### Q9: Enforcement Settings (single-select for each sub-question)
 
-**Auto-detect**: Derive defaults from Q5 risk tolerance — mission-critical/regulated gets strict enforcement, prototype gets relaxed.
+**Auto-detect**: Derive defaults from Q4 risk tolerance — mission-critical/regulated gets strict enforcement, prototype gets relaxed.
 
 **Present**: "How strictly should the delivery pipeline be enforced?"
 
@@ -349,7 +341,7 @@ The wizard runs stale hook migration during **config upgrade** or **fresh setup*
 
 - On every wizard execution (fresh install, config upgrade, or re-run)
 - Before the "Project-Level Hook Installation" step installs or updates the command hook
-- After Q12 enforcement settings are confirmed but before hooks are written
+- After Q9 enforcement settings are confirmed but before hooks are written
 
 #### Scan Targets
 
@@ -427,7 +419,7 @@ The wizard validates against this complete table of expected hooks. All plugin h
 | 7 | Empirical validation | SubagentStop | `developer\|godot` | command | `flag_empirical_validation.py` | 30 | hooks.json |
 | 8 | Pipeline scope enforcement | PreToolUse | `Edit\|Write\|NotebookEdit` | command | `enforce_pipeline_scope.py` | 5 | project settings |
 
-> **Note**: Hook 8 is only expected when `enforcement.source_code_hook` is `true` in `.delivery/config.yml`. If the user chose not to install the source code hook (Q12), hook 8 is excluded from validation.
+> **Note**: Hook 8 is only expected when `enforcement.source_code_hook` is `true` in `.delivery/config.yml`. If the user chose not to install the source code hook (Q9), hook 8 is excluded from validation.
 
 #### Validation Process
 
@@ -519,8 +511,9 @@ The wizard generates `.delivery/config.yml` as a pure YAML configuration file.
 **Schema reference**: See `references/config-schema.md` for the complete schema with all keys, types, defaults, valid values, and consuming skills. The wizard uses the schema as its source of truth for defaults and validation.
 
 ```yaml
-config_version: "2.1"
-project_type: GREENFIELD
+config_version: "2.7"
+routing:
+  force_type: null  # Optional opt-in pin. Phase 1 detection always runs.
 tech_stack:
   languages: [TypeScript, Python]
   frameworks: [Next.js, FastAPI]
@@ -566,7 +559,7 @@ wizard_completed: YYYY-MM-DD
 
 ### YAML Field Rules
 
-- `project_type`: One of GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY
+- `routing.force_type` (optional): One of GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY, or `null` (default). Opt-in override for Phase 1 detection. Phase 1 still runs and is logged; routing uses the pin.
 - `tech_stack.languages`: List of detected or confirmed language names
 - `tech_stack.frameworks`: List of detected or confirmed framework names
 - `tech_stack.databases`: List of detected or confirmed database names (empty list if none)
@@ -646,7 +639,12 @@ The delivery-flow SKILL.md reads the config at pipeline start and applies all se
 1. **Check for `.delivery/config.yml`** in the current working directory.
 
 2. **If config exists**, read the YAML configuration and apply all settings:
-   - `project_type` -- Skip Phase 1 detection entirely; use the configured type
+   - **Phase 1 project type detection always runs** from the current user
+     request. Project type is a runtime routing decision, not a config
+     setting. Legacy v≤2.6 `project_type` keys are tolerantly dropped with
+     a deprecation warning on load (warn-and-drop, see ADR-002).
+   - `routing.force_type` (optional) -- If set, Phase 1 detection still runs
+     and is logged, but routing uses the pin. Banner announces the override.
    - `pipeline.checkpoints` -- Enable only the listed human checkpoints
    - `pipeline.collaboration_patterns` -- Enable only the listed patterns per stage
    - `pipeline.max_self_correction` -- Override the default iteration limit

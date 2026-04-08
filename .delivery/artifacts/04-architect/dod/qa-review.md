@@ -1,70 +1,127 @@
-# Gate 4 QA Review -- Architect Stage
+# QA Review — Architect Stage Artifacts
 
-**Reviewer**: Legolas (QA Engineer)
-**Artifact**: `.delivery/artifacts/04-architect/solution/architecture.md`
-**Date**: 2026-04-04
-**Depth**: LIGHT
+**Reviewer**: Legolas (QA)
+**Stage**: 04 — Architect (FEATURE-light)
+**Scope**: architecture.md, ADR-001 (origin detection), ADR-003 (adversarial loop convergence)
+**Date**: 2026-04-05
 
----
-
-*"A keen eye sees not only the path ahead, but every branch where an arrow might fly true -- or miss its mark."*
+> *"My eyes see far. I will tell you only what can be measured, struck, or counted."*
 
 ---
 
-## Criterion 1: Architecture Supports Testing
+## Verdict: DONE
 
-**PASS**
-
-Each component in the architecture has a verifiable validation approach:
-
-| Component | Testability Assessment |
-|-----------|----------------------|
-| **generate_pptx.py** | Deterministic script with CLI interface (Section 1.3). Input: JSON file. Output: .pptx file. Dependency check at import time enables isolated testing with/without python-pptx. Layout mapping table (Section 1.5) defines exact fallback indices -- each row is a test case. Template precedence chain (Section 1.4) has 5 ordered levels, each independently verifiable. |
-| **JSON Intermediate Format** | Schema defined explicitly (Section 1.2) with typed fields per slide. The Composer produces it, the script consumes it -- contract boundary is clean and testable with schema validation. ADR-01 confirms this was chosen specifically to avoid brittle regex parsing. |
-| **Narrative Editorial Passes** | Four sequential passes (Section 2.1), each with defined input/output transformations. Emphasis mutates order + writes emphasis_log. Cutting removes slides + writes cuts_log. Framing rewrites body content in-place. Tension repositions climax to 60-70% point. Each pass is independently testable because each reads/writes the same in-memory slide list with observable mutations. |
-| **Fallback Degradation** | Decision tree (Section 3.1) is fully deterministic with binary branching at each node. Threshold resolution (Section 3.3) has a 4-level precedence chain with a hardcoded default. The interaction matrix (Section 3.4) enumerates all 4 scenarios with expected outcomes per lever -- each row is a test case. |
-| **Config Toggles** | Three toggles (Section 2.4) with defined skip behavior when disabled. Framing is always-on. Tension has a slide-count threshold (< 6). Each toggle state is a distinct test scenario. |
+All three artifacts present testable success criteria, measurable termination conditions, and falsifiable decisions. Findings below are recommended test hooks for Plan/Quality stages, not blockers.
 
 ---
 
-## Criterion 2: Components Are Isolatable
+## 1. Origin Detection — Testability (ADR-001 + arch §2)
 
-**PASS**
+### Success criteria are clear and verifiable
 
-| Boundary | Isolation Mechanism |
-|----------|-------------------|
-| Composer to Script | JSON file contract (ADR-01). The script is a "pure consumer" -- it never interprets markdown. These two components can be tested independently: feed the script any valid JSON, verify .pptx output. |
-| Editorial Passes | Sequential but each pass operates on the same in-memory list with defined mutations (Section 2.3). A pass can be tested by providing a slide list and asserting the transformed output. Pass ordering is enforced by design (ADR-02), not by coupling. |
-| Degradation Logic | Independent from editorial passes (Section 3.2 confirms Step 4 never degrades). Light mode and threshold degradation are independent controls (Section 3.4) -- testable in isolation and in combination. |
-| Template/Branding | Precedence chain (Section 1.4) is a pure resolution function: given inputs at each level, output is deterministic. No side effects on other components. |
-| PPTX Generation | Explicitly outside the threshold window (Section 3.3) -- post-approval, isolated from the timed flow. Dependency guard at import time (Section 1.3) provides clean fallback path. |
+| Behavior | Falsifiable test |
+|---|---|
+| Layer 1: env var present ⇒ allow | Set `DELIVERY_FLOW_AGENT_CONTEXT=architect`, attempt write to `.delivery/artifacts/04-architect/x.md`, assert exit 0 + write proceeds |
+| Layer 1: env var absent ⇒ fall through | Unset env var, attempt orchestrator-origin write, assert Layer 2 path executes |
+| Layer 2: positive sub-agent identifier ⇒ allow | Inject mock hook stdin with `parent_tool_use_id` populated, assert allow |
+| Layer 3: both signals absent ⇒ warn-not-deny | No env var, no parent id, attempt write, assert exit 0 AND `systemMessage` emitted naming Delegation Prime Directive |
+| Allowlist always allows | For each path in §2.3, attempt write with no env var, assert allow |
+| Bash redirection coverage | Bash `cat <<EOF > .delivery/artifacts/foo.md` with no env var, assert same Layer 1→2→3 behavior |
+| Activation gating | v2.6 config OR `enforce_self_write_block: false` ⇒ deny path never reached even when origin = orchestrator |
+| NFR-01 budget | Measure p95 hook latency over N=1000 invocations, assert ≤ 50ms |
 
----
+### Falsifiability of the decision
+ADR-001 names rejected alternatives (A-alone, B-alone, C, D, hard-deny) with concrete failure modes. Each rejection is independently testable.
 
-## Criterion 3: Decisions Are Verifiable
-
-**PASS**
-
-| Decision | Verification Path |
-|----------|------------------|
-| ADR-01: JSON over markdown parsing | Rationale is falsifiable: "markdown parsing is brittle." Verify by comparing error rates of JSON deserialization vs regex parsing on edge cases (nested bullets, Mermaid blocks, tables). |
-| ADR-02: Sequential over parallel passes | Rationale states each pass depends on prior output. Verify by running passes out of order and confirming inconsistent results (e.g., cutting a slide that tension already repositioned). Dependency chain documented in Section 2.2 with per-pass justification. |
-| ADR-03: Step 4 never degrades | Rationale: single-agent, rule-based, fast. Verify by timing Step 4 relative to Steps 3 and 5 under load. The claim "degradation reduces parallelism width, never processing depth" is a testable architectural invariant. |
-| Layout fallback strategy | Section 1.5 states all non-title layouts use index 1. Rationale: "corporate templates rarely have 7+ custom layouts." Verify by testing against diverse .potx templates. |
-| Threshold = 90s default | Section 3.3 defines the resolution chain. Verify each precedence level overrides the next. Value 0 disables threshold -- testable boundary condition. |
-
-All three ADRs include explicit context, decision, rationale, and consequences -- the standard ADR structure that enables future verification and reversal if assumptions change.
+### Observations (non-blocking)
+- **PQ-1 unresolved**: Layer 2's `parent_tool_use_id` reliance is harness-version-dependent. Plan stage must pin a harness version for the test matrix.
+- **Allowlist drift**: recommend a unit test that asserts the module constant matches the documented §2.3 list verbatim.
+- **Layer 3 telemetry**: ADR-001 says soft-deny "should be monitored" but no counter/log channel is named. Recommend logging Layer 3 hits to `state.md` so QA can grep them post-run.
 
 ---
 
-## Verdict
+## 2. Adversarial Loop Convergence — Testability (ADR-003 + arch §4)
 
-**DONE**
+### Termination conditions are measurable
 
-The architecture is testable at every seam. Components communicate through defined contracts (JSON schema, in-memory slide list, CLI arguments). The degradation model is a pure function of two independent inputs (light mode, threshold). All design decisions are documented with falsifiable rationale. No blocking issues found.
+All three exit conditions are decidable from loop history alone, no AI judgment required:
 
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/04-architect/dod/qa-review.md
-SUMMARY: Architecture passes all 3 criteria -- testable components, clean isolation boundaries, verifiable ADRs.
-```
+| Rule | Decidability check |
+|---|---|
+| Two-clean | `len(loops[-1].findings) == 0 AND len(loops[-2].findings) == 0` |
+| No-new-classes | Set membership over `classes`, two consecutive loops with no novel class |
+| Hard cap | `N >= max_self_correction` integer comparison |
+
+These are pure data assertions over the `loops` list — replayable with synthetic finding streams.
+
+### Recommended test matrix
+
+| Scenario | Synthetic input | Expected exit |
+|---|---|---|
+| Immediate two-clean | `[[],[]]` | converged(two_clean), N=2 |
+| Lucky single clean then findings | `[[],[coupling]]` | continue (does not exit on N=1 clean) |
+| Class saturation | `[[coupling],[security],[coupling],[security]]` | converged(class_saturated) |
+| Pure novelty stream | new class each loop, length 3 | cap_reached, N=3 |
+| Untagged finding | `[[{class:None}]]` | counted as `misc`, treated as new class |
+| Taxonomy evasion | `[[{class:"COUPLING"}],[{class:"coupling-ish"}]]` | both bucketed `misc`, no false saturation |
+| Cap with default 3 | findings every loop, all novel | cap_reached at N=3, residuals documented |
+
+### Falsifiability
+ADR-003 rejects A (one-clean), C (severity), E-alone, B-alone, three-clean — each with a stated failure mode that the matrix above can reproduce.
+
+### Observations (non-blocking)
+- **Default cap = 3 + two-clean rule = only 1 fix iteration**. ADR-003 acknowledges this. Recommend Quality stage measure cap_reached frequency on the dogfood run; if > 50%, raise default to 4 in a follow-up.
+- **Architect-revision context scoping** is asserted as invariant. Recommend a test that inspects the dispatched Architect prompt and asserts it does NOT contain prior-loop finding strings.
+- **Reviewer context isolation**: unit test should mock the dispatcher and assert each reviewer prompt contains exactly `[artifact, reviewer_brief, taxonomy]` and nothing else.
+- **Pseudocode timing**: §4.3 `if len(loops) >= 3` means class-saturation cannot fire until N=3. With default cap=3 it can only fire on the very last loop before cap_reached. Consistent with spec but should be noted in `team-patterns.md` so reviewers understand it.
+
+---
+
+## 3. ADR Falsifiability — Per Decision
+
+| Decision | Falsifiable? | How to falsify |
+|---|---|---|
+| ADR-001: layered detection > single mechanism | Yes | Demonstrate that A or B alone meets all FR-09 + NFR-05 cases on the harness in use |
+| ADR-001: soft-deny on uncertainty | Yes | Show a production incident where soft-deny allowed a destructive write, AND a hard-deny variant would not have bricked the pipeline |
+| ADR-001: allowlist scope | Yes | Find a legitimate orchestrator bookkeeping path NOT in §2.3, OR an in-list path that should have been denied |
+| ADR-003: two-clean > one-clean | Yes | Show a stream where one-clean exits correctly and two-clean wastes a loop with no benefit, repeated across N runs |
+| ADR-003: class saturation > severity threshold | Yes | Run both on the dogfood corpus, compare false-converge / false-continue rates |
+| ADR-003: misc bucket counts as new class | Yes | Show a reviewer using `misc` legitimately and having class-saturation incorrectly delayed |
+| ADR-003: cap_reached is exit not failure | Yes (policy) | Show human checkpoint cannot in practice make an informed accept/reject decision from the residuals format |
+
+Every decision is bound to an observable outcome on a finite test stream.
+
+---
+
+## 4. Cross-Cutting QA Concerns
+
+### Pass
+- Edit map (§5) is gateable: each row has FR back-reference and a concrete file. Doc-parity DoD can be a deterministic grep.
+- NFR table (§6) gives every NFR a budget AND an architectural hook.
+- Activation gating (§2.5) makes the dogfood run testable without circular dependency.
+
+### Recommendations for Plan stage (non-blocking)
+1. Define the test fixture path for `enforce_pipeline_scope.py` (PQ-2 mentions `delivery-team/tests/fixtures/legacy-v2.6-config.yml`). Standalone Python script that exits non-zero on assertion failure.
+2. Specify the `routing.force_type` enum exhaustively (PQ-3) so parser tests can be table-driven.
+3. Bash-redirection regex needs a positive AND negative test set (e.g., `grep > /dev/null` must not match an artifact path).
+4. End-to-end smoke test for the dogfood activation gate: v2.6 config (deny unreachable), v2.7 + flag false (same), v2.7 + flag true (deny fires).
+
+---
+
+## 5. Falsifiability Summary
+
+| Artifact | Testable | Measurable | Falsifiable | Verdict |
+|---|---|---|---|---|
+| architecture.md | Yes | Yes | Yes | Pass |
+| ADR-001 | Yes | Yes | Yes | Pass |
+| ADR-003 | Yes | Yes | Yes | Pass |
+
+---
+
+## STATUS
+
+**DONE** — Architecture and ADRs are testable, success criteria are measurable, and every decision is falsifiable. Observations above are recommended Plan-stage test inputs, not gate failures.
+
+> *"The arrow flies true when the bow is straight. This bow is straight."*
+
+— Legolas

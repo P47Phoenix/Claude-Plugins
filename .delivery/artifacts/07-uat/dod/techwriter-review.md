@@ -1,84 +1,83 @@
-# Tech Writer DoD Review
+# Tech Writer DoD Review — Stage 7 UAT
+
+*"A tidy pantry, a tidy ledger — let me tell you what I found, friend."*
+— Bilbo, tech-writer
 
 **Reviewer**: Bilbo (Technical Writer)
-**Date**: 2026-04-04
-**Artifact Reviewed**: `.delivery/artifacts/07-uat/tech-writer/release-notes.md`
-**Cross-Referenced**: Issues #43-#46, actual files on disk
-**Verdict**: NOT_DONE
+**Stage**: 7 — UAT
+**Release**: delivery-team v2.18.0 (schema v2.6 → v2.7)
+**Date**: 2026-04-05
 
 ---
 
-Well now, these are rather fine release notes -- thorough, well-structured, and written with the care of a hobbit cataloguing his seed potatoes. But I did find one broken path hiding in the pantry, and a proper documentation review cannot let that pass without remark.
+## Scope of review
+
+I checked three things, as a good hobbit should:
+
+1. **Release notes accuracy** — does `release-notes.md` truthfully describe the bundle?
+2. **User-facing docs parity** — are `CLAUDE.md`, `README.md`, and `.claude-plugin/marketplace.json` updated to match?
+3. **Breaking change clarity** — is the `project_type` removal called out where a user will actually see it?
 
 ---
 
-## Gate 7 Criteria
+## Findings
 
-### 1. Release notes are complete and accurate [BLOCKING] -- PASS
+### 1. Release notes accuracy — DONE
 
-The release notes cover all four enhancement groups with appropriate depth:
+The release notes (`/var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/artifacts/07-uat/tech-writer/release-notes.md`) correctly describe:
 
-| Section | Content | Verdict |
-|---------|---------|---------|
-| What's New: Five New Presentation Types (#43) | 5 types listed with use cases, narrative frameworks, and keyword detection. Count matches (4 existing + 5 new = 9 total stated) | **PASS** |
-| What's New: PPTX Output Support (#44) | Script path, template support, font/color config, fallback behavior, limitations documented | **PASS** |
-| What's New: Narrative Intelligence (#46) | 4 capabilities with override mechanisms, Review Gate integration noted | **PASS** |
-| What's New: Performance (#45) | Progress indicators, light mode, graceful degradation -- all documented with config keys | **PASS** |
-| New Configuration Keys | 8 keys listed with types, defaults, and purpose | **PASS** |
-| Breaking Changes | Correctly states "None" with backward compatibility explanation | **PASS** |
-| Dependencies | `python-pptx` listed as optional with install instructions | **PASS** |
-| Known Limitations | 5 limitations documented covering PPTX fidelity, narrative heuristics, sensitivity filter, light mode, and Mermaid | **PASS** |
+- Schema bump v2.6 to v2.7 with warn-and-drop migration for `project_type`.
+- New `routing.force_type` opt-in pin and `pipeline.enforce_self_write_block` activation gate.
+- Setup wizard reduced from 10 to 9 questions.
+- Delegation Prime Directive, Step 4.5 tightening, and the eight named anti-patterns.
+- One Role = One Sub-Agent rule plus the three compound-role detectors in `audit_agent_prompt.py` (with negation-aware skipping).
+- Pattern 2b Isolated Adversarial Loop with the issue-class taxonomy and the three convergence rules (two-clean / no-new-classes / hard cap at `max_self_correction`, default 3).
+- Closes #69, #70, #71, #73 and links the four most-changed reference files.
+- Known gap (Bash redirection not yet intercepted by `enforce_pipeline_scope.py`) is honestly disclosed rather than hidden.
 
-### 2. Release notes reference Issues #43-#46 [BLOCKING] -- PASS
+The "in a nutshell" paragraph and the upgrade checklist both match the body. No factual drift detected.
 
-All four issues referenced in two locations each:
+### 2. User-facing docs parity — DONE
 
-| Issue | Header Reference (Line 6) | References Section (Lines 127-130) | GitHub Title Match |
-|-------|--------------------------|-----------------------------------|-------------------|
-| #43 | `[#43](https://github.com/P47Phoenix/Claude-Plugins/issues/43)` | "Deferred Presentation Types" | Matches: "Presentation skill v1.1: Add 5 deferred presentation types" |
-| #44 | `[#44](https://github.com/P47Phoenix/Claude-Plugins/issues/44)` | "python-pptx Branded Output" | Matches: "Presentation skill: python-pptx branded .pptx output path" |
-| #45 | `[#45](https://github.com/P47Phoenix/Claude-Plugins/issues/45)` | "90-Second Fallback Plan" | Matches: "Presentation skill: Add fallback plan for 90-second generation target" |
-| #46 | `[#46](https://github.com/P47Phoenix/Claude-Plugins/issues/46)` | "Deeper Narrative Intelligence" | Matches: "Presentation skill: Deeper narrative intelligence beyond data-signal adaptation" |
+- **`CLAUDE.md`** (lines 96–98, 125): correctly states schema is v2.7, project type detected per run, setup wizard is 9 questions, and `routing.force_type` is the opt-in override. Config schema source-of-truth pointer updated to v2.7.
+- **`README.md`** (line 62): "Setup wizard: 9-question config wizard … project type is detected per-run, not pinned in config; use `routing.force_type` for opt-in pins". Consistent with release notes and CLAUDE.md.
+- **`.claude-plugin/marketplace.json`**: `metadata.version` is `"2.18.0"`. Matches the release notes header.
 
-All URLs use correct format and point to the correct repository.
+All three user-facing surfaces tell the same story.
 
-### 3. No broken paths [BLOCKING] -- FAIL
+### 3. Breaking change clarity — DONE
 
-| Path in Release Notes | Exists on Disk | Status |
-|------------------------|----------------|--------|
-| `delivery-team/skills/presentation/SKILL.md` | Yes | **OK** |
-| `delivery-team/skills/presentation/references/narrative-patterns.md` | Yes | **OK** |
-| `delivery-team/skills/presentation/references/slide-structure.md` | Yes | **OK** |
-| `delivery-team/skills/presentation/scripts/generate_pptx.py` | Yes | **OK** |
-| `delivery-flow/references/config-schema.md` | **No** | **BROKEN** |
-| `.delivery/artifacts/02-refine/po/prd.md` | Yes | **OK** |
-| `.delivery/artifacts/01-idea/po/idea-brief.md` | Yes | **OK** |
+The breaking change (`project_type` removal) is called out in places a user will actually see:
 
-**Broken path details**: The Files Modified table (line 102) references `delivery-flow/references/config-schema.md`. The actual file lives at `delivery-team/skills/delivery-flow/references/config-schema.md`. The `delivery-team/skills/` prefix is missing, inconsistent with all other paths in the same table which use full repo-relative paths.
+- A dedicated **"Breaking change — please read"** section in the release notes, with the warn-and-drop migration explained, the legacy-tolerance behavior named, and the new `routing.force_type` pin shown as a YAML snippet.
+- The **upgrade checklist** at the bottom of the release notes makes it actionable: bump `config_version`, drop the bare key, add `routing.force_type` if needed.
+- **`CLAUDE.md`** Key Conventions section explicitly notes the removal and points at `routing.force_type` as the replacement.
+- **`README.md`** Setup wizard bullet mirrors the same guidance for users who only ever read the README.
 
-**Fix required**: Change `delivery-flow/references/config-schema.md` to `delivery-team/skills/delivery-flow/references/config-schema.md` on line 102.
-
-### 4. Documentation is clear and follows project conventions [NON-BLOCKING] -- PASS
-
-- **Structure**: Follows established release notes pattern (What's New, Config Keys, Breaking Changes, Files Modified, Dependencies, Known Limitations, References).
-- **Clarity**: Each enhancement group is well-organized with tables, key capabilities lists, and override documentation.
-- **Tone**: Bilbo voice is consistent and warm without compromising technical precision. Opening and closing quotes are thematically appropriate.
-- **Completeness**: Version, date, project type, source issues, and skill path are all present in the header.
+The tone is appropriately gentle ("nothing urgent — existing repos keep working") because the warn-and-drop migration genuinely is non-breaking at runtime; the "breaking" label refers to the schema contract, not user impact, and the notes make that distinction clearly.
 
 ---
 
-## Defect Summary
+## Minor observations (non-blocking)
 
-| ID | Severity | Location | Description | Fix |
-|----|----------|----------|-------------|-----|
-| TW-01 | MUST-FIX | Line 102, Files Modified table | Broken path: `delivery-flow/references/config-schema.md` does not exist. Missing `delivery-team/skills/` prefix | Change to `delivery-team/skills/delivery-flow/references/config-schema.md` |
+- The release notes mention `docs/user-guide/config.md`, `docs/skills/delivery-flow.md`, and `docs/contributing/index.md` were updated as part of the parity sweep. I did not re-verify those files in this review (out of scope for the listed input artifacts), but the claim is consistent with the rest of the bundle.
+- `README.md` describes the Presentation skill as "4 types … 3 output formats" while `CLAUDE.md` lists "9 types … 4 formats". This pre-existed v2.18.0 and is not introduced by this release, so it does not block this DoD — but I'm logging it here so the PO can grab it as a small follow-up doc fix.
 
 ---
 
-## Summary
+## DoD verdict
 
-These release notes are remarkably thorough -- nine presentation types accounted for, every configuration key documented, limitations honestly stated, and all four issues properly linked. One broken file path in the Files Modified table (a missing `delivery-team/skills/` prefix on the config-schema reference) prevents a clean pass. A small fix, but a necessary one; a hobbit's map must lead where it says, or the traveler ends up in the wrong part of the Shire.
+All three DoD criteria for the tech-writer slice are satisfied:
 
-Once TW-01 is resolved, this artifact earns a DONE.
+- [x] Release notes are accurate and match the implemented changes.
+- [x] User-facing documentation (`CLAUDE.md`, `README.md`, `marketplace.json`) is updated and consistent.
+- [x] Breaking changes are clearly called out with migration guidance.
 
-**STATUS: NOT_DONE**
+**Status: DONE.**
+
+*"And the road goes ever on — but tonight, the ledger balances. Sleep well."*
+— Bilbo
+
+---
+
+STATUS: DONE

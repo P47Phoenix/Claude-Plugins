@@ -1,6 +1,8 @@
 # Configuration Reference
 
-All configuration lives in `.delivery/config.yml` (pure YAML, no frontmatter). The setup wizard generates this file. Current schema version: **2.6**.
+All configuration lives in `.delivery/config.yml` (pure YAML, no frontmatter). The setup wizard generates this file. Current schema version: **2.7**.
+
+> **v2.7 migration**: The bare `project_type` config key was removed. Project type is now detected per pipeline run from the user request (Phase 1 always-detect). To pin a project type, use `routing.force_type`. Legacy v≤2.6 configs containing `project_type` are tolerantly loaded with a deprecation warning.
 
 ## Complete Config Key Reference
 
@@ -8,8 +10,8 @@ All configuration lives in `.delivery/config.yml` (pure YAML, no frontmatter). T
 
 | Key | Type | Default | Valid Values | Description |
 |-----|------|---------|-------------|-------------|
-| `config_version` | string | "2.6" | semver | Schema version for migration |
-| `project_type` | string | FEATURE | GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY | Project type for stage routing |
+| `config_version` | string | "2.7" | semver | Schema version for migration |
+| `routing.force_type` | string/null | null | GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY, null | Optional opt-in pin overriding Phase 1 type detection (detection still runs and is logged) |
 | `wizard_completed` | string | auto | ISO date | When the wizard last ran |
 
 ### Tech Stack
@@ -165,8 +167,9 @@ All configuration lives in `.delivery/config.yml` (pure YAML, no frontmatter). T
 ## Full Example Config
 
 ```yaml
-config_version: "2.6"
-project_type: GREENFIELD
+config_version: "2.7"
+routing:
+  force_type: null  # opt-in pin; Phase 1 detection always runs
 tech_stack:
   languages: [TypeScript, Python]
   frameworks: [Next.js, FastAPI]

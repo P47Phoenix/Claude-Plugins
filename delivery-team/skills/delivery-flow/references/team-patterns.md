@@ -17,6 +17,8 @@ Select the collaboration pattern based on the situation. Multiple patterns may a
 
 ## Pattern 1: Evaluator-Optimizer Loop
 
+**Dispatch rule**: Dispatch the producer and the evaluator as SEPARATE Agent tool calls. One role = one sub-agent invocation. Never collapse "produce and self-evaluate" into a single compound prompt.
+
 ### When to Use
 
 After any stage produces its primary artifact, before Team DoD validation. This is the first quality pass -- it catches obvious issues cheaply before invoking the full validator panel.
@@ -95,6 +97,8 @@ SUMMARY: {one sentence, max 200 characters}
 ---
 
 ## Pattern 2: Adversarial Review (Red Team / Devil's Advocate)
+
+**Dispatch rule**: Dispatch the challenger as a SEPARATE Agent tool call from the producer. One role = one sub-agent invocation. Never ask the producer to "also challenge its own work". For multi-loop adversarial review, use the **Isolated Adversarial Loop** variant (Pattern 2b) — each loop is a fresh sub-agent with no prior-loop context.
 
 ### When to Use
 
@@ -199,7 +203,137 @@ FINDINGS: {bullet list of key challenges}
 
 ---
 
+## Pattern 2b: Isolated Adversarial Loop
+
+**Dispatch rule**: Each loop iteration dispatches a FRESH sub-agent with zero prior-loop context. One loop = one Agent tool call. Never paste prior findings into a new reviewer's prompt.
+
+### When to Use
+
+- Stage 4 (Architect) — when the artifact's correctness depends on surfacing
+  deep structural issues that a single reviewer pass can anchor away
+- Any time the single-pass Adversarial Review (Pattern 2) has produced a
+  suspicious "clean" result on the first try
+- Whenever `pipeline.collaboration_patterns` includes `adversarial` and the
+  current stage is marked to use the isolated variant
+
+### Core Guarantee: Fresh Context Every Loop
+
+The whole point of this variant is that a single fresh reviewer's clean pass
+**proves nothing** about convergence. Fresh reviewers produce non-monotonic
+critique sets — loop N+1 may raise an entirely disjoint set of issues that
+loop N had no context for. See ADR-003 for the rationale.
+
+Therefore:
+
+- Every reviewer dispatch is a fresh sub-agent whose prompt contains **only**
+  the current artifact and the reviewer brief + taxonomy.
+- **NO** prior findings. **NO** "this is loop N". **NO** fix summaries.
+- The Architect revision sub-agent sees the **current** loop's findings only,
+  not prior loops' findings, to prevent compound patching against contradictory
+  priorities.
+
+### Issue Class Taxonomy
+
+Reviewers MUST tag each finding with exactly one class from this fixed taxonomy:
+
+```
+coupling | security | data-integrity | naming | testability | performance | docs
+```
+
+Untagged or invalid-tag findings are bucketed as `misc` and counted as a new
+class (conservative — prevents taxonomy evasion).
+
+### Convergence Rules (ADR-003)
+
+Terminate the loop when ANY of the following holds:
+
+1. **Two-clean rule**: Two *consecutive* loops return zero findings.
+   Exit `converged (two_clean)`.
+2. **No-new-classes rule**: Two *consecutive* loops produce findings, but
+   every finding in each belongs to an issue class raised in an earlier loop.
+   Exit `converged (class_saturated)`. Residuals documented.
+3. **Hard cap**: `N >= pipeline.max_self_correction` (default 3). Exit
+   `cap_reached`. Residuals documented and surfaced to the human checkpoint.
+
+A single zero-finding loop is **not** sufficient. A clean pass at N=1 with
+no prior clean loop does NOT exit — it re-runs the reviewer on the same
+artifact to seek the second consecutive clean.
+
+`cap_reached` is a **documented exit**, not a failure. The human checkpoint
+decides whether residuals are acceptable or require manual remediation.
+
+### Loop Protocol Pseudocode
+
+```
+function isolated_adversarial_loop(artifact, max_iter):
+    loops = []
+    N = 0
+    while N < max_iter:
+        N += 1
+
+        # Loop 1 (and every subsequent loop): FRESH sub-agent.
+        # Prompt contains ONLY the current artifact plus the reviewer brief
+        # and taxonomy. NO prior findings. NO loop number. NO fix summaries.
+        reviewer = dispatch_fresh_subagent(
+            role="adversarial_reviewer",
+            inputs=[artifact, reviewer_brief, taxonomy],
+            context_leak=False,
+        )
+        findings = reviewer.return_findings()   # [{issue, class}, ...]
+        classes  = { f.class for f in findings }
+        loops.append({"findings": findings, "classes": classes, "N": N})
+
+        # Rule 1: two-clean
+        if len(findings) == 0:
+            if len(loops) >= 2 and len(loops[-2]["findings"]) == 0:
+                return {"status": "converged", "reason": "two_clean", "loops": loops}
+            # Single clean loop: keep going, do NOT exit.
+            # Architect has nothing to fix; re-dispatch reviewer on same artifact.
+            continue
+
+        # Rule 2: no-new-classes (track issue CLASSES across loops)
+        if len(loops) >= 3:
+            prior_union_before_prev = union(l["classes"] for l in loops[:-2])
+            prior_union_before_curr = union(l["classes"] for l in loops[:-1])
+            prev_classes    = loops[-2]["classes"]
+            current_classes = loops[-1]["classes"]
+            if (prev_classes.issubset(prior_union_before_prev) and
+                current_classes.issubset(prior_union_before_curr)):
+                document_residuals(findings)
+                return {"status": "converged", "reason": "class_saturated",
+                        "loops": loops}
+
+        # Otherwise: Architect (fresh dispatch) revises artifact.
+        # Architect sees CURRENT findings only, not prior loops.
+        artifact = dispatch_fresh_subagent(
+            role="architect_revise",
+            inputs=[artifact, findings],
+        ).revised_artifact()
+
+    # Rule 3: hard cap — documented exit, not a failure.
+    document_residuals(loops[-1]["findings"])
+    return {"status": "cap_reached", "loops": loops}
+```
+
+### Invariants
+
+- **Reviewer context isolation**: every reviewer dispatch is a fresh sub-agent
+  with zero prior-loop context. Enforced by the dispatch wrapper and audited
+  by the compound-role detector in `audit_agent_prompt.py`.
+- **Architect context scoping**: the Architect revision sub-agent sees the
+  **current** loop's findings only, not prior loops' findings.
+- **Cap-reached is a documented exit**, not a failure. Human checkpoint decides
+  whether to accept residuals.
+- **N=1 clean pass** continues to N=2 with the same artifact. A clean first
+  pass proves nothing.
+
+See ADR-003 for the full decision record.
+
+---
+
 ## Pattern 3: Multi-Perspective Review Board
+
+**Dispatch rule**: Dispatch each reviewer as a SEPARATE Agent tool call, all in parallel in a single message. Three reviewers = three Agent calls. Never fuse two reviewers into one compound prompt.
 
 ### When to Use
 
@@ -285,6 +419,8 @@ SUMMARY: {one sentence, max 200 characters}
 
 ## Pattern 4: Decision Ownership Routing
 
+**Dispatch rule**: The Decision Owner is a SEPARATE Agent tool call dispatched on demand. One role = one sub-agent invocation. Never ask another agent to "also make this decision".
+
 ### When to Use
 
 At any point during pipeline execution when a decision must be made that falls outside the primary agent's domain expertise. Common triggers:
@@ -348,6 +484,8 @@ When an issue matches multiple signal categories:
 ---
 
 ## Pattern 5: Debate Pattern
+
+**Dispatch rule**: Dispatch PRO, CON, and JUDGE as SEPARATE Agent tool calls. PRO + CON in parallel (single message, two Agent calls), JUDGE sequentially after. Three roles = three Agent invocations. Never collapse PRO and CON into one compound prompt.
 
 ### When to Use
 
@@ -545,6 +683,8 @@ SUMMARY: {one sentence, max 200 characters}
 ---
 
 ## Pattern 6: Consensus Protocol
+
+**Dispatch rule**: Each participant in each round is a SEPARATE Agent tool call, all participants dispatched in parallel within a round. N participants × R rounds = N Agent calls per round. Never collapse two participants into one compound prompt.
 
 ### When to Use
 

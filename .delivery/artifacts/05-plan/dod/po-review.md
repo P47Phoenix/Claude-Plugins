@@ -1,171 +1,92 @@
-# Gate 1 + Gate 5 (Light) DoD Review: Product Owner
+# PO DoD Review — Stage 5 Plan
 
-**Reviewer**: Gandalf (Product Owner)
-**Date**: 2026-04-04
-**Pipeline**: BUG_FIX — Issues #60, #61, #62
-**Artifacts Reviewed**:
-- `.delivery/artifacts/01-idea/po/idea-brief.md` (Gate 1)
-- `.delivery/artifacts/05-plan/po/stories.md` (Gate 5)
-- `.delivery/artifacts/05-plan/sm/sprint-plan.md` (Gate 5)
+**Reviewer**: Gandalf the Grey (PO)
+**Stage**: 05 — Plan
+**Artifacts reviewed**:
+- `.delivery/artifacts/02-refine/po/prd.md` (16 FRs, 8 NFRs)
+- `.delivery/artifacts/05-plan/po/stories.md` (13 stories, 32 pts)
+- `.delivery/artifacts/05-plan/sm/sprint-plan.md`
+
 **Verdict**: DONE
 
-> *"I have examined the brief and the plan with the care one applies to reading ancient scripts -- every line weighed, every omission sought. The problem is clear, the scope is tight, and the plan is sound. There is nothing superfluous, and nothing missing."*
+---
+
+## 1. Scope Correctness
+
+The plan's scope is exactly the four bundled issues named in the PRD (#73, #71, #70, #69) plus the cross-cutting doc-parity sweep (FR-16). Nothing smuggled in; nothing quietly abandoned. The sprint goal in §2 of the sprint plan restates the PRD's thesis faithfully: ship the four orchestration discipline fixes as one cohesive, atomically-merged PR that the orchestrator demonstrably dogfoods. The out-of-scope list from PRD §6 is honored — no alias themes, no adversarial loops at stages other than Architect, no rewrite of Phase 1 detection logic itself. Pass.
+
+## 2. Story Value
+
+Every one of the 13 stories (OD-01 … OD-13) is user-facing valuable when read through the four PRD personas:
+
+- P1 PO Operator is served by OD-01 / OD-02 / OD-03 / OD-04 (routing truthfulness per run + intentional pin).
+- P2 Plugin Contributor is served by OD-05 / OD-06 / OD-07 / OD-08 / OD-09 / OD-10 (discipline they can trust in the artifacts they review).
+- P3 Future Orchestrator is served by OD-02 / OD-05 / OD-06 / OD-08 / OD-11 / OD-12 (unambiguous, hook-enforced rules instead of aspirational prose).
+- P4 Architect Sub-Agent is served by OD-11 / OD-12 (explicit isolated-loop protocol with convergence criterion).
+
+No dead-weight stories. The SM's own §5.3 reverse check confirms this, and I concur. Pass.
+
+## 3. Coverage: All PRD FRs Mapped
+
+Walking the PRD FR list against sprint-plan §5.1 and stories.md Traces lines:
+
+| FR | Covered by | OK |
+|---|---|---|
+| FR-01 | OD-01, OD-04 | yes |
+| FR-02 (a, b, c) | OD-04 (a), OD-03 (b, c) | yes |
+| FR-03 | OD-02 | yes |
+| FR-04 | OD-01 | yes |
+| FR-05 | OD-01, OD-02 | yes |
+| FR-06 | OD-05 | yes |
+| FR-07 | OD-06 | yes |
+| FR-08 | OD-05 (six anti-patterns in ACs) | yes |
+| FR-09 (a–e) | OD-07 | yes |
+| FR-10 | OD-08 | yes |
+| FR-11 | OD-09 | yes |
+| FR-12 | OD-10 (MAY) | yes, conditional |
+| FR-13 | OD-11 | yes |
+| FR-14 | OD-12 | yes |
+| FR-15 | OD-04, OD-11, OD-12 | yes |
+| FR-16 | OD-13 | yes |
+
+16/16 FRs covered. NFR coverage (sprint-plan §5.2) is also complete — 6 by stories, 2 (NFR-06 dogfood, NFR-07 plugin-dev skills) by process enforcement, which is the correct placement because neither is a work product. Pass.
+
+One caveat worth naming plainly: if OD-10 is dropped under the slip protocol (sprint-plan §4.4), FR-12 becomes unsatisfied for this sprint. The SM has already flagged this in §5.1 and committed to logging a next-sprint backlog entry before sprint close. PRD FR-12 is explicitly MAY, so this is contract-compliant, not a coverage gap. I accept the disposition.
+
+## 4. Business Value Preserved
+
+The PRD's stated business value is discipline the orchestrator cannot lie about. Four levers:
+
+1. Truthful routing per run — preserved in OD-01 through OD-04, with `routing.force_type` correctly namespaced as a deliberate pin (not a revived footgun).
+2. Zero orchestrator self-writes — preserved in OD-05 / OD-06 / OD-07, with the critical activation-gating detail (schema_version ≥ 2.7 AND `pipeline.enforce_self_write_block: true`) carried forward from PRD FR-09 into OD-07 and acknowledged in sprint-plan §7.
+3. One role = one sub-agent — preserved in OD-08 / OD-09, with OD-10 as an optional reinforcement.
+4. Iterative isolated adversarial loops at Architect — preserved in OD-11 / OD-12, with the full two-clean / no-new-classes / hard-cap convergence criterion from PRD FR-13 carried into OD-11's ACs.
+
+Atomic merge (NFR-08) and dogfood (NFR-06) — the two process-level values that justify bundling at all — are both enforced at the sprint DoD (sprint-plan §8 items 3 and 5). Pass.
+
+## 5. Observations (non-blocking)
+
+- The sprint is committed at the exact 80% ceiling (32/40 points, 0 strict headroom). This is unusual, but the SM has justified it correctly: atomic-merge compels single-sprint shipment, and OD-10 serves as the explicit pressure-relief valve. I accept the commitment stance.
+- OD-07 at 8 points is the only executable-code story and carries almost the entire schedule risk. The sprint plan's Day-4 concentration of OD-07 plus its slip protocol (drop OD-10 first, escalate to human checkpoint rather than split the PR) is the right posture.
+- OQ-5 from the PRD (does dogfood Architect need ≥2 loop iterations to validate FR-13?) is not resolved in the plan. It is a Plan-stage question per PRD §8. Recommendation for the SM / Quality handoff: resolve before Developer stage begins so the dogfood run has a crisp validation target. Non-blocking for this DoD.
+- The Gandalf/Aragorn alias split across PO stories and SM sprint plan is in good order; both stayed in character without sacrificing precision.
+
+## 6. Checklist
+
+- [x] Scope matches PRD (4 issues + cross-cutting)
+- [x] Every story traces to at least one FR
+- [x] Every FR traces to at least one story (16/16)
+- [x] NFRs accounted for (stories + process)
+- [x] Business value for all 4 PRD personas preserved
+- [x] Atomic-merge constraint honored in plan structure
+- [x] Dogfood constraint honored in sprint DoD
+- [x] Slip protocol preserves PRD compliance (FR-12 MAY clause respected)
+- [x] No dead-weight stories, no silent scope creep
 
 ---
 
-## GATE 1: Idea Brief Validation
+**STATUS**: DONE
 
-### Criterion: Problem Statement Present and Specific [BLOCKING]
+*"The plan is sound. The road is counted. Thirteen steps, thirty-two stones of burden, and every one of them bent toward a promise the orchestrator made to itself. Walk on."*
 
-**Result**: PASS
-
-The problem statement identifies three concrete, observable defects with issue numbers (#60, #61, #62). Each defect is described with:
-- **What is wrong**: flat artifact paths vs namespaced paths; inline `[ARTIFACT CONTENT]` vs file-path references; root cause of content duplication.
-- **Where it manifests**: specific sections of SKILL.md (Stage Definitions, Team DoD Protocol).
-- **Observable impact**: agents write artifacts to wrong locations; downstream stages break; two-channel communication principle violated.
-
-The root cause analysis (Issue #62) correctly identifies content duplication as the upstream fault producing both symptoms (#60, #61). This is well-structured causal reasoning -- not symptom-chasing.
-
-### Criterion: Target Users Identified [BLOCKING]
-
-**Result**: PASS
-
-Three user groups are named:
-1. The delivery-flow orchestrator (primary consumer of SKILL.md)
-2. All delivery-team sub-agents receiving artifact paths from the orchestrator
-3. Plugin maintainers needing a single source of truth
-
-These are the correct stakeholders. The orchestrator is the direct consumer; sub-agents are downstream victims of wrong paths; maintainers suffer from drift over time. No user group is missing.
-
-### Criterion: Goals Present and Specific [BLOCKING]
-
-**Result**: PASS
-
-Five goals are stated, each actionable and verifiable:
-1. Establish `references/pipeline-stages.md` as single source of truth (measurable: no duplicated definitions in SKILL.md)
-2. Remove duplicated definitions from SKILL.md (measurable: line count reduction)
-3. Fix artifact path inconsistency (measurable: grep for flat paths = 0)
-4. Fix DoD validator template (measurable: no `[ARTIFACT CONTENT]` in SKILL.md)
-5. Ensure pipeline continues to function (measurable: structural verification of routing elements)
-
-Goals are appropriately scoped -- they address both symptoms and root cause without expanding beyond the defect boundary.
-
-### Criterion: Scope Defined [BLOCKING]
-
-**Result**: PASS
-
-Scope is explicitly bounded:
-- **In scope**: Single file modification (`delivery-team/skills/delivery-flow/SKILL.md`), markdown-only edits, removing ~400 lines of duplication, replacing with cross-references.
-- **Constraints**: Must not break pipeline execution; must retain Stage Routing Matrix, high-level descriptions, collaboration patterns, human checkpoints.
-- **Out of scope (implicit)**: No changes to `references/pipeline-stages.md`. No code changes. No new features.
-
-The scope is appropriately narrow for a BUG_FIX project type. The constraint that SKILL.md retains routing-relevant content is critical and correctly identified.
-
-### Gate 1 Verdict: PASS
-
-> *"The brief reads as a map drawn by one who has walked the terrain. The three issues are causally linked, the users are rightly named, and the scope is a surgeon's cut -- no wider than needed."*
-
----
-
-## GATE 5 (Light): Plan Validation
-
-*Light mode applies: BUG_FIX project type. Validating scope correctness and story value only. Full consensus protocol and adversarial review are skipped per light mode rules.*
-
-### Criterion: Scope Correct [BLOCKING]
-
-**Result**: PASS
-
-#### Idea-to-Story Traceability
-
-The single story (BF-62-001) traces to all three source issues (#60, #61, #62) and covers all five goals from the idea brief:
-
-| Idea Brief Goal | Story AC | Covered |
-|-----------------|----------|---------|
-| G1: pipeline-stages.md as single source of truth | AC-5 (explicit directive in SKILL.md) | Yes |
-| G2: Remove duplicated definitions | AC-1 (Stage Definitions section replaced with summaries) | Yes |
-| G3: Fix artifact path inconsistency | AC-3 (all paths use namespaced convention) | Yes |
-| G4: Fix DoD validator template | AC-4 (no `[ARTIFACT CONTENT]`, reference to pipeline-stages.md template) | Yes |
-| G5: Pipeline continues to function | AC-7 (Phase 4 Step 3 intact, Stage Routing Matrix intact) | Yes |
-
-**Unmapped goals**: None. 5/5 covered.
-
-**Scope creep check**: No AC introduces work beyond the idea brief's scope. All 7 ACs are structural verifications of the single-file refactoring. The story does not expand to modifying pipeline-stages.md or any other file.
-
-#### Constraint Compliance
-
-| Constraint (from idea brief) | Enforced by |
-|-------------------------------|-------------|
-| Single file modified (SKILL.md only) | Sprint plan: "Single file: `delivery-team/skills/delivery-flow/SKILL.md`" |
-| Markdown-only edits | Story: structural ACs only; no code changes referenced |
-| Must not break pipeline execution | AC-7 (Phase 4 Step 3 + Stage Routing Matrix intact) |
-| Retain routing elements | AC-2 (5 elements preserved per stage) |
-
-All four constraints from the idea brief are enforced by specific acceptance criteria or sprint plan statements.
-
-### Criterion: Stories Valuable [BLOCKING]
-
-**Result**: PASS
-
-#### Value Assessment
-
-| Story | Value Justification | Load-Bearing? |
-|-------|---------------------|---------------|
-| BF-62-001 | Eliminates root cause of two active defects (#60, #61) by removing content duplication that caused drift; prevents future recurrence by establishing single source of truth | Yes -- sole story, addresses root cause |
-
-The story is not a cosmetic cleanup. It fixes two observable defects (wrong artifact paths breaking downstream stages; DoD template violating two-channel rule) by addressing their shared root cause (content duplication). Every AC is necessary -- none is a "nice-to-have."
-
-#### Acceptance Criteria Quality
-
-All 7 ACs are:
-- **Specific**: each names the exact section, pattern, or element to verify
-- **Measurable**: each has a concrete verification method (grep patterns, structural inspection)
-- **Structural**: all verifiable by document inspection (appropriate for markdown-only BUG_FIX)
-
-The 9 test cases cover all 7 ACs with overlap for thoroughness. TC-2 and TC-3 use grep patterns to catch flat paths mechanically -- no reliance on manual scanning.
-
-#### Estimation Calibration
-
-2 SP for markdown refactoring is reasonable. The sprint plan justifies the estimate ("one tier lower than standard BUG_FIX" since it is markdown-only). At 80% velocity ceiling with 2.5 SP available, the 2 SP load is within bounds.
-
-### Criterion: Sprint Plan Sound [NON-BLOCKING, Light Mode]
-
-**Result**: PASS
-
-The sprint plan provides:
-- Clear implementation approach with 4 ordered modification areas
-- Explicit "What NOT to change" list (6 sections preserved)
-- Risk assessment with 3 identified risks and mitigations
-- Definition of Done referencing all 7 ACs and 9 TCs
-
-The implementation approach is well-ordered: Stage Definitions first (bulk removal), then DoD Protocol (template fix), then Cross-Stage Artifact Flow (path cleanup), then sweep for remaining flat paths. This sequence minimizes rework.
-
----
-
-## Findings Summary
-
-| # | Finding | Severity | Gate | Resolution |
-|---|---------|----------|------|------------|
-| 1 | All 5 idea brief goals traced to story ACs | N/A | G1+G5 | Verification passed |
-| 2 | Problem statement correctly identifies causal chain (#62 -> #60, #61) | N/A | G1 | Verification passed |
-| 3 | All 4 constraints enforced by ACs or plan statements | N/A | G5 | Verification passed |
-| 4 | Single story is appropriate for BUG_FIX scope (no artificial splitting) | N/A | G5 | Verification passed |
-| 5 | All ACs are structural and verifiable (correct for markdown-only change) | N/A | G5 | Verification passed |
-| 6 | Flat path count in current SKILL.md confirmed at 9 occurrences (TC-2 baseline) | N/A | G5 | Pre-verification |
-
-**Blocking issues**: None.
-**Non-blocking observations**: None.
-
----
-
-## Verdict
-
-**DONE** -- Gate 1 passes: the idea brief has a specific problem statement with causal analysis, correctly identified users, five verifiable goals, and tightly bounded scope. Gate 5 (light) passes: scope is correct (5/5 goals traced to 7 ACs), the single story is valuable (fixes root cause of two active defects), and the sprint plan is implementable with appropriate risk mitigations. The fellowship may proceed to Development.
-
-> *"A wise plan does not attempt more than it must, nor less than it should. This plan removes the duplication that bred the errors, and does precisely nothing else. That is wisdom, not timidity. You have my blessing to proceed."*
-
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/05-plan/dod/po-review.md
-REVIEWER: Gandalf (Product Owner)
-VERDICT: DONE — Gate 1 (idea brief complete) + Gate 5 light (scope correct, stories valuable)
-```
+— Gandalf, PO

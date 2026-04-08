@@ -1,4 +1,4 @@
-config_version: "2.3"
+config_version: "2.6"
 project_type: FEATURE
 tech_stack:
   languages: [Python, Markdown, Shell, TypeScript, JavaScript]
@@ -96,4 +96,15 @@ presentation:
   marp_theme: default
   staleness_warning_days: 7
   vocabulary_overrides: {}
-wizard_completed: 2026-03-29
+  narrative:
+    emphasis: true
+    cutting: true
+    framing: true
+    tension: true
+  light_mode: auto
+  thresholds: {}
+  thresholds_default: 90
+  pptx_template: ""
+  pptx_font: Calibri
+  pptx_accent_color: "#2d5aa0"
+wizard_completed: 2026-04-05
