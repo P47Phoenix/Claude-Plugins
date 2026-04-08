@@ -1,124 +1,91 @@
-# Architect Review: Gate 1 -- Idea Brief
+# Architect DoD Review — Stage 1 Idea Brief
 
-**Reviewer**: Celebrimbor (Solution Architect)
-**Date**: 2026-04-05
-**Brief**: Orchestration Discipline Bundle
-**Project Type**: FEATURE (bundled)
-**Issues**: GitHub #73, #71, #70, #69
-**Source Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-
-*"Let us forge something that will endure beyond the ages."*
+**Reviewer:** Celebrimbor, Architect
+**Artifact:** `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Feature:** DESIGN Project Type for delivery-flow (Issue #72)
+**Date:** 2026-04-05
 
 ---
 
-## Verdict: PASS
+## Verdict
 
-The bundle is feasible, bounded, and architecturally coherent. Four discipline gaps in the delivery-flow orchestrator share a single set of forge-files and a single thesis — *the orchestrator must practice the discipline it preaches*. Sequencing them apart would only beat the same anvil thrice with contradictory hammers.
+**STATUS: DONE**
 
----
-
-## Assessment by Architect Gate 1 Criteria
-
-### Criterion 1: Idea is technically feasible with stated constraints — **PASS**
-
-Every remediation rests on mechanisms already present in the pipeline:
-
-- **#73 (remove `project_type`)** — Phase 1 detection logic exists; only its invocation cadence changes. Tolerant parsing of legacy configs is a well-trodden pattern, and the v2.6 schema already documents an extension protocol for version bumps.
-- **#71 (delegation prime directive)** — `enforce_pipeline_scope.py` is pure-stdlib Python and already inspects tool-call paths. Extending it with a path-prefix allowlist for `.delivery/artifacts/` and source files is O(1) per call, well within the stated performance budget.
-- **#70 (one role = one sub-agent)** — SKILL.md, `team-patterns.md`, `quality-gates.md`, and `pipeline-stages.md` already describe dispatch; the work is to make the rule prominent and uniform. Optional `audit_agent_prompt.py` extension is regex-level inspection, also stdlib.
-- **#69 (architect adversarial loops)** — The orchestrator already knows how to spawn sub-agents per role. A loop with fresh context per iteration is a natural extension of the existing adversarial-review pattern; termination conditions (zero issues OR `max_self_correction`) are stated.
-
-All five constraints in the brief are honoured: backwards-compatible config, no new dependencies, hook performance budget, documentation parity, dogfooding, and mandatory plugin-dev skill loading. *The metal is tested, the molds are prepared.*
-
-### Criterion 2: No obvious architectural blockers — **PASS**
-
-| Concern | Assessment |
-|---------|------------|
-| Schema breakage from removing `project_type` | **Not a blocker.** Legacy key tolerated with deprecation note; schema version bump documented in `config-schema.md` per v2.6 extension protocol. |
-| Hook over-blocking the orchestrator | **Not a blocker.** Routing metadata vs. artifact content is distinguishable by path prefix; the brief explicitly carves out routing metadata. |
-| Compound-prompt detection false positives | **Not a blocker.** Auditing is marked optional; even prose-level enforcement in SKILL.md is sufficient to satisfy the goal. |
-| Adversarial loop non-termination | **Not a blocker.** Dual termination (clean loop OR `max_self_correction`) bounds the recursion. |
-| Doc-parity drift | **Not a blocker.** CLAUDE.md, README.md, marketplace.json, and references are all enumerated as targets. |
-| Dogfooding circularity (the bundle fixes the orchestrator that runs the bundle) | **Acknowledged, not blocking.** The current orchestrator is healthy enough to dispatch this work; the fixes only tighten what already mostly works. The very act of running the bundle through delivery-flow is the integration test. |
-
-No structural impediment prevents this work.
-
-### Criterion 3: Scope is bounded and achievable as one bundle — **PASS**
-
-| Issue | Files Touched | Achievability |
-|-------|--------------|---------------|
-| #73 — Remove `project_type` | SKILL.md, config-schema.md, setup-wizard.md, project-types.md, marketplace.json doc parity | Bounded — single config key removal + doc parity |
-| #71 — Delegation prime directive | SKILL.md (Step 4.5 + anti-patterns), `enforce_pipeline_scope.py` | Bounded — one section + one hook extension |
-| #70 — One role = one sub-agent | SKILL.md, team-patterns.md, quality-gates.md, pipeline-stages.md, optional `audit_agent_prompt.py` | Bounded — additive guidance + optional regex |
-| #69 — Architect adversarial loops | team-patterns.md (new variant), pipeline-stages.md (Stage 4 reference) | Bounded — pattern variant documentation |
-
-The Out-of-Scope section is unusually disciplined: Phase 1 detection internals excluded, adversarial loops at other stages excluded, general migration tooling excluded, unrelated plugins explicitly walled off, and net-new analytics excluded. *Four flaws, one ingot.*
-
-### Criterion 4: Target files identified — **PASS**
-
-The brief enumerates eleven concrete file paths under "Shared target files":
-
-| Target | Path | Touched By |
-|--------|------|------------|
-| Delivery-flow SKILL.md | `delivery-team/skills/delivery-flow/SKILL.md` | #73, #71, #70 |
-| Pipeline stages reference | `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | #70, #69 |
-| Team patterns reference | `delivery-team/skills/delivery-flow/references/team-patterns.md` | #70, #69 |
-| Quality gates reference | `delivery-team/skills/delivery-flow/references/quality-gates.md` | #70 |
-| Config schema reference | `delivery-team/skills/delivery-flow/references/config-schema.md` | #73 |
-| Setup wizard reference | `delivery-team/skills/delivery-flow/references/setup-wizard.md` | #73 |
-| Project types reference | `delivery-team/skills/delivery-flow/references/project-types.md` | #73 |
-| Pipeline scope hook | `delivery-team/hooks/enforce_pipeline_scope.py` | #71 |
-| Agent prompt audit hook (optional) | `delivery-team/hooks/audit_agent_prompt.py` | #70 |
-| Repo guidance | `CLAUDE.md`, `README.md` | #73 doc parity |
-| Marketplace registry | `.claude-plugin/marketplace.json` | #73 doc parity |
-
-This is sufficient for Stage 4 Architect to lay out the change graph without further discovery.
-
-### Criterion 5: The 4 issues genuinely share files and can ship coherently (not a false bundle) — **PASS**
-
-This is the load-bearing claim, and it withstands the test of the forge:
-
-- **SKILL.md** is touched by **three** of four issues (#73 routing guidance, #71 delegation prime directive, #70 dispatch rule).
-- **team-patterns.md** is touched by **two** issues (#70 dispatch rule per pattern, #69 new Isolated Adversarial Loop variant).
-- **pipeline-stages.md** is touched by **two** issues (#70 header note on `[PARALLEL]`/`[SEQUENTIAL]`, #69 Stage 4 reference).
-
-If sequenced as four separate runs, the SKILL.md anti-patterns/dispatch sections would be rewritten three times, with high merge churn and a real risk of contradictory guidance — one PR adding a delegation rule that the next PR's "one role per sub-agent" section silently contradicts. The four issues are not unrelated work glued together for convenience; they are four facets of one discipline (truthful state, delegation, isolation, iteration) ground from the same stone. **This is a true bundle, not a false one.**
+Hear me, smiths of the pipeline. I have laid the brief upon the anvil and struck it with the four hammers of the architect's Definition of Done. It rings true.
 
 ---
 
-## Architectural Notes for Stage 4 (non-blocking)
+## DoD Criteria
 
-These are matters for the forge at Architect stage, not blockers at Gate 1:
+### 1. Feasibility — PASS
 
-1. **Isolated Adversarial Loop hand-off contract.** Each loop should receive the artifact + the prior loop's *fix*, but **not** the prior loop's *findings*. The pattern doc must make this explicit, lest the next loop simply re-rank the prior loop's complaints.
+The proposed change is wholly within the realm of the achievable. DESIGN is a routing variant atop existing stages 1–4, all of which already exist at full depth and produce the very artifacts (PRD, design, architecture, ADRs) the brief enumerates. No new stage machinery, no new artifact templates, no new agents, no new hooks are required. Skipping stages 5–7 is a routing concern with precedent in DOCS_ONLY and SPIKE. The schema extension for `routing.force_type` follows the documented v2.6 protocol. Nothing here strains the forge.
 
-2. **Delegation hook scope discrimination.** `enforce_pipeline_scope.py` must distinguish "routing metadata" (allowed orchestrator writes) from "artifact content" (blocked). A path-prefix allowlist (e.g., `.delivery/state/`, `.delivery/routing/`) is the cleanest mechanism. Stage 4 should specify the exact allowlist.
+### 2. No Blockers — PASS
 
-3. **Schema version bump.** Must follow the v2.6 extension protocol in `config-schema.md`. The deprecation note for `project_type` should appear in both the schema reference and migration guidance.
+I find no impediment in the path:
 
-4. **Compound-prompt detection signature.** If `audit_agent_prompt.py` is extended for #70, the signature should look for multiple role declarations in a single agent prompt (e.g., "You are X and also Y"). Stage 4 should define the regex.
+- **Schema extension protocol** exists and is referenced (config-schema.md v2.6).
+- **Wizard concern resolved** — PR #74 already removed Q1, so no interactive prompt change is needed; only detection guidance.
+- **Retrospective hook** is correctly flagged as a compatibility surface (must fire after Architect when later stages skip), and the brief commits to verification, not modification.
+- **Documentation parity surfaces** (CLAUDE.md, README.md, marketplace.json, SKILL.md, four reference files) are explicitly enumerated.
+- **Backward compatibility** is asserted as a constraint, not deferred.
 
-5. **Dogfooding loop.** Because the bundle fixes the orchestrator running the bundle, Stage 4 should plan for at least one full re-run after merge to confirm the new discipline holds against itself.
+No upstream dependency, no missing decision, no unresolved external choice blocks Refine.
+
+### 3. Scope Bounded — PASS
+
+The boundary is drawn with the clarity of mithril wire. The brief carries both an **In Scope** file table (eight files, each with the nature of its change) and an explicit **Out of Scope** section that excludes:
+
+- New scripts/hooks/schema-generation code
+- New wizard questions
+- Routing changes to the six existing project types
+- A "DESIGN-light" variant
+- Automatic handoff into a follow-on implementation run
+- Retroactive migration
+- Net-new artifact templates
+
+Furthermore, the brief correctly calibrates effort one tier lower per the markdown-only convention and explicitly distinguishes *skip* (definitional, for DESIGN's missing stages) from *light* (forbidden conflation, per the no-skip-stages standing order). This is the discipline of a well-bounded feature.
+
+### 4. Targets Identified — PASS
+
+The targets of change are named with precision:
+
+| Target | Nature |
+|---|---|
+| `delivery-team/skills/delivery-flow/SKILL.md` | Routing matrix + detection table |
+| `delivery-team/skills/delivery-flow/references/project-types.md` | New DESIGN section |
+| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | DESIGN routing + skip-vs-light clarification |
+| `delivery-team/skills/delivery-flow/references/setup-wizard.md` | Auto-detect signals |
+| `delivery-team/skills/delivery-flow/references/config-schema.md` | Enum extension + version bump |
+| `CLAUDE.md` | Project-type list |
+| `README.md` | Project-type enumeration |
+| `.claude-plugin/marketplace.json` | Description if it enumerates types |
+
+The canonical routing matrix (full Idea/Refine/Design/Architect; skip Plan/Dev/UAT) is given inline. The user populations are named. The detection signals are seeded. Every artifact a downstream stage will need to find, the brief points to.
 
 ---
 
-## Verdict Summary
+## Architectural Notes for Refine & Design
 
-| Criterion | Result |
-|-----------|--------|
-| Technically feasible with stated constraints | **PASS** |
-| No obvious architectural blockers | **PASS** |
-| Scope bounded and achievable as one bundle | **PASS** |
-| Target files identified | **PASS** |
-| Genuinely shared files / true bundle | **PASS** |
+These are not gating concerns — they are forge notes for the next smith:
 
-*Four discipline gaps, one anvil, one hammer-stroke. The orchestrator shall be taught to delegate by an act of delegation; to isolate by an act of isolation; to iterate by an act of iteration; and to type itself truly by being typed truly. Thus is craftsmanship preserved.*
+1. **DESIGN's relationship to SPIKE** deserves a sentence in project-types.md. SPIKE is bounded *exploration* with a learning artifact; DESIGN is bounded *design production* with a delivery-ready package. Both skip implementation, but the intent and the artifact shape differ. Calling out the contrast prevents future detection collisions.
 
-**DONE**
+2. **The "ready-to-feed-a-future-run" promise** in Goal 3 should be made operationally concrete in Refine: which artifact paths and names must DESIGN produce so a follow-on FEATURE/GREENFIELD run can ingest them as input artifacts? The brief correctly defers the *handoff wiring* to a future feature, but the *output contract* should be pinned now so the package is reusable, not orphaned.
 
-```
-STATUS: DONE
-REVIEWER: Celebrimbor (Architect)
-GATE: 1 (Idea)
-CRITERIA_MET: 5/5
-```
+3. **Retrospective hook verification** should appear as an acceptance criterion in Plan, not merely a constraint. A DESIGN dogfood run that completes after Architect is the cheapest possible test of hook compatibility, and the brief already commits us to dogfooding.
+
+4. **`routing.force_type: DESIGN` precedence** vs. auto-detection signals should be confirmed consistent with how the other six types resolve conflicts. I expect no surprise here, but Design should state the precedence explicitly in pipeline-stages.md alongside the routing matrix.
+
+None of these block passage to Refine. They are stones to be set when the next ring is forged.
+
+---
+
+## Conclusion
+
+The Idea Brief is feasible, unblocked, well-bounded, and precisely targeted. It honors the standing orders (light != skip; markdown calibration; route through the pipeline; documentation parity) and arrives at Refine without owed work. The road is open.
+
+*Celebrimbor sets his mark upon the work.*
+
+— Celebrimbor, Architect of the delivery-flow

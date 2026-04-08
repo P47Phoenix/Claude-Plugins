@@ -179,6 +179,8 @@ SUMMARY: {one sentence, max 200 characters}
 
 ## Stage 1: Idea
 
+> **DESIGN**: Runs full depth for DESIGN.
+
 ### Purpose
 Capture and structure the raw idea into a brief that downstream stages can work from.
 
@@ -232,6 +234,8 @@ Capture and structure the raw idea into a brief that downstream stages can work 
 
 ## Stage 2: Refine
 
+> **DESIGN**: Runs full depth for DESIGN.
+
 ### Purpose
 Transform the idea brief into a complete PRD with acceptance criteria, success metrics, and validated requirements.
 
@@ -274,6 +278,8 @@ Transform the idea brief into a complete PRD with acceptance criteria, success m
 ---
 
 ## Stage 3: Design
+
+> **DESIGN**: Runs full depth for DESIGN.
 
 ### Purpose
 Create user experience design: flows, wireframes, interaction patterns, and accessibility considerations.
@@ -325,6 +331,8 @@ Create user experience design: flows, wireframes, interaction patterns, and acce
 ---
 
 ## Stage 4: Architect
+
+> **DESIGN**: Runs full depth for DESIGN. This is the terminal stage for DESIGN runs — Plan/Dev/UAT are skipped.
 
 ### Purpose
 Create technical architecture: system design, C4 models, ADRs, technology decisions.
@@ -406,6 +414,8 @@ Create technical architecture: system design, C4 models, ADRs, technology decisi
 
 ## Stage 5: Plan
 
+> **DESIGN**: Skipped for DESIGN.
+
 ### Purpose
 Create sprint plan with stories, estimates, test strategy, and deployment approach.
 
@@ -477,6 +487,8 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 ---
 
 ## Stage 6: Development
+
+> **DESIGN**: Skipped for DESIGN.
 
 ### Purpose
 Implement the code, write tests, and produce development documentation.
@@ -563,6 +575,8 @@ Each session uses role-specific checklists (PO, QA, Dev, Architect/UX) and cross
 ---
 
 ## Stage 7: UAT
+
+> **DESIGN**: Skipped for DESIGN.
 
 ### Purpose
 Execute user acceptance testing, prepare release artifacts, and get final approval.

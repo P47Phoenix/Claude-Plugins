@@ -210,6 +210,7 @@ Auto-detect from the user's input using the following signal table:
 | GREENFIELD | "new project", "from scratch", "brand new", "start fresh", "bootstrap" | No existing codebase referenced |
 | FEATURE | "add feature", "enhance", "extend", "new capability", "integrate" | References existing system or codebase |
 | BUG_FIX | "fix", "bug", "broken", "error", "crash", "regression", "not working" | Error/defect language dominant |
+| DESIGN | "design session", "design-only", "architecture proposal", "no code yet", "exploring design", "design workshop" | Design work without implementation |
 | GAME_DEV | "game", "Godot", "Unity", "gameplay", "NPC", "HUD", "GDScript" | MODIFIER -- always combines with another type |
 | SPIKE | "spike", "POC", "prototype", "investigate", "feasibility", "explore" | Time-boxed, throwaway output |
 | DOCS_ONLY | "documentation", "docs only", "write docs", "user guide", "runbook" | No code changes described |
@@ -277,15 +278,15 @@ Based on the detected project type, determine which stages execute and at what d
 
 ### Stage Routing Matrix
 
-| Stage | GREENFIELD | FEATURE | BUG_FIX | GAME_DEV+ | SPIKE | DOCS_ONLY |
-|-------|-----------|---------|---------|-----------|-------|-----------|
-| 1. Idea | full | full | full | full | full | full |
-| 2. Refine | full | full | skip | full | skip | skip |
-| 3. Design | full | full | skip | full+game | skip | skip |
-| 4. Architect | full | light-or-skip | skip | full+game | full | skip |
-| 5. Plan | full | full | light | full | skip | light |
-| 6. Dev | full | full | full | full+game | full | full |
-| 7. UAT | full | full | full | full | skip | full |
+| Stage | GREENFIELD | FEATURE | BUG_FIX | DESIGN | GAME_DEV+ | SPIKE | DOCS_ONLY |
+|-------|-----------|---------|---------|--------|-----------|-------|-----------|
+| 1. Idea | full | full | full | full | full | full | full |
+| 2. Refine | full | full | skip | full | full | skip | skip |
+| 3. Design | full | full | skip | full | full+game | skip | skip |
+| 4. Architect | full | light-or-skip | skip | full | full+game | full | skip |
+| 5. Plan | full | full | light | skip | full | skip | light |
+| 6. Dev | full | full | full | skip | full+game | full | full |
+| 7. UAT | full | full | full | skip | full | skip | full |
 
 ### Depth Definitions
 

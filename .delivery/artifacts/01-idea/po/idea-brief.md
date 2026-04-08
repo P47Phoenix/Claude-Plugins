@@ -1,75 +1,100 @@
-# Idea Brief: Orchestration Discipline Bundle
+# Idea Brief: DESIGN Project Type for delivery-flow
 
-**Project Type**: FEATURE (bundled)
-**Date**: 2026-04-05
-**Source**: GitHub Issues #73, #71, #70, #69
-**PO**: Gandalf
+*"All we have to decide is what to do with the time that is given us — and sometimes, that decision is to think before we build."* — Gandalf
 
-*"A pipeline is never late, nor early. It delegates precisely when it means to."*
-
-## Problem Statement
-
-The delivery-flow orchestrator has accumulated four discipline gaps that, taken together, allow it to silently corrupt its own pipeline. A frozen `project_type` in config lies to every run that isn't the one type setup happened to guess. The orchestrator grants itself "simple enough" exemptions and writes artifacts directly instead of delegating. Review patterns quietly collapse multiple reviewer roles into one sub-agent, defeating context isolation. And the Architect stage runs only a single adversarial pass, anchoring on the first issues found while deeper ones slip through. Each is small alone; together they erode the trust users place in the pipeline's verdicts.
-
-These four issues all live in the same handful of files. Sequencing them as separate runs would force the same SKILL.md and reference docs to be edited three or four times, with merge churn and contradictory edits. They want to ship as one coherent act of remediation.
-
-## Target Users
-
-- **delivery-flow operators** running pipelines who currently get wrong-typed routing and invisible orchestrator shortcuts.
-- **Plugin contributors** who rely on context isolation and adversarial review to keep agent outputs honest.
-- **Future PO and Architect agents** in this repo, who need the orchestrator to be a delegator, not a doer.
-
-## Goals
-
-1. **Truthful project typing per run.** Phase 1 detection runs every pipeline invocation from the user's actual request; no frozen value lies in config.
-2. **Delegation as prime directive.** The orchestrator never writes artifacts or source files directly during a pipeline run, regardless of perceived simplicity. Hooks enforce this, not just prose.
-3. **One role, one sub-agent.** Every review pattern dispatches each reviewer role to its own isolated sub-agent. Compound multi-role prompts are detectable and discouraged.
-4. **Iterative adversarial review at Architect.** Each adversarial loop runs in a fresh sub-agent with no knowledge of prior loops, repeating until clean or `max_self_correction` is reached.
-5. **Coherent edits.** All four fixes ship in one bundle so the shared files (SKILL.md, pipeline-stages.md, team-patterns.md, quality-gates.md) are touched once with internally consistent guidance.
-
-## Constraints
-
-- **Backwards compatibility for config.** Removing `project_type` must not break existing `.delivery/config.yml` files; older configs should be tolerated (key ignored, deprecation noted) and the schema version bumped.
-- **No new external dependencies.** Hook updates remain pure Python stdlib.
-- **Hook performance budget.** `enforce_pipeline_scope.py` and `audit_agent_prompt.py` must stay fast enough not to noticeably slow tool calls.
-- **Documentation parity.** CLAUDE.md, README.md, marketplace.json, and `references/config-schema.md` must reflect the new schema version and behavior before merge.
-- **Self-consistency / dogfooding.** This bundle itself must run through delivery-flow; the orchestrator must demonstrate the very discipline it is being taught.
-- **Plugin-dev skills required.** Any SKILL.md or hook edits load `plugin-dev:skill-development` and `plugin-dev:hook-development` first.
-
-## Initial Scope
-
-Four GitHub issues, ordered by WSJF, all bundled as one FEATURE pipeline run:
-
-1. **#73 — Remove `project_type` from config (P0, WSJF 25.0).** Strip `project_type` from `.delivery/config.yml` and the setup wizard (drop Q1). Phase 1 detection runs every pipeline run from the user's current request. Bump schema version, document migration, update `config-schema.md`, `setup-wizard.md`, `project-types.md`, and SKILL.md routing guidance.
-
-2. **#71 — Orchestrator bypasses delegation when "simple" (P0, WSJF 14.5).** Strengthen the delegation prime directive in SKILL.md with explicit anti-patterns. Update Step 4.5 to reject "simple" as a justification. Add a "Common Orchestrator Anti-Patterns" section. Extend `enforce_pipeline_scope.py` to block orchestrator self-writes to `.delivery/artifacts/` (except routing metadata) and to source files during pipeline runs.
-
-3. **#70 — Enforce one-sub-agent-per-reviewer across all patterns (P0, WSJF 14.0).** Add a prominent "One Role = One Sub-Agent" rule to SKILL.md. Reinforce in `team-patterns.md` (every pattern leads with the dispatch rule), `quality-gates.md` (DoD protocol), and `pipeline-stages.md` (header note on `[PARALLEL]`/`[SEQUENTIAL]`). Optionally extend `audit_agent_prompt.py` to detect compound multi-role prompts.
-
-4. **#69 — Architect adversarial loops with isolated context (P1, WSJF 11.0).** Add adversarial **loops** at the Architect stage. Each loop spawns a separate sub-agent that does not know what prior loops fixed. Run until either `max_self_correction` (default 3) is reached OR a loop returns zero issues. Document as the "Isolated Adversarial Loop" variant in `team-patterns.md` and reference from `pipeline-stages.md` Stage 4.
-
-**Shared target files:**
-- `delivery-team/skills/delivery-flow/SKILL.md`
-- `delivery-team/skills/delivery-flow/references/pipeline-stages.md`
-- `delivery-team/skills/delivery-flow/references/team-patterns.md`
-- `delivery-team/skills/delivery-flow/references/quality-gates.md`
-- `delivery-team/skills/delivery-flow/references/config-schema.md`
-- `delivery-team/skills/delivery-flow/references/setup-wizard.md`
-- `delivery-team/skills/delivery-flow/references/project-types.md`
-- `delivery-team/hooks/enforce_pipeline_scope.py`
-- `delivery-team/hooks/audit_agent_prompt.py` (optional)
-- `CLAUDE.md`, `README.md`, `.claude-plugin/marketplace.json` (doc parity)
-
-## Out of Scope
-
-- Rewriting Phase 1 project-type detection logic itself (only its invocation cadence changes).
-- Introducing new collaboration patterns beyond the "Isolated Adversarial Loop" variant.
-- Adversarial loops at stages other than Architect (Refine, Design, Plan loops are a separate future discussion).
-- A general migration tool for old `.delivery/config.yml` files beyond tolerant parsing and a deprecation note.
-- Refactoring hooks unrelated to delegation enforcement or prompt auditing.
-- Net-new analytics, telemetry, or dashboard changes.
-- Any non-delivery-flow plugin (`developer/`, `architect/`, `quality/`, etc.) — those are downstream consumers, not the subject of this bundle.
+**Type:** FEATURE
+**Source:** GitHub Issue #72
+**Author:** Product Owner (Gandalf)
+**Date:** 2026-04-05
 
 ---
 
-*All we have to decide is what to fix with the discipline that is given to us. And I decide we fix the orchestrator's shortcuts before we trust it with anything larger.*
+## Problem
+
+The delivery-flow pipeline carries every project type — GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY — straight through the mountain pass to implementation. There is no road for the fellowship that wishes only to *plan the journey*: to gather requirements, design the system, and architect the solution without yet drawing a sword of code.
+
+Today, a team that wants a pure design engagement must either:
+
+1. Run a full pipeline and manually abandon it after Architect (wasteful, leaves the pipeline state mid-stride and the retrospective hook unhappy), or
+2. Run DOCS_ONLY (which skips the very design and architecture work they need), or
+3. Work outside the pipeline entirely (violating the cardinal rule that all work routes through delivery-flow).
+
+None of these are honest paths. The pipeline lacks a first-class mode for *design-only* engagements, and so design work either gets contaminated by half-built implementation pressure or escapes pipeline governance altogether.
+
+## Target Users
+
+- **Solution Architects** preparing a design package for a future implementation team or quarter.
+- **Product Owners & Tech Leads** running discovery / pre-funding engagements where the deliverable is a coherent design, not running code.
+- **Enterprise / Platform teams** producing reference architectures, ADRs, and PRDs that downstream teams will later implement.
+- **Consultants and internal advisors** delivering design artifacts as the contractual outcome.
+- **Plugin maintainers (us)** who want to dogfood design-only work through the same pipeline as everything else.
+
+## Goals
+
+1. **First-class DESIGN project type** registered alongside the existing six, with its own detection signals and routing.
+2. **Stage routing** that runs Idea, Refine, Design, and Architect at *full* depth and *skips* Plan, Development, and UAT — producing a complete design package without implementation pressure.
+3. **Coherent output package** comprising PRD, design artifacts, architecture documentation, and ADRs — ready to be handed to a future pipeline run as input artifacts.
+4. **Documentation parity** across SKILL.md, references, CLAUDE.md, README.md, and marketplace.json so that the new type is discoverable and consistently described everywhere it appears.
+5. **Configurable override** via `routing.force_type: DESIGN` in `.delivery/config.yml`, validated by the config schema.
+6. **No regressions** to the six existing project types or their routing.
+
+## Constraints
+
+- **Light != skip:** This brief uses *skip* deliberately for Plan/Dev/UAT because DESIGN is definitionally a design-only mode. This is not "light Plan" — it is "no Plan." That distinction must be clear in pipeline-stages.md so it does not bleed into other types where light stages MUST execute.
+- **Markdown-only edits calibrate one tier lower:** All file changes are documentation/configuration. No code, no scripts, no schema generators. Effort must be sized accordingly.
+- **All work routes through the pipeline:** This feature itself must be delivered via delivery-flow, dogfooding the very mechanism it extends.
+- **Documentation parity is non-negotiable:** CLAUDE.md, README.md, and marketplace.json must reflect the change in the same PR.
+- **Schema versioning:** `config-schema.md` is the source of truth (currently v2.6). Adding DESIGN as a valid `routing.force_type` value follows the documented extension protocol.
+- **Wizard:** PR #74 removed Q1, so no wizard *question* needs to be added. Detection guidance in setup-wizard.md must still be updated so the wizard's auto-detection knows the signals for DESIGN.
+- **Backward compatibility:** Existing configs without DESIGN must continue to work unchanged.
+- **Retrospective hook compatibility:** The Stop hook that enforces retrospectives must still fire correctly when a DESIGN run completes after Architect.
+
+## Initial Scope
+
+The following files are in scope for this feature:
+
+| File | Change |
+|---|---|
+| `delivery-team/skills/delivery-flow/SKILL.md` | Add DESIGN to routing matrix and project-type detection table |
+| `delivery-team/skills/delivery-flow/references/project-types.md` | Add DESIGN section with detection signals, examples, and rationale |
+| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | Document DESIGN-specific routing (full Idea/Refine/Design/Architect; skip Plan/Dev/UAT) and clarify that *skip* here is intentional |
+| `delivery-team/skills/delivery-flow/references/setup-wizard.md` | Add DESIGN detection guidance for the wizard's auto-detect logic |
+| `delivery-team/skills/delivery-flow/references/config-schema.md` | Add DESIGN as a valid `routing.force_type` enum value; bump schema version per extension protocol |
+| `CLAUDE.md` | Update the project-type list in the delivery-flow architecture section |
+| `README.md` | Update any project-type enumeration so DESIGN appears alongside the others |
+| `.claude-plugin/marketplace.json` | Update delivery-flow description if it enumerates project types |
+
+**Routing matrix for DESIGN (the canonical table this feature ships):**
+
+| Stage | Depth |
+|---|---|
+| 1. Idea | full |
+| 2. Refine | full |
+| 3. Design | full |
+| 4. Architect | full |
+| 5. Plan | skip |
+| 6. Dev | skip |
+| 7. UAT | skip |
+
+**Detection signals (initial draft, to be refined in Stage 2):**
+
+- User language: "design only," "no implementation," "design package," "architecture spike that produces docs," "pre-funding design," "reference architecture," "design the system but don't build it yet."
+- Absence of an executable target, repo, or sprint commitment.
+- Explicit handoff intent: "to be implemented later by team X."
+- Deliverable framed as PRD + ADRs + architecture diagrams rather than working software.
+
+## Out of Scope
+
+- **New scripts, hooks, or schema-generation code.** This is a documentation and configuration change.
+- **A new wizard question.** PR #74 removed Q1; we update detection guidance only, not interactive prompts.
+- **Changes to other project types' routing.** GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, and DOCS_ONLY are untouched.
+- **A "DESIGN-light" variant.** One depth profile for DESIGN; future variants can be proposed separately.
+- **Automatic handoff into a follow-on implementation run.** The output is *ready* to feed a future run; wiring that handoff is a separate feature.
+- **Retroactive migration of existing in-flight pipelines** to DESIGN.
+- **Changes to the retrospective hook's behavior** beyond verifying it still fires correctly after Architect when later stages are skipped.
+- **Net-new artifacts or templates** for the design package — DESIGN reuses existing PRD, design, architecture, and ADR artifact formats produced by stages 1–4.
+
+---
+
+*Speak, friends, and proceed. The road to Refine is open.*
+— Gandalf, Product Owner

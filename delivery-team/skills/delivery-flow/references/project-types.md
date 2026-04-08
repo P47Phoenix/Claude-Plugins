@@ -42,6 +42,14 @@ Classify every user request into one of the following project types before pipel
 - **Confidence boosters**: Error messages, stack traces, "it used to work", reproduction steps provided, specific version references, "since the last update"
 - **Confidence reducers**: "new feature", "enhancement", no description of incorrect behavior
 
+### DESIGN
+
+- **Signals**: "design session", "design-only", "architecture proposal", "no code yet", "exploring design", "design workshop", "produce design deliverable"
+- **Confidence boosters**: User explicitly says "no code", references a "design package" or "design deliverable" as the output, wants ADRs / architecture / wireframes without implementation, frames the engagement as a workshop or proposal
+- **Confidence reducers**: Mentions tests, deployment, release, commits, "ship it", or any implementation verbs
+- **Disambiguation from SPIKE**: SPIKE is a throwaway, time-boxed investigation whose output is a learning or recommendation that may be discarded. DESIGN is a committed design intent — the design package itself IS the deliverable and is expected to be honored by future implementation work.
+- **Disambiguation from GREENFIELD**: GREENFIELD runs all the way through Plan/Dev/UAT to produce working code. DESIGN intentionally stops after Architect — no Plan, no Dev, no UAT. If the user wants the design AND the implementation in the same engagement, that is GREENFIELD (or FEATURE), not DESIGN.
+
 ### GAME_DEV
 
 - **Signals**: "game", "Godot", "Unity", "Unreal", "gameplay", "level", "HUD", "multiplayer", "NPC", "player controller", "sprite", "tilemap", "game loop", "physics body", "collision", "scene tree", "GDScript", "C# MonoBehaviour"
@@ -81,15 +89,15 @@ Classify every user request into one of the following project types before pipel
 
 Each cell defines the execution depth for that stage given the project type.
 
-| Stage | GREENFIELD | FEATURE | BUG_FIX | GAME_DEV+ | SPIKE | DOCS_ONLY |
-|-------|-----------|---------|---------|-----------|-------|-----------|
-| 1. Idea | full | full | full | full | full | full |
-| 2. Refine | full | full | skip | full | skip | skip |
-| 3. Design | full | full | skip | full+game | skip | skip |
-| 4. Architect | full | light-or-skip | skip | full+game | full | skip |
-| 5. Plan | full | full | light | full | skip | light |
-| 6. Dev | full | full | full | full+game | full | full |
-| 7. UAT | full | full | full | full | skip | full |
+| Stage | GREENFIELD | FEATURE | BUG_FIX | DESIGN | GAME_DEV+ | SPIKE | DOCS_ONLY |
+|-------|-----------|---------|---------|--------|-----------|-------|-----------|
+| 1. Idea | full | full | full | full | full | full | full |
+| 2. Refine | full | full | skip | full | full | skip | skip |
+| 3. Design | full | full | skip | full | full+game | skip | skip |
+| 4. Architect | full | light-or-skip | skip | full | full+game | full | skip |
+| 5. Plan | full | full | light | skip | full | skip | light |
+| 6. Dev | full | full | full | skip | full+game | full | full |
+| 7. UAT | full | full | full | skip | full | skip | full |
 
 ---
 

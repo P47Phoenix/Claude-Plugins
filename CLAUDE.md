@@ -89,7 +89,7 @@ No build step, linting config, or test runner is configured.
 
 **Delivery-flow pipeline architecture**:
 - 7 stages: Idea → Refine → Design → Architect → Plan → Development → UAT
-- Auto-detect project type (GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY) with stage routing
+- Auto-detect project type (GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV, SPIKE, DOCS_ONLY) with stage routing (DESIGN terminates after Architect for design-only engagements)
 - Team DoD validation (ALL validators must say DONE)
 - 6 collaboration patterns: evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus
 - Self-learning memory in `.delivery/memory/` (tiered chunked retrieval)
