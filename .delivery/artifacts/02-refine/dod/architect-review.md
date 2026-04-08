@@ -1,80 +1,92 @@
-# Architect DoD Review -- PRD: Presentation Skill v1.1 Enhancement Batch
+# Architect DoD Review — Stage 2 PRD (Orchestration Discipline Bundle)
 
-**Reviewer**: Architect (Celebrimbor)
-**Date**: 2026-04-04
-**Artifact**: `.delivery/artifacts/02-refine/po/prd.md` (v1.0)
-**Status**: DONE
-
----
-
-> *"I perceive four works of craft before me -- each well-forged in purpose, each sound in design. The rings of power were built in sequence; so too shall these enhancements be."*
-
-## Gate 2 Architect Criteria
-
-### 1. Technically Feasible, No Blockers
-
-- [x] **Technically feasible, no blockers** [blocking]
-
-| Feasibility Area | Assessment |
-|-----------------|------------|
-| Group A: FR-01 through FR-06 (5 Deferred Types) | **Feasible.** The existing skill already supports 4 types with keyword detection, pipeline auto-detection, content gate rules, slide sequencing, and narrative framework mapping. Each new type follows the identical pattern -- a new row in detection tables, a new content gate rule set, a new narrative framework, and a new slide sequence. The SKILL.md, `narrative-patterns.md`, and `slide-structure.md` files accept additive entries. No structural changes to the 6-step flow are required. The Retrospective Summary sensitivity filter (FR-05.4) is a conditional rule on audience mode -- straightforward branching logic in the Composer step. |
-| Group B: FR-07 through FR-11 (PPTX Output) | **Feasible.** `python-pptx` is a mature, pure-Python library (PyPI, MIT licensed, widely used). Slide layout mapping (FR-08) uses `python-pptx`'s `slide_layouts` collection with name-based matching and index fallback -- a documented pattern. Template consumption (FR-09) is native to `python-pptx` via `Presentation(template_path)`. The script parses a structured markdown file (composed-draft.md) using regex or section parsing -- bounded complexity. Font and color configuration (FR-11) maps directly to `python-pptx` font and color API. The script lives in `scripts/` within the existing plugin directory -- no structural novelty. |
-| Group C: FR-12 through FR-15 (90-Second Fallback) | **Feasible.** Progress indicators (FR-12) are output strings at step boundaries -- already partially implemented as `[N/6]` prefixes. Light mode (FR-13) reduces sub-agent dispatch count, which is a conditional filter on the existing parallel dispatch logic in Step 3. Per-type thresholds (FR-14) are config lookups. Degradation behavior (FR-15) is conditional logic at 75% and 100% of threshold -- no timer infrastructure needed since each step is sequential and elapsed time is trackable within the flow. |
-| Group D: FR-16 through FR-20 (Narrative Intelligence) | **Feasible.** Emphasis selection (FR-16) adds a ranking pass before slide ordering in Step 4 -- the Composer already reads all draft files and assembles them. Information cutting (FR-17) adds an evaluation pass that flags low-value slides -- implementable as rules in `narrative-patterns.md`. Audience framing (FR-18) extends the existing tone normalization with structural reframing rules per audience mode. Narrative tension (FR-19) adds a climax-positioning rule for 6+ slide presentations. Review Gate criteria expansion (FR-20) adds new evaluation dimensions to the TW and UX reviewer prompts. All changes are additive to the Compose step. |
-| Cross-cutting: Config Schema Extension | **Feasible.** 8 new keys in the `presentation.*` namespace. The config-schema.md v2.3 extension protocol exists and has been exercised before. All keys are optional with defaults. A version bump to the config schema is required but routine. |
-| Cross-cutting: Plugin Structure Compliance | **Feasible.** All changes are within `delivery-team/skills/presentation/`. New files: one Python script in `scripts/`, extended content in `references/narrative-patterns.md` and `references/slide-structure.md`, and updated SKILL.md. No new top-level directories. |
-
-**No technical blockers identified.** The enhancement batch is entirely additive to an existing, stable skill. Group A extends lookup tables and reference documentation. Group B adds an optional output path via a mature third-party library. Group C adds conditional logic around existing step boundaries. Group D extends the Compose step with rule-based passes that operate on the same data the Composer already reads.
-
-### 2. NFRs Realistic
-
-- [x] **NFRs realistic** [blocking]
-
-| NFR | Assessment |
-|-----|-----------|
-| NFR-01 (Backward compatibility) | **Realistic.** All changes are additive -- new type entries in detection tables, new config keys with defaults, new optional output format. The 6-step flow structure is unchanged. Existing types, formats, and config keys are not modified. |
-| NFR-02 (Generation speed -- light mode, <60s) | **Realistic.** Light mode dispatches 3 or fewer sub-agents in Step 3 and a single reviewer in Step 5. Reducing from 5 parallel agents + 2 reviewers to 3 + 1 is a meaningful reduction. Sub-agent dispatch is the primary time cost. 60 seconds is achievable for simple types. |
-| NFR-03 (Generation speed -- full mode, <120s) | **Realistic with caveat.** Complex types with 5 contributing roles and 10+ slides require 5 parallel sub-agent dispatches + 2 reviewer dispatches + Compose step. 120 seconds is tight but achievable if sub-agents run in parallel as designed. The per-type threshold override (FR-14) provides an escape valve for types that consistently exceed 120s. |
-| NFR-04 (Single new dependency) | **Realistic.** `python-pptx` is the sole addition. It is optional -- all core functionality works without it. The fallback behavior (FR-10.4) is specified. No transitive dependency concerns for a pure-Python library. |
-| NFR-05 (Plugin structure compliance) | **Realistic.** Verified: `delivery-team/skills/presentation/` exists with the expected structure (`SKILL.md`, `references/` with 4 files). Adding `scripts/` is a standard pattern used elsewhere in the repo. |
-| NFR-06 (Config schema extension) | **Realistic.** The extension protocol exists in config-schema.md v2.3. Eight optional keys with defaults is a modest extension. Schema generation and validation scripts exist at `delivery-team/scripts/generate-schema.py` and `validate-config.py`. |
-| NFR-07 (Dogfooding validation) | **Realistic.** Each new type has explicit acceptance criteria that require end-to-end execution. The pipeline itself can produce artifacts to feed each presentation type. This is a process requirement, not a technical one. |
-| NFR-08 (PPTX output quality) | **Realistic.** The "good enough to edit" bar is appropriate for programmatic generation. `python-pptx` produces structurally correct files. The disclaimer (section 12) sets expectations correctly. Mermaid-to-text fallback (FR-08.7) avoids an impossible rendering problem. |
-
-**All 8 NFRs are achievable within the stated scope.** NFR-03 carries a minor risk for the most complex types, but the per-type threshold override mitigates this adequately.
+**Reviewer**: Celebrimbor, Architect
+**Artifact**: `.delivery/artifacts/02-refine/po/prd.md`
+**Stage**: 2 — Refine
+**Verdict**: **DONE**
 
 ---
 
-## Open Questions Assessment (Architect-Relevant)
+## Preface
 
-| OQ | Pre-Assessment | Feasibility Risk |
-|----|---------------|-----------------|
-| OQ-1 (Structured intermediate format vs regex parsing) | Both approaches are feasible. Structured intermediate (JSON/YAML) is more robust and simplifies the PPTX script but adds an artifact to the Compose step. Regex parsing of composed-draft.md is simpler but brittle against formatting variations. **Recommendation**: Structured intermediate -- the composed-draft.md format is already well-defined with consistent heading patterns; a parallel JSON output is low cost. Solvable in Design. | None |
-| OQ-2 (Narrative tension vs user-specified order) | Solvable with precedence rule: explicit user outline overrides auto-reorder. The PRD already includes FR-16.3 (`"no reorder"` command) and FR-16.4 (`narrative_reorder: false` config). These provide sufficient escape hatches. Design should clarify default precedence. | None |
-| OQ-3 (Type-specific vs universal emphasis/cutting rules) | Both approaches are feasible. Type-specific rules are more accurate but add reference file complexity. **Recommendation**: Start with universal rules, add type-specific overrides where dogfooding reveals inadequacy. Solvable in Design. | None |
-| OQ-4 (Minimum slide count for light mode) | This is a threshold question, not a feasibility question. The PRD already gates light mode on "3 or fewer contributing roles" (FR-13.1), which is type-driven, not slide-driven. Slide count is a secondary signal. Solvable in Architect stage. | None |
-| OQ-5 (Speaker notes in PPTX) | `python-pptx` supports speaker notes via `slide.notes_slide.notes_text_frame`. The existing skill supports speaker notes as optional. Carrying this through to PPTX is trivial. Solvable in Design. | None |
-
-All five open questions are tractable with zero feasibility risk. None require changes to the PRD scope.
+By the light of the forge, I have examined the work of Gandalf, PO, and weighed it upon the anvil of architectural feasibility. I speak now as one who has shaped rings and reckoned their consequences: the design herein is sound, the materials at hand sufficient, and no hidden flaw threatens the binding.
 
 ---
 
-## Architectural Observations
+## 1. Technical Feasibility
 
-1. **Delivery sequence is sound.** Group A first (unblocks type definitions), Group D second (narrative rules apply to all types), Group C third (thresholds need type definitions), Group B last (output script consumes composed artifacts from all types). The noted parallelism between A/B and C/D after A completes is valid.
+| Concern | Assessment |
+|---|---|
+| Schema bump v2.6 → v2.7 with tolerant legacy parsing | **Feasible.** YAML reader changes are localized; tolerant ignore is a well-trodden pattern. NFR-03 is achievable without breaking existing repos. |
+| `routing.force_type` namespaced override | **Feasible and prudent.** Namespacing under `routing.` avoids re-creating the v2.6 footgun and is discoverable. |
+| Phase 1 detection per-invocation, written to `state.md` only | **Feasible.** Existing detection logic is reused (per Out-of-Scope §6); only invocation cadence shifts. |
+| `enforce_pipeline_scope.py` deny on orchestrator self-writes | **Feasible** with the layered origin detection specified in FR-09. Stdlib-only constraint (NFR-02) is honored. |
+| Bash-redirection coverage | **Feasible.** Pattern matching against the command string is tractable; the enumerated patterns (`>`, `>>`, `tee`, `cat <<`, `cat >`, `dd of=`, `cp`, `mv`) cover the realistic bypass surface. |
+| Activation gating on `schema_version >= 2.7` and `pipeline.enforce_self_write_block` | **Feasible and necessary.** Resolves R7 cleanly and prevents the dogfood paradox. |
+| Compound-role prompt detection (FR-12) | **Feasible but brittle**, hence rightly marked MAY. Architect concurs with deferral authority. |
+| Isolated Adversarial Loop with two-clean / no-new-classes / hard-cap convergence | **Feasible.** The fixed issue-class taxonomy is small and stable; reviewer sub-agents can tag deterministically. |
 
-2. **The Composer's role expansion is the key architectural concern.** Groups C and D both add logic to Step 4 (Compose). The Composer currently handles: reference loading, narrative arc, opening/closing slides, tone normalization, density enforcement, transitions, format application, citations, and speaker notes. Adding emphasis ranking, information cutting, audience framing, and narrative tension is a meaningful expansion. The SKILL.md instructions will need clear ordering of these new passes to avoid conflicts (e.g., cutting a slide that was positioned as the climax). Design should define a Compose sub-step ordering.
+No FR requires net-new infrastructure, no new dependencies, no harness changes outside documented extension points. All work lives in files the team already owns.
 
-3. **The sensitivity filter for Retrospective Summary (FR-05.4) is a content transformation, not just a formatting rule.** It anonymizes and generalizes individual feedback. This is qualitatively different from tone normalization. Design should treat this as a distinct Compose sub-step with clear transformation rules, not embed it in general tone normalization.
+---
+
+## 2. Obvious Blockers — None Found
+
+I searched for the usual ill-omens and found none:
+
+- **No circular dependencies.** FR-01..FR-05 (config) are independent of FR-13..FR-15 (Architect loops). FR-06..FR-09 (delegation) depend only on the schema bump for the activation flag, which is sequenced correctly.
+- **No harness assumptions that cannot be validated.** OQ-1 (env var injection point for `DELIVERY_FLOW_AGENT_CONTEXT`) is correctly routed to me at Stage 4 with a soft-deny fallback already specified — so even an adverse Architect finding cannot block the bundle.
+- **No contradiction with `CLAUDE.md` conventions.** NFR-07 explicitly invokes `plugin-dev:skill-development` and `plugin-dev:hook-development`, matching the project's stated rule.
+- **No silent breakage of cross-plugin consumers.** R8 acknowledges section-anchor risk in `SKILL.md` and routes a grep check to Plan stage.
+- **Dogfood paradox resolved.** R7 + the activation gating in FR-09 mean this very pipeline run is *not* blocked by the hook it is introducing. Without that gating I would have raised a hard objection.
+
+---
+
+## 3. Architecture Implications — Documented
+
+The PRD surfaces every architectural decision a downstream Design/Architect stage must make:
+
+1. **Origin attribution layer** (FR-09, OQ-1): The layered strategy (env var → transcript metadata → soft-deny) is the correct shape. Architect at Stage 4 must validate the env var injection point exists in the orchestrator's sub-agent dispatch path; if not, that becomes a small adjacent change rather than a blocker.
+2. **Allowlist centralization** (FR-09): Single constant in the hook module — correctly identified as drift-prevention. I would have demanded this; it is already present.
+3. **Convergence semantics** (FR-13): Two-clean OR no-new-classes OR hard-cap is mathematically defensible. A single clean pass under fresh-context review proves nothing, and the PRD names this explicitly. The issue-class taxonomy (`coupling`, `security`, `data-integrity`, `naming`, `testability`, `performance`, `docs`) is small enough to be stable and large enough to be expressive.
+4. **Schema migration model**: Tolerant ignore + deprecation log line is the correct lightweight migration. No migration tool is in scope (correctly out-of-scope §6).
+5. **Activation flag default asymmetry**: `enforce_self_write_block: true` for fresh v2.7 configs, `false` for tolerantly-parsed v2.6 configs. This is the correct safety posture.
+6. **Hook coverage gaps documented** (FR-09 known-gaps): MCP-routed writes, `git checkout`/`git apply` materializations, and sub-process inheritance are explicitly named. Honest scoping; architecturally responsible.
+
+---
+
+## 4. DoD Criteria Checklist (Architect Lens)
+
+- [x] Technical feasibility confirmed for all 16 FRs and 8 NFRs.
+- [x] No obvious blockers; risks are enumerated with mitigations (R1–R8).
+- [x] Architecture implications documented and routed to the correct downstream stages via OQ-1..OQ-7.
+- [x] No new dependencies introduced (NFR-02 honored).
+- [x] Backwards compatibility addressed (NFR-03, FR-02).
+- [x] Performance budget stated and measurable (NFR-01: ≤50ms p95).
+- [x] Failure modes preserve user pipelines (NFR-05, soft-deny fallback).
+- [x] Cross-cutting doc parity made a DoD validator (NFR-04).
+- [x] Self-consistency / dogfood requirement is acknowledged and architecturally survivable.
+
+---
+
+## 5. Forge-Notes for Stage 4 (Architect)
+
+When this PRD reaches my own Architect stage, I will need to:
+
+1. Confirm the exact dispatch site where `DELIVERY_FLOW_AGENT_CONTEXT` can be injected, and whether the harness propagates env vars to sub-agent tool calls reliably across versions.
+2. Specify the transcript-metadata fallback shape concretely (what field, what depth heuristic).
+3. Author the Isolated Adversarial Loop ADR with the issue-class taxonomy frozen.
+4. Run my own stage under that very pattern — at least two loops, per OQ-5, to prove the protocol works on its own birth.
+
+These are notes for future me, not gaps in the PRD.
 
 ---
 
 ## Verdict
 
-**DONE.** The PRD for Presentation Skill v1.1 is technically feasible with zero blockers across all four groups (20 functional requirements). All 8 NFRs are realistic and achievable. The existing skill structure (`SKILL.md`, `references/`, and the 6-step flow) accommodates every proposed enhancement through additive changes. The sole new dependency (`python-pptx`) is mature, optional, and well-scoped. All 5 open questions are tractable with no feasibility risk. Three architectural observations are noted for the Design and Architect stages -- none are blockers.
+The PRD is technically sound, free of blockers, and faithfully documents the architectural implications it raises. It is fit to pass from Refine into Design.
 
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/02-refine/dod/architect-review.md
-SUMMARY: Gate 2 DONE. All 20 FRs feasible (additive to existing skill). 8 NFRs realistic. python-pptx sole dependency, optional. 5 OQs tractable. 3 observations for Design.
-```
+**STATUS: DONE**
+
+— Celebrimbor, Architect of the Second Age
+*"A ring is only as honest as the hand that forges it. So too with a pipeline."*

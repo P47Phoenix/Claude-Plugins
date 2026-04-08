@@ -44,6 +44,55 @@ FINDINGS: [if NOT_DONE: bullet list of specific failures]
 
 DoD validators run in PARALLEL when `pipeline.parallel_validators` is true. Each validator receives only the artifact file path and gate criteria -- no other validator's output.
 
+**One validator = one Agent invocation.** Every validator role is dispatched as
+a SEPARATE Agent tool call. Four validators = four Agent calls in a single
+parallel message. Never fuse two validator roles into one compound prompt
+(e.g., "validate as QA and also as Security"). The compound-role detector in
+`audit_agent_prompt.py` warns on these patterns. This rule is what makes Team
+DoD actually a team — independent perspectives cannot emerge from a single
+sub-agent asked to wear multiple hats.
+
+### Delegation Meta-Gate
+
+Before any stage's DoD is allowed to pass, the orchestrator MUST answer:
+
+> **"Was every domain artifact produced in this stage written by a delegated
+> sub-agent via the Agent tool?"**
+
+If the orchestrator used Write or Edit to author, amend, or materially revise
+any non-routing file in `.delivery/artifacts/**` during this stage, the DoD
+meta-gate FAILS regardless of how validators voted. Routing metadata
+(`stage-summary.md`, `state.md`, `state.tmp.md`) is the only permitted
+orchestrator write path.
+
+This meta-gate exists because a violation of the Delegation Prime Directive
+invalidates the entire stage — the artifact did not come from the team, it
+came from the orchestrator, and no amount of after-the-fact validation can
+restore the team-authored provenance. If this gate fails, the stage MUST be
+re-run with proper delegation.
+
+### Known Hook Limitations
+
+The `enforce_pipeline_scope.py` hook implements layered origin detection
+(ADR-001) but has known gaps that this meta-gate exists to compensate for:
+
+- **Bash redirection bypass**: Orchestrator-origin writes via Bash
+  (`>`, `>>`, `tee`, `cat <<EOF`, `dd of=`, `cp`/`mv` into artifact paths)
+  are not matched by the hook's current tool matchers. Closing this gap
+  requires registering the hook on the Bash tool AND pattern-matching
+  the command string.
+- **Layer 2 metadata drift**: The hook's secondary detection reads harness
+  hook-input metadata (`parent_tool_use_id` and similar fields). The shape
+  of that payload is harness-version-dependent; unknown keys fall through
+  to the soft-deny fallback (warn-only, never hard-deny — NFR-05).
+- **Missing env-var injection**: Layer 1 (env var) is load-bearing. A
+  missed injection at any orchestrator dispatch site collapses Layer 1,
+  leaving Layer 2 carrying the full weight. Centralizing sub-agent dispatch
+  (one injection site) is the architectural mitigation.
+
+Validators and the meta-gate should assume the hook is advisory and apply
+the "Was every artifact produced by a delegated sub-agent?" check manually.
+
 ---
 
 ## Self-Correction Protocol

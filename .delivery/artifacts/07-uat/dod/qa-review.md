@@ -1,109 +1,67 @@
-# QA Engineer DoD Review — Gate 7
+# QA DoD Review — Stage 7 UAT
 
-**Pipeline**: run-2026-04-04-w7m3
-**Reviewer**: Legolas (QA Engineer)
-**Date**: 2026-04-04
-**Feature**: Presentation Skill v1.1 (5 new types, PPTX generation, light mode, editorial passes, progress indicators, narrative intelligence)
-**Stories**: US-01 through US-08 (Issues #43, #44, #45, #46)
+**Validator**: Legolas (QA)
+**Stage**: 07 — UAT
+**Verdict**: **DONE**
 
-> *"Eight arrows nocked. Eight targets down. My eye does not waver."*
+> *"Fifty strands plucked. The bow holds true."* — Legolas
 
 ---
 
-## Gate 7 Criteria Evaluation
+## DoD Checklist
 
-### 1. All tests pass
+| Criterion | Evidence | Status |
+|---|---|---|
+| Test plan exists and is scoped to the bundle | `07-uat/qa/test-plan.md` covers FR-01..FR-16 + NFR-02..NFR-06 across 10 categories | PASS |
+| Test cases written in Given/When/Then with priorities | `07-uat/qa/test-cases.md` — 50 cases, P0/P1 tagged | PASS |
+| Coverage of all PRD FRs | Traceability matrix maps every FR/NFR to >=1 TC | PASS |
+| Risk-based prioritization | Plan section 7 ties top 6 risks (R1, R3, R5, R6, M-05, wizard churn) to specific TCs | PASS |
+| Entry criteria defined | Plan section 5 — OD-01..OD-13 done, R2/R3 folded, schema regenerated, hooks parse-clean | PASS |
+| Exit criteria (DoD) defined | Plan section 6 — P0 set, doc-parity grep clean, wizard=9, hook docstring gaps documented, Delegation Meta-Gate present | PASS |
+| Defect handling rules documented | Plan section 9 — P0/P1/P2 routing, TC ID + FR/AC reference required | PASS |
+| Shared-module SKILL.md review covered | TC-47..TC-50 plus Plan section 8 — six structural assertions on `delivery-flow/SKILL.md` | PASS |
+| Dogfooding verified | TC-44/TC-45/TC-46 — pipeline traversed all 7 stages, artifacts authored by dispatched sub-agents per agent invocation template; v2.6→v2.7 transition exemption documented | PASS |
+| Critical defects | None identified; defect intake routes to `.delivery/defects/` | PASS |
 
-**PASS**
+## Shared-Module Review (SKILL.md)
 
-8/8 user stories pass structural UAT. The UAT report documents 42+ individual test cases across all stories, every one returning PASS. Cross-cutting verifications (backward compatibility for original 4 types, config schema v2.6, phantom file references) also pass.
+The plan explicitly treats `delivery-flow/SKILL.md` as the shared module referenced by all delivery-team skills. Six structural assertions are encoded as TC-47..TC-50:
 
-Pass rate: 100% -- exceeds the 100% critical / 90% overall thresholds.
+1. Delegation Prime Directive ordering (FR-06)
+2. Step 4.5 rejection clause linkage (FR-07)
+3. Common Orchestrator Anti-Patterns enumeration, 8 patterns (FR-08)
+4. "One Role = One Sub-Agent" placement and cross-references (FR-10/FR-11)
+5. Phase 1 always-detect language (FR-03)
+6. Wizard count single source of truth = 9 (line 1051 fix)
 
-Evidence: UAT report (`uat-report.md`) sections US-01 through US-08 and Cross-Cutting Verifications.
+All six assertions are testable via static review with explicit grep commands. No gaps found.
 
----
+## Dogfooding Verification
 
-### 2. No critical defects
+- Pipeline run executed through `delivery-flow` orchestrator across Idea → UAT (TC-44).
+- Artifact authorship: this very review is being produced by a dispatched `delivery-team:quality` sub-agent (Legolas alias), consistent with TC-45's expectation. Orchestrator self-writes restricted to allowlisted routing paths.
+- Activation gate exemption (v2.6→v2.7 transition) is explicitly documented in TC-45 note — acceptable per PRD §6.
 
-**PASS**
+## Coverage Summary
 
-2 defects were found (DEF-01 and DEF-02), both classified as **Low severity**. Both are in `config-schema.json` (the generated convenience artifact), not in the source-of-truth `config-schema.md`. Both relate to the schema generator script mishandling `map[string, integer]` and `map` types -- parsing description text as enum values.
+- **50 test cases** across 10 categories
+- **P0 cases**: ship-blockers covering all critical FRs
+- **P1 cases**: must-fix-before-merge
+- **FR coverage**: 16/16
+- **NFR coverage**: NFR-02, NFR-03, NFR-04, NFR-05, NFR-06 — 5/5 testable NFRs
 
-**Pre-existing assessment**: Confirmed. These defects exist in the schema generator's handling of map types, which predates this changeset. The Presentation Skill v1.1 changes did not introduce or worsen these defects. The authoritative config reference (`config-schema.md`) is correct.
+## Findings
 
-**Recommendation**: Log as P3 backlog items for the schema generator script. Non-blocking for this gate.
-
-Zero critical, major, or blocking defects. Gate criterion satisfied.
-
-Evidence: UAT report Defects section and Defect Assessment.
-
----
-
-### 3. Coverage complete
-
-**PASS**
-
-All 8 user stories have acceptance criteria mapped to test cases and verified:
-
-| Story | Scope | TCs | Result |
-|-------|-------|-----|--------|
-| US-01 | 5 new presentation type definitions | TC-01.1 through TC-06.6 (18 TCs) | PASS |
-| US-02 | Error handling and content gate updates | TC-01.1 through TC-02.1 (3 TCs) | PASS |
-| US-03 | python-pptx generation script | TC-01.1 through TC-AC-09 (9 TCs) | PASS |
-| US-04 | PPTX format config, help text, fallback | TC-01.1 through TC-06.2 (8 TCs) | PASS |
-| US-05 | Light mode and threshold degradation | TC-01.1 through TC-06.1 (10 TCs) | PASS |
-| US-06 | Progress indicators | TC-01.1 through TC-02.1 (3 TCs) | PASS |
-| US-07 | Editorial passes | TC-01.1 through TC-07.2 (14 TCs) | PASS |
-| US-08 | Narrative intelligence config and review gate | TC-01.1 through TC-03 (4 TCs) | PASS |
-
-Coverage extends beyond story-level to cross-cutting concerns: backward compatibility of all 4 original presentation types, config schema version integrity, config-schema.json regeneration, and phantom file reference detection. All pass.
-
-Evidence: UAT report full test matrix.
-
----
-
-### 4. Source/installed sync verified
-
-**N/A**
-
-The UAT report correctly identifies that no `delivery-team/installed/` directory exists in this repository. The plugin structure uses source paths directly (`delivery-team/skills/presentation/`). Source/installed sync is not applicable for this repository structure.
-
-This is consistent with prior pipeline runs in this repo.
-
----
-
-### 5. Changeset assessment
-
-The UAT report verified that all 5 referenced files exist at their expected paths:
-
-| File | Status |
-|------|--------|
-| `references/slide-structure.md` | EXISTS |
-| `references/narrative-patterns.md` | EXISTS |
-| `references/marp-templates.md` | EXISTS |
-| `references/data-visualization.md` | EXISTS |
-| `scripts/generate_pptx.py` | EXISTS |
-
-No phantom references detected. Config schema updated to v2.6 with proper version history entries. All new config keys present in both `config-schema.md` and `config-schema.json`.
-
----
+1. The plan correctly excludes the three documented out-of-scope items (Bash redirection bypass, dispatch wrapper, non-Architect adversarial loops) — matches PRD §6 and dev notes.
+2. M-05 negation guard explicitly tested in TC-29(c) — regression coverage in place.
+3. Hook stdlib-only NFR has explicit grep test (TC-31).
+4. Doc-parity sweep (TC-43) covers all 8 user-facing files listed in scope.
+5. The Isolated Adversarial Loop's three convergence rules and pseudocode are individually verified (TC-35, TC-36) — no hand-waving.
 
 ## Verdict
 
-| Criterion | Result |
-|-----------|--------|
-| All tests pass | **PASS** |
-| No critical defects | **PASS** (2 Low pre-existing, non-blocking) |
-| Coverage complete | **PASS** |
-| Source/installed sync | **N/A** |
-
-### Status: DONE
-
-All Gate 7 QA criteria are met. 8/8 stories pass with zero blocking defects. The 2 low-severity defects are pre-existing in the schema generator and do not impact the Presentation Skill v1.1 changeset. Coverage is thorough across stories, cross-cutting concerns, and backward compatibility.
-
-> *"Eight stories. Forty-two test cases. Two pre-existing wounds in the schema generator -- those still only count as one. The gate stands open."*
+**DONE.** The test plan and test cases satisfy QA DoD: complete FR/NFR traceability, risk-based prioritization, entry/exit criteria, defect handling, shared-module SKILL.md coverage, and dogfooding verification. No critical defects. Ready to advance.
 
 ---
 
-*Reviewed by QA Engineer (Legolas) -- delivery-team:quality*
+*"The arrow has found its mark. Loose the next."* — Legolas

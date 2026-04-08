@@ -1,191 +1,106 @@
-# Adversarial Challenge: MTG Commander Deck Builder Plugin PRD
+# Adversarial Challenge: Orchestration Discipline Bundle PRD
 
-**Challenger**: Adversarial Reviewer
-**Date**: 2026-04-01
-**PRD Version**: 1.0
-**Overall Confidence**: 3/5 (Proceed with targeted fixes -- two challenges require PRD revision)
+*"Let us forge something that will endure beyond the ages — but first, let us strike the steel and see where it cracks."*
 
----
-
-## Challenge 1: "Every card synergizes with 3+ other cards" Is Not Testable As Specified
-
-**Confidence: 2/5 -- Serious concern**
-
-The PRD's core differentiator is synergy-first selection: "Every non-land card interacts meaningfully with 3+ other cards in the deck" (G-02, FR-04.1, FR-04.2). The Optimization Reviewer is tasked with validating this. The PRD also introduces a synergy score metric (FR-04.8).
-
-**The fundamental problem**: "interacts meaningfully" is undefined. The PRD does not specify what constitutes a meaningful interaction versus a weak or coincidental one. Consider:
-
-- Does sharing a creature type count? If Elvish Mystic and Llanowar Elves are both Elves, do they "interact" with each other? They share a type but have zero mechanical synergy.
-- Does "all creatures benefit from Coat of Arms" count as an interaction between every creature and Coat of Arms, AND between every creature pair? If yes, a single anthem effect could inflate synergy counts for every creature in the deck, making the 3+ threshold trivially easy to meet.
-- Does a ramp spell "interact with" every card that costs 4+ mana? Technically Sol Ring enables casting everything -- does it get 60+ synergy connections?
-
-The Rules Judge validates interaction claims against oracle text (FR-03.7), but only checks whether a *claimed* interaction is mechanically possible -- it does not define when an interaction *should* be claimed. The Deck Builder decides what to claim, the Judge checks if the claim is plausible, and the Optimizer counts claims. This means synergy scoring is driven by how aggressively the Deck Builder writes rationale text, not by objective deck quality.
-
-**What this means practically**: Two runs of the same commander with the same card pool could produce different synergy scores based solely on how the AI phrases its rationale. "Interacts meaningfully" needs a taxonomy or it becomes a rubber stamp.
-
-**What must change**: The PRD must either:
-1. Define interaction categories with inclusion/exclusion rules (e.g., "shared creature type alone does not constitute interaction; a card that references the type by name does"), OR
-2. Defer synergy scoring to a structured tag system (OQ-1 leans this way but is left open) and make the Design stage responsible for the taxonomy before Development begins, OR
-3. Acknowledge that synergy validation in v1 is heuristic and AI-judged, remove the hard "3+ interactions" gate, and make synergy score advisory rather than blocking.
-
-Option 2 is the strongest path -- it preserves the aspiration while routing the hard problem to Design where it belongs. But the PRD cannot ship to Design with "interacts meaningfully" unresolved, because Design will inherit the ambiguity and pass it to Development unchanged.
-
-**Verdict**: MUST FIX. The core value proposition has no testable definition.
+— Celebrimbor, Master Craftsman
 
 ---
 
-## Challenge 2: Card Hallucination Mitigation Is Correctly Placed But Has a Cost Blindspot
+I have examined the PRD and idea brief with the care a smith reserves for a blade meant to outlast its wielder. The work is sound in its bones, but I have found seams where the hammer has not yet fallen.
 
-**Confidence: 4/5 -- Minor concern**
+## C1 — `project_type` removal: the user-config blast radius is under-examined
 
-The PRD correctly identifies card hallucination as the highest-risk failure mode (PO Note 5) and places the Rules Judge immediately after the Deck Builder to catch it (FR-03.2). Every card name is validated against Scryfall with zero tolerance. This is the right architecture.
+FR-01 through FR-05 strip `project_type` from schema and wizard. NFR-03 promises tolerant parsing. But the PRD treats `project_type` as if it lives only in the orchestrator's head. It does not.
 
-**The concern is the correction cycle cost.** If the Deck Builder hallucinate 10 card names in a 100-card list (plausible -- AI models are notoriously bad at exact Magic card names), the Rules Judge returns FAIL with 10 violations, and the Deck Builder must correct all 10. But the replacement cards must ALSO be validated, which means a second Rules Judge pass. If 3 of the 10 replacements are also hallucinated, that is a third cycle. The PRD references `pipeline.max_self_correction: 3` (FR-07.3), which means the pipeline could exhaust all correction cycles on card name accuracy alone before the Optimizer or Price Evaluator ever run.
+- **Downstream consumers.** FR-05's grep is scoped only to `delivery-team/skills/delivery-flow/`. Hooks, alias surfacing, analytics dashboard, memory tiering, defect tracking — any of them may key behavior off the configured type. **The grep must run across the entire repo, and any hit outside Phase 1 detection is a defect this PRD must own.**
+- **User-pinned overrides.** Users may have committed `.delivery/config.yml` with `project_type` deliberately pinned because they *wanted* a specific routing — for example, a docs-only repo that should never trigger code stages regardless of how a request is phrased. FR-02's "tolerant ignore + deprecation log" silently changes their behavior. That is not backwards compatibility; that is a behavior break wearing a compatibility costume. **The PRD must either honor a pinned `project_type` as a user-intent override (with deprecation warning), or provide an explicit escape hatch (e.g. `routing.force_type:`) and acknowledge the behavior change in NFR-03.**
+- **Wizard renumbering (FR-04) is a documentation hazard.** Q1–Q10 may be referenced by number in setup-wizard.md or external write-ups. Renumbering silently breaks any doc that says "answer Q7 with…". Trivial fix, must be called out.
 
-A better architecture would have the Deck Builder call Card Finder (FR-06.7) to validate card names *during initial construction*, not after. FR-06.7 provides exactly this: "a card name validation function that returns True/False for whether a given name exactly matches a card in Scryfall." If the Deck Builder validates each card as it selects it, the Rules Judge receives a list with zero (or near-zero) hallucinated names, and correction cycles are preserved for actual legality and synergy issues.
+## C2 — "One role = one sub-agent" has legitimate exceptions the PRD denies
 
-**However**, FR-07.1 already allows the Deck Builder to use Card Finder -- it is a "shared utility available to all agents." The PRD does not *prohibit* pre-validation; it simply does not *require* it. This is a Design/Architect decision about agent composition, not a PRD gap.
+FR-10 states the rule absolutely: *"A single sub-agent prompt MUST NOT request that the agent 'play multiple roles.'"* Absolutism is a fine ideal and a poor specification.
 
-**Recommendation**: Add one sentence to FR-02 acceptance criteria: "FR-02.9: The Deck Builder SHOULD validate each card name against Card Finder (FR-06.7) during construction. Cards that fail validation MUST NOT appear in the output list." This converts pre-validation from an implementation choice to a documented expectation without over-specifying the architecture.
+- **Sequenced single-author skills.** product-delivery bundles PO, Scrum Bag, and Data Analyst into one skill that auto-detects role. Dispatching one sub-agent into product-delivery is one role, not three. The rule as written could be misread to forbid skill bundling entirely. **Clarify: the rule forbids compound *reviewer* prompts, not skill-internal role auto-detection.**
+- **Tiny atomic tandems.** Evaluator-optimizer genuinely benefits from a single agent holding both halves in working memory. The PRD treats this as forbidden without discussion. **Either justify the prohibition with evidence, or carve evaluator-optimizer as a named exception.**
+- **Detection heuristic (FR-12) will fire on meta-discussion.** A prompt that says *"Do not act as both reviewer and architect"* contains the smell phrase. The hook will warn on prompts that themselves enforce the rule. Architect must specify a negation-aware matcher or accept the false-positive rate.
 
-**Verdict**: Not blocking. The architecture handles hallucination; the optimization is a should-have.
+FR-12 is correctly softened to MAY-not-MUST. But FR-10's prose should be revised to "compound *reviewer* prompts" rather than "compound role prompts."
 
----
+## C3 — `enforce_pipeline_scope.py` extension: orchestrator-vs-sub-agent detection is unsolved and the PRD knows it
 
-## Challenge 3: Scryfall API Rate Limits Make 100-Card Pricing Fragile
+OQ-1 admits this. R6 admits this. Yet FR-09's acceptance criteria *require* the detection to work. This is circular: the FR cannot be accepted until OQ-1 is answered, and OQ-1 is deferred to Architect.
 
-**Confidence: 3/5 -- Moderate concern**
+**The PRD must either:**
+- (a) Mark FR-09 as conditional on OQ-1 with a fallback (soft-warn instead of hard-deny if origin detection is unreliable), or
+- (b) Resolve OQ-1 in this PRD by selecting a mechanism (transcript stack inspection, env var on sub-agent dispatch, or tool-call metadata).
 
-The PRD specifies "minimum 50ms delay between consecutive API requests" (FR-06.4, NFR-01). Scryfall's actual documentation states 50-100ms between requests, or approximately 10 requests per second. The idea brief correctly states 10 requests/second.
+Without one of these, the PRD ships a hook contract that cannot be implemented and Plan stage will discover this only after committing.
 
-**The math for a full pipeline run:**
+**Worse: the allowlist forgets edge cases.** Per-stage scratch files under `.delivery/artifacts/*/state/` (if any) and stage handoff breadcrumbs need an audit before the deny rule lands.
 
-1. **Deck Builder**: Commander validation = 1 request. Card name validation during build (if FR-02.9 is adopted) = up to 99 requests. That is ~5-10 seconds.
-2. **Rules Judge**: Validate 100 card names = 100 requests = ~5-10 seconds. Validate legality = potentially 100 more if legality status is not included in the name lookup response. That is 10-20 seconds.
-3. **Price Evaluator**: Price lookup for 100 cards = 100 requests = ~5-10 seconds.
-4. **Correction cycles**: Each correction cycle that touches N cards adds N requests per agent that re-validates.
+**Worst: hooks attribute the *acting* tool, not intent.** If the orchestrator inlines a Bash heredoc that writes a file, the hook sees Bash, not Edit/Write — and the hook is registered on Edit/Write/NotebookEdit only. **The hook must also intercept Bash with redirection/heredoc patterns targeting artifact paths, or the rule is trivially bypassed by the very "simplicity shortcut" it is meant to forbid.**
 
-**Best case (no corrections)**: ~200-300 API calls, 10-30 seconds of API wait time alone. **Worst case (3 correction cycles with significant churn)**: ~800-1200 API calls, 40-120 seconds of API wait time. This is within Scryfall's tolerance for a single session but is not negligible for user experience.
+## C4 — Isolated Adversarial Loop convergence: the cap is a comfort, not a guarantee
 
-**The real concern**: The PRD says "bulk endpoints preferred over individual lookups where possible" (NFR-01) but does not specify which agents should use bulk endpoints. Scryfall's `/cards/collection` endpoint accepts up to 75 card identifiers per request. A 100-card deck could be fully validated and priced in 2 bulk requests instead of 100 individual ones. This is a 50x reduction in API calls.
+R3 dismisses non-convergence as "low likelihood" with the cap as mitigation. I challenge this directly.
 
-**What is missing**: FR-06 (Card Finder) specifies the `/cards/search` endpoint (FR-06.1) but never mentions `/cards/collection` or `/cards/named` for exact lookups. The Card Finder's interface is designed around individual card searches, not batch operations. This means even if bulk is "preferred," the utility does not support it.
+- **Each loop is a fresh sub-agent with no prior context** (FR-13 step 2a). A fresh reviewer with no memory of what was already fixed will, statistically, surface a *different* set of issues each time — including issues previous reviewers waved through. There is no monotonic decrease. **Convergence is not guaranteed by the protocol; it is merely hoped for.**
+- **The Architect *does* see prior loops** — it must, in order to fix things. So the artifact gets progressively patched, but the reviewer judges fresh each time. After 3 loops you may have an artifact patched against 3 disjoint critique sets, possibly internally inconsistent because each fix optimized for its own reviewer's priorities.
+- **OQ-5 routes this to Plan as a test design question. It is not.** It is a protocol design question. **FR-13 should require a convergence criterion stronger than "one clean loop" — for example, two consecutive clean loops, or a severity threshold below which loops terminate.** Otherwise the cap-reached path becomes the *normal* path and "adversarially clean" becomes vanishingly rare.
 
-**Recommendation**: Add an acceptance criterion to FR-06: "FR-06.8: Card Finder supports batch card lookup via Scryfall's `/cards/collection` endpoint, accepting up to 75 card identifiers per request and returning structured data for all matched cards. Agents SHOULD use batch lookup when validating or pricing complete decklists." This is architecturally important enough to specify at the PRD level.
+## C5 — Bundling: three of four are semantically coherent; #69 is bundled by geography
 
-**Verdict**: Not blocking for v1 correctness, but the PRD should acknowledge the performance characteristic and add batch support to the Card Finder spec.
+- #73, #71, #70 all touch `SKILL.md` and reinforce the same delegation/isolation theme. Tightly coupled in semantics.
+- #69 (isolated adversarial loops) touches `team-patterns.md`, `pipeline-stages.md`, `config-schema.md` — shared *files* with the others, but **its substantive content has no semantic dependency on the other three**.
 
----
+#69 is bundled for file proximity, not coherence. Risk: if #69's protocol turns controversial at Architect (see C4), it can hold the entire bundle hostage. **NFR-08 should permit a fallback path where #69 splits into a separate immediate follow-up if Architect rejects the loop protocol.** The other three are tightly coupled in semantics; #69 is coupled only in geography.
 
-## Challenge 4: The Orchestration Sequence Has a Logical Flaw in Budget Correction
+## C6 — Dogfooding paradox (R7) is acknowledged but not resolved
 
-**Confidence: 2/5 -- Serious concern**
+R7 says the new self-write hook will block the orchestrator authoring this very PRD's successor docs. The mitigation is "this is the intended behavior."
 
-The pipeline is: Deck Builder > Rules Judge > Optimization Reviewer > Price Evaluator (FR-07.1). When any agent returns FAIL, the pipeline cycles back to the Deck Builder (FR-07.2).
+But the hook does not exist *yet*. It will be authored *during* this run. **The PRD must specify the activation point for the hook**: enabled on commit? on merge? on stage transition? Until then, the dogfood test is unverifiable.
 
-**The flaw**: When the Price Evaluator busts the budget, the Deck Builder must replace expensive cards with cheaper alternatives. But the replacements must then pass the Rules Judge (legality) AND the Optimization Reviewer (synergy) again. This means a budget fix can create a synergy failure, which creates a correction cycle, which changes cards, which may re-bust the budget. The correction loop is:
+Also: NFR-06 says this bundle must be delivered through delivery-flow. The current run *is* delivering it. **Clarify whether dogfooding is self-referential (this run) or forward-looking (next run).** If self-referential, the PRD must accept that some discipline rules will only be enforceable retroactively in this run.
 
-```
-Budget fail -> Builder replaces cards -> Judge re-validates -> Optimizer re-validates 
--> Optimizer fails (replacement has <3 synergy) -> Builder replaces again 
--> Judge re-validates -> Optimizer passes -> Pricer re-validates 
--> Pricer fails (new replacement is expensive) -> ...
-```
+## C7 — Doc parity (FR-16) is under-specified
 
-With `max_self_correction: 3`, this oscillation between budget and synergy constraints can exhaust all cycles without convergence. The problem is structural: budget and synergy are competing constraints, and the pipeline has no mechanism to negotiate between them.
+FR-16 lists `config-schema.md`, `CLAUDE.md`, `README.md`, `marketplace.json`. The PRD ignores:
 
-**Real-world example**: A $75 Mono-Blue Mill deck (Test Case 3). Rhystic Study is a premier draw spell with 10+ synergy connections. It costs ~$40. Removing it for budget reasons removes a major synergy hub, which causes multiple other cards to drop below the 3-interaction threshold. Replacing those cards changes the deck substantially, potentially re-introducing budget problems.
+- `delivery-flow/SKILL.md` itself (references schema version in metadata)
+- The MkDocs Material site (per recent commit `185d802` — 25 pages)
+- Any hook script that asserts a minimum schema version
+- The setup wizard's own self-description
 
-**What must change**: The PRD needs to specify what happens when budget and synergy constraints conflict irreconcilably. Options:
-1. **Budget wins**: If a card must be cut for budget, the synergy threshold is relaxed for its replacement (e.g., 2 interactions instead of 3). This needs explicit specification.
-2. **Optimizer suggests budget-aware replacements**: FR-04.6 says the Optimizer suggests replacements, but does not require them to be budget-aware. The Optimizer and Price Evaluator should share context.
-3. **Combined pass**: The Optimizer and Price Evaluator run together or the Optimizer is aware of the budget constraint. This is an architecture change.
-4. **Graceful degradation**: If budget and synergy conflict after max cycles, the output includes a warning explaining the tradeoff. FR-07.4 partially covers this ("best-effort decklist with a clear warning") but does not acknowledge the budget/synergy tension specifically.
-
-At minimum, FR-07.4 should explicitly state: "When budget and synergy constraints conflict irreconcilably, budget compliance takes priority. The output warns which cards were included with fewer than 3 synergy connections due to budget constraints." This gives the pipeline a deterministic resolution rule.
-
-**Verdict**: MUST FIX. The correction loop can oscillate without convergence. The PRD needs a priority rule for competing constraints.
+**The grep target list in NFR-04 must be widened, or the doc parity validator will pass while stale references survive in the published docs site.**
 
 ---
 
-## Challenge 5: Three Test Cases Are Insufficient for a GREENFIELD Plugin
+## Direct answers to the questions posed
 
-**Confidence: 3/5 -- Moderate concern**
+- **Removing project_type breaks existing users?** Yes, in the pinned-override case (C1). Tolerant parsing alone is insufficient; an explicit override mechanism or behavior-change acknowledgment is required.
+- **Does "one role = one sub-agent" have legitimate exceptions?** Yes — skill-internal role auto-detection and evaluator-optimizer (C2). The rule should target compound *reviewer* prompts specifically.
+- **Could the hook extension block valid orchestrator writes?** Yes — incomplete allowlist plus Bash-heredoc bypass (C3). Both must be addressed.
+- **Does isolated adversarial loop risk non-convergence?** Yes (C4). The protocol is designed for non-monotonic critique sets and lacks a convergence criterion stronger than a single clean pass.
+- **Are the four issues compatible to bundle?** #73/#71/#70 are semantically coherent. #69 is bundled by file geography only and should have a split-out fallback (C5).
+- **Backwards compat for user configs?** Tolerant parsing covers parser-level compat but not behavioral compat for users who pinned `project_type` intentionally (C1).
 
-The PRD specifies 3 test cases (Section 8): Mono-Black Graveyard ($150), Orzhov Lifegain ($100 with $10/card cap), and Mono-Blue Mill ($75, no infinite combos). These cover:
+## Required PRD changes before Design
 
-- 1 mono-color, 1 two-color, 1 mono-color (no 3+ color test)
-- 3 different budget tiers
-- 1 per-card cap scenario
-- 1 card restriction scenario (no infinite combos)
-- 0 partner commander scenarios (OQ-5 asks if partners are in scope -- if yes, no test)
-- 0 high-power (8-10) scenarios
-- 0 edge cases for color identity (e.g., hybrid mana, Phyrexian mana, colorless commander)
-
-**The critical gap is multi-color.** A 3+ color commander (e.g., Korvold, Meren, Atraxa) exercises color identity validation far more rigorously than mono or two-color. With mono-black, every black card is legal. With 4-color, the Rules Judge must correctly identify which combinations of 4 colors are within identity and reject the fifth. This is where color identity bugs hide.
-
-**Secondary gap**: No test case exercises the correction loop. All 3 test cases are designed to *pass* cleanly. There is no test case that intentionally triggers a Rules Judge failure (e.g., a commander with a commonly confused color identity) or a Price Evaluator failure (e.g., a $50 budget that forces significant compromises). The dogfooding tests the happy path but not the correction machinery.
-
-**Recommendation**: Add two test cases:
-1. **Multi-color stress test**: A 3+ color commander (e.g., Korvold, Fae-Cursed King -- Jund/BRG) at power 8 with a $200 budget. Exercises multi-color identity validation and higher power structural targets.
-2. **Budget stress test**: A popular commander (e.g., Atraxa, Praetors' Voice -- WUBG) at power 7 with a $50 budget. This WILL trigger budget correction cycles because 4-color mana bases are expensive. Tests the correction loop and budget/synergy negotiation.
-
-**Verdict**: Not blocking, but 3 tests leave significant coverage gaps. Adding 2 targeted cases would substantially increase confidence.
+1. **C1**: Widen FR-05 grep to whole repo; address pinned `project_type` as intentional override; flag wizard renumbering hazard.
+2. **C2**: Reword FR-10 to "compound *reviewer* prompts"; acknowledge legitimate skill-internal role bundling.
+3. **C3**: Resolve OQ-1 in PRD or mark FR-09 conditional; expand allowlist; add Bash-redirection coverage to hook scope.
+4. **C4**: Specify convergence criterion stronger than "one clean loop" for FR-13; reclassify R3 from Low to Medium likelihood.
+5. **C5**: Permit #69 to fall out of the bundle if its protocol is rejected at Architect.
+6. **C6**: Specify hook activation timing; clarify dogfood scope (this run vs next run).
+7. **C7**: Widen FR-16 doc parity targets to include MkDocs site, SKILL.md metadata, and version-asserting hooks.
 
 ---
 
-## Challenge 6: Open Question OQ-5 (Partner Commanders) Must Be Resolved Before Design
+The bundle is the right work. Gandalf has named the discipline gaps correctly. But the PRD's edges are too smooth where the metal must be sharp. C1, C3, and C4 are the items I would not let leave the forge unaddressed; the rest may be carried as Design refinements with PO acknowledgment.
 
-**Confidence: 4/5 -- Low risk if resolved**
+*Let us forge something that will endure beyond the ages.*
 
-OQ-5 asks whether partner commanders are supported in v1. The PRD leaves this to Design. However, partner support has PRD-level implications:
+— Celebrimbor
 
-- **FR-02.1** (intake questions): Question 2 is "commander name" (singular). Partners require two names and combined color identity derivation. The intake flow changes.
-- **FR-02.5**: "exactly 100 cards including the commander" -- with partners, it is 100 cards including TWO commanders (98 other cards). The count rule changes.
-- **FR-02.4**: Color identity is "derived from the validated commander card" -- with partners, it is the union of both commanders' color identities.
-- **FR-03.1**: Validates "exactly 100 cards (including commander)" -- same count ambiguity.
-- **Structural minimums**: Partners decks sometimes have different structural needs (e.g., partner pairs that provide card advantage may need fewer draw sources).
-
-If partners are IN scope, at least 5 acceptance criteria need revision. If partners are OUT of scope, the PRD should state this explicitly so that the Rules Judge can reject partner commanders with a clear error message rather than silently mishandling them.
-
-**Recommendation**: Resolve OQ-5 in the PRD as OUT of scope for v1, with an explicit acceptance criterion: "FR-02.10: If a user specifies a partner commander, the intake flow informs the user that partner commanders are not supported in v1 and prompts for a single commander." This is a 2-minute PRD change that prevents an ambiguous failure mode.
-
-**Verdict**: Not blocking if resolved as out-of-scope. Blocking if left ambiguous.
-
----
-
-## Summary Table
-
-| # | Challenge | Confidence | Verdict |
-|---|-----------|-----------|---------|
-| 1 | Synergy scoring is untestable as specified | 2/5 | **MUST FIX** -- "interacts meaningfully" needs a taxonomy or must be routed to Design explicitly |
-| 2 | Card hallucination correction cost | 4/5 | Proceed -- add pre-validation recommendation to FR-02 |
-| 3 | Scryfall API rate limits and batch support | 3/5 | Proceed -- add batch endpoint to Card Finder spec |
-| 4 | Budget/synergy correction oscillation | 2/5 | **MUST FIX** -- needs priority rule for competing constraints |
-| 5 | Three test cases insufficient | 3/5 | Proceed -- add 2 targeted test cases (multi-color, budget stress) |
-| 6 | Partner commanders unresolved | 4/5 | Proceed -- resolve as out-of-scope with explicit rejection |
-
----
-
-## Blocking Assessment
-
-**Two challenges scored <= 2 and require PRD revision before proceeding to Design:**
-
-1. **Challenge 1 (confidence 2/5)**: The synergy-first philosophy -- the PRD's stated core differentiator -- has no testable definition. "Interacts meaningfully" is subjective and AI-variable. The 3+ interaction threshold is gameable through overly broad interaction claims (type-sharing, mana-enablement). Without an interaction taxonomy or explicit routing to Design for taxonomy creation, the Optimization Reviewer cannot enforce the gate deterministically. Fix: either define interaction categories in the PRD or add an explicit precondition that Design must produce an interaction taxonomy before Development begins.
-
-2. **Challenge 4 (confidence 2/5)**: The correction loop can oscillate between budget and synergy constraints without convergence. The pipeline has no priority rule for when these constraints conflict. With `max_self_correction: 3`, oscillation exhausts cycles and produces a "best-effort" deck that may violate both constraints. Fix: add a constraint priority rule to FR-07 (recommended: budget wins, synergy threshold relaxes for budget-forced replacements) and specify this in FR-07.4's graceful degradation clause.
-
-**Three additional challenges require minor PRD amendments (not blocking but should be addressed before Plan):**
-
-- **Challenge 2**: Add FR-02.9 recommending pre-validation of card names via Card Finder during construction.
-- **Challenge 3**: Add FR-06.8 specifying batch card lookup via Scryfall's `/cards/collection` endpoint.
-- **Challenge 5**: Add 2 test cases: multi-color stress test and budget stress test.
-- **Challenge 6**: Resolve OQ-5 as out-of-scope with explicit partner rejection in FR-02.
-
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/02-refine/challenger/challenge.md
-CONFIDENCE: 3/5
-ESCALATION: Not required (overall confidence > 2). Two MUST FIX items (Challenge 1, Challenge 4) require PRD revision before Design. Four minor amendments recommended.
-SUMMARY: 6 challenges raised against MTG Commander Deck Builder PRD. Synergy scoring lacks a testable definition (the core value proposition is ambiguous). Budget/synergy correction loop can oscillate without convergence. Card hallucination mitigation is architecturally sound but should pre-validate. Scryfall API performance needs batch endpoint support. Test coverage gaps in multi-color and correction-loop scenarios. Partner commander scope must be resolved explicitly.
-```
+Confidence: 4/5

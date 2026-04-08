@@ -7,21 +7,161 @@
   "properties": {
     "config_version": {
       "type": "string",
-      "default": "2.6"
+      "default": "2.7"
     },
-    "project_type": {
-      "type": "string",
-      "enum": [
-        "GREENFIELD",
-        "FEATURE",
-        "BUG_FIX",
-        "GAME_DEV+GREENFIELD",
-        "GAME_DEV+FEATURE",
-        "GAME_DEV+BUG_FIX",
-        "SPIKE",
-        "DOCS_ONLY"
-      ],
-      "default": "FEATURE"
+    "routing": {
+      "type": "object",
+      "properties": {
+        "force_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "pipeline": {
+      "type": "object",
+      "properties": {
+        "enforce_self_write_block": {
+          "type": "boolean",
+          "default": true
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "code-only",
+            "all",
+            "custom"
+          ],
+          "default": "code-only"
+        },
+        "scope_include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "scope_exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".delivery/",
+            ".git/",
+            "node_modules/",
+            "__pycache__/"
+          ]
+        },
+        "verify_skill_loading": {
+          "type": "boolean",
+          "default": true
+        },
+        "delegation_retry_max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 2
+        },
+        "isolation_audit": {
+          "type": "string",
+          "enum": [
+            "off",
+            "warn",
+            "block"
+          ],
+          "default": "warn"
+        },
+        "metadata_max_chars": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 500,
+          "default": 200
+        },
+        "agent_timeout": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 600,
+          "default": 120
+        },
+        "required_agent_retry_max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 2
+        },
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "refine",
+              "architect",
+              "plan",
+              "uat"
+            ]
+          },
+          "default": [
+            "refine",
+            "architect",
+            "plan",
+            "uat"
+          ]
+        },
+        "collaboration_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "evaluator-optimizer",
+              "adversarial",
+              "review-board",
+              "debate",
+              "consensus",
+              "decision-routing"
+            ]
+          },
+          "default": [
+            "evaluator-optimizer",
+            "adversarial",
+            "review-board",
+            "debate",
+            "consensus",
+            "decision-routing"
+          ]
+        },
+        "max_self_correction": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "max_dod_rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3
+        },
+        "max_parallel_agents": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "parallel_stories": {
+          "type": "boolean",
+          "default": true
+        },
+        "parallel_validators": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
     },
     "tech_stack": {
       "type": "object",
@@ -159,143 +299,6 @@
         "retro_skip_allowed": {
           "type": "boolean",
           "default": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "pipeline": {
-      "type": "object",
-      "properties": {
-        "scope": {
-          "type": "string",
-          "enum": [
-            "code-only",
-            "all",
-            "custom"
-          ],
-          "default": "code-only"
-        },
-        "scope_include": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": []
-        },
-        "scope_exclude": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            ".delivery/",
-            ".git/",
-            "node_modules/",
-            "__pycache__/"
-          ]
-        },
-        "verify_skill_loading": {
-          "type": "boolean",
-          "default": true
-        },
-        "delegation_retry_max": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 5,
-          "default": 2
-        },
-        "isolation_audit": {
-          "type": "string",
-          "enum": [
-            "off",
-            "warn",
-            "block"
-          ],
-          "default": "warn"
-        },
-        "metadata_max_chars": {
-          "type": "integer",
-          "minimum": 50,
-          "maximum": 500,
-          "default": 200
-        },
-        "agent_timeout": {
-          "type": "integer",
-          "minimum": 30,
-          "maximum": 600,
-          "default": 120
-        },
-        "required_agent_retry_max": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 5,
-          "default": 2
-        },
-        "checkpoints": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "refine",
-              "architect",
-              "plan",
-              "uat"
-            ]
-          },
-          "default": [
-            "refine",
-            "architect",
-            "plan",
-            "uat"
-          ]
-        },
-        "collaboration_patterns": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "evaluator-optimizer",
-              "adversarial",
-              "review-board",
-              "debate",
-              "consensus",
-              "decision-routing"
-            ]
-          },
-          "default": [
-            "evaluator-optimizer",
-            "adversarial",
-            "review-board",
-            "debate",
-            "consensus",
-            "decision-routing"
-          ]
-        },
-        "max_self_correction": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 5,
-          "default": 3
-        },
-        "max_dod_rounds": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 5,
-          "default": 3
-        },
-        "max_parallel_agents": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 10,
-          "default": 3
-        },
-        "parallel_stories": {
-          "type": "boolean",
-          "default": true
-        },
-        "parallel_validators": {
-          "type": "boolean",
-          "default": true
         }
       },
       "additionalProperties": false
@@ -791,7 +794,6 @@
   "additionalProperties": false,
   "required": [
     "config_version",
-    "project_type",
     "wizard_completed"
   ]
 }

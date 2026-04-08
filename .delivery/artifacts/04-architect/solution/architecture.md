@@ -1,336 +1,300 @@
-# Architecture: Presentation Skill v1.1 Enhancements
+# Architecture: Orchestration Discipline Bundle (LIGHT)
 
-**Version**: 1.0
-**Date**: 2026-04-04
-**Architect**: Celebrimbor (Solution Architect)
-**PRD**: `.delivery/artifacts/02-refine/po/prd.md` v1.0
-**UX Flows**: `.delivery/artifacts/03-design/ux/user-flows.md` v1.0
-**Project Type**: FEATURE
-**Depth**: LIGHT
-**Covers**: Issues #43, #44, #45, #46
+**Stage**: 04 — Architect (FEATURE-light)
+**Architect**: Celebrimbor, Master Craftsman
+**Scope**: delivery-flow plugin only — SKILL.md, references, hook scripts. No new data models, no external integrations, no new APIs.
+**Source PRD**: `.delivery/artifacts/02-refine/po/prd.md` (16 FRs, 8 NFRs)
+
+> *"Let us forge something that will endure beyond the ages."*
 
 ---
 
-> *"Let us forge something that will endure beyond the ages. Four enhancements, woven into a skill that already stands -- not a rewrite, but a masterwork of augmentation."*
+## 1. Architectural Posture
+
+This is a **discipline remediation bundle**, not a feature. The architecture is therefore almost entirely:
+
+- Documentation edits (SKILL.md + 6 reference docs)
+- One hook extension (`enforce_pipeline_scope.py`)
+- One optional hook extension (`audit_agent_prompt.py`)
+- One config schema version bump (v2.6 → v2.7)
+
+There is **no new component**, **no new data flow**, **no new service boundary**. The load-bearing design questions are narrow and tactical:
+
+1. How does `enforce_pipeline_scope.py` reliably distinguish orchestrator-origin writes from sub-agent-origin writes?
+2. How does config loading tolerate the removal of `project_type` without surprising pinned users?
+3. How does the Isolated Adversarial Loop actually terminate in bounded time with non-monotonic reviewers?
+4. Which files change, and what is the minimum consistent edit set?
+
+The three ADRs in this stage lock the contentious answers. This doc maps the rest.
 
 ---
 
-## 1. python-pptx Integration Architecture
+## 2. Origin Detection Strategy for `enforce_pipeline_scope.py`
 
-### 1.1 File Flow
+### 2.1 Problem
 
-The PPTX generation follows a three-stage pipeline. Each stage produces a distinct artifact, and failure at any stage falls back to the previous stage's output.
+The hook must deny orchestrator-initiated writes to pipeline artifacts during an active run, but allow sub-agent-initiated writes to the same paths. PreToolUse hooks receive tool input but no first-class "who is calling" field that distinguishes the top-level Claude session from a dispatched Agent tool sub-session.
 
-```
-SKILL.md (Composer, Step 4)
-  │
-  ├─ writes → composed-draft.md        (always, all formats)
-  │
-  └─ writes → composed-draft.json      (only when format=pptx)
-                │
-                │  post-approval
-                ▼
-        generate_pptx.py
-                │
-                └─ writes → {type}-{date}.pptx
-```
+### 2.2 Chosen mechanism: layered detection with soft-deny fallback
 
-**Key design decision**: The Composer produces both `.md` and `.json` in parallel during Step 4 when `format=pptx`. The markdown is the human-reviewable artifact (Steps 5-6 operate on it). The JSON is the machine-consumable intermediate for the Python script. This avoids fragile regex parsing of markdown.
+Three signals, checked in order. First signal that resolves wins. If none resolve, the hook **warns** rather than denies (preserves NFR-05).
 
-### 1.2 JSON Intermediate Format
+**Layer 1 — Environment variable (primary, deterministic)**
 
-The JSON structure is defined in the UX flows document (OQ-1 resolution). Per slide:
+- The orchestrator sets `DELIVERY_FLOW_AGENT_CONTEXT=<role>` immediately before dispatching any Agent tool invocation (e.g., `po`, `architect`, `developer`, `quality`).
+- The env var is inherited by the sub-agent process tree. The hook reads `os.environ.get("DELIVERY_FLOW_AGENT_CONTEXT")`.
+- If **set** → sub-agent-origin → allow (subject to scope rules).
+- If **unset** → candidate orchestrator-origin → proceed to Layer 2.
 
-```json
-{
-  "slides": [
-    {
-      "number": 1,
-      "title": "...",
-      "layout": "title|content|metrics|comparison|cta|timeline|architecture",
-      "body": ["bullet 1", "bullet 2"],
-      "table": null | { "headers": [], "rows": [[]] },
-      "speaker_notes": null | "...",
-      "citations": ["artifact-1.md"],
-      "mermaid": null | "graph TD; ..."
-    }
-  ],
-  "metadata": {
-    "type": "investor-pitch",
-    "date": "2026-04-04",
-    "project": "...",
-    "audience": "investor",
-    "format": "pptx"
-  }
-}
-```
+**Layer 2 — Hook input metadata (secondary)**
 
-The Composer is responsible for producing valid JSON. The Python script is a pure consumer -- it never interprets markdown.
+- `read_hook_input()` returns the JSON payload the harness provides on stdin. Inspect for a `transcript_path` / `session_id` pattern that differs between parent and sub-agent frames, or a `parent_tool_use_id` field when present.
+- If Layer 2 positively identifies a sub-agent frame → allow.
+- If inconclusive → proceed to Layer 3.
 
-### 1.3 Script Location and Invocation
+**Layer 3 — Soft-deny fallback (safety)**
 
-**Location**: `delivery-team/skills/presentation/scripts/generate_pptx.py`
+- If neither signal is available (e.g., harness version drift, env var never injected), emit a **loud `systemMessage` warning** naming the Delegation Prime Directive and the target path, but DO NOT deny.
+- Rationale: a broken detector must never brick a user pipeline. NFR-05 wins over FR-09 strictness when the mechanism itself is uncertain.
 
-This follows the plugin structure convention: implementation scripts live in `scripts/` under the skill directory.
+### 2.3 Routing metadata allowlist
 
-**Invocation** (by the Composer after user approval in Step 6):
-
-```bash
-python delivery-team/skills/presentation/scripts/generate_pptx.py \
-  --input .delivery/artifacts/presentations/.drafts/composed-draft.json \
-  --output .delivery/artifacts/presentations/{type}-{date}.pptx \
-  [--template {path}] \
-  [--font {font}] \
-  [--accent-color {hex}]
-```
-
-**Dependency check**: Before invocation, the Composer runs a probe:
-
-```python
-try:
-    import pptx
-except ImportError:
-    # Fall back to structured-markdown with warning
-```
-
-The script itself also guards at import time (FR-07.3). The Composer's pre-check avoids spawning a process that will immediately fail.
-
-### 1.4 Template Handling
-
-Branding resolution follows the precedence chain defined in the UX flows (Flow B.2):
+Regardless of origin, the following paths are **always allowed**, because they are legitimately orchestrator-owned bookkeeping:
 
 ```
-CLI --template flag
-  └─ config presentation.pptx_template
-      └─ CLI --font / --accent-color
-          └─ config presentation.pptx_font / presentation.pptx_accent_color
-              └─ DEFAULTS: Calibri, #2d5aa0
+.delivery/state.md
+.delivery/config.yml
+.delivery/memory/**
+.delivery/artifacts/*/state/**
+.delivery/artifacts/*/handoff/**
 ```
 
-The script loads the template (if any) via `python-pptx`'s `Presentation(template_path)` constructor, which inherits slide masters, fonts, and colors. Font/color flags then override within the loaded template. Layout matching uses name-first, index-fallback strategy (FR-09.3).
+The allowlist is a single module-level constant in the hook so it cannot drift.
 
-### 1.5 Slide Layout Mapping
+### 2.4 Bash-redirection coverage
 
-| JSON `layout` value | PowerPoint Layout | Fallback Index |
-|---------------------|-------------------|----------------|
-| `title` | "Title Slide" | 0 |
-| `content` | "Title and Content" | 1 |
-| `metrics` | "Title and Content" | 1 |
-| `comparison` | "Title and Content" | 1 |
-| `cta` | "Title and Content" | 1 |
-| `timeline` | "Title and Content" | 1 |
-| `architecture` | "Title and Content" | 1 |
+The hook is currently registered on `Edit`, `Write`, `NotebookEdit`. It will be extended to also fire on `Bash`. When the Bash `command` string matches a write-redirection pattern (`>`, `>>`, `tee`, `cat <<EOF`, `dd of=`, `cp`/`mv` targeting an artifact path) pointing at an in-scope path, the same origin rule applies. This closes the heredoc bypass called out in C3. Pattern detection is a cheap regex over the command string.
 
-All non-title layouts use "Title and Content" as the base. Differentiation happens in content population, not layout selection. This is intentional -- corporate templates rarely have 7+ custom layouts, so relying on a single flexible layout with varied content formatting is more robust than hunting for specialized layouts.
+### 2.5 Activation gating
+
+Deny behavior is gated on BOTH:
+
+- `schema_version >= 2.7` in `.delivery/config.yml`, AND
+- `pipeline.enforce_self_write_block: true` in the same file
+
+Default for fresh v2.7 configs is `true`. For tolerantly-parsed v2.6 configs the effective value is `false`. This resolves R7/C6 — the dogfood run is **forward-looking**, not self-referential.
+
+### 2.6 Degradation contract
+
+All new logic stays inside the existing `try/except → sys.exit(0)` wrapper in `main()`. No new dependencies. Pure stdlib. p95 overhead budget: **≤ 15ms added** (NFR-01 gives 50ms total).
+
+**See ADR-001 for the full decision record.**
 
 ---
 
-## 2. Narrative Intelligence Sub-Step Ordering
+## 3. Config Migration Strategy: `project_type` v2.6 → v2.7
 
-### 2.1 The Four Editorial Passes
+### 3.1 Decision summary
 
-The narrative intelligence system inserts four sequential editorial passes into Step 4 (Compose), after draft assembly and before format finalization. The ordering is strict and sequential.
+**Warn-and-drop with explicit opt-in override.** Not silent. Not a hard error.
 
-```
-Step 4: Compose
-  │
-  1. ASSEMBLE drafts from .drafts/
-  │
-  2. PASS 1: Emphasis Selection  ──── reorders slides by impact
-  │         ↓ output: reordered slide sequence
-  3. PASS 2: Information Cutting ──── merges/removes low-value slides
-  │         ↓ output: reduced slide set + cuts log
-  4. PASS 3: Audience Framing   ──── restructures arguments per audience
-  │         ↓ output: reframed slide content
-  5. PASS 4: Narrative Tension  ──── positions climax at 60-70% point
-  │         ↓ output: final slide sequence with tension arc
-  │
-  6. FORMAT + FINALIZE (write .md, optionally .json)
-```
+### 3.2 Behavior matrix
 
-### 2.2 Why This Order (and Why Sequential)
+| Config state | schema_version | Behavior |
+|---|---|---|
+| v2.6 with `project_type: GREENFIELD` | 2.6 | Parse. Log deprecation banner on stage start. Phase 1 detection runs and drives routing. Legacy `project_type` ignored for routing. |
+| v2.7, no `project_type` | 2.7 | Normal operation. Phase 1 detection every run. |
+| v2.7 with `routing.force_type: DOCS_ONLY` | 2.7 | Phase 1 detection runs and is logged, but routing uses `routing.force_type`. Banner announces the pin. |
+| v2.7, both bare `project_type` AND `routing.force_type` | 2.7 | `routing.force_type` wins. Bare `project_type` logged as deprecated. |
+| v2.6, neither key | 2.6 | Unchanged from today. |
 
-The passes are **strictly sequential** -- no parallelism is possible. Each pass transforms the slide set, and the next pass operates on the transformed output.
+### 3.3 Why warn-and-drop (not silent)
 
-| Pass | Why This Position | Depends On |
-|------|-------------------|------------|
-| 1. Emphasis | Must run first because it establishes the impact ranking that all subsequent passes respect. Cutting a slide that was already positioned for emphasis would be contradictory. | Raw drafts only |
-| 2. Cutting | Runs after emphasis because we cut *after* knowing what is important. A slide ranked low by emphasis is a stronger cut candidate. The cuts log must be finalized before framing rewrites content. | Emphasis-ranked order |
-| 3. Framing | Runs after cutting because we rewrite only surviving slides. Framing a slide that gets cut wastes work. Runs before tension because framing changes argument structure, which affects where the climax should land. | Cut-reduced slide set |
-| 4. Tension | Runs last because it needs the final slide set (post-cut) with final content (post-framing) to identify the true climax. Moving a slide to the 60-70% position is meaningless if the slide set or content changes after. | Final framed content |
+C1 is correct that silent drop is a behavior break wearing a compatibility costume. A user who pinned `project_type: DOCS_ONLY` intentionally deserves to know their pin is being ignored. The deprecation banner gives them one run's notice before they migrate to `routing.force_type:`.
 
-### 2.3 Pass Data Flow
+### 3.4 Parser changes
 
-Each pass reads and writes the same in-memory slide list. No intermediate files.
+- `SKILL.md` Phase 1: always run detection from the current user request.
+- Config loader: read `project_type` if present, emit deprecation to `state.md` run log + stage banner, discard for routing.
+- New key `routing.force_type` in schema v2.7. Enum matches existing project types.
+- Migration recipe in `config-schema.md` "Deprecated keys" section.
 
-- **Emphasis**: Reads `body` content of each slide to compute impact signals. Mutates slide order. Writes `emphasis_log` (list of reorder actions).
-- **Cutting**: Reads slide content to evaluate cutting heuristics. Removes slides from the list and merges key points into adjacent slides. Writes `cuts_log` (list of merges with rationale).
-- **Framing**: Reads `metadata.audience` and each slide's `body`. Rewrites `body` content in-place per audience framing rules from `narrative-patterns.md`. No structural changes.
-- **Tension**: Reads slide count (skip if < 6), identifies climax slide, repositions it to 60-70% point. Respects locked positions (PO-sequenced, structural like Now/Next/Later). Mutates slide order.
-
-Both `emphasis_log` and `cuts_log` are preserved for Step 6 output (Narrative Cuts and Emphasis Order sections).
-
-### 2.4 Config Toggles
-
-Each pass can be independently disabled:
-
-| Pass | Disabled By | Effect When Disabled |
-|------|-------------|---------------------|
-| Emphasis | `narrative_reorder: false` OR user "no reorder" | Pass skipped entirely, original outline order preserved |
-| Cutting | `narrative_cutting: false` | Pass skipped entirely, all draft slides preserved |
-| Framing | (always on) | Cannot be disabled -- audience is always relevant |
-| Tension | Implicitly off when < 6 slides | No config toggle; only slide count threshold applies |
-
-When emphasis is disabled but tension is not, tension still runs -- it works on whatever order exists. When cutting is disabled, tension operates on the full slide set.
+**See ADR-002 for the full decision record.**
 
 ---
 
-## 3. Fallback Degradation Architecture
+## 4. Isolated Adversarial Loop Convergence Algorithm
 
-### 3.1 Decision Tree
+### 4.1 Termination conditions (canonical)
 
-```
-Flow starts → Timer begins
-  │
-  ├─ PRE-FLOW: Evaluate light mode
-  │   ├─ light_mode = "never" OR --full flag? → FULL MODE
-  │   ├─ light_mode = "always"? → LIGHT MODE
-  │   └─ light_mode = "auto"?
-  │       ├─ Contributing roles <= 3? → LIGHT MODE
-  │       └─ Contributing roles >= 4? → FULL MODE
-  │
-  ├─ Steps 1-2: No degradation (always full depth)
-  │
-  ├─ Step 3 (Draft):
-  │   ├─ FULL MODE → all assigned roles dispatched
-  │   └─ LIGHT MODE → only required roles, optional slots skipped
-  │
-  ├─ At 75% of threshold:
-  │   └─ DEGRADE: Step 5 → single reviewer (TW only), MUST-FIX only
-  │
-  ├─ Step 4 (Compose): No degradation (narrative passes always run fully)
-  │   Note: Compose is a single-agent step, not parallelizable,
-  │   so degradation levers do not apply here.
-  │
-  ├─ Step 5 (Review Gate):
-  │   ├─ FULL + under threshold → 2 reviewers (TW + UX), full scope
-  │   ├─ LIGHT + under threshold → 1 reviewer (TW), full scope
-  │   ├─ FULL + 75% hit → 1 reviewer (TW), MUST-FIX only
-  │   └─ LIGHT + 75% hit → 1 reviewer (TW), MUST-FIX only
-  │
-  └─ Step 6 (User Review):
-      └─ If threshold exceeded → append notice with timing + suggestion
-```
+Terminate when ANY of:
 
-### 3.2 What Degrades vs What Never Degrades
+1. **Two-clean rule**: Two *consecutive* loops return zero findings → `status: converged (two_clean)`
+2. **No-new-classes rule**: Two *consecutive* loops have findings, but every finding belongs to an issue class raised in an earlier loop (no new class has appeared for 2 consecutive iterations) → `status: converged (class_saturated)`
+3. **Hard cap**: `N >= max_self_correction` (default 3) → `status: cap_reached`, surfaced to the human checkpoint with residuals documented.
 
-| Component | Degrades? | Rationale |
-|-----------|-----------|-----------|
-| Step 1 (Assemble) | Never | User checkpoint -- must be full quality |
-| Step 2 (Content Gate) | Never | Automated validation, negligible time |
-| Step 3 (Draft) | Light mode only | Role count is the primary time driver |
-| Step 4 (Compose) | Never | Single-agent, editorial passes are fast |
-| Step 5 (Review Gate) | Yes | Reviewer count and scope both degrade |
-| Step 6 (User Review) | Never | User checkpoint -- always full output |
-| Narrative passes | Never | Rule-based, fast, always run if enabled |
-| PPTX generation | Never | Post-approval, outside threshold window |
+A single zero-finding loop is **not** sufficient — fresh reviewers produce non-monotonic critique sets (C4).
 
-### 3.3 Threshold Resolution
+### 4.2 Issue class taxonomy
+
+Reviewers MUST tag each finding with exactly one class from a fixed taxonomy declared in `team-patterns.md`:
 
 ```
-1. presentation.thresholds.{type-name} → per-type override
-2. presentation.thresholds_default → global override
-3. Neither set → 90 seconds (hardcoded)
-4. Value = 0 → no threshold (unlimited)
+coupling | security | data-integrity | naming | testability | performance | docs
 ```
 
-The timer starts at flow begin (before Step 1) and the 75% check occurs at each step transition. The threshold governs Steps 1-6 only; PPTX generation is post-approval and outside the threshold window.
+A finding without a valid tag is treated as `misc` and counted as a new class (conservative — prevents taxonomy evasion).
 
-### 3.4 Light Mode + Threshold Interaction
+### 4.3 Pseudocode (loop protocol)
 
-Light mode and threshold degradation are **independent controls that converge on the same levers**. They are not cumulative -- when both are active, the effect is the union, not the sum.
+```
+function isolated_adversarial_loop(artifact, max_iter):
+    loops = []
+    N = 0
+    while N < max_iter:
+        N += 1
 
-| Scenario | Step 3 Roles | Step 5 Reviewers | Step 5 Scope |
-|----------|-------------|-----------------|-------------|
-| Full, under threshold | All | TW + UX | Full |
-| Full, 75% hit | All | TW only | MUST-FIX only |
-| Light, under threshold | Required only | TW only | Full |
-| Light, 75% hit | Required only | TW only | MUST-FIX only |
+        # Fresh reviewer. Prompt contains ONLY the current artifact
+        # plus the standard adversarial reviewer brief + taxonomy.
+        # NO prior findings, NO "this is loop N", NO fix summaries.
+        reviewer = dispatch_fresh_subagent(
+            role="adversarial_reviewer",
+            inputs=[artifact, reviewer_brief, taxonomy],
+            context_leak=False,
+        )
+        findings = reviewer.return_findings()   # [{issue, class}, ...]
+        classes  = { f.class for f in findings }
+        loops.append({"findings": findings, "classes": classes, "N": N})
 
-The only additive effect: light mode starts with fewer roles in Step 3 AND threshold degradation adds MUST-FIX-only scope in Step 5. The reviewer count does not drop below 1.
+        # Rule 1: two-clean
+        if len(findings) == 0:
+            if len(loops) >= 2 and len(loops[-2]["findings"]) == 0:
+                return {"status": "converged", "reason": "two_clean", "loops": loops}
+            # Single clean loop: keep going, do NOT exit.
+            # Architect has nothing to fix; re-dispatch reviewer on same artifact.
+            continue
+
+        # Rule 2: no-new-classes
+        if len(loops) >= 3:
+            prior_union_before_prev = union(l["classes"] for l in loops[:-2])
+            prior_union_before_curr = union(l["classes"] for l in loops[:-1])
+            prev_classes    = loops[-2]["classes"]
+            current_classes = loops[-1]["classes"]
+            if (prev_classes.issubset(prior_union_before_prev) and
+                current_classes.issubset(prior_union_before_curr)):
+                document_residuals(findings)
+                return {"status": "converged", "reason": "class_saturated", "loops": loops}
+
+        # Otherwise: Architect (fresh dispatch) revises artifact.
+        artifact = dispatch_fresh_subagent(
+            role="architect_revise",
+            inputs=[artifact, findings],   # Architect sees current findings only.
+        ).revised_artifact()
+
+    # Rule 3: hard cap
+    document_residuals(loops[-1]["findings"])
+    return {"status": "cap_reached", "loops": loops}
+```
+
+### 4.4 Key invariants
+
+- **Reviewer context isolation**: every reviewer dispatch is a fresh sub-agent with zero prior-loop context. Enforced by the dispatch wrapper.
+- **Architect context scoping**: the Architect revision sub-agent sees the **current** loop's findings only, not prior loops' findings, to prevent compound patching.
+- **Cap-reached is a documented exit**, not a failure. Human checkpoint decides whether to accept residuals.
+- **N=1 clean pass** continues to N=2 with the same artifact. A clean first pass proves nothing.
+
+**See ADR-003 for the full decision record.**
 
 ---
 
-## 4. File Organization
+## 5. Documentation Touch Points (Edit Map)
 
-### 4.1 New Files
+Complete set of files the Development stage will edit. No content drafted here — only *what change goes where*.
 
-| File | Purpose |
-|------|---------|
-| `delivery-team/skills/presentation/scripts/generate_pptx.py` | PPTX generation script (FR-07 through FR-11) |
+### 5.1 delivery-flow plugin (primary)
 
-This is the only net-new file in the skill directory. The `scripts/` directory does not currently exist and must be created.
+| File | Changes | FRs |
+|------|---------|-----|
+| `delivery-team/skills/delivery-flow/SKILL.md` | Add "Delegation Prime Directive" section (top, post-metadata). Add "One Role = One Sub-Agent" rule block adjacent. Revise Step 4.5 to reject "simple" justifications. Add "Common Orchestrator Anti-Patterns" section (post-stages, pre-references). Update Phase 1 guidance to reference current-request detection. Bump schema_version references to 2.7. | FR-03, FR-05, FR-06, FR-07, FR-08, FR-10 |
+| `.../references/config-schema.md` | Bump v2.6 → v2.7. Move `project_type` to "Deprecated keys". Add `routing.force_type` and `pipeline.enforce_self_write_block`. Document expanded `max_self_correction` use. Changelog. | FR-01, FR-02, FR-15, FR-16 |
+| `.../references/setup-wizard.md` | Remove Q1 (project_type). Renumber Q2-Q10 → Q1-Q9. Note the renumbering for any external references. Wizard output has no `project_type` and declares `schema_version: 2.7`. | FR-04 |
+| `.../references/project-types.md` | Reframe: project types are runtime routing decisions, not config settings. | FR-05 |
+| `.../references/pipeline-stages.md` | Header note: `[PARALLEL]`/`[SEQUENTIAL]` markers mean separate sub-agents per role. Stage 4 references Isolated Adversarial Loop pattern by name; bounds loops by `max_self_correction`. | FR-11, FR-14 |
+| `.../references/team-patterns.md` | Every pattern gets a "Dispatch rule:" one-liner. Add new "Isolated Adversarial Loop" variant with full protocol (setup, loop, three convergence rules, taxonomy, no-context-leak guarantee). | FR-11, FR-13 |
+| `.../references/quality-gates.md` | DoD validation: each validator role is its own sub-agent invocation. Add "Known hook limitations" list mirrored from the hook docstring. | FR-09, FR-11 |
 
-### 4.2 Modified Files
+### 5.2 Hook scripts
 
-| File | Changes | Groups Affected |
-|------|---------|----------------|
-| `delivery-team/skills/presentation/SKILL.md` | Add 5 new types to detection table. Add pipeline auto-detection mappings. Add PPTX format to output formats section. Add JSON intermediate to Step 4. Add narrative intelligence editorial passes to Step 4. Add light mode and threshold logic. Add new config keys. Add new user commands (`--format pptx`, `--full`, `--light`, `restore`, `no reorder`). Update error handling table. Update references table. | A, B, C, D |
-| `delivery-team/skills/presentation/references/narrative-patterns.md` | Add 5 new narrative frameworks (Traction-Opportunity-Ask, Now-Next-Later, Hook-Show-Impact, Context-Landscape-Pathways, Celebrate-Learn-Commit). Add default framework mappings for new types. Add "Audience Framing Rules" section (FR-18). Add type-specific emphasis weight modifiers (OQ-3 resolution). Add narrative tension patterns per type (FR-19). Add sensitivity filter rules for Retro Summary. | A, D |
-| `delivery-team/skills/presentation/references/slide-structure.md` | Add slide sequencing sections for 5 new types (Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary). Add `[DEMO]` placeholder conventions for Product Demo type. | A |
-| `delivery-flow/references/config-schema.md` | Add 8 new `presentation.*` config keys following v2.3 extension protocol. Version bump to v2.4. | B, C, D |
+| File | Changes | FRs |
+|------|---------|-----|
+| `delivery-team/hooks/enforce_pipeline_scope.py` | Extend module docstring with scope + known gaps. Add `ALLOWLIST` constant. Add layered origin detection (env var → hook input metadata → soft-deny). Extend to `Bash` tool. Add Bash-redirection pattern matcher. Add activation gating on `schema_version >= 2.7` + `pipeline.enforce_self_write_block`. Preserve try/except → sys.exit(0). | FR-09 |
+| `delivery-team/hooks/hooks.json` | Register `enforce_pipeline_scope.py` on `Bash` in addition to Edit/Write/NotebookEdit. | FR-09 |
+| `delivery-team/hooks/audit_agent_prompt.py` *(OPTIONAL / MAY)* | Add compound *reviewer* prompt detector (negation-aware). Emit non-blocking `systemMessage` on hit. | FR-12 |
 
-### 4.3 Unchanged Files
+### 5.3 Cross-cutting doc parity
 
-| File | Rationale |
-|------|-----------|
-| `references/marp-templates.md` | No Marp changes in v1.1 |
-| `references/data-visualization.md` | No visualization changes in v1.1 |
+| File | Changes | FRs |
+|------|---------|-----|
+| `CLAUDE.md` | Update "Config schema" conventions line: v2.6 → v2.7. | FR-16 |
+| `README.md` | Scan for `project_type` as a config field. Remove or update. | FR-16 |
+| `.claude-plugin/marketplace.json` | Scan for schema version references. Update if present (likely no-op). | FR-16 |
+| `docs/**` (MkDocs site, 25 pages) | Grep for `project_type`, `schema_version: 2.6`, bare `2.6`. Update surviving references. | FR-16 (expanded per C7) |
 
-### 4.4 Directory Structure After v1.1
+### 5.4 NOT touched (explicit)
 
-```
-delivery-team/skills/presentation/
-├── SKILL.md                              (modified)
-├── scripts/
-│   └── generate_pptx.py                  (new)
-└── references/
-    ├── slide-structure.md                (modified)
-    ├── narrative-patterns.md             (modified)
-    ├── data-visualization.md             (unchanged)
-    └── marp-templates.md                 (unchanged)
-```
-
----
-
-## 5. Architecture Decision Records
-
-### ADR-01: JSON Intermediate Over Direct Markdown Parsing
-
-**Context**: The PPTX script needs structured slide data. Two options: (a) parse `composed-draft.md` with regex, or (b) have the Composer output a parallel JSON intermediate.
-
-**Decision**: JSON intermediate (option b).
-
-**Rationale**: Markdown parsing is brittle -- slide boundaries, nested bullets, tables, and Mermaid blocks create ambiguous parse states. The JSON is authoritative and typed. The cost is one additional artifact in `.drafts/` (cleaned up on approve/abort). The Composer already knows the slide structure in-memory; serializing to JSON is trivial.
-
-**Consequences**: The Composer must produce valid JSON when `format=pptx`. The JSON schema becomes a contract between the Composer and the script. Changes to slide structure require coordinated updates to both.
-
-### ADR-02: Sequential Editorial Passes, Not Parallel
-
-**Context**: The four narrative intelligence passes could theoretically run in parallel to reduce latency.
-
-**Decision**: Strictly sequential (Emphasis -> Cutting -> Framing -> Tension).
-
-**Rationale**: Each pass transforms the slide set. Emphasis ranking informs cutting decisions. Cutting removes slides before framing rewrites them. Framing changes content that tension uses to identify the climax. Parallel execution would require each pass to operate on a snapshot, producing conflicting mutations that need complex reconciliation. The passes are fast (rule-based, no sub-agent dispatch), so sequential execution adds negligible latency.
-
-### ADR-03: Step 4 (Compose) Never Degrades
-
-**Context**: The threshold degradation system could potentially simplify Step 4 by reducing editorial passes.
-
-**Decision**: Step 4 always runs at full depth. Degradation targets Step 3 (role count) and Step 5 (reviewer count and scope).
-
-**Rationale**: Step 4 is a single-agent step executing rule-based passes -- it is inherently fast. The time cost is dominated by Step 3 (multi-agent dispatch) and Step 5 (multi-reviewer dispatch). Degrading editorial passes would reduce output quality for minimal time savings. The architectural invariant is: degradation reduces *parallelism width* (fewer agents/reviewers), never *processing depth* (fewer passes on the same content).
+- Other delivery-team skills (`developer/`, `quality/`, `architect/`, `godot/`, `operations/`, `ui/`, `presentation/`, `user-feedback/`, `alias-creator/`)
+- Other plugins (`agentic-flow-builder/`, `prd-quality-gate-flow/`, `research-agent/`, `prompt-engineer/`)
+- Any database / SQLite component
+- Any MCP server
 
 ---
 
-*"And thus the design is laid. Four enhancements, woven into the existing six-step flow with surgical precision. The foundation endures; the augmentation elevates. Let us now forge the implementation."*
+## 6. Non-Functional Budget
+
+| NFR | Budget | Architecture position |
+|---|---|---|
+| NFR-01 | p95 ≤ 50ms for hook | Layered detection is O(1) dict/string ops. Bash regex is one pass. Well under budget. |
+| NFR-02 | stdlib only | Only `os.environ`, `re`, `fnmatch`, `pathlib`. |
+| NFR-03 | v2.6 configs must parse | Tolerant parser. Warn-and-drop (ADR-002). |
+| NFR-04 | doc parity is a DoD validator | Edit map §5 is the canonical grep target list. |
+| NFR-05 | graceful degradation | `try/except sys.exit(0)` preserved; Layer 3 soft-deny. |
+| NFR-06 | dogfood this bundle | Activation gating (§2.5) makes dogfood forward-looking. |
+| NFR-07 | plugin-dev skills required | Enforced at Development-stage DoD. |
+| NFR-08 | atomic merge | Single PR with all §5 edits. |
+
+---
+
+## 7. Risk Treatment Summary
+
+| PRD Risk | Architecture response |
+|---|---|
+| R1 over-blocking | Explicit allowlist constant (§2.3) |
+| R2 FR-12 brittleness | FR-12 remains MAY; negation-aware matcher if implemented |
+| R3 non-convergence | Two-clean + no-new-classes + hard cap (ADR-003) |
+| R4 v2.6 parse crash | Tolerant parser with try/except (ADR-002) |
+| R5 doc parity drift | Explicit §5 edit map |
+| R6 origin detection unreliability | Layered + soft-deny fallback (ADR-001) |
+| R7 dogfood paradox | Activation gating on schema_version + flag (§2.5) |
+| R8 SKILL.md anchor drift | Plan-stage grep before merge |
+
+---
+
+## 8. Open Questions (forwarded to Plan)
+
+- **PQ-1**: Does Layer 2 (hook input metadata) actually receive a sub-agent identifier in the current Claude Code harness, or is Layer 1 (env var) load-bearing? Verify against harness version in use.
+- **PQ-2**: Test fixture location for v2.6 legacy config (OQ-7). No test runner — recommend `delivery-team/tests/fixtures/legacy-v2.6-config.yml` exercised by a standalone Python script.
+- **PQ-3**: `routing.force_type` enum — must it match exactly the Phase 1 detection vocabulary? Assume yes unless Design says otherwise.
+
+---
+
+## 9. ADR Index
+
+- **ADR-001**: Origin detection mechanism for `enforce_pipeline_scope.py`
+- **ADR-002**: `project_type` migration strategy (v2.6 → v2.7)
+- **ADR-003**: Isolated Adversarial Loop convergence criteria
+
+---
+
+*"The hammer has fallen where the seams were thinnest. What remains is straight, and what remains will endure."*
+
+— Celebrimbor

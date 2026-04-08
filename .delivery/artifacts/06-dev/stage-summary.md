@@ -1,14 +1,29 @@
 ## Stage 6: Development — Summary
-**Pipeline**: run-2026-04-04-p5v8 | **Date**: 2026-04-04 | **Status**: CODE_COMPLETE (R2 — derived artifacts fixed)
 
-### Sprints Delivered
-| Sprint | Stories | SP | Files Modified |
-|--------|---------|-----|----------------|
-| 1 | US-01, US-02 | 5 | SKILL.md, slide-structure.md, narrative-patterns.md |
-| 2 | US-07, US-08 | 6 | SKILL.md, narrative-patterns.md, config-schema.md |
-| 3 | US-05, US-06 | 5 | SKILL.md, config-schema.md |
-| 4 | US-03, US-04 | 8 | SKILL.md, config-schema.md + NEW generate_pptx.py |
+**Pipeline**: run-2026-04-05-3d92
+**Project Type**: BUG_FIX
 
-### DoD R1: Gimli NOT_DONE (stale schema.json + missing YAML keys), Legolas CODE_COMPLETE, Celebrimbor DONE
-### Self-correction: Fixed YAML template (7 keys), regenerated config-schema.json (v2.6, 86 rows)
-### Empirical ACs: 8 pending dogfooding (1 per story) → UAT
+### Stories Implemented
+
+| Story | ID | Status | Changes |
+|-------|-----|--------|---------|
+| Stale Hook Migration Logic | B-011-A | DONE | +migration section in setup-wizard.md |
+| Post-Install Hook Validation | B-011-B | DONE | +validation section + expected hooks table |
+| Documentation Update | B-011-C | DONE | +conflict detection logic docs |
+
+### Total Changes
+- 173 lines added, 0 deleted in setup-wizard.md
+- All existing content preserved unchanged
+
+### Agents Dispatched
+
+| Agent | Role | Status | Artifact |
+|-------|------|--------|----------|
+| Developer (Gimli) | Primary — implementation | DONE | 06-dev/developer/B-011-all.md |
+| QA Engineer (Legolas) | Evaluator-Optimizer | DONE | 06-dev/qa-evaluator/B-011-all-round-1.md |
+| Developer (Gimli) | DoD Validator | DONE | 06-dev/dod/B-011-all-developer-review.md |
+| QA Engineer (Legolas) | DoD Validator | DONE | 06-dev/dod/B-011-all-qa-review.md |
+| Architect (Celebrimbor) | DoD Validator | DONE | 06-dev/dod/B-011-all-architect-review.md |
+
+### Gate Result
+ALL validators DONE. Stage advances.

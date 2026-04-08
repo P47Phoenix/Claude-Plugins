@@ -104,7 +104,7 @@ Key settings that affect pipeline behavior:
 
 | Setting | Effect |
 |---------|--------|
-| `project_type` | Determines stage routing |
+| `routing.force_type` | Optional pin overriding Phase 1 type detection (detection always runs) |
 | `pipeline.checkpoints` | Which stages have human checkpoints |
 | `pipeline.collaboration_patterns` | Which quality patterns run |
 | `pipeline.max_self_correction` | Iteration limit per stage |

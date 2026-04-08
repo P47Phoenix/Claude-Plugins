@@ -62,7 +62,7 @@ Reference files contain domain-specific knowledge loaded on demand. Key rules:
 
 ### Config Schema
 
-The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.6).
+The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.7).
 
 When adding new config keys, follow the extension protocol:
 

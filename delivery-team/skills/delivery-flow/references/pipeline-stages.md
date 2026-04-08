@@ -16,6 +16,16 @@ Each sub-flow step below is annotated with:
 - **[PARALLEL]** or **[SEQUENTIAL]**: whether the step can run concurrently with other steps
 - **[required]** or **[optional]**: whether the agent's output is mandatory for stage completion
 
+> **One role = one Agent tool call.** The `[PARALLEL]` and `[SEQUENTIAL]`
+> annotations imply **one Agent tool call per listed role**. When a step
+> lists N roles to run in parallel, the orchestrator dispatches N separate
+> Agent tool calls in a single message. Never combine multiple roles into
+> a single sub-agent invocation — even when the roles look similar, even
+> when one role's output is brief, even when it would be faster. Compound
+> multi-role prompts are a Prime Directive violation and are detected by
+> `audit_agent_prompt.py`. See SKILL.md "One Role = One Sub-Agent" and
+> `references/team-patterns.md` for the full dispatch contract.
+
 ---
 
 ## Agent Invocation Templates
@@ -350,8 +360,27 @@ Create technical architecture: system design, C4 models, ADRs, technology decisi
    - Output: `.delivery/artifacts/04-architect/security/security-review.md`
 5. **Evaluator-Optimizer Loop** [SEQUENTIAL] [required]: QA reviews for testability, DevOps reviews for deployability. Route findings back to Architect. Max 2 iterations.
    - Evaluator writes to: `.delivery/artifacts/04-architect/qa-evaluator/evaluation-round-{N}.md`
-6. **Adversarial Review** [SEQUENTIAL after eval-opt] [required]: Challenger questions architecture assumptions, rates confidence
-   - Challenger writes to: `.delivery/artifacts/04-architect/challenger/challenge.md`
+6. **Isolated Adversarial Loop** [SEQUENTIAL after eval-opt, multi-iteration] [required]:
+   Replaces the single-pass Adversarial Review at Stage 4. Each loop iteration
+   dispatches a **fresh** reviewer sub-agent (one Agent tool call per loop) with
+   zero prior-loop context — no prior findings, no loop number, no fix summaries.
+   Reviewers tag findings with the fixed class taxonomy
+   (`coupling | security | data-integrity | naming | testability | performance | docs`;
+   untagged = `misc` = new class). Between loops, the Architect is re-dispatched
+   (another fresh Agent call) to address the **current** loop's findings only.
+   Convergence rules (ADR-003):
+     (1) **Two-clean**: two consecutive zero-finding loops → `converged (two_clean)`
+     (2) **No-new-classes**: two consecutive loops whose classes are all subsets
+         of classes raised in earlier loops → `converged (class_saturated)` with
+         residuals documented
+     (3) **Hard cap**: `N >= pipeline.max_self_correction` (default 3) →
+         `cap_reached` with residuals documented and surfaced at the human
+         checkpoint (cap_reached is a documented exit, not a failure)
+   A single zero-finding pass at N=1 does NOT exit — re-run the reviewer on the
+   same artifact to seek the second consecutive clean.
+   - Each loop's reviewer writes to: `.delivery/artifacts/04-architect/challenger/loop-{N}.md`
+   - Architect revisions between loops write to: `.delivery/artifacts/04-architect/solution/architecture.md` (in place)
+   - See `references/team-patterns.md` Pattern 2b (Isolated Adversarial Loop) and ADR-003 for the full protocol.
 7. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: Architect (soundness), QA (testability), DevOps (deployability), Security (posture)
 8. **Human Checkpoint 2** [SEQUENTIAL]: Present architecture summary for approval
 

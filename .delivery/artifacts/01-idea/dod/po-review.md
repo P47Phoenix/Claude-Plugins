@@ -1,94 +1,103 @@
 # Product Owner Review -- Idea Brief (Gate 1)
 
 **Reviewer**: Product Owner (Gandalf)
-**Date**: 2026-04-04
+**Date**: 2026-04-05
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Pipeline**: Presentation v1.1 batch
-**Issues**: #43, #44, #45, #46 -- Presentation Skill v1.1 Enhancement Batch
+**Project**: Orchestration Discipline Bundle (FEATURE, bundled)
+**Sources**: GitHub Issues #73, #71, #70, #69
 **Verdict**: DONE
+
+*"A product owner is never late, nor early. They prioritize precisely when they mean to."*
 
 ---
 
 ## Criteria Evaluation
 
-### [PASS] [blocking] Problem statement present and specific
+### [PASS] [blocking] Problem statement present and clear
 
-The problem statement identifies four distinct gaps in the existing presentation skill, and each gap is described with concrete observable symptoms rather than vague aspirations:
+The Problem Statement names all four discipline gaps with precision: (1) a frozen `project_type` in config that lies to runs of any other type, (2) the orchestrator granting itself "simple enough" exemptions and writing artifacts directly, (3) review patterns silently collapsing multiple reviewer roles into a single sub-agent and defeating context isolation, and (4) the Architect stage running only one adversarial pass and anchoring on first-pass findings. The compounding harm -- erosion of trust in the pipeline's verdicts -- is named explicitly. The bundling rationale (shared files, merge churn, contradictory edits) is included and is itself a piece of problem framing. A reader can reproduce each failure mode from the description.
 
-1. **Limited type coverage** -- five named presentation types hit a hard "Unknown type" error. The failure mode is specific: users encounter a STOP, not degraded behavior.
-2. **No branded file output** -- markdown and Marp text exist but no path to `.pptx`. The gap is precisely bounded: teams need files they can email or present without a markdown renderer.
-3. **No degradation strategy** -- the 90-second target is named, and the failure mode is described: no progress, no fallback, no tuning levers. A user encountering this knows exactly the stall the brief describes.
-4. **Shallow narrative intelligence** -- the brief distinguishes between what the Composer does today (normalize tone, enforce density) and what it does not do (editorial judgment: emphasis, cutting, audience framing, narrative tension). This is not "make it better" -- it names the specific editorial capabilities that are absent.
+### [PASS] [blocking] Target users identified
 
-Each gap maps to a numbered GitHub issue. A developer reading this problem statement can reproduce each failure independently. Sufficient specificity for a FEATURE enhancement batch.
+Three distinct user groups are enumerated, each with the specific pain this bundle addresses:
 
-### [PASS] [blocking] Target users identified with brief descriptions
+1. **delivery-flow operators** -- currently get wrong-typed routing and invisible orchestrator shortcuts.
+2. **Plugin contributors** -- depend on context isolation and adversarial review for honest agent outputs.
+3. **Future PO and Architect agents** -- need the orchestrator to be a delegator, not a doer.
 
-Four user groups are named, each with a distinct need:
+The user list maps cleanly onto the four issues, so each fix has a constituency.
 
-1. **Delivery pipeline users** -- create presentations as part of sprint reviews, stakeholder updates, and feature pitches within delivery-flow. Their context is internal pipeline usage.
-2. **Product owners and team leads** -- need branded `.pptx` files for stakeholders who do not use markdown tooling. The constraint is explicit: their audience cannot consume the current output formats.
-3. **Teams running long presentations** -- 10+ slides, multiple contributing roles. The friction point is generation time, not output quality.
-4. **Anyone presenting to executives, investors, or external audiences** -- narrative quality determines whether the message lands. The stakes are explicit: these are high-consequence presentations.
+### [PASS] [blocking] Goals are measurable
 
-Each persona maps to at least one of the four issues. No persona is orphaned, no issue lacks a user. The personas are distinct enough that downstream story writing can use them as the "As a..." role.
-
-### [PASS] [blocking] Goals present and measurable
-
-Four goals, each tied to a specific issue with a measurable target:
+Five goals, each with an observable, binary acceptance signal:
 
 | # | Goal | Measurable? | Assessment |
 |---|------|-------------|------------|
-| 1 | 5 new types fully functional with slide sequencing, narrative arc, content gate rules | Yes -- each type passes end-to-end with no [TBD] artifacts and no "Unknown type" fallback | Binary pass/fail per type. Five tests, five verdicts. |
-| 2 | python-pptx script produces branded `.pptx` from structured output | Yes -- valid `.pptx` opens in PowerPoint/LibreOffice with correct slide mapping, fonts, colors | Verifiable by opening the file. Acceptance criteria name the specific attributes to check. |
-| 3 | Progress indication + graceful degradation when 90s exceeded | Yes -- progress indicators display, light mode activates, per-type threshold tuning is configurable | Three sub-criteria, each independently testable. |
-| 4 | Composer applies editorial judgment: emphasis, cutting, framing, tension | Yes -- TW + UX reviewers confirm four specific behaviors | The four behaviors are named. Reviewers have a checklist, not a vibes assessment. |
+| 1 | Truthful project typing per run | Yes -- inspect a pipeline run and verify Phase 1 detection executed from the user's request, not from config | Binary: detection ran or did not |
+| 2 | Delegation as prime directive | Yes -- run the pipeline; verify zero orchestrator writes to `.delivery/artifacts/` (except routing metadata) and to source files; hook enforcement present | Hook either blocks self-writes or it does not |
+| 3 | One role, one sub-agent | Yes -- audit any pipeline run; each reviewer role appears in its own sub-agent invocation; compound prompts detectable | Hook flags compound prompts or not |
+| 4 | Iterative adversarial review at Architect | Yes -- inspect Architect stage; loops are isolated, fresh-context, and bounded by `max_self_correction` (default 3) or zero-issue exit | Loops behave as specified or not |
+| 5 | Coherent edits | Yes -- verify named shared files are touched once with internally consistent guidance | Single PR diff is reviewable for consistency |
 
-Goal 4 is the most subjective of the four -- "confirm the Composer actively reorders for impact" requires reviewer judgment. However, the brief mitigates this by naming four specific editorial behaviors as the checklist. A reviewer who cannot point to evidence of reordering, cutting, framing, or climax-building has a clear basis for NOT_DONE. This is acceptable rigor for narrative quality at the Idea stage; the Refine stage can define concrete test scenarios.
+Each goal is testable in DoD without further clarification.
 
-### [PASS] [blocking] Initial scope defined
+### [PASS] [blocking] Constraints documented
 
-The scope section is structured per-issue with specific deliverables:
+Six constraints are named, all well-targeted:
 
-- **#43**: 5 type definitions in SKILL.md, narrative arc patterns, slide structure definitions, error handling table update. Four discrete file changes.
-- **#44**: Python script in `scripts/`, template-based slide mapping (4 slide types named), font/color config, new output format option. Bounded to one new script and integration touchpoints.
-- **#45**: Progress indicators extending existing `[N/6]` markers, "light mode" definition, per-type threshold config, documentation. Enhances existing flow steps rather than adding new ones.
-- **#46**: Compose step (Step 4) enhancement with four named editorial rules, reference material addition, Review Gate criteria update. Changes are confined to the Compose step and review criteria.
+1. **Backwards compatibility for config** -- removing `project_type` must not break existing `.delivery/config.yml`; key tolerated, deprecation noted, schema version bumped.
+2. **No new external dependencies** -- hook updates remain pure Python stdlib.
+3. **Hook performance budget** -- `enforce_pipeline_scope.py` and `audit_agent_prompt.py` must not noticeably slow tool calls.
+4. **Documentation parity** -- CLAUDE.md, README.md, marketplace.json, `references/config-schema.md` updated before merge.
+5. **Self-consistency / dogfooding** -- this bundle itself must run through delivery-flow.
+6. **Plugin-dev skills required** -- `plugin-dev:skill-development` and `plugin-dev:hook-development` loaded before any SKILL.md or hook edits.
 
-All changes are scoped to `delivery-team/skills/presentation/` (SKILL.md, references, scripts). No new top-level directories. No cross-skill modifications. The constraint section reinforces this: existing 4 types, 6-step flow, and 3 output formats must continue working. This is enhancement, not rewrite.
+These constraints prevent scope drift, protect backward compatibility, and operationalize repo memory (dogfooding, plugin-dev skills, doc parity).
+
+### [PASS] [blocking] Initial scope defined (4 bundled issues)
+
+Four GitHub issues are scoped, ordered by WSJF, each with priority and a concrete edit list:
+
+1. **#73 -- Remove `project_type` from config** (P0, WSJF 25.0). Strip from config and setup wizard, run Phase 1 every invocation, bump schema, document migration, update `config-schema.md`, `setup-wizard.md`, `project-types.md`, SKILL.md.
+2. **#71 -- Orchestrator bypasses delegation when "simple"** (P0, WSJF 14.5). Strengthen delegation directive in SKILL.md, reject "simple" justification at Step 4.5, add anti-patterns section, extend `enforce_pipeline_scope.py` to block orchestrator self-writes.
+3. **#70 -- Enforce one-sub-agent-per-reviewer** (P0, WSJF 14.0). Add "One Role = One Sub-Agent" rule to SKILL.md, reinforce in `team-patterns.md`, `quality-gates.md`, `pipeline-stages.md`; optionally extend `audit_agent_prompt.py`.
+4. **#69 -- Architect adversarial loops with isolated context** (P1, WSJF 11.0). Add isolated adversarial loops at Architect, bounded by `max_self_correction` or zero-issue exit; document as "Isolated Adversarial Loop" in `team-patterns.md`.
+
+A consolidated **Shared Target Files** list names exactly which SKILL.md, references, hooks, and doc-parity files will be touched. The bundling justification is sound: the same files would otherwise be edited 3-4 times across separate runs with merge churn and contradictory edits.
 
 ### [PASS] [blocking] Out of scope defined
 
-Seven explicit exclusions, each preventing a natural scope-creep vector:
+Seven explicit exclusions, each blocking a plausible scope-creep path:
 
-1. No custom/user-defined type framework -- prevents the "just one more type" expansion.
-2. No real-time collaboration -- the skill remains batch generation.
-3. No custom `.potx` template design -- programmatic layouts only, custom branding is future work.
-4. No AI-generated images or diagrams -- slides reference existing assets only.
-5. No changes to other delivery-team skills -- contributing roles are unchanged.
-6. No fundamental speed optimization of sub-agent dispatch -- #45 addresses degradation UX, not framework performance.
-7. No internationalization -- English-only.
+1. Rewriting Phase 1 project-type detection logic itself (only invocation cadence changes).
+2. New collaboration patterns beyond the "Isolated Adversarial Loop" variant.
+3. Adversarial loops at stages other than Architect.
+4. A general migration tool for old configs beyond tolerant parsing and a deprecation note.
+5. Refactoring hooks unrelated to delegation enforcement or prompt auditing.
+6. Net-new analytics, telemetry, or dashboard changes.
+7. Any non-delivery-flow plugin (`developer/`, `architect/`, `quality/`, etc.) -- those are downstream consumers, not the subject of this bundle.
 
-Each exclusion is a boundary that a team member might reasonably try to cross during development. Naming them up front saves cycles.
+Boundaries are crisp. A developer tempted to "fix Refine loops while we're in there" or "add a migration CLI" knows those are out of bounds.
 
-### [PASS] [blocking] Brief sufficient for downstream stages
+### [PASS] [blocking] Business value evident
 
-The brief provides everything downstream needs:
+The through-line is **trust in pipeline verdicts**, named in the Problem Statement and reinforced by every goal. Each fix protects a specific axis of trust: truthful routing (#73), enforced delegation (#71), honest review isolation (#70), and deeper architectural critique (#69). The bundling itself adds value: one coherent PR over four churning ones, with internally consistent guidance across the shared files. For users currently shipping work through delivery-flow, the value is concrete -- the orchestrator stops silently corrupting its own pipeline.
 
-- **Refine** has four issues, each with a clear problem, scope, and measurable goal. Epic decomposition into stories is straightforward -- each issue is already near-epic granularity with named deliverables.
-- **Design/Architect** knows the existing skill structure, the single new dependency (python-pptx), the config schema extension protocol to follow, and the backward compatibility requirement.
-- **Development** has bounded file changes per issue, a named dependency (python-pptx), and explicit constraints (no new top-level directories, no cross-skill changes).
-- **Quality/UAT** can derive test cases directly from the measurable targets: run each new type end-to-end, open generated `.pptx` files, trigger degradation thresholds, have TW+UX review narrative quality.
-- **Dogfooding** is explicitly required in the constraints section -- each enhancement must be validated by actual pipeline use before shipping.
+---
 
-No downstream stage needs to guess at intent, scope, or success criteria. The four-issue structure maps cleanly to parallel work streams with independent acceptance.
+## Notes for Downstream Stages
+
+- **Refine**: turn each of the five goals into explicit acceptance criteria, with the hook or doc edit that enforces each one.
+- **Architect**: examine `enforce_pipeline_scope.py` and `audit_agent_prompt.py` deeply before proposing extensions. Validate and build on the existing designs; do not reimagine them.
+- **Plan**: documentation parity is a hard constraint -- CLAUDE.md, README.md, marketplace.json, and `config-schema.md` edits are first-class tasks, not afterthoughts.
+- **UAT**: this bundle dogfoods delivery-flow; the orchestrator's behavior during this run is itself UAT evidence. Any orchestrator self-write or compound reviewer prompt observed during execution is a failure of the bundle, not an aside.
 
 ---
 
 ## Summary
 
-"Four roads stretch before us, and the brief has mapped each one with the care of a cartographer who has walked the path."
+*"Even the smallest discipline gap can unsettle an entire pipeline. But this brief has traced the shadows to their sources."*
 
-This idea brief covers a four-issue enhancement batch for the presentation skill. Each issue has a specific problem, named users, measurable goals, bounded scope, and explicit exclusions. The constraints section preserves backward compatibility, enforces plugin structure conventions, limits new dependencies to python-pptx, and requires dogfooding. The scope is ambitious but decomposable -- four issues that can be refined, developed, and tested independently.
+All seven Gate 1 criteria pass. The brief is well-structured: four issues bundled with sound rationale, five measurable goals, six well-targeted constraints, seven crisp out-of-scope items, and a consolidated shared-target-files list that makes the coherent-edits goal actionable. The bundle is fit to advance to Stage 2 (Refine).
 
-A product owner is never late, nor early. They prioritize precisely when they mean to. This brief is ready to advance.
+*All we have to decide is what to fix with the discipline that is given to us. And I decide we fix the orchestrator's shortcuts before we trust it with anything larger. Forward to Refine.*
