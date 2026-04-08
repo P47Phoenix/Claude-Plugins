@@ -41,6 +41,8 @@ Before presenting any questions, scan the codebase to populate smart defaults. E
 | Existing `.delivery/` | Check for: `.delivery/config.yml`, `.delivery/memory/*.md`, `.delivery/artifacts/` | Prior wizard run, existing memories, config staleness |
 | Project structure | Check for: `src/`, `lib/`, `app/`, `cmd/`, `scenes/`, `assets/`, `public/`, `tests/` | Monorepo vs single app, game vs web vs API vs CLI |
 
+> **Detected project type hints**: The Phase 1 detector classifies the request into one of GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV+, SPIKE, or DOCS_ONLY. DESIGN is detected when the user frames the engagement as design-only ("design session", "architecture proposal", "no code yet") and routes Idea/Refine/Design/Architect at full depth while skipping Plan/Dev/UAT.
+
 For each scan, the orchestrator uses Glob, Grep, Read, and Bash tools to gather data. Results are compiled into a `detected_state` object that feeds smart defaults into every wizard question.
 
 ---
@@ -191,6 +193,7 @@ found, offer options, and record the answer. Every question includes a
 - GREENFIELD / GAME_DEV+: All 4 checkpoints enabled
 - FEATURE: Checkpoints 1 (Refine) and 4 (UAT)
 - BUG_FIX: Checkpoint 4 (UAT) only
+- DESIGN: Checkpoints 1 (Refine) and 2 (Architect) — DESIGN terminates after Architect
 - SPIKE: None
 - DOCS_ONLY: Checkpoint 4 (UAT) only
 
@@ -559,7 +562,7 @@ wizard_completed: YYYY-MM-DD
 
 ### YAML Field Rules
 
-- `routing.force_type` (optional): One of GREENFIELD, FEATURE, BUG_FIX, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY, or `null` (default). Opt-in override for Phase 1 detection. Phase 1 still runs and is logged; routing uses the pin.
+- `routing.force_type` (optional): One of GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV+GREENFIELD, GAME_DEV+FEATURE, GAME_DEV+BUG_FIX, SPIKE, DOCS_ONLY, or `null` (default). Opt-in override for Phase 1 detection. Phase 1 still runs and is logged; routing uses the pin.
 - `tech_stack.languages`: List of detected or confirmed language names
 - `tech_stack.frameworks`: List of detected or confirmed framework names
 - `tech_stack.databases`: List of detected or confirmed database names (empty list if none)

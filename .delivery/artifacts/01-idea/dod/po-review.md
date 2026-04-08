@@ -3,11 +3,11 @@
 **Reviewer**: Product Owner (Gandalf)
 **Date**: 2026-04-05
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Project**: Orchestration Discipline Bundle (FEATURE, bundled)
-**Sources**: GitHub Issues #73, #71, #70, #69
+**Project**: DESIGN Project Type for delivery-flow (FEATURE)
+**Source**: GitHub Issue #72
 **Verdict**: DONE
 
-*"A product owner is never late, nor early. They prioritize precisely when they mean to."*
+*"All we have to decide is what to do with the time that is given us -- and sometimes, that decision is to think before we build."*
 
 ---
 
@@ -15,89 +15,104 @@
 
 ### [PASS] [blocking] Problem statement present and clear
 
-The Problem Statement names all four discipline gaps with precision: (1) a frozen `project_type` in config that lies to runs of any other type, (2) the orchestrator granting itself "simple enough" exemptions and writing artifacts directly, (3) review patterns silently collapsing multiple reviewer roles into a single sub-agent and defeating context isolation, and (4) the Architect stage running only one adversarial pass and anchoring on first-pass findings. The compounding harm -- erosion of trust in the pipeline's verdicts -- is named explicitly. The bundling rationale (shared files, merge churn, contradictory edits) is included and is itself a piece of problem framing. A reader can reproduce each failure mode from the description.
+The brief names the gap with precision: delivery-flow has no first-class mode for design-only engagements. It enumerates the three failing alternatives a team must currently choose from -- (1) running a full pipeline and abandoning after Architect (wasteful, leaves state mid-stride, upsets the retrospective hook), (2) using DOCS_ONLY (which skips the very design work needed), and (3) escaping the pipeline entirely (violating the route-through-pipeline rule). The compounding harm -- design work either contaminated by implementation pressure or escaping pipeline governance -- is named explicitly. A reader can reproduce the failure mode without further inquiry.
 
 ### [PASS] [blocking] Target users identified
 
-Three distinct user groups are enumerated, each with the specific pain this bundle addresses:
+Five distinct user groups are enumerated, each with the specific need this feature serves:
 
-1. **delivery-flow operators** -- currently get wrong-typed routing and invisible orchestrator shortcuts.
-2. **Plugin contributors** -- depend on context isolation and adversarial review for honest agent outputs.
-3. **Future PO and Architect agents** -- need the orchestrator to be a delegator, not a doer.
+1. **Solution Architects** preparing design packages for future implementation teams or quarters.
+2. **Product Owners and Tech Leads** running discovery / pre-funding engagements where the deliverable is a coherent design.
+3. **Enterprise / Platform teams** producing reference architectures, ADRs, and PRDs for downstream consumption.
+4. **Consultants and internal advisors** delivering design artifacts as the contractual outcome.
+5. **Plugin maintainers (us)** dogfooding design-only work through the same pipeline as everything else.
 
-The user list maps cleanly onto the four issues, so each fix has a constituency.
+Each group has a concrete reason to want a DESIGN type, and the dogfooding constituency ensures the feature has an internal champion.
 
 ### [PASS] [blocking] Goals are measurable
 
-Five goals, each with an observable, binary acceptance signal:
+Six goals, each with an observable, binary acceptance signal:
 
-| # | Goal | Measurable? | Assessment |
-|---|------|-------------|------------|
-| 1 | Truthful project typing per run | Yes -- inspect a pipeline run and verify Phase 1 detection executed from the user's request, not from config | Binary: detection ran or did not |
-| 2 | Delegation as prime directive | Yes -- run the pipeline; verify zero orchestrator writes to `.delivery/artifacts/` (except routing metadata) and to source files; hook enforcement present | Hook either blocks self-writes or it does not |
-| 3 | One role, one sub-agent | Yes -- audit any pipeline run; each reviewer role appears in its own sub-agent invocation; compound prompts detectable | Hook flags compound prompts or not |
-| 4 | Iterative adversarial review at Architect | Yes -- inspect Architect stage; loops are isolated, fresh-context, and bounded by `max_self_correction` (default 3) or zero-issue exit | Loops behave as specified or not |
-| 5 | Coherent edits | Yes -- verify named shared files are touched once with internally consistent guidance | Single PR diff is reviewable for consistency |
+| # | Goal | Measurable? |
+|---|------|-------------|
+| 1 | First-class DESIGN project type registered alongside the existing six | Yes -- inspect detection table and routing matrix |
+| 2 | Stage routing: full Idea/Refine/Design/Architect; skip Plan/Dev/UAT | Yes -- run pipeline; verify which stages execute |
+| 3 | Coherent output package (PRD + design + architecture + ADRs) ready as input for a future run | Yes -- inspect produced artifacts |
+| 4 | Documentation parity across SKILL.md, references, CLAUDE.md, README.md, marketplace.json | Yes -- diff inspection on a single PR |
+| 5 | Configurable override via `routing.force_type: DESIGN`, validated by config schema | Yes -- schema check + integration test |
+| 6 | No regressions to the six existing project types | Yes -- regression check on routing matrix |
 
-Each goal is testable in DoD without further clarification.
+Each goal is testable in DoD without further refinement.
 
 ### [PASS] [blocking] Constraints documented
 
-Six constraints are named, all well-targeted:
+Eight well-targeted constraints, all of them honoring repo discipline and memory:
 
-1. **Backwards compatibility for config** -- removing `project_type` must not break existing `.delivery/config.yml`; key tolerated, deprecation noted, schema version bumped.
-2. **No new external dependencies** -- hook updates remain pure Python stdlib.
-3. **Hook performance budget** -- `enforce_pipeline_scope.py` and `audit_agent_prompt.py` must not noticeably slow tool calls.
-4. **Documentation parity** -- CLAUDE.md, README.md, marketplace.json, `references/config-schema.md` updated before merge.
-5. **Self-consistency / dogfooding** -- this bundle itself must run through delivery-flow.
-6. **Plugin-dev skills required** -- `plugin-dev:skill-development` and `plugin-dev:hook-development` loaded before any SKILL.md or hook edits.
+1. **Light != skip** -- the brief deliberately uses *skip* for Plan/Dev/UAT because DESIGN is definitionally a design-only mode. This is a called-out exception to the general rule, and the brief instructs `pipeline-stages.md` to fence the distinction so it does not bleed into other types. Honors the `feedback_no_skip_stages` memory directly.
+2. **Markdown-only edits calibrate one tier lower** -- effort sized accordingly; no code, no scripts, no schema generators.
+3. **All work routes through the pipeline** -- this feature dogfoods the very mechanism it extends.
+4. **Documentation parity is non-negotiable** -- CLAUDE.md, README.md, marketplace.json updated in the same PR.
+5. **Schema versioning** -- `config-schema.md` (v2.6) is the source of truth; extension protocol followed.
+6. **Wizard** -- PR #74 removed Q1, so detection guidance updates only, no interactive prompt added.
+7. **Backward compatibility** -- existing configs without DESIGN must continue to work unchanged.
+8. **Retrospective hook compatibility** -- the Stop hook must still fire correctly when a DESIGN run terminates after Architect.
 
-These constraints prevent scope drift, protect backward compatibility, and operationalize repo memory (dogfooding, plugin-dev skills, doc parity).
+The constraints prevent scope drift, protect backward compatibility, and operationalize repo memory (light != skip, dogfooding, doc parity).
 
-### [PASS] [blocking] Initial scope defined (4 bundled issues)
+### [PASS] [blocking] Initial scope defined
 
-Four GitHub issues are scoped, ordered by WSJF, each with priority and a concrete edit list:
+Eight files in scope, each with an explicit per-file change description:
 
-1. **#73 -- Remove `project_type` from config** (P0, WSJF 25.0). Strip from config and setup wizard, run Phase 1 every invocation, bump schema, document migration, update `config-schema.md`, `setup-wizard.md`, `project-types.md`, SKILL.md.
-2. **#71 -- Orchestrator bypasses delegation when "simple"** (P0, WSJF 14.5). Strengthen delegation directive in SKILL.md, reject "simple" justification at Step 4.5, add anti-patterns section, extend `enforce_pipeline_scope.py` to block orchestrator self-writes.
-3. **#70 -- Enforce one-sub-agent-per-reviewer** (P0, WSJF 14.0). Add "One Role = One Sub-Agent" rule to SKILL.md, reinforce in `team-patterns.md`, `quality-gates.md`, `pipeline-stages.md`; optionally extend `audit_agent_prompt.py`.
-4. **#69 -- Architect adversarial loops with isolated context** (P1, WSJF 11.0). Add isolated adversarial loops at Architect, bounded by `max_self_correction` or zero-issue exit; document as "Isolated Adversarial Loop" in `team-patterns.md`.
+| File | Change |
+|---|---|
+| `delivery-team/skills/delivery-flow/SKILL.md` | Add DESIGN to routing matrix and detection table |
+| `references/project-types.md` | New DESIGN section with detection signals, examples, rationale |
+| `references/pipeline-stages.md` | Document DESIGN routing and fence the *skip* exception |
+| `references/setup-wizard.md` | DESIGN detection guidance for auto-detect |
+| `references/config-schema.md` | DESIGN as valid `routing.force_type` enum value; schema bump |
+| `CLAUDE.md` | Update project-type list |
+| `README.md` | Update project-type enumeration |
+| `.claude-plugin/marketplace.json` | Update delivery-flow description if it enumerates types |
 
-A consolidated **Shared Target Files** list names exactly which SKILL.md, references, hooks, and doc-parity files will be touched. The bundling justification is sound: the same files would otherwise be edited 3-4 times across separate runs with merge churn and contradictory edits.
+The canonical routing matrix (full Idea/Refine/Design/Architect; skip Plan/Dev/UAT) is included in the brief itself, making it the contract for downstream stages. Detection signals are seeded but flagged as "to be refined in Stage 2" -- appropriate for Idea depth.
 
 ### [PASS] [blocking] Out of scope defined
 
 Seven explicit exclusions, each blocking a plausible scope-creep path:
 
-1. Rewriting Phase 1 project-type detection logic itself (only invocation cadence changes).
-2. New collaboration patterns beyond the "Isolated Adversarial Loop" variant.
-3. Adversarial loops at stages other than Architect.
-4. A general migration tool for old configs beyond tolerant parsing and a deprecation note.
-5. Refactoring hooks unrelated to delegation enforcement or prompt auditing.
-6. Net-new analytics, telemetry, or dashboard changes.
-7. Any non-delivery-flow plugin (`developer/`, `architect/`, `quality/`, etc.) -- those are downstream consumers, not the subject of this bundle.
+1. New scripts, hooks, or schema-generation code -- documentation/configuration only.
+2. New wizard question -- detection guidance only, no interactive prompt.
+3. Changes to other project types' routing -- the existing six are untouched.
+4. A "DESIGN-light" variant -- one depth profile; future variants proposed separately.
+5. Automatic handoff into a follow-on implementation run -- output is *ready* but wiring is a separate feature.
+6. Retroactive migration of existing in-flight pipelines.
+7. Net-new artifacts or templates -- DESIGN reuses existing PRD, design, architecture, and ADR formats.
 
-Boundaries are crisp. A developer tempted to "fix Refine loops while we're in there" or "add a migration CLI" knows those are out of bounds.
+Boundaries are crisp. A developer tempted to "add a wizard question while we're in there" or "build the auto-handoff" knows those are out of bounds.
 
 ### [PASS] [blocking] Business value evident
 
-The through-line is **trust in pipeline verdicts**, named in the Problem Statement and reinforced by every goal. Each fix protects a specific axis of trust: truthful routing (#73), enforced delegation (#71), honest review isolation (#70), and deeper architectural critique (#69). The bundling itself adds value: one coherent PR over four churning ones, with internally consistent guidance across the shared files. For users currently shipping work through delivery-flow, the value is concrete -- the orchestrator stops silently corrupting its own pipeline.
+The value is articulated explicitly and implicitly: DESIGN brings pure-design engagements *inside* pipeline governance for the first time, so they stop being either contaminated by implementation pressure or escaping pipeline governance entirely. It serves a real and named user population (Solution Architects, pre-funding discovery, reference-architecture teams), it enables dogfooding of design-only work through the same pipeline, and it produces a coherent output package ready to feed a future implementation run. The bundling rationale ("first-class mode") prevents the half-pipeline-then-abandon antipattern that today wastes effort and leaves the retrospective hook unhappy.
 
 ---
 
 ## Notes for Downstream Stages
 
-- **Refine**: turn each of the five goals into explicit acceptance criteria, with the hook or doc edit that enforces each one.
-- **Architect**: examine `enforce_pipeline_scope.py` and `audit_agent_prompt.py` deeply before proposing extensions. Validate and build on the existing designs; do not reimagine them.
-- **Plan**: documentation parity is a hard constraint -- CLAUDE.md, README.md, marketplace.json, and `config-schema.md` edits are first-class tasks, not afterthoughts.
-- **UAT**: this bundle dogfoods delivery-flow; the orchestrator's behavior during this run is itself UAT evidence. Any orchestrator self-write or compound reviewer prompt observed during execution is a failure of the bundle, not an aside.
+- **Refine**: turn each of the six goals into explicit acceptance criteria. Refine the detection signals into a concrete decision rule (precedence order vs. existing types matters -- DESIGN must not poach signals from GREENFIELD or DOCS_ONLY).
+- **Design**: the *skip* fence in `pipeline-stages.md` is the most delicate text in this feature. Draft it so a future maintainer cannot mistake DESIGN's intentional skipping for permission to skip light stages elsewhere.
+- **Architect**: examine `references/config-schema.md` (v2.6) and the existing routing logic deeply before proposing the schema bump. Validate and build on the existing extension protocol; do not reimagine it.
+- **Architect**: explicitly verify the Stop / retrospective hook still fires correctly when Architect is the terminal stage. This is the highest-risk integration point.
+- **Plan / Tech Writer**: documentation parity (CLAUDE.md, README.md, marketplace.json) is a hard constraint -- first-class tasks, not afterthoughts.
+- **No Dev / UAT stages will run** for this feature's own delivery if it itself is routed as DESIGN; however, this feature is FEATURE-typed (it ships markdown/config edits to a real repo), so the normal pipeline applies.
 
 ---
 
 ## Summary
 
-*"Even the smallest discipline gap can unsettle an entire pipeline. But this brief has traced the shadows to their sources."*
+*"A brief is judged not by its length, but by whether it lights the road ahead. This one does."*
 
-All seven Gate 1 criteria pass. The brief is well-structured: four issues bundled with sound rationale, five measurable goals, six well-targeted constraints, seven crisp out-of-scope items, and a consolidated shared-target-files list that makes the coherent-edits goal actionable. The bundle is fit to advance to Stage 2 (Refine).
+All seven Gate 1 criteria pass. The brief is well-structured: a clearly named gap, five user groups with concrete needs, six measurable goals, eight discipline-honoring constraints (with the *light != skip* exception called out explicitly and fenced), an eight-file scope table with a canonical routing matrix, and seven crisp out-of-scope items. The brief honors repo memory directives (light != skip, route-through-pipeline, dogfooding, doc parity) and stays at the *what/why* layer without solutioning leakage.
 
-*All we have to decide is what to fix with the discipline that is given to us. And I decide we fix the orchestrator's shortcuts before we trust it with anything larger. Forward to Refine.*
+*Speak, friends, and proceed. The road to Refine is open.*
+
+-- Gandalf, Product Owner

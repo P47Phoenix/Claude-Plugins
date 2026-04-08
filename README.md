@@ -46,7 +46,7 @@ A full software delivery team with 11 specialized skills covering the complete d
 
 | Skill | Roles | What It Does |
 |-------|-------|-------------|
-| **Delivery Flow** | Pipeline orchestrator | 7-stage pipeline (Idea → Refine → Design → Architect → Plan → Dev → UAT) with auto-detect project type, team DoD, self-correction, adversarial review, debate, consensus, and self-learning memory |
+| **Delivery Flow** | Pipeline orchestrator | 7-stage pipeline (Idea → Refine → Design → Architect → Plan → Dev → UAT) with auto-detect project type (GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV, SPIKE, DOCS_ONLY — DESIGN supports design-only engagements that terminate after Architect), team DoD, self-correction, adversarial review, debate, consensus, and self-learning memory |
 | **Product Delivery** | Product Owner, Scrum Bag, Data Analyst | User stories, PRDs, backlogs, sprint plans, retrospectives, metrics, A/B testing |
 | **Developer** | 14 languages + OOP + FP + Frontend + Nx | Code implementation with language context isolation (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) |
 | **Godot** | GDScript, C#, Scenes, Signals | Godot 4.x game dev with headless validation and defect prevention |

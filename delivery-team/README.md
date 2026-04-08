@@ -48,7 +48,7 @@ See `skills/delivery-flow/references/getting-started.md` for a complete walkthro
 
 ## Key Features
 
-- **Setup wizard**: 9-question config wizard with codebase auto-detection (schema v2.7; project type detected per-run, not pinned in config; `routing.force_type` available as opt-in pin)
+- **Setup wizard**: 9-question config wizard with codebase auto-detection (schema v2.8; project type detected per-run from GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV+, SPIKE, DOCS_ONLY — DESIGN supports design-only engagements terminating after Architect; not pinned in config; `routing.force_type` available as opt-in pin)
 - **Team DoD**: Every artifact validated by multiple roles before advancing
 - **6 collaboration patterns**: Evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus
 - **Self-learning memory**: Tiered chunked retrieval in `.delivery/memory/`
