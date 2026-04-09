@@ -1,0 +1,70 @@
+# constraints-refine.yml — Refine-stage template (Stage 2)
+#
+# Canonical location (when authored):
+#   .delivery/artifacts/02-refine/po/constraints.yml
+#
+# Purpose:
+#   PROBLEM-scoped constraints owned by the Product Owner. Answers
+#   "what domain nouns, business invariants, sprint ceilings, and
+#   downstream deliverables does this PRD commit to?" — NOT
+#   "how will the system be decomposed?" (that is Stage 4 Architect's
+#   concern and is captured in constraints-architect.yml).
+#
+# Scope discipline:
+#   - entities       = domain nouns from the PRD (Customer, Order, Invoice)
+#   - invariants     = business rules the PRD promises hold end-to-end
+#   - actions        = PO-authored state transitions / allowed verbs
+#   - state_variables= observable domain state the business tracks
+#   - numeric_ceilings = sprint ceilings, token budgets, SLA bounds
+#   - mandatory_artifacts = downstream files the PRD promises will exist
+#   - forbidden_vocabulary = business terms banned from downstream copy
+#   - citations      = authoritative sources backing the invariants above
+#
+# Schema: 8 fields (ADR-001). `entities` and `invariants` are required;
+# the other six are optional. Preserve this field order for glance-ability.
+# Canonical reference: references/constraints-model-guide.md
+
+# REQUIRED — domain nouns locked at Refine.
+# These are PRD-level entities (the problem vocabulary), NOT bounded
+# contexts or volatility classes — those belong in Stage 4 Architect.
+# Example: [Customer, Order, Invoice, Payment]
+entities:
+  - # <fill in: first domain noun from the PRD>
+
+# REQUIRED — business invariants the PRD promises hold end-to-end.
+# Each invariant must be load-bearing and referenced by at least one
+# downstream artifact (design, architecture, plan, stories).
+# Example: "Every Order must reference a known Customer"
+invariants:
+  - # <fill in: first PRD-level business invariant>
+
+# OPTIONAL — business terms forbidden in downstream artifacts.
+# Use for vocabulary hygiene (deprecated product names, legal-risk
+# phrasing, ambiguous synonyms). NOT for implementation tokens — those
+# live in constraints-architect.yml.
+# Example: ["user" (prefer "Customer"), "delete" (prefer "archive")]
+forbidden_vocabulary: []
+
+# OPTIONAL — quantitative ceilings the PRD commits to.
+# Example: {sprint_story_ceiling: 8, token_budget_per_run: 200000,
+#           p95_response_ms: 500, max_concurrent_users: 1000}
+numeric_ceilings: {}
+
+# OPTIONAL — observable domain state the business tracks per entity.
+# Example: [order_status, payment_state, customer_tier]
+state_variables: []
+
+# OPTIONAL — PO-authored state transitions / allowed domain actions.
+# These are business verbs, not API calls.
+# Example: [place_order, cancel_order, refund_payment, upgrade_tier]
+actions: []
+
+# OPTIONAL — downstream files this stage promises will exist by DoD.
+# At minimum, most Refine runs will list the PRD and metrics outputs.
+mandatory_artifacts:
+  - .delivery/artifacts/02-refine/po/prd.md
+
+# OPTIONAL — authoritative references required by invariants above.
+# Shape: [{work, chapter, page}]. Cite product specs, regulatory
+# documents, or domain texts that back the invariants claimed above.
+citations: []

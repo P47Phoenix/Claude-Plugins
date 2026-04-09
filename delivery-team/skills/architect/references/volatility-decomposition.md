@@ -2,6 +2,47 @@
 
 Based on Juval Lowy's IDesign methodology. Decompose systems by axes of change -- isolate what's volatile from what's stable.
 
+## 0. The Golden Rule of Volatility-Based Decomposition
+
+> **THE RULE:** **Decompose by volatility, not by functionality.**
+>
+> — Juval Löwy, *Righting Software* (IDesign), Chapter 2
+
+This is not a guideline. It is not a preference. It is **THE RULE** that governs every decision in the phases below. If you violate it, nothing else in this document will save your architecture.
+
+**What "volatility" means here.** Volatility is an **axis of change**: a dimension along which the system is expected to vary over time, independently of other dimensions. Business rules, tax codes, shipping partners, auth providers, UI frameworks, and regulatory policies are all *separate* axes. A well-decomposed system puts each axis behind its own stable interface so that a change on one axis does not ripple across the others.
+
+**Why functional decomposition is the wrong instinct.** Functions are what the system *does today*. Volatility is about what will *change tomorrow*. Human language and requirements documents are written in verbs ("validate order", "price order", "ship order", "notify customer"), so teams instinctively carve the system along those verbs. That instinct is wrong. Functions cluster code by *present behavior*; volatility clusters code by *future change*. The two almost never agree, and when they disagree, functional decomposition loses — every time.
+
+**How to tell them apart.** Ask two questions of any proposed boundary:
+1. "What is the *name* of this component?" — If it's a verb or a use-case step (Validate, Price, Ship, Notify), it's functional.
+2. "What single reason would cause *only* this component to change?" — If you can't answer with a crisp axis of change (tax law, partner API, business rule, regulator), the boundary is fictitious.
+
+### Anti-Pattern: The Functional-Decomposition Trap
+
+A team is told to build an **order processing system**. They read the requirements, extract the verbs, and draw four services:
+
+```
+[ ValidationService ] -> [ PricingService ] -> [ ShippingService ] -> [ NotificationService ]
+```
+
+It looks clean. It mirrors the requirements document. It is wrong.
+
+**What happens when reality hits:**
+
+| Change request | Functional cut (what must change) | Volatility cut (what must change) |
+|---|---|---|
+| New business rule: "VIP customers skip validation on orders < $50" | `ValidationService` **and** `PricingService` (VIP tier lookup) **and** `NotificationService` (VIP receipt template) | `BusinessRulesEngine` only |
+| Tax code change in EU (VAT reform) | `PricingService` **and** `ShippingService` (landed cost) **and** `NotificationService` (invoice line items) | `TaxEngine` only |
+| Swap shipping partner from FedEx to DHL | `ShippingService` **and** `PricingService` (rate tables) **and** `NotificationService` (tracking URLs) | `ShippingPartnerAccessor` only |
+| New SMS notification channel | `NotificationService` only | `NotificationChannelAccessor` only |
+
+The functional cut creates **cross-cutting modifications** on three of four change requests: one axis of change touches three services. Every deploy is a coordinated release. Every regression test is a full-system test. The "clean" boundaries are a lie told by the verbs.
+
+The volatility cut localizes each change to exactly one component, because the components were named after *reasons to change*, not *things the system does*. `BusinessRulesEngine`, `TaxEngine`, `ShippingPartnerAccessor`, and `NotificationChannelAccessor` are boundaries that survive contact with the real world.
+
+**Apply this rule at every phase below.** If a proposed boundary survives review because it mirrors a function name in the requirements, **reconsider it**. The rule is the rule.
+
 ## Core Principle
 
 Traditional decomposition (by domain, by layer, by function) breaks down when change patterns don't align with those boundaries. Volatility-based decomposition identifies WHAT CHANGES and encapsulates it behind stable interfaces. The result: changes to one axis of volatility don't cascade to other parts of the system.

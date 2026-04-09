@@ -1,55 +1,34 @@
-# PO DoD Review — Stage 2 Refine PRD
+# PO DoD Review — Stage 2 Refine (Paired Constraints PRD)
 
-**Reviewer**: Gandalf (PO)
+**Validator**: Product Owner (Gandalf) | **Date**: 2026-04-08
 **Artifact**: `.delivery/artifacts/02-refine/po/prd.md`
-**Date**: 2026-04-05
-**Verdict**: DONE
+**Run**: run-2026-04-08-a1f3
 
-> *"A PRD, like a wizard, must arrive precisely when it means to — bearing problem, value, and bounded scope. This one does."*
+> *"A PRD, like a staff, is judged by whether it bears weight on the long road."*
 
----
+## Gate Check (Refine, PO lens)
 
-## Criterion 1 — Business Value Articulated
+1. **Traces to idea brief, no silent drift — PASS.** BACKLOG-001 ∥ BACKLOG-004 preserved; the three Architect gaps carried verbatim; dogfood P0 intact; no scope additions. The Fellowship has not wandered from the map it drew in Stage 1.
+2. **Problem cites real failures — PASS.** `memory/stages/plan.md` 3/7 rework; `volatility-decomposition.md:7`, `:181`, `:49-96`; `pipeline-stages.md:428-449`; `config-schema.md:57-63`. Stones, not rumor.
+3. **FRs cover BACKLOG-001 and BACKLOG-004 without conflation — PASS.** FR-2 owns Refine/problem constraints (001). FR-3, FR-4, FR-5, FR-6 own Architect/decomposition constraints (004). FR-1 is the shared schema — paired, not fused. The primitive is one shape; the two instances remain distinct.
+4. **Testable ACs — PASS.** AC-1,2,3,4,5,7,8 are deterministic rule checks (file existence, grep token list, citation presence, artifact presence, token-delta math). AC-6 is empirical with denominator named (5-run window, stage health table). Each criterion is falsifiable.
+5. **Success metrics have baselines — PASS.** §7 table binds every target to `metrics-baseline.md`: Plan 57% all-time (honest denominator per Elrond), contamination and Golden-Rule baselines flagged as must-grep-pre-land. Caveat (non-blocking): NFR-5's 15% token ceiling has no Refine-token baseline captured yet — Stage 3 Design must capture it before A/B window opens.
+6. **Out-of-scope names BACKLOG-003/005/006 and MAR — PASS.** §6 lists all four by id, plus the v2.8 schema bump deferral and the rewrite-discipline boundary. Clean exclusion.
+7. **Users/actors are real orchestrator components — PASS.** Orchestrator (delivery-flow), Architect sub-agents, PO sub-agents, DoD validators, human checkpoint reviewer. All five map to extant pipeline roles; none invented.
+8. **No implementation details leaked — PASS.** The banned-token list (lambda/ecr/sqs/etc.) appears *as payload data* inside `forbidden_vocabulary` — the feature's subject, not its architecture. No cloud service, runtime, or file-level design is prescribed for how the primitive itself is built. The PRD names its enemies without becoming them.
 
-**PASS.** Section 1 names a concrete, compounding harm: the orchestrator "silently lies about its own behavior" through four discipline lapses. Section 2 translates harm into eight measurable goals (G1–G8) with explicit targets — 100% re-detection of project_type, zero unblocked self-writes, zero compound-role prompts, ≤50ms hook p95. Value is the restoration of the very mechanisms (context isolation, role specialization, DoD enforcement) that justify the pipeline's existence. NFR-06 (dogfooding) elevates the bundle into a self-test of the discipline it teaches.
+## Non-Blocking Counsel
 
-## Criterion 2 — Stories / FRs Are Valuable and Traceable
+- Stage 3 Design must capture a Refine-stage token baseline so NFR-5 has firm ground.
+- R-4 rollback protocol (3-run <57% → revert flag, reopen BACKLOG-001 as REJECT) is crisp — Scrum Bag should mirror into memory at Plan-entry.
+- AC-7 dogfood remains P0; honor the memory lesson, no DoD submission before the dogfood run.
 
-**PASS.** All 16 FRs trace to one of four source issues (#73, #71, #70, #69) plus cross-cutting FR-16. Section 9 provides an explicit issue→FR mapping with WSJF priorities. Each FR carries PRD-level acceptance criteria; story-level elaboration is correctly deferred to Stage 5 (Plan). FR-12 is explicitly MAY-not-MUST with a documented docs-only fallback — healthy scope hygiene.
+## Judgment
 
-## Criterion 3 — Scope Is Bounded
+The PRD carries the burden it must carry, and no more. It traces to the idea brief, cites real stones, pairs the backlog items without fusing them, names falsifiable criteria, baselines its claims, and refuses implementation's shadow by binding every schema field to a downstream rule check (FR-7). Narrow enough to survive; load-bearing enough to matter.
 
-**PASS.** Section 6 (Out of Scope) is unusually disciplined. It excludes: rewriting Phase 1 detection, new collaboration patterns beyond Isolated Adversarial Loop, adversarial loops at non-Architect stages, a general migration tool, unrelated hook refactors, telemetry/dashboard work, changes to other plugins, new alias themes, and changes to `max_self_correction`'s default. The bundle's rationale for being a bundle (overlapping file edits, merge churn) is itself a scope argument; NFR-08 (atomic merge) reinforces the boundary.
-
-## Criterion 4 — Personas Identified
-
-**PASS.** Four personas (P1 PO Operator, P2 Plugin Contributor, P3 Future Orchestrator Instance, P4 Architect Sub-Agent), including the correct choice to treat the next Claude instance as a persona — which directly motivates "hook-enforced rules, not aspirational prose."
-
-## Criterion 5 — Risks and Dependencies Surfaced
-
-**PASS.** Section 7 lists 8 risks with likelihood/impact/mitigation, including the self-referential R7 (dogfood run triggers its own self-write block) correctly identified as *intended* behavior. Dependencies D1–D4 name plugin-dev skill prerequisites (NFR-07) and reuse of existing infrastructure. Open questions in Section 8 are routed to specific downstream stages, not left as orphan blockers.
-
-## Criterion 6 — Acceptance Criteria Present
-
-**PASS.** Section 10 provides PRD-level acceptance criteria for promotion to Stage 3. Per-FR acceptance criteria appear in Section 4. The two altitudes are kept distinct, which is correct.
-
-## Criterion 7 — Non-Functional Requirements Captured
-
-**PASS.** Eight NFRs cover performance, stdlib hygiene, backwards compatibility, doc parity, graceful degradation, dogfooding, process compliance, and atomic delivery. NFR-04 and NFR-07 are appropriately elevated to DoD-validator status.
-
----
-
-## Minor Observations (Non-Blocking)
-
-- OQ-6 (does `marketplace.json` mention schema version?) is correctly routed to Plan as verification.
-- OQ-7 (test fixture location) acknowledges the repo has no test runner per CLAUDE.md — Quality to recommend approach in its stage.
-- The Gandalf voice is preserved without sacrificing rigor. The PRD reads as a piece of writing, not a checklist.
-
----
-
-## Verdict
-
-**STATUS: DONE.** All seven PO DoD criteria pass. The PRD is complete, valuable, bounded, traceable, and ready for Stage 3 (Design).
-
-> *"The road goes ever on — and now it goes to Design."*
-> — Gandalf, PO
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/02-refine/dod/po-review.md
+SUMMARY: The PRD bears its burden — traceable, testable, baselined, free of implementation's shadow. Pass, and onward to Design, precisely when we mean to.
+```

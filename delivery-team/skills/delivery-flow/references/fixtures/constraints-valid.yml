@@ -1,0 +1,21 @@
+# Green fixture: all 8 fields populated minimally.
+entities:
+  - Ring
+  - Bearer
+invariants:
+  - "A Ring has exactly one Bearer at a time"
+state_variables:
+  - bearer_id
+actions:
+  - bind
+  - surrender
+numeric_ceilings:
+  max_bearers: 1
+mandatory_artifacts:
+  - docs/ring-lore.md
+forbidden_vocabulary:
+  - precious
+citations:
+  - work: The Fellowship of the Ring
+    chapter: "2"
+    page: "55"

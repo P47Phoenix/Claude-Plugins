@@ -247,6 +247,7 @@ Transform the idea brief into a complete PRD with acceptance criteria, success m
    - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `prd`, ROLE: `po`
    - Input artifacts: `.delivery/artifacts/01-idea/po/idea-brief.md`
    - Output: `.delivery/artifacts/02-refine/po/prd.md`
+   - PO MUST also emit a problem-scoped `constraints.yml` artifact at `.delivery/artifacts/02-refine/po/constraints.yml`, instantiated from `references/templates/constraints-refine.yml` (8 fields per ADR-001). This artifact is validated by `scripts/validate_constraints.py` and is required by the Refine DoD.
 2. **Invoke Data Analyst** [SEQUENTIAL after step 1] [optional] (product-delivery skill, task_type: metrics_definition)
    - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `metrics_definition`, ROLE: `data-analyst`
    - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md` (goals section)
@@ -428,13 +429,18 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
    - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `user_story`, ROLE: `po`
    - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`
    - Output: `.delivery/artifacts/05-plan/po/stories.md`
-2. **Invoke QA Engineer** [SEQUENTIAL per story, after step 1] [required] (quality skill, task_type: test-cases)
+2. **Invoke Architect** [SEQUENTIAL, after step 1] [required for FEATURE, GREENFIELD, GAME_DEV; WAIVED for BUG_FIX, DOCS_ONLY, DESIGN] (architect skill, task_type: implementation-sequencing) -- per ADR-002
+   - SKILL: `delivery-team:architect`, TASK_TYPE: `implementation-sequencing`, ROLE: `solution`
+   - Input artifacts: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/02-refine/po/constraints.yml`, `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/04-architect/solution/constraints.yml`, `.delivery/artifacts/05-plan/po/stories.md` (if produced), `.delivery/artifacts/05-plan/sm/sprint-plan.md` (if produced)
+   - Output: `.delivery/artifacts/05-plan/architect/sequencing.md`
+   - Architect participates as an active contributor (not gate-owner); PO retains Stage 5 ownership
+3. **Invoke QA Engineer** [SEQUENTIAL per story, after step 2] [required] (quality skill, task_type: test-cases)
    - SKILL: `delivery-team:quality`, TASK_TYPE: `test-cases`, ROLE: `qa`
    - Input artifacts: `.delivery/artifacts/05-plan/po/stories.md` (each story's acceptance criteria)
    - Output: test cases appended per story within `.delivery/artifacts/05-plan/po/stories.md`
    - Test cases MUST be produced alongside stories, not as a separate optional step
    - Each story's output includes: story + acceptance criteria + test cases
-3. **Invoke Supporting Agents** [PARALLEL after step 2] -- dispatch SM, QA (test-strategy), DevOps in a single message:
+4. **Invoke Supporting Agents** [PARALLEL after step 3] -- dispatch SM, QA (test-strategy), DevOps in a single message:
    - **Scrum Bag** [required] (product-delivery skill, task_type: sprint_planning)
      - SKILL: `delivery-team:product-delivery`, TASK_TYPE: `sprint_planning`, ROLE: `sm`
      - Input artifacts: `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/04-architect/solution/architecture.md`
@@ -447,20 +453,20 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
      - SKILL: `delivery-team:operations`, TASK_TYPE: `deployment-strategy`, ROLE: `devops`
      - Input artifacts: `.delivery/artifacts/04-architect/solution/architecture.md`
      - Output: `.delivery/artifacts/05-plan/devops/deploy-plan.md`
-4. **Matrix validation** [SEQUENTIAL after step 3] [required]: Verify the sprint plan includes both mandatory matrices:
+5. **Matrix validation** [SEQUENTIAL after step 4] [required]: Verify the sprint plan includes both mandatory matrices:
    - **Capacity matrix**: must be present with all team members listed, available hours > 0, utilization % calculated
    - **Coverage matrix**: must be present with every PRD FR-ID mapped to at least one planned task; any unmapped FR causes a BLOCKING finding
    - **Light Mode (BUG_FIX, DOCS_ONLY)**: Both matrices are WAIVED -- skip this step
    <!-- retros c8f2, k4m9 -->
-5. **Consensus Protocol** [PARALLEL per round, SEQUENTIAL between rounds] [required]: SM, PO, QA, DevOps independently estimate and identify risks (R1 parallel), then share and respond (R2 parallel), and converge (R3 parallel if needed). 2-3 rounds.
+6. **Consensus Protocol** [PARALLEL per round, SEQUENTIAL between rounds] [required]: SM, PO, QA, DevOps independently estimate and identify risks (R1 parallel), then share and respond (R2 parallel), and converge (R3 parallel if needed). 2-3 rounds.
    - R1 writes to: `.delivery/artifacts/05-plan/consensus/r1/{role}-position.md`
    - R2 writes to: `.delivery/artifacts/05-plan/consensus/r2/{role}-response.md`
    - R3 writes to: `.delivery/artifacts/05-plan/consensus/r3/{role}-final.md` (if needed)
-6. **Adversarial Review** [SEQUENTIAL after consensus] [required]: Challenger questions estimates and risk assessments
+7. **Adversarial Review** [SEQUENTIAL after consensus] [required]: Challenger questions estimates and risk assessments
    - Challenger writes to: `.delivery/artifacts/05-plan/challenger/challenge.md`
-7. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: SM (process), PO (scope), QA (coverage), DevOps (readiness)
-8. **Git branch creation** [SEQUENTIAL] (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
-9. **Human Checkpoint 3** [SEQUENTIAL]: Present sprint plan for approval
+8. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: SM (process), PO (scope), QA (coverage), DevOps (readiness)
+9. **Git branch creation** [SEQUENTIAL] (if `git.auto_branch` is true): Create feature branch from main (or develop for GitFlow) using the configured `git.branch_strategy`. Branch name: `feature/<issue-number>-<short-description>`. Verify clean working tree before branching. If the branch already exists, append a numeric suffix. Record branch name in `.delivery/state.md`. See `references/git-integration.md`.
+10. **Human Checkpoint 3** [SEQUENTIAL]: Present sprint plan for approval
 
 ### DoD Validators [PARALLEL] -- dispatch all in a single message
 - Scrum Bag [required]: process is sound, capacity realistic, capacity matrix present with utilization calculated, coverage matrix present with all PRD FRs mapped to at least one task. Capacity threshold enforcement: >80% utilization emits WARNING requiring acknowledgment; >100% utilization is BLOCKING <!-- retros c8f2, k4m9 -->
@@ -474,6 +480,7 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 
 ### Output Artifacts
 - `.delivery/artifacts/05-plan/po/stories.md`
+- `.delivery/artifacts/05-plan/architect/sequencing.md` (Architect as participant per ADR-002; waived in Light Mode)
 - `.delivery/artifacts/05-plan/sm/sprint-plan.md`
 - `.delivery/artifacts/05-plan/qa/test-strategy.md`
 - `.delivery/artifacts/05-plan/devops/deploy-plan.md`
@@ -481,6 +488,7 @@ Create sprint plan with stories, estimates, test strategy, and deployment approa
 ### Light Mode (BUG_FIX, DOCS_ONLY)
 - PO writes a single story for the fix/doc task
 - SM produces minimal plan (no full sprint plan)
+- Architect `implementation-sequencing` step is WAIVED
 - Skip consensus protocol and adversarial review
 - QA still validates testability
 

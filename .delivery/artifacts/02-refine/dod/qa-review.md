@@ -1,90 +1,34 @@
-# QA DoD Review — Stage 2 PRD (Orchestration Discipline Bundle)
+# QA DoD Review — Refine Stage (Paired Constraints Primitive)
 
-**Reviewer**: Legolas (QA)
-**Artifact**: `.delivery/artifacts/02-refine/po/prd.md`
-**Verdict**: **DONE**
+**Validator**: Legolas (QA Engineer) | **Date**: 2026-04-08 | **Stage**: 2 Refine
+**Under review**: `.delivery/artifacts/02-refine/po/prd.md`
+**Supporting**: `.delivery/artifacts/02-refine/data/metrics-baseline.md`
 
----
+> *"That bug still only counts as one."*
 
-## QA Lens: Testability of Requirements
+## Gate Criteria — QA Lens
 
-A keen eye sees far. I have walked the length of this PRD, arrow nocked, and tested each requirement against the QA Definition of Done: is it specific, is it verifiable, is it testable.
+1. **Every AC testable.** PASS. AC-1..AC-5, AC-8 are rule-based with explicit file/grep predicates; AC-6 and AC-7 are empirical with named denominator (5 runs) and artifact path. Each has an imaginable failing and passing case. My bow-hand is still.
+2. **Metrics measurable with existing instrumentation.** PASS. Elrond's §5 maps each PRD metric to an extant memory file or grep over `.delivery/artifacts/04-architect/**/*.md`. No new tooling required — `memory/index.md`, `stages/plan.md`, `topics/gate-patterns.md`, `defects/index.md` all exist.
+3. **Forbidden vocabulary enumerated, not heuristic.** PASS. FR-3, NFR-2, AC-3 list the tokens: `lambda|ecr|sqs|ec2|s3|dynamodb|kafka|python|node|typescript|golang`. R-3 codifies "enumerated, not heuristic". Greppable. I count them like orc kills.
+4. **80% Plan target has defined measurement window.** PASS. NFR-1 and AC-6 say **"5 subsequent pipeline runs"**; Success Metrics row 1 echoes "5-run rolling window post-land". Window stated plainly.
+5. **Dogfood AC has concrete Exhibit A.** PASS. FR-8 and AC-7 name the exact path `.delivery/artifacts/02-refine/po/constraints.yml`, author stage (Design), gate stage (UAT via FR-7), and P0 priority. No DoD before dogfood — the memory lesson holds.
+6. **Rollback/regression protocol for Plan metric.** PASS. R-4 mitigation: threshold (<57%), window (any 3-run), switch (`experimental.constraints_model: false`), disposition (reopen BACKLOG-001 as REJECT). All four moving parts named.
+7. **No "should"/"approximately" hiding in ACs.** PASS. Scanned §5 Acceptance Criteria — zero "should", zero "approximately", zero "~". The ACs stand on verbs like "exists", "returns", "cites", "include", "passes".
+8. **A/B confounds acknowledged.** PASS. Metrics baseline §6 names the gate-patterns-injection confound explicitly and counsels BACKLOG-001 spike flag as the only clean read. NFR-4 provides the `experimental.constraints_model: true` flag that makes the A/B mechanically possible. Small-n caveat also logged.
 
-### 1. Functional Requirements (FR-01 through FR-16)
+## Non-Blocking Observations (route to Design)
 
-| FR | Testable? | Verification approach the PRD already names |
-|----|-----------|----------------------------------------------|
-| FR-01 | Yes | Fresh config contains no `project_type`, declares `schema_version: 2.7`. File inspection. |
-| FR-02 | Yes | Three concrete acceptance scenarios (a/b/c): legacy bare key, v2.7 override, both-keys-present precedence. |
-| FR-03 | Yes | Two consecutive runs with different request types produce two different routing decisions. |
-| FR-04 | Yes | Wizard output is a 9-question flow producing a config with no `project_type`. |
-| FR-05 | Yes | `grep project_type delivery-team/skills/delivery-flow/` returns only deprecation/Phase-1 hits. |
-| FR-06 | Yes | Section exists, is first prose block, referenced from three named downstream sections. |
-| FR-07 | Yes | Step 4.5 contains rejection clause and links to FR-08 anti-patterns section. |
-| FR-08 | Yes | All six named anti-patterns present with name + description + alternative. |
-| FR-09 | Yes | Five lettered acceptance scenarios (a–e): orchestrator-write block, sub-agent allow, Bash redirection block, fallback warn, known-gaps documented. Strongest acceptance set in the PRD. |
-| FR-10 | Yes | Rule block exists, visually distinct, referenced by name from three named docs. |
-| FR-11 | Yes | Each of three reference docs contains the dispatch rule in specified locations. |
-| FR-12 | Yes (conditional) | Hook fires on synthetic compound-role prompt; does not fire on single-role prompt. Correctly marked MAY-not-MUST. |
-| FR-13 | Yes | Pattern doc contains all four protocol steps + three convergence criteria + taxonomy + no-context-leak guarantee. |
-| FR-14 | Yes | Stage 4 doc references the new pattern by name and bounds loop count. |
-| FR-15 | Yes | `config-schema.md` v2.7 documents `max_self_correction` with Architect loop use listed. |
-| FR-16 | Yes | `grep 2.6` across the four named files returns only changelog/historical hits. |
+- AC-8 token-delta baseline (prior 5-run Refine average) is not snapshotted in metrics-baseline.md §1. Capture before the flag flips.
+- Banned-token pre-feature grep over the last 5 Architect artifacts (baseline §6 caveat) must run before Stage 4 so AC-3's "zero" has a truthful pre-state.
+- Token enumeration diverges slightly across FR-3/NFR-2 (includes `kafka`) vs baseline §5.2 (adds `javascript`, `rust`, `nodejs`). Canonicalize in `constraints-model-guide.md` — FR-1 correctly defers the single source there.
 
-QA finding: every functional requirement names at least one observable, verifiable acceptance condition. Sixteen arrows, sixteen marks struck.
+## Defect Ledger
 
-### 2. Non-Functional Requirements (NFR-01 through NFR-08)
+Zero defects logged this gate. Eight arrows, eight marks struck.
 
-| NFR | Measurable? | Notes |
-|-----|-------------|-------|
-| NFR-01 | Yes | p95 ≤ 50ms with named measurement method (wall-clock around hook entry/exit) and a v2.6 baseline. |
-| NFR-02 | Yes | Stdlib-only — verifiable by import inspection. |
-| NFR-03 | Yes | Tolerant load of v2.6 fixture is a single test. |
-| NFR-04 | Yes | DoD validator named; grep is the verification. |
-| NFR-05 | Yes | Wrap-and-exit-0 pattern is inspectable in source. |
-| NFR-06 | Yes (process) | The dogfood run itself is the test, correctly elevated to acceptance. |
-| NFR-07 | Yes (process) | Plugin-dev skill load is observable in transcript. |
-| NFR-08 | Yes | Single PR / single merged change set is observable in git history. |
-
-QA finding: NFRs are constraints, not vapour. Each one names how it will be checked.
-
-### 3. PRD-Level Acceptance Criteria (Section 10)
-
-The five PRD-level checkboxes are reviewable and gate-ready. Section 9's traceability table maps every FR to a source issue — no orphans, no inventions.
-
-### 4. Open Questions
-
-OQ-1 through OQ-7 are correctly marked as non-blocking and routed to specific downstream stages. OQ-1 is marked RESOLVED in FR-09 with the layered detection strategy spelled out. OQ-7 (test fixture location) lands at QA's feet; resolution in Plan: commit a static fixture under `delivery-team/tests/fixtures/legacy-v2.6-config.yml` rather than generate inline, because the repo lacks a test runner and a checked-in fixture is grep-able and reviewable without execution.
-
-### 5. Risks Have Mitigations
-
-All eight risks (R1–R8) carry an explicit mitigation. R3 (loops never converge) and R6 (origin detection unreliable) are the highest-stakes for QA, and both have concrete mechanical fallbacks (two-clean / no-new-classes / hard cap; layered detection with soft-deny degradation). Satisfied.
-
----
-
-## What I Looked For And Did Not Find
-
-- Vague verbs. No "should be robust", no "improve quality", no "where appropriate". Every requirement names an artifact, a file, or a behaviour.
-- Untestable success metrics. All eight goal metrics in Section 2 are countable (percent, count, latency).
-- Hidden coupling. The four issues live on shared files; the PRD calls this out in Section 1 and addresses it via NFR-08 (atomic merge) and the implementation-order recommendation in Section 9.
-- Missing negative cases. FR-09 acceptance includes the *allow* path (sub-agent write) alongside the *block* path. FR-12 includes the *no false positive* case (single-role prompt). Both halves of the truth are present.
-
-## Minor Observations (Non-Blocking)
-
-These do not affect DoD pass; surfaced as input for Design/Plan:
-
-1. FR-09(a) test data: the acceptance scenario writes to `.delivery/artifacts/02-refine/po/prd.md` — the very path this current PRD occupies. The PRD already gates the block on `schema_version >= 2.7` plus a config flag, so the dogfood run authoring this PRD is not self-blocked. Plan stage should still pick a different artifact path for the actual hook test fixture to avoid temporal confusion in test logs.
-2. NFR-01 baseline: "v2.6 baseline" needs a concrete number captured before the change lands. Plan stage should add a task: "Capture v2.6 hook p95 latency on dogfood machine and record in PR description."
-3. FR-13 taxonomy: the seven issue classes (`coupling`, `security`, `data-integrity`, `naming`, `testability`, `performance`, `docs`) are named but not defined. A one-line gloss per class in `team-patterns.md` would prevent reviewer drift between loops. Architect or Plan stage call.
-
-None of these block PRD acceptance.
-
----
-
-## Verdict
-
-Sixteen functional requirements, eight non-functional requirements, eight risks with mitigations, seven open questions correctly routed, and a traceability table that closes every loop back to a source issue. Each FR carries at least one observable acceptance condition. Each NFR names its measurement.
-
-The PRD is testable, specific, and verifiable. It passes the QA Definition of Done.
-
-**STATUS: DONE**
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/02-refine/dod/qa-review.md
+SUMMARY: Eight arrows, eight orcs. Every AC testable, window stated, rollback armed, confounds named. That bug still only counts as one — and today there are none.
+```

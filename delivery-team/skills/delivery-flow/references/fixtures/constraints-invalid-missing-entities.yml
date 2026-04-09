@@ -1,0 +1,5 @@
+# Red fixture: missing required `entities`.
+invariants:
+  - "A Ring has exactly one Bearer at a time"
+actions:
+  - bind

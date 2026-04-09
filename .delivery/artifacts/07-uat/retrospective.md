@@ -1,128 +1,42 @@
-# Retrospective: run-2026-04-04-j8f2
+# Retrospective — run-2026-04-08-a1f3
 
-**Scrum Master**: Aragorn
-**Date**: 2026-04-04
-**Pipeline**: run-2026-04-04-j8f2
-**Type**: BUG_FIX (#58 -- Alias theme not injected into agent prompts)
-**Fix**: Added Agent Invocation Templates section to `pipeline-stages.md`
+**Facilitator**: Scrum Bag (Aragorn)
+**Feature**: Paired Constraints Primitive (`constraints.yml`) + Architect-in-Plan (ADR-002)
+**Date**: 2026-04-08
 
-> *"A small wound, but one that cut deeper than it appeared. An alias theme, crafted with care by the alias-creator, lost in the space between source and sword. One file, one section, one session -- and the fellowship moved as one to close it. I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall. Not to a bug this clear, and certainly not to a process gap we have seen before."*
+> *"A day may come when our pipelines fail us — but it is not this day. Today, we learn."*
 
 ---
 
-## 1. Run Summary
+## What Went Well
 
-| Item | Value |
-|------|-------|
-| **Pipeline ID** | run-2026-04-04-j8f2 |
-| **Type** | BUG_FIX |
-| **Issue** | #58 -- Alias theme not injected into agent prompts |
-| **Started** | 2026-04-04 |
-| **Completed** | 2026-04-04 |
-| **Sessions** | 1 (0 session losses) |
-| **Stages Executed** | 4 of 7: Idea (full), Plan (light), Dev (full), UAT (full) -- Refine/Design/Architect skipped per BUG_FIX routing |
-| **Total Stories** | 1 |
-| **Total SP** | 2 |
-| **DoD First-Try Pass** | 100% (4/4 stages) |
-| **Defects Found** | 0 |
-| **Human Checkpoints** | 0 (fully autonomous execution) |
-| **Files Modified** | 1 (`pipeline-stages.md` -- added Agent Invocation Templates section) |
+- **The Model-First primitive landed whole.** PRD, schema, templates, and validators rode into UAT together — no orphan artifacts, no late-binding surprises.
+- **Celebrimbor, summoned into Plan (ADR-002), proved his worth on his first ride.** The live dogfood of Architect-in-Plan caught **three unpriced gaps** — schema forward-compat (AC-1.4), cache-refresh after constraints edit (AC-9.4), and S3 intra-order sequencing — before a single one touched UAT.
+- **Gate-patterns memory injection continued to compound.** Pre-loaded constraints at Refine saved us from two classic PO/SM rework loops.
+- **UAT stayed clean.** Fifth consecutive first-try UAT pass. The shield wall holds.
+- **Adversarial review earned its keep again** — Gimli's round-2 rejection was uncomfortable but correct.
 
----
+## What Didn't
 
-## 2. What Went Well
+- **SM self-rejection on round 2 (stale artifact).** Scrum Bag validated against a prior draft of `sprint-plan.md` whose amendments had not been re-read. Cost: one full correction round.
+- **Gimli round-2 rejection — amendments not propagated.** Boundary corrections were written into `sequencing.md` but never carried into the authoritative `stories.md`. Validators quite rightly refused to infer.
+- **Bilbo API overload retry.** Transient upstream 529s during Architect-in-Plan decomposition forced a retry loop. Recoverable, but noisy.
+- **Stage 6 QA sweep — fixture arg-order error.** `check_dod_constraints.py` was invoked with arguments transposed (`<artifact> <constraints>` instead of `<constraints> <artifact>`). It read as a fixture-data mismatch; it was a CLI contract failure in the sweep script.
 
-### 2.1 All Four Stages Passed DoD on First Try
+## Key Insight — The Self-Validating Capability
 
-Every executed stage -- Idea, Plan, Dev, UAT -- passed its Definition of Done on the first attempt. No rework, no second rounds, no validator rejections. For a BUG_FIX pipeline, this is exactly what we want to see: clean in, clean out.
+The live dogfood of **ADR-002 (Architect-in-Plan)** during the very pipeline that introduced it caught **three gaps before they shipped**. The capability proved itself *inside its own build*. There is no stronger evidence than a feature earning its place on the day it is forged.
 
-**Evidence**: 4/4 stages report DoD Rounds: 1. First-try pass rate: 100%.
+## Meta-Irony
 
-### 2.2 Templates Structurally Consistent with Existing Patterns
+This run had **three DoD rounds at Plan stage** — which is *precisely* the symptom the Paired Constraints Primitive + Architect-in-Plan feature exists to eliminate. The feature is now self-applicable to its next run. If run-2026-04-09 does not land Plan in a single round with Celebrimbor + `constraints.yml` loaded, we must question whether we built the right thing or merely documented it.
 
-The Agent Invocation Templates added to `pipeline-stages.md` are structurally consistent with the existing `team-patterns.md` templates (12 templates total across both files). No format drift, no style inconsistency. The new section looks like it belongs where it was placed.
+## Action Items
 
-**Evidence**: QA review confirmed template format alignment with existing reference documents.
-
-### 2.3 QA Dogfooding Caught Installed-vs-Source Gap Before Close
-
-TC-5 dogfooding surfaced that the developer had edited the installed plugin file but had not synced the change back to the source repository. The PO correctly flagged this before the pipeline closed. The gap was caught inside the pipeline, not after release.
-
-**Evidence**: PO flag at UAT. Change synced to source before pipeline close.
-
-### 2.4 Fully Autonomous Execution Worked Cleanly
-
-The user requested zero human checkpoints. The team executed all four stages autonomously, and the result was correct. This validates that well-scoped BUG_FIX pipelines with clear root cause analysis do not require human intervention at every gate.
-
-**Evidence**: 0 human checkpoints. 4/4 stages passed. 0 defects.
+1. **Amendment propagation rule**: Validators MUST fail any artifact whose amendments reference adjacent docs not mirrored in the authoritative source. Add to `stages/plan.md` gate check. *(Owner: Scrum Bag, next run)*
+2. **Validator CLI contract banners**: Every validator script must print a one-line arg-order banner at invocation. Start with `check_dod_constraints.py` and the Stage 6 sweep script. *(Owner: DevOps, this sprint)*
+3. **Next-run dogfood gate**: Explicitly measure Plan first-try pass on run-2026-04-09. If the feature does not self-apply, open a P0 defect against ADR-002. *(Owner: Orchestrator, next run)*
 
 ---
 
-## 3. What Didn't Go Well
-
-### 3.1 Developer Edited Installed File Without Syncing to Source Repo
-
-The developer edited the installed plugin file rather than the source repository file. The PO caught this at UAT, but it should never have happened. This is the same class of issue as the Tech Writer false negative from run-2026-04-01-m7v3 -- installed vs source file confusion. Two occurrences of the same process gap in four days is a pattern.
-
-**Evidence**: PO flag at UAT. Same issue class as run-2026-04-01-m7v3 Tech Writer false negative.
-
----
-
-## 4. Lessons Learned
-
-| # | Lesson | Evidence | New? |
-|---|--------|----------|:----:|
-| L-1 | **When editing plugin files, always sync installed to source repo (or vice versa). Dev must commit to source, not just the installed location.** This is the second occurrence of this gap. The team needs a guardrail, not just awareness. | PO flag at UAT (this run) + Tech Writer false negative (run-2026-04-01-m7v3). Same root cause. | No (repeat) |
-| L-2 | **Fully autonomous execution (no checkpoints) works well for well-scoped BUG_FIX pipelines with clear root cause.** Do not over-gate small, focused fixes. The team can be trusted when the scope is tight and the cause is known. | 0 checkpoints, 4/4 DoD first-try, 0 defects. | Yes |
-
----
-
-## 5. Stage Health
-
-| Stage | Depth | DoD Rounds | First-Try Pass | Cumulative Baseline (9 runs) | Trend |
-|-------|-------|:----------:|:--------------:|:----------------------------:|:-----:|
-| Idea | Full | 1 | Yes | 100% (7/7) | Stable |
-| Refine | Skipped | -- | -- | 100% (3/3) | -- |
-| Design | Skipped | -- | -- | 100% (2/2) | -- |
-| Architect | Skipped | -- | -- | 100% (4/4) | -- |
-| Plan | Light | 1 | Yes | 63% (5/8) | Recovering |
-| Dev | Full | 1 | Yes | N/A (empirical) | -- |
-| UAT | Full | 1 | Yes | 80% (4/5) | Stable |
-
-**Overall first-try pass rate this run**: 100% (4/4 executed stages)
-**Consecutive 100% runs**: 1
-
-**Plan stage note**: Plan passed first-try on this run (light depth). Cumulative rate improves from 57% to 63%. One data point does not reverse a trend, but it is a step in the right direction.
-
----
-
-## 6. Metrics
-
-| Metric | Value |
-|--------|-------|
-| **Velocity** | 2 SP / 1 session |
-| **Stories completed** | 1/1 (100%) |
-| **DoD first-try pass rate** | 100% (4/4 stages) |
-| **Defects found** | 0 |
-| **Session count** | 1 (0 session losses) |
-| **Calendar days** | 1 |
-| **Files modified** | 1 |
-| **Human checkpoints** | 0 |
-
----
-
-## Improvement Actions
-
-| # | Action | Owner | Priority | Target |
-|---|--------|-------|----------|--------|
-| IA-1 | Add a pre-commit or Dev-stage guardrail that detects when edits target installed plugin paths instead of source repo paths. Prevent the installed-vs-source gap at the point of edit, not at UAT. This is a repeat finding -- awareness alone has not fixed it. | SM / Pipeline | P1 | Next pipeline |
-
----
-
-> *"One story. Two points. One file changed. And yet, within this smallest of marches, the same old shadow appeared -- the gap between where a file lives and where it belongs. We have seen it twice now. Twice is not coincidence; it is a flaw in our road. We will lay a stone there before the next traveler stumbles.*
->
-> *But let the record also show: the team ran this pipeline alone, start to finish, no hand upon the tiller, and delivered cleanly. That trust was earned, and it held. The sprint did not fall today."*
-
----
-
-**Retrospective complete.** Pipeline run-2026-04-04-j8f2 is closed.
+*"The pipeline is long, and the rework heavy — but not all who wander the DoD are lost. Forth, and shipwards."*

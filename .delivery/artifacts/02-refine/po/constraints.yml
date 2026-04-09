@@ -1,0 +1,84 @@
+# constraints.yml — Exhibit A (dogfood) for Paired Constraints Primitive PRD
+# Stage 2 Refine, authored per FR-8 / AC-7 / US-9.
+# Source PRD: .delivery/artifacts/02-refine/po/prd.md
+
+entities:
+  - Orchestrator
+  - PO sub-agent
+  - Architect sub-agent
+  - DoD validator
+  - Human checkpoint reviewer
+  - constraints.yml
+  - constraints-schema.json
+  - constraints-model-guide.md
+  - constraints-refine.yml template
+  - constraints-architect.yml template
+
+invariants:
+  - "constraints.yml schema has exactly 8 top-level fields; entities and invariants are required, the other six are optional"
+  - "Schema changes remain backwards-compatible for at least one minor version (forward-compat preserved)"
+  - "Plan stage first-try pass rate must reach >=80% over the 5-run post-release measurement window"
+  - "Zero implementation-detail vocabulary contamination in any new decomposition artifact produced after this feature lands"
+  - "Forbidden vocabulary is enumerated, not heuristic; additions require a PRD revision"
+  - "Every volatility-strategy Architect artifact cites Lowy's Golden Rule (Righting Software Ch. 2)"
+  - "Stage 5 Plan includes Architect as a participant via .delivery/artifacts/05-plan/architect/sequencing.md"
+  - "DoD gates at Plan and Architect perform at least one deterministic rule check against constraints.yml"
+
+forbidden_vocabulary:
+  - lambda
+  - ecr
+  - sqs
+  - ec2
+  - s3
+  - dynamodb
+  - kafka
+  - python
+  - node
+  - typescript
+  - golang
+
+numeric_ceilings:
+  token_overhead_pct_max: 15
+  sprint_story_ceiling: 4
+  sprint_story_hard_cap: 5
+  dod_rounds_max: 3
+  self_correction_rounds_max: 3
+  plan_first_try_pass_rate_target_pct: 80
+  schema_field_count_max: 8
+
+state_variables:
+  - current_stage
+  - dod_round
+  - config_version
+  - experimental_constraints_model_flag
+  - plan_first_try_pass_rate
+  - refine_token_cost_delta_pct
+
+actions:
+  - emit_constraints
+  - validate_constraints
+  - check_dod_constraints
+  - load_constraints
+  - refresh_installed_cache
+  - cite_golden_rule
+
+mandatory_artifacts:
+  - .delivery/artifacts/02-refine/po/prd.md
+  - .delivery/artifacts/02-refine/po/constraints.yml
+  - delivery-team/skills/delivery-flow/references/constraints-schema.json
+  - delivery-team/skills/delivery-flow/references/constraints-model-guide.md
+  - delivery-team/skills/delivery-flow/references/templates/constraints-refine.yml
+  - delivery-team/skills/delivery-flow/references/templates/constraints-architect.yml
+  - delivery-team/skills/delivery-flow/scripts/validate_constraints.py
+  - delivery-team/skills/delivery-flow/scripts/check_dod_constraints.py
+
+citations:
+  - work: "Righting Software"
+    chapter: "2"
+    page: "TBD"
+  - work: "arXiv:2512.14474 Model-First Reasoning LLM Agents"
+    chapter: "-"
+    page: "-"
+  - work: "arXiv:2512.20845 Multi-Agent Reflexion"
+    chapter: "-"
+    page: "-"

@@ -1,237 +1,165 @@
-# Stories: DESIGN Project Type for delivery-flow
+# Stories — Paired Constraints Primitive (`constraints.yml`)
 
-*"Each story is a stone on the path. Lay them well, and the road holds."* — Gandalf
+**Stage**: 5 (Plan) | **Role**: Product Owner (Gandalf)
+**Pipeline ID**: run-2026-04-08-a1f3
+**Date**: 2026-04-08
+**Inputs**: PRD FR-1..FR-8, `architecture.md`, ADR-001/002/003, `.delivery/memory/stages/plan.md`
 
-**Stage:** 05 — Plan (PO sub-flow)
-**Feature:** DESIGN Project Type
-**PRD:** `.delivery/artifacts/02-refine/po/prd.md`
-**Author:** Product Owner (Gandalf)
-**Date:** 2026-04-05
-
-**Sizing note:** All stories are markdown/configuration edits. Points are calibrated one tier lower than equivalent code work — a 1-pointer here is a single-file paragraph edit; a 2-pointer touches multiple sections or requires schema-version discipline.
+> *"The burden is named. Now we measure it in stones we can carry — no more, no less."*
 
 ---
 
-## DS-01 — Add DESIGN to `routing.force_type` enum in config-schema.md
+## Capacity Declaration
 
-**Points:** 2
-**Files:** `delivery-team/skills/delivery-flow/references/config-schema.md`
-**Maps to:** FR-01, FR-05, NFR-03
+| Field | Value |
+|---|---|
+| Team size | 1 |
+| Velocity baseline | 5 pts / sprint |
+| Ceiling (80% target) | 4 pts / sprint |
+| Hard cap (100%) | 5 pts / sprint (never exceed) |
+| Work class | Markdown + Schema + Content → estimates one tier lower (memory: run-h3k7) |
+| Sprints proposed | **4** |
+| Total committed | **17 pts** |
 
-**As a** delivery-flow user
-**I want** `routing.force_type: DESIGN` to be a valid configuration value
-**So that** I can explicitly force DESIGN routing in `.delivery/config.yml`.
+Honesty note: three sprints was a hope; four is the truth. No story exceeds 3 pts; if Sprint Planning re-estimates any higher, split before commit.
 
-**Acceptance Criteria:**
-
-- **Given** the current `config-schema.md` at v2.7
-  **When** I add `DESIGN` to the `routing.force_type` enum
-  **Then** the enum reads: `[GREENFIELD, FEATURE, BUG_FIX, GAME_DEV, SPIKE, DOCS_ONLY, DESIGN]`.
-- **Given** the schema version is being changed
-  **When** the edit is committed
-  **Then** the version is bumped per the extension protocol and a changelog entry referencing this feature is added.
-- **Given** an existing config that does not set `force_type`
-  **When** validated against the new schema
-  **Then** it MUST validate unchanged (backward compatibility).
-
-**Test Cases:**
-
-1. Grep `config-schema.md` for `DESIGN` — appears in the `routing.force_type` enum row.
-2. Grep for the new schema version string — appears in the version header and changelog.
-3. Sample config with `routing.force_type: DESIGN` validates clean.
-4. Sample config with no `force_type` key validates clean (regression).
+> *"A wizard commits precisely when he means to — and no story point later."*
 
 ---
 
-## DS-02 — Add DESIGN to SKILL.md Phase 1 detection table + routing matrix
+## User Stories
 
-**Points:** 2
-**Files:** `delivery-team/skills/delivery-flow/SKILL.md`
-**Maps to:** FR-01, FR-03, FR-04
+### US-1 — `constraints.yml` JSON schema + validator
+- **Role**: Orchestrator / DoD validators
+- **Goal**: load and rule-check any `constraints.yml` against a canonical schema
+- **Value**: deterministic gate decisions; zero AI variance on structure
+- **Acceptance Criteria**:
+  - AC-1.1 JSON Schema defines exactly 8 top-level fields (`entities`, `state_variables`, `actions`, `numeric_ceilings`, `mandatory_artifacts`, `invariants`, `forbidden_vocabulary`, `citations`) ⇒ **PRD FR-1, AC-1**
+  - AC-1.2 `entities` and `invariants` required; remainder optional ⇒ **PRD FR-1**
+  - AC-1.3 Validator exits non-zero on missing required fields ⇒ **PRD FR-1 invariant check**
+  - AC-1.4 Schema is forward-compatible: additional top-level fields in a future `constraints.yml` are ignored rather than rejected by the validator ⇒ **PRD FR-1 extensibility**
+- **Estimate**: 3 pts
+- **Depends on**: none
+- **DoD**: schema under `delivery-team/skills/delivery-flow/references/`; validator headless; red/green fixtures pass
 
-**As a** delivery-flow orchestrator
-**I want** the Phase 1 project-type detection table and stage routing matrix to know about DESIGN
-**So that** auto-detection routes design-only requests correctly.
+### US-2 — `constraints-model-guide.md` authoring canon
+- **Role**: PO/Architect sub-agents
+- **Goal**: one guide explaining every field + required/optional markers
+- **Value**: consistent authorship across Refine and Architect
+- **Acceptance Criteria**:
+  - AC-2.1 Guide documents all 8 fields with type + required/optional + example ⇒ **PRD FR-1, AC-1**
+  - AC-2.2 Guide cross-links Löwy golden rule for `citations` ⇒ **PRD FR-3, AC-4**
+- **Estimate**: 2 pts
+- **Depends on**: US-1
+- **DoD**: guide under `delivery-flow/references/`; linked from PRD dependency list
 
-**Acceptance Criteria:**
+### US-3 — Refine-stage PO constraints template + invocation
+- **Role**: PO sub-agent at Refine
+- **Goal**: emit `constraints.yml` with problem-scoped content as part of Refine
+- **Acceptance Criteria**:
+  - AC-3.1 Template instantiates all 8 fields with Refine-scoped guidance ⇒ **PRD FR-2**
+  - AC-3.2 `pipeline-stages.md` Refine invocation updated to require `constraints.yml` artifact ⇒ **PRD FR-2**
+  - AC-3.3 Sample emission passes US-1 validator ⇒ **PRD FR-2 invariant check**
+- **Estimate**: 2 pts
+- **Depends on**: US-1, US-2
+- **DoD**: template + invocation update shipped; sample validated
 
-- **Given** the Phase 1 detection table in SKILL.md
-  **When** I view the table
-  **Then** a DESIGN row exists with detection signals and a routing summary, in the same format as the other six types.
-- **Given** the stage routing matrix in SKILL.md
-  **When** I view the matrix
-  **Then** DESIGN is encoded as: Idea=full, Refine=full, Design=full, Architect=full, Plan=skip, Dev=skip, UAT=skip.
-- **Given** the six existing rows
-  **When** the diff is inspected
-  **Then** none of them are modified (regression check).
+### US-4 — Architect-stage decomposition template + invocation
+- **Role**: Architect sub-agent
+- **Goal**: emit `constraints.yml` with volatility/DDD-scoped content
+- **Acceptance Criteria**:
+  - AC-4.1 Template instantiates 8 fields with Architect-scoped content ⇒ **PRD FR-3**
+  - AC-4.2 `forbidden_vocabulary` pre-populated with enumerated list (`lambda, ecr, sqs, ec2, s3, dynamodb, kafka, python, node, typescript, golang`) ⇒ **PRD FR-3, NFR-2, AC-3**
+  - AC-4.3 `citations` requires Löwy reference when volatility strategy selected ⇒ **PRD FR-3, AC-4**
+- **Estimate**: 2 pts
+- **Depends on**: US-1, US-2
+- **DoD**: template + invocation update shipped; sample emission validated; token list locked
 
-**Test Cases:**
+### US-5 — `volatility-decomposition.md` §0 Golden Rule insertion
+- **Role**: Architect reader
+- **Goal**: see Löwy's rule stated as a rule at the top of the reference
+- **Acceptance Criteria**:
+  - AC-5.1 New §0 "The Golden Rule" — Löwy, *Righting Software* Ch. 2, verbatim ⇒ **PRD FR-4, AC-4**
+  - AC-5.2 Functional-decomposition-trap anti-pattern with worked example ⇒ **PRD FR-4 (Gap 1)**
+- **Estimate**: 1 pt
+- **Depends on**: none
+- **DoD**: edit landed; no prose regressions
 
-1. Grep SKILL.md for `DESIGN` — appears in detection table and routing matrix.
-2. Diff against `main` shows only additions for DESIGN; existing rows unchanged.
-3. Manual read confirms routing summary text matches "stages 1–4 full, 5–7 skip."
+### US-6 — `strategic-ddd.md` Decomposition Hygiene sidebar
+- **Role**: Architect reader (DDD path)
+- **Goal**: equivalent "no implementation nouns" guardrail across DDD phases
+- **Acceptance Criteria**:
+  - AC-6.1 Sidebar threaded into Phases 1–4 prohibiting cloud services/runtimes/languages ⇒ **PRD FR-5 (Gap 2 DDD parity)**
+  - AC-6.2 Bounded-context integrity rules added ⇒ **PRD FR-5**
+- **Estimate**: 1 pt
+- **Depends on**: none
+- **DoD**: sidebar present in all four phases
 
----
+### US-7 — Architect-in-Plan integration (`pipeline-stages.md`)
+- **Role**: Orchestrator
+- **Goal**: invoke Architect in Stage 5 Plan per ADR-002
+- **Acceptance Criteria**:
+  - AC-7.1 New invocation step between Plan steps 1 and 3, `task_type: implementation-sequencing` ⇒ **PRD FR-6, ADR-002**
+  - AC-7.2 Output `.delivery/artifacts/05-plan/architect/sequencing.md` declared ⇒ **PRD FR-6, AC-5**
+  - AC-7.3 Architect listed as participant (not owner) of Stage 5 ⇒ **PRD FR-6 (Gap 3)**
+- **Estimate**: 2 pts
+- **Depends on**: US-1
+- **DoD**: `pipeline-stages.md` updated; dry-run orchestrator loads new step
 
-## DS-03 — Add DESIGN detection signals to project-types.md
+### US-8 — DoD validator deterministic constraint checks
+- **Role**: DoD validators (Plan + Architect)
+- **Goal**: at least one rule-based check against `constraints.yml` per gate
+- **Acceptance Criteria**:
+  - AC-8.1 Forbidden-vocabulary grep blocks DoD on match ⇒ **PRD FR-7, AC-3, NFR-2**
+  - AC-8.2 Mandatory-artifact presence check ⇒ **PRD FR-7**
+  - AC-8.3 Numeric-ceiling compliance check ⇒ **PRD FR-7**
+  - AC-8.4 Missing Löwy citation on volatility artifact fails DoD ⇒ **PRD FR-7, AC-4**
+- **Estimate**: 3 pts
+- **Depends on**: US-1, US-4
+- **DoD**: validator integrated into `dod_validators` path; red/green fixtures; no new required `config.yml` key (NFR-4)
 
-**Points:** 2
-**Files:** `delivery-team/skills/delivery-flow/references/project-types.md`
-**Maps to:** FR-01, FR-02
-
-**As a** Product Owner triaging an incoming request
-**I want** project-types.md to document DESIGN's detection signals, examples, and rationale
-**So that** I (and the orchestrator) can recognize design-only engagements consistently.
-
-**Acceptance Criteria:**
-
-- **Given** project-types.md
-  **When** I view it
-  **Then** a DESIGN section exists with: detection signals, example user phrases, rationale, and routing summary.
-- **Given** the listed signals
-  **When** I read them
-  **Then** they include: "design only," "no implementation," "design package," "reference architecture," "pre-funding design," explicit downstream-handoff intent, absence of executable target, deliverable framed as PRD + ADRs + diagrams.
-- **Given** the existing six type sections
-  **When** the diff is inspected
-  **Then** they are untouched.
-
-**Test Cases:**
-
-1. Grep `project-types.md` for `## DESIGN` — section exists.
-2. Grep for at least 5 of the listed signal phrases.
-3. Diff confirms existing six type sections unchanged.
-
----
-
-## DS-04 — Update pipeline-stages.md with DESIGN-specific routing notes
-
-**Points:** 2
-**Files:** `delivery-team/skills/delivery-flow/references/pipeline-stages.md`
-**Maps to:** FR-03, NFR-04
-
-**As a** delivery-team member reading the stage reference
-**I want** pipeline-stages.md to call out DESIGN's stage-5/6/7 skip behavior explicitly
-**So that** "skip" is not confused with "light" elsewhere in the pipeline.
-
-**Acceptance Criteria:**
-
-- **Given** pipeline-stages.md
-  **When** I read stages 5, 6, and 7
-  **Then** each notes that DESIGN runs SKIP these stages, and that this is intentional/definitional, NOT a "light" variant.
-- **Given** the cardinal rule that "light != skip"
-  **When** I read the DESIGN note
-  **Then** it explicitly affirms the rule and clarifies DESIGN as the sole exception by definition (no Plan/Dev/UAT to be light about).
-- **Given** stages 1–4
-  **When** I read them
-  **Then** DESIGN is noted as running them at full depth.
-
-**Test Cases:**
-
-1. Grep `pipeline-stages.md` for `DESIGN` — appears in stage 5, 6, 7 sections.
-2. Grep for "light" near DESIGN — confirms the distinction is called out.
-3. Manual read confirms stages 1–4 mention DESIGN as full-depth.
-
----
-
-## DS-05 — Update setup-wizard.md detection guidance for DESIGN
-
-**Points:** 1
-**Files:** `delivery-team/skills/delivery-flow/references/setup-wizard.md`
-**Maps to:** FR-07
-
-**As a** delivery-flow setup wizard
-**I want** my detection guidance to recognize DESIGN signals
-**So that** auto-detection routes design-only setups correctly without a new question.
-
-**Acceptance Criteria:**
-
-- **Given** setup-wizard.md
-  **When** I view the detection guidance section
-  **Then** DESIGN appears alongside the other types with its detection signals.
-- **Given** PR #74 removed Q1
-  **When** the diff is inspected
-  **Then** no new interactive wizard question is added — only detection guidance text.
-
-**Test Cases:**
-
-1. Grep `setup-wizard.md` for `DESIGN` — appears in the detection guidance section.
-2. Diff confirms no new "Q" or numbered question block was added.
+### US-9 — Dogfood: emit this PRD's own `constraints.yml`
+- **Role**: Exhibit A
+- **Goal**: ship `.delivery/artifacts/02-refine/po/constraints.yml` that passes all checks in UAT
+- **Acceptance Criteria**:
+  - AC-9.1 File exists at exact path ⇒ **PRD FR-8, AC-7**
+  - AC-9.2 Passes US-1 schema validator ⇒ **PRD FR-8**
+  - AC-9.3 Passes US-8 deterministic DoD checks during UAT ⇒ **PRD FR-8, AC-7 (P0 dogfood)**
+  - AC-9.4 Dogfood run includes explicit installed-cache refresh step (source → cache sync) before validation, preventing stale-cache masking of source edits ⇒ **PRD FR-8, memory hot lesson #4**
+- **Estimate**: 1 pt
+- **Depends on**: US-1, US-2, US-3, US-8
+- **DoD**: file committed; UAT run green; memory lesson "no DoD before dogfood" honored
 
 ---
 
-## DS-06 — Update CLAUDE.md, README.md, marketplace.json with DESIGN
+## Sprint Allocation
 
-**Points:** 2
-**Files:** `CLAUDE.md`, `README.md`, `.claude-plugin/marketplace.json`
-**Maps to:** FR-06, NFR-02
-
-**As a** developer or user discovering delivery-flow
-**I want** every discovery surface to list DESIGN
-**So that** the project type is visible everywhere it's enumerated.
-
-**Acceptance Criteria:**
-
-- **Given** `CLAUDE.md`'s delivery-flow architecture section
-  **When** I view the project-type list
-  **Then** DESIGN is listed alongside the existing six.
-- **Given** the root `README.md`
-  **When** I view any project-type enumeration
-  **Then** DESIGN is listed.
-- **Given** `.claude-plugin/marketplace.json`
-  **When** the delivery-flow plugin description enumerates project types
-  **Then** DESIGN is included; if no enumeration exists, the file is left unchanged and a note is added to the PR description.
-
-**Test Cases:**
-
-1. Grep `CLAUDE.md` for `DESIGN` in the project-type list.
-2. Grep `README.md` for `DESIGN`.
-3. Inspect `marketplace.json` — DESIGN added or non-applicability documented.
-4. Diff inspection confirms no other project-type rows are altered.
-
----
-
-## DS-07 — Update delivery-team/README.md project type list
-
-**Points:** 1
-**Files:** `delivery-team/README.md`
-**Maps to:** FR-08, NFR-02
-
-**As a** plugin maintainer browsing delivery-team
-**I want** delivery-team/README.md to list DESIGN
-**So that** plugin-level documentation is consistent with the references and root docs.
-
-**Acceptance Criteria:**
-
-- **Given** `delivery-team/README.md`
-  **When** I view any project-type enumeration
-  **Then** DESIGN is listed alongside the existing six types.
-- **Given** the existing project-type entries
-  **When** the diff is inspected
-  **Then** they are untouched.
-
-**Test Cases:**
-
-1. Grep `delivery-team/README.md` for `DESIGN`.
-2. Diff confirms no other type rows altered.
-
----
-
-## Story Map Summary
-
-| Story | Points | File(s) | FRs |
+| Sprint | Stories | Points | % of 5-pt cap |
 |---|---|---|---|
-| DS-01 | 2 | config-schema.md | FR-01, FR-05, NFR-03 |
-| DS-02 | 2 | SKILL.md | FR-01, FR-03, FR-04 |
-| DS-03 | 2 | project-types.md | FR-01, FR-02 |
-| DS-04 | 2 | pipeline-stages.md | FR-03, NFR-04 |
-| DS-05 | 1 | setup-wizard.md | FR-07 |
-| DS-06 | 2 | CLAUDE.md, README.md, marketplace.json | FR-06, NFR-02 |
-| DS-07 | 1 | delivery-team/README.md | FR-08, NFR-02 |
-| **Total** | **12** | | |
+| **S1 — Foundations** | US-1 (3), US-5 (1) | **4** | 80% target ✅ |
+| **S2 — Guides & Templates** | US-2 (2), US-6 (1), US-4 (2) | **5** | 100% hard cap ⚠ |
+| **S3 — Integration** | US-3 (2), US-7 (2) | **4** | 80% target ✅ |
+| **S4 — Validators & Dogfood** | US-8 (3), US-9 (1) | **4** | 80% target ✅ |
 
-**Suggested execution order:** DS-01 → DS-03 → DS-02 → DS-04 → DS-05 → DS-06 → DS-07. (Schema first, then references the schema points to, then the orchestrator entry table, then surfacing.)
+**Total: 17 pts / 4 sprints.** S2 rides the hard cap — watch it. If S1 slips, pull US-6 from S2 into S3 (trivially re-orderable — no dependency).
 
 ---
 
-*"Twelve points, seven stories, one road. Walk it well."*
-— Gandalf, Product Owner
+## Cross-Cutting Risks (emergent from breakdown)
+
+- **CR-1** US-8 relies on US-4's enumerated token list — lock the list in US-4 DoD or US-8 re-opens.
+- **CR-2** US-9 cannot begin until US-1/2/3/8 are green; schedule last in S4.
+- **CR-3** US-3 and US-7 both edit `pipeline-stages.md` — coordinate across S3 to avoid merge collisions.
+- **CR-4** NFR-5 token delta (≤15%) is a post-land measurement — Data Analyst owns it at UAT, not per-sprint.
+
+---
+
+## Out of Scope Reminder
+
+No BACKLOG-003, BACKLOG-005, BACKLOG-006. No `config.yml` v2.7→v2.8 bump (PRD §6 — earned only after the primitive survives both domains).
+
+---
+
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/05-plan/po/stories.md
+SUMMARY: Nine stories, 17 pts across 4 sprints (honest recalibration from 3). All ACs traced 1:1 to PRD FR-1..FR-8. No sprint over 5-pt hard cap. patched round 2 — +AC-1.4 +AC-9.4

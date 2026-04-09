@@ -1,0 +1,30 @@
+# DoD fixture: constraints file used to exercise check_dod_constraints.py
+# Uses the ADR-003 enumerated forbidden-vocabulary list (subset sufficient
+# for the red/green fixtures in US-8).
+entities:
+  - Ring
+  - Bearer
+invariants:
+  - "A Ring has exactly one Bearer at a time"
+state_variables:
+  - bearer_id
+actions:
+  - bind
+  - surrender
+numeric_ceilings:
+  max_bearers: 1
+mandatory_artifacts:
+  - delivery-team/skills/delivery-flow/references/fixtures/dod-artifact-clean.md
+forbidden_vocabulary:
+  - Lambda
+  - AWS Lambda
+  - DynamoDB
+  - S3
+  - Kubernetes
+  - Docker
+  - Python
+  - TypeScript
+citations:
+  - work: "Righting Software by Juval Löwy"
+    chapter: "2"
+    page: "47"

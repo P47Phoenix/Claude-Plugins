@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/P47Phoenix/Claude-Plugins/delivery-team/constraints-schema.json",
+  "title": "constraints.yml",
+  "description": "Paired Constraints Primitive — stage-committed constraints carried from Refine and Architect into Plan, Dev, and DoD gates. See ADR-001.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["entities", "invariants"],
+  "properties": {
+    "entities": {
+      "type": "array",
+      "description": "Named domain entities locked at Refine.",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "invariants": {
+      "type": "array",
+      "description": "Rule-checkable invariants that must hold end-to-end.",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "state_variables": {
+      "type": "array",
+      "description": "Named state variables the system tracks.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "actions": {
+      "type": "array",
+      "description": "Allowed domain actions / verbs.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "numeric_ceilings": {
+      "type": "object",
+      "description": "Map of constraint name → numeric upper bound.",
+      "additionalProperties": { "type": "number" }
+    },
+    "mandatory_artifacts": {
+      "type": "array",
+      "description": "Paths of artifacts that must exist at DoD time.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "forbidden_vocabulary": {
+      "type": "array",
+      "description": "Words/phrases forbidden in downstream artifacts.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "citations": {
+      "type": "array",
+      "description": "Structured source citations for Löwy-rule enforcement.",
+      "items": {
+        "type": "object",
+        "required": ["work", "chapter", "page"],
+        "additionalProperties": true,
+        "properties": {
+          "work":    { "type": "string", "minLength": 1 },
+          "chapter": { "type": ["string", "integer"] },
+          "page":    { "type": ["string", "integer"] }
+        }
+      }
+    }
+  }
+}

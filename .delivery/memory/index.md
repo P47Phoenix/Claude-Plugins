@@ -1,7 +1,7 @@
 # Memory Index
 
-**Last updated**: 2026-04-05
-**Total runs**: 17
+**Last updated**: 2026-04-08
+**Total runs**: 18
 
 ## Stage Health (from last 5 runs)
 
@@ -11,7 +11,7 @@
 | Refine | 100% (2/2) | Stable | Only ran in 2 of last 5 |
 | Design | 100% (2/2) | Stable | Ran in 2 of last 5 |
 | Architect | 100% (3/3) | Stable | Ran in 3 of last 5 |
-| Plan | 80% (4/5) | **Improving** | 2 consecutive first-try passes with pre-loaded constraints |
+| Plan | 60% (3/5) | **Regressed** | run-a1f3 needed 3 DoD rounds (stale SM artifact, amendments not propagated); meta-irony — the very feature being built |
 | Development | 80% (4/5) | **Improving** | Clean first-try in 3d92; derived artifacts lesson applied proactively |
 | UAT | 100% (5/5) | Stable | 5 consecutive first-try passes |
 
@@ -21,7 +21,7 @@
 2. Gate-patterns memory injection yields compound returns — but Plan stage needs pre-loaded constraints → topics/gate-patterns.md
 3. Dogfooding is a P0 UAT gate, not a follow-up — execute before DoD submission → stages/uat.md
 4. Installed↔source file sync is mandatory — Dev must commit to source, validators must check installed → stages/uat.md
-5. Plan stage agents need pre-loaded constraints (sprint ceiling, mandatory artifacts) → stages/plan.md
+5. Propagate amendments to authoritative artifacts, not just referencing ones → topics/gate-patterns.md / stages/plan.md
 
 ## Topic Files (read when relevant)
 

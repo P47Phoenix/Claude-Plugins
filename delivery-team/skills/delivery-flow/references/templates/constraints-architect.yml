@@ -1,0 +1,92 @@
+# constraints-architect.yml — Architect-stage template (Stage 4)
+#
+# Canonical location (when authored):
+#   .delivery/artifacts/04-architect/solution/constraints.yml
+#
+# Purpose:
+#   Decomposition-scoped constraints. Answers "what volatility classes,
+#   bounded contexts, and invariants govern the decomposition?" — NOT
+#   "what implementation technology will we use?". Implementation nouns
+#   are forbidden at this stage (see forbidden_vocabulary below).
+#
+# Schema: 8 fields (ADR-001). `entities` and `invariants` are required;
+# the other six are optional. Preserve this field order for glance-ability.
+# Canonical reference: references/constraints-model-guide.md
+
+# REQUIRED — bounded contexts / volatility classes owned by this decomposition.
+# At Architect stage, entities are NOT domain nouns from Refine — they are
+# the volatility classes and contexts the Architect is committing to.
+# Example: [billing_context, identity_context, volatile_pricing_engine]
+entities:
+  - # <fill in: first bounded context or volatility class>
+
+# REQUIRED — decomposition truths that must hold end-to-end.
+# Each invariant should be load-bearing and referenced by at least one
+# downstream artifact (sequencing.md, stories, plan).
+# Example: "Volatile pricing logic is isolated from stable identity context"
+invariants:
+  - # <fill in: first decomposition invariant>
+
+# OPTIONAL — forbidden implementation tokens at decomposition stage.
+# ADR-003: enumerated list, restated per file, matched case-insensitively
+# by whole-word grep in the DoD validator. Tokens are forbidden ONLY at
+# Stage 4 decomposition — Stage 5 Plan and Stage 6 Dev legitimately name
+# these. Maintainers: add new tokens via the ADR-003 maintenance protocol
+# and update references/constraints-model-guide.md in the same PR.
+forbidden_vocabulary:
+  - lambda
+  - aws lambda
+  - ecr
+  - ecs
+  - eks
+  - sqs
+  - sns
+  - eventbridge
+  - dynamodb
+  - s3
+  - kinesis
+  - fargate
+  - ec2
+  - gcp
+  - azure functions
+  - kubernetes
+  - docker
+  - python
+  - node
+  - typescript
+  - javascript
+  - go
+  - rust
+  - java
+  - express
+  - fastapi
+  - django
+  - postgresql
+  - mysql
+  - mongodb
+
+# OPTIONAL — quantitative ceilings on the decomposition.
+# Example: {max_bounded_contexts: 7, max_volatility_classes: 5}
+numeric_ceilings: {}
+
+# OPTIONAL — observable state the decomposition introduces or mutates.
+state_variables: []
+
+# OPTIONAL — state transitions the Architect stage commits to.
+actions: []
+
+# OPTIONAL — downstream files this stage promises will exist.
+# At minimum, most Architect runs will list the sequencing output.
+mandatory_artifacts:
+  - # <fill in: e.g. ".delivery/artifacts/05-plan/architect/sequencing.md">
+
+# OPTIONAL — authoritative references required by invariants above.
+# REQUIRED when a volatility-based decomposition strategy is selected:
+# at least one citation MUST reference Löwy's "Righting Software" (Ch. 2,
+# "The Golden Rule"). The DoD validator rule R-CITATIONS enforces this
+# on Architect volatility runs (PRD AC-4, ADR-001, architecture.md §7).
+# Shape: [{work, chapter, page}]
+citations:
+  # - work: "Righting Software"
+  #   chapter: "2"
+  #   page: "31"

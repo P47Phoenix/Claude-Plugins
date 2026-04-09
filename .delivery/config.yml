@@ -1,5 +1,4 @@
-config_version: "2.6"
-project_type: FEATURE
+config_version: "2.7"
 tech_stack:
   languages: [Python, Markdown, Shell, TypeScript, JavaScript]
   frameworks: []
@@ -107,4 +106,4 @@ presentation:
   pptx_template: ""
   pptx_font: Calibri
   pptx_accent_color: "#2d5aa0"
-wizard_completed: 2026-04-05
+wizard_completed: 2026-04-08

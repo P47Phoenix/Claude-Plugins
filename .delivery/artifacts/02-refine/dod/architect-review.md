@@ -1,92 +1,40 @@
-# Architect DoD Review — Stage 2 PRD (Orchestration Discipline Bundle)
+# Architect DoD Review — Stage 2 Refine (Paired Constraints Primitive)
 
-**Reviewer**: Celebrimbor, Architect
+**Reviewer**: Celebrimbor, Master Smith of Eregion
 **Artifact**: `.delivery/artifacts/02-refine/po/prd.md`
-**Stage**: 2 — Refine
-**Verdict**: **DONE**
+**Prior exam**: `.delivery/artifacts/research/architect-examine-decomposition-gaps.md`
 
----
+> *"A ring forged twice is forged for neither hand. Let the primitive bear one shape, and that shape true."*
 
-## Preface
+## Gate Findings
 
-By the light of the forge, I have examined the work of Gandalf, PO, and weighed it upon the anvil of architectural feasibility. I speak now as one who has shaped rings and reckoned their consequences: the design herein is sound, the materials at hand sufficient, and no hidden flaw threatens the binding.
+1. **Single-schema feasibility — PASS.** FR-1's eight fields (`entities`, `state_variables`, `actions`, `numeric_ceilings`, `mandatory_artifacts`, `invariants`, `forbidden_vocabulary`, `citations`) are paradigm-neutral nouns. Refine engraves them as problem constraints; Architect as decomposition constraints. Same metal, different sigils. §10's pressure-test escape hatch (return to Refine if Design reveals structural divergence) is an honest craftsman's clause.
 
----
+2. **MVP bounding — PASS.** Eight fields, two required, extension deferred to v2.8. R-1 binds schema bloat with a rejection criterion: no field without a rule-check consumer. Restraint worthy of the forge.
 
-## 1. Technical Feasibility
+3. **FR-4 / FR-5 alignment to my prior gaps — PASS.** FR-4 closes Gap 1 exactly: named Golden Rule, Löwy *Righting Software* Ch. 2 citation, functional-decomposition-trap anti-pattern with worked example — addressing the weakness I named at `volatility-decomposition.md:7,181`. FR-5 closes Gap 2 for DDD parity — "No Implementation Nouns at Decomposition" threaded through Phases 1–4 plus bounded-context integrity rules. Gap 4 (configurable board) is correctly deferred to BACKLOG-003.
 
-| Concern | Assessment |
-|---|---|
-| Schema bump v2.6 → v2.7 with tolerant legacy parsing | **Feasible.** YAML reader changes are localized; tolerant ignore is a well-trodden pattern. NFR-03 is achievable without breaking existing repos. |
-| `routing.force_type` namespaced override | **Feasible and prudent.** Namespacing under `routing.` avoids re-creating the v2.6 footgun and is discoverable. |
-| Phase 1 detection per-invocation, written to `state.md` only | **Feasible.** Existing detection logic is reused (per Out-of-Scope §6); only invocation cadence shifts. |
-| `enforce_pipeline_scope.py` deny on orchestrator self-writes | **Feasible** with the layered origin detection specified in FR-09. Stdlib-only constraint (NFR-02) is honored. |
-| Bash-redirection coverage | **Feasible.** Pattern matching against the command string is tractable; the enumerated patterns (`>`, `>>`, `tee`, `cat <<`, `cat >`, `dd of=`, `cp`, `mv`) cover the realistic bypass surface. |
-| Activation gating on `schema_version >= 2.7` and `pipeline.enforce_self_write_block` | **Feasible and necessary.** Resolves R7 cleanly and prevents the dogfood paradox. |
-| Compound-role prompt detection (FR-12) | **Feasible but brittle**, hence rightly marked MAY. Architect concurs with deferral authority. |
-| Isolated Adversarial Loop with two-clean / no-new-classes / hard-cap convergence | **Feasible.** The fixed issue-class taxonomy is small and stable; reviewer sub-agents can tag deterministically. |
+4. **FR-6 concrete placement — PASS.** Between Plan steps 1 and 3 in `pipeline-stages.md`, task_type `implementation-sequencing`, artifact `.delivery/artifacts/05-plan/architect/sequencing.md`, Architect as *participant not owner*. Placeable on the line; respects existing Stage 5 ownership; closes Gap 3 as my exam recommended.
 
-No FR requires net-new infrastructure, no new dependencies, no harness changes outside documented extension points. All work lives in files the team already owns.
+5. **Forbidden vocabulary — PASS.** Enumerated, not heuristic (`lambda|ecr|sqs|ec2|s3|dynamodb|kafka|python|node|typescript|golang`). R-3 explicitly rejects heuristics; additions require PRD revision. AC-3's deterministic grep is auditable by any apprentice. Sound.
 
----
+6. **Backwards-compat — PASS.** NFR-3 ≥1 minor version; NFR-4 forbids new required config keys; work gated behind existing `experimental.constraints_model` flag — no v2.7→v2.8 bump. R-4's rollback is concrete: 3-run Plan regression below 57% triggers flag-off and BACKLOG-001 REJECT. Existing pipeline runs untouched.
 
-## 2. Obvious Blockers — None Found
+7. **NFRs — no architectural surprise.** NFR-1–6 are measurable and consistent with prior memory lessons. NFR-6 (installed↔source sync asserted at SessionStart) is the guardrail I would have demanded unprompted.
 
-I searched for the usual ill-omens and found none:
+8. **Schema bloat named — PASS.** R-1 names it first and binds it with the ≤8 cap plus the rejection criterion. R-5 also names the produce-and-ignore sin — the deeper architect failing — and binds it via FR-7's mandatory downstream consumption.
 
-- **No circular dependencies.** FR-01..FR-05 (config) are independent of FR-13..FR-15 (Architect loops). FR-06..FR-09 (delegation) depend only on the schema bump for the activation flag, which is sequenced correctly.
-- **No harness assumptions that cannot be validated.** OQ-1 (env var injection point for `DELIVERY_FLOW_AGENT_CONTEXT`) is correctly routed to me at Stage 4 with a soft-deny fallback already specified — so even an adverse Architect finding cannot block the bundle.
-- **No contradiction with `CLAUDE.md` conventions.** NFR-07 explicitly invokes `plugin-dev:skill-development` and `plugin-dev:hook-development`, matching the project's stated rule.
-- **No silent breakage of cross-plugin consumers.** R8 acknowledges section-anchor risk in `SKILL.md` and routes a grep check to Plan stage.
-- **Dogfood paradox resolved.** R7 + the activation gating in FR-09 mean this very pipeline run is *not* blocked by the hook it is introducing. Without that gating I would have raised a hard objection.
+## Observations (non-blocking)
 
----
-
-## 3. Architecture Implications — Documented
-
-The PRD surfaces every architectural decision a downstream Design/Architect stage must make:
-
-1. **Origin attribution layer** (FR-09, OQ-1): The layered strategy (env var → transcript metadata → soft-deny) is the correct shape. Architect at Stage 4 must validate the env var injection point exists in the orchestrator's sub-agent dispatch path; if not, that becomes a small adjacent change rather than a blocker.
-2. **Allowlist centralization** (FR-09): Single constant in the hook module — correctly identified as drift-prevention. I would have demanded this; it is already present.
-3. **Convergence semantics** (FR-13): Two-clean OR no-new-classes OR hard-cap is mathematically defensible. A single clean pass under fresh-context review proves nothing, and the PRD names this explicitly. The issue-class taxonomy (`coupling`, `security`, `data-integrity`, `naming`, `testability`, `performance`, `docs`) is small enough to be stable and large enough to be expressive.
-4. **Schema migration model**: Tolerant ignore + deprecation log line is the correct lightweight migration. No migration tool is in scope (correctly out-of-scope §6).
-5. **Activation flag default asymmetry**: `enforce_self_write_block: true` for fresh v2.7 configs, `false` for tolerantly-parsed v2.6 configs. This is the correct safety posture.
-6. **Hook coverage gaps documented** (FR-09 known-gaps): MCP-routed writes, `git checkout`/`git apply` materializations, and sub-process inheritance are explicitly named. Honest scoping; architecturally responsible.
-
----
-
-## 4. DoD Criteria Checklist (Architect Lens)
-
-- [x] Technical feasibility confirmed for all 16 FRs and 8 NFRs.
-- [x] No obvious blockers; risks are enumerated with mitigations (R1–R8).
-- [x] Architecture implications documented and routed to the correct downstream stages via OQ-1..OQ-7.
-- [x] No new dependencies introduced (NFR-02 honored).
-- [x] Backwards compatibility addressed (NFR-03, FR-02).
-- [x] Performance budget stated and measurable (NFR-01: ≤50ms p95).
-- [x] Failure modes preserve user pipelines (NFR-05, soft-deny fallback).
-- [x] Cross-cutting doc parity made a DoD validator (NFR-04).
-- [x] Self-consistency / dogfood requirement is acknowledged and architecturally survivable.
-
----
-
-## 5. Forge-Notes for Stage 4 (Architect)
-
-When this PRD reaches my own Architect stage, I will need to:
-
-1. Confirm the exact dispatch site where `DELIVERY_FLOW_AGENT_CONTEXT` can be injected, and whether the harness propagates env vars to sub-agent tool calls reliably across versions.
-2. Specify the transcript-metadata fallback shape concretely (what field, what depth heuristic).
-3. Author the Isolated Adversarial Loop ADR with the issue-class taxonomy frozen.
-4. Run my own stage under that very pattern — at least two loops, per OQ-5, to prove the protocol works on its own birth.
-
-These are notes for future me, not gaps in the PRD.
-
----
+- FR-7 could name *which* rule-check fires at *which* gate. Acceptable to defer to Stage 3 Design — the primitive is Refine's burden, the wiring is Design's.
+- AC-4 should accept either Ch. 2 page reference or a section anchor for the Löwy citation; leave to the FR-3 template.
 
 ## Verdict
 
-The PRD is technically sound, free of blockers, and faithfully documents the architectural implications it raises. It is fit to pass from Refine into Design.
+The primitive is bounded, the three gaps I named are closed, guardrails are enumerated not heuristic, the rollback is concrete, and schema bloat is named as the threat it is. No hammer-blows remain to be struck at Refine.
 
-**STATUS: DONE**
-
-— Celebrimbor, Architect of the Second Age
-*"A ring is only as honest as the hand that forges it. So too with a pipeline."*
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/02-refine/dod/architect-review.md
+SUMMARY: The primitive is bounded, three gaps closed, guardrails enumerated not heuristic. A ring worth the forging. Pass to Design.
+```

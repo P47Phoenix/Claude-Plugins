@@ -21,6 +21,13 @@ Jumping to step 5 or 6 without doing 1-4 produces shallow architectures that don
 
 ## Phase 1: Knowledge Crunching
 
+> ### 🛡 Decomposition Hygiene (Phase 1)
+> **Rule:** Bounded contexts are derived from ubiquitous language and domain events — not from deployment units, runtime platforms, or database products.
+>
+> **Forbidden vocabulary at this stage:** Lambda, ECR, ECS, SQS, DynamoDB, S3, EC2, Kubernetes, Docker, Python, Node, TypeScript, Go, Rust, Java, Express, FastAPI, Django, PostgreSQL, MySQL, MongoDB. These names belong in the Plan and Development stages — never in bounded-context discovery.
+>
+> **Phase 1 focus:** listen for the words domain experts actually use. If you catch yourself sketching "a Lambda that writes to DynamoDB," you have stopped crunching knowledge and started designing infrastructure. Put the runtime down.
+
 The foundation of DDD. Domain experts and developers collaborate to build shared understanding.
 
 ### What Knowledge Crunching Is
@@ -53,6 +60,11 @@ The foundation of DDD. Domain experts and developers collaborate to build shared
 ---
 
 ## Phase 2: Model Exploration Whirlpool
+
+> ### 🛡 Decomposition Hygiene (Phase 2)
+> **Rule:** Bounded contexts are derived from ubiquitous language and domain events — not from deployment units, runtime platforms, or database products.
+>
+> **Phase 2 focus:** walk scenarios through the *domain* model, not through a service topology. Forbidden framings: "the order service calls the payment service via SQS," "we stash it in Dynamo," "a FastAPI endpoint handles it." Replace with domain verbs: "Order is placed, Payment is authorized, Inventory is reserved." If a scenario cannot be told without naming a cloud product, the model is too thin — keep crunching.
 
 Evans' Model Exploration Whirlpool — rapid iterative cycles of modeling and validation.
 
@@ -91,6 +103,13 @@ Each cycle (15-30 minutes):
 
 ## Phase 3: Ubiquitous Language Discovery
 
+> ### 🛡 Decomposition Hygiene (Phase 3)
+> **Rule:** Bounded contexts are derived from ubiquitous language and domain events — not from deployment units, runtime platforms, or database products.
+>
+> **Bounded-context integrity:** each bounded context owns its ubiquitous language — no vocabulary bleed across boundaries. Integration between contexts happens via anti-corruption layers, not shared models or shared tables. "Customer" in Billing and "Customer" in Support are different words that happen to be spelled the same; never collapse them to reuse a class.
+>
+> **Forbidden at this stage:** naming a concept after the database that stores it ("MongoCustomer"), the framework that serves it ("DjangoOrder"), or the language it's written in ("PyInvoice"). The ubiquitous language belongs to the domain experts.
+
 The shared vocabulary between domain experts and developers within a bounded context. Language emerges from modeling — it is not a pre-defined glossary.
 
 ### How Language Emerges
@@ -118,6 +137,18 @@ Watch for these signals that indicate a bounded context boundary:
 ---
 
 ## Phase 4: Bounded Context Identification
+
+> ### 🛡 Decomposition Hygiene (Phase 4)
+> **Rule:** Bounded contexts are derived from ubiquitous language and domain events — not from deployment units, runtime platforms, or database products.
+>
+> **Bounded-context integrity rules:**
+> - Each bounded context owns its ubiquitous language; no vocabulary bleed across boundaries.
+> - Integration happens via **anti-corruption layers**, not shared models, shared schemas, or shared tables.
+> - Context maps are expressed in **domain terms** — upstream/downstream, customer/supplier, conformist, partnership, open host — never in RPC mechanisms (gRPC, REST, SQS, Kafka topics, Lambda invoke).
+>
+> **Anti-pattern — "decomposing by microservice":** teams draw boxes labeled `order-service`, `payment-service`, `user-service` and call it a bounded-context map. It isn't. Those are deployment units. The real cut is by **subdomain**: Ordering, Billing, Fulfillment, Identity — each with its own language, its own invariants, its own events. A single bounded context may ship as one service, three services, or a monolith module; that is a Plan-stage decision, not a discovery-stage one.
+>
+> **Worked example (brief):** A team proposed `lambda-checkout`, `lambda-inventory`, `lambda-email`. Re-cut by subdomain: *Ordering* (places orders, owns Cart and Order aggregates), *Fulfillment* (reserves stock, ships), *Customer Communications* (notifications). Same work, domain-shaped boundaries, deployment freedom preserved.
 
 Boundaries appear where the language and model change. This is discovered through Phases 1-3, not designed up-front.
 

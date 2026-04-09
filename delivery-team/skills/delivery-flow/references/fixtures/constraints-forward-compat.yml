@@ -1,0 +1,7 @@
+# Green fixture: required fields + an unknown top-level field.
+# Per AC-1.4 the validator MUST ignore unknown fields.
+entities:
+  - Ring
+invariants:
+  - "A Ring has exactly one Bearer at a time"
+future_field: whatever

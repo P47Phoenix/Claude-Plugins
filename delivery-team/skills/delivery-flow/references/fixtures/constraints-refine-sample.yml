@@ -1,0 +1,43 @@
+# Sample Refine-stage constraints.yml emission (US-3 AC-3.3).
+# Represents a plausible PO emission for a hypothetical e-commerce PRD.
+# Used as a fixture for the US-1 validator self-test.
+
+entities:
+  - Customer
+  - Order
+  - Invoice
+  - Payment
+
+invariants:
+  - Every Order must reference a known Customer
+  - Invoice total equals the sum of its Order line items
+  - A Payment cannot exceed the Invoice amount due
+
+forbidden_vocabulary:
+  - user
+  - delete
+
+numeric_ceilings:
+  sprint_story_ceiling: 8
+  token_budget_per_run: 200000
+  p95_response_ms: 500
+
+state_variables:
+  - order_status
+  - payment_state
+  - customer_tier
+
+actions:
+  - place_order
+  - cancel_order
+  - refund_payment
+  - upgrade_tier
+
+mandatory_artifacts:
+  - .delivery/artifacts/02-refine/po/prd.md
+  - .delivery/artifacts/02-refine/data-analyst/metrics.md
+
+citations:
+  - work: "PRD v1"
+    chapter: "3"
+    page: "12"
