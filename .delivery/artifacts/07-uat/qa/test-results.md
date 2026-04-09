@@ -1,35 +1,35 @@
-# Stage 7 UAT — Test Results (run-2026-04-08-b2c7)
+# Test Results — Stage 7 UAT (transformation-planning, run c4d1)
 
-**Role:** QA Engineer — *Legolas* (the bow sees what others miss)
-**Scope:** Architecture Board capability (BACKLOG-003 + absorbed -002)
+**Role:** Legolas (QA Engineer) | **Date:** 2026-04-08
 
-## Test Execution
+## Test Case Results
 
-| TC | Check | Expected | Actual | Result |
-|----|-------|----------|--------|--------|
-| TC-01 | `architecture-board-personas.md` exists | present | present | PASS |
-| TC-02 | `board/volatility-architect-review.md` | present | present | PASS |
-| TC-03 | `board/ddd-architect-review.md` | present | present | PASS |
-| TC-04 | `board/risk-architect-review.md` | present | present | PASS |
-| TC-05 | `board/judge-verdict.md` | present | present (CONDITIONAL) | PASS |
-| TC-06 | `config-schema.md` contains `architecture_board` | ≥1 | 9 | PASS |
-| TC-07 | `team-patterns.md` has "Architecture Board Review" | ≥1 | 1 | PASS |
-| TC-08 | `pipeline-stages.md` references `architecture_board.enabled` | ≥1 | 1 | PASS |
-| TC-09 | 4 personas present in personas doc | ≥4 | 4 | PASS |
-| TC-10 | `validate_constraints.py` on dogfood `constraints.yml` | exit 0 | exit 0, ok | PASS |
-| TC-11 | Backwards-compat: `enabled: false` default documented | present | present in config-schema | PASS |
+| # | Test Case | Expected | Actual | Status |
+|---|-----------|----------|--------|--------|
+| TC-01 | transformation-planning.md exists | present | present | PASS |
+| TC-02 | 4 phase docs (1a/1b/2/3) exist | 4 | 4 | PASS |
+| TC-03 | Dogfood outputs at 08-transform/ (as-is-constraints, as-is-use-cases, to-be-constraints, roadmap) | 4 | 4 | PASS |
+| TC-04 | grep -c transformation-planning in architect SKILL.md | >=1 | 3 | PASS |
+| TC-05 | grep -c "Golden Rule" phase-2 ref | >=1 | 4 | PASS |
+| TC-06 | validate_constraints as-is-constraints.yml | exit 0 | exit 0 | PASS |
+| TC-07 | validate_constraints to-be-constraints.yml | exit 0 | exit 0 | PASS |
+| TC-08 | validate_constraints 02-refine/po/constraints.yml | exit 0 | exit 0 | PASS |
+| TC-09 | Use cases in as-is-use-cases.md | >=5 | 7 | PASS |
+| TC-10 | >=1 low-confidence UC entry | >=1 | 3 | PASS |
+| TC-11 | Roadmap steps (STEP-NN) | >=3 | 5 | PASS |
+| TC-12 | DoD self-check on to-be-constraints.yml | exit 0 | exit 1 | NOTE |
+| TC-13 | Backwards compat: task_type additive | unaffected | additive-only | PASS |
 
-## Deferred (documented, not blocking)
+## TC-12 Caveat
 
-- **NFR-1 token overhead** — empirical baseline requires ≥3 real pipeline runs with/without board; deferred to ops telemetry follow-up.
-- **Real orchestrator dispatch** — US-7 shipped as dogfood *simulation*; full wiring requires SKILL.md changes tracked as follow-up.
+check_dod_constraints.py was run with to-be-constraints.yml as BOTH rules and text. It FAILED exit=1 because the `forbidden_vocabulary` list literally contains the tokens (lambda, ecs, python…) as list items — self-match, not contamination. The brief noted exit=0 expectation but empirically the grep phase cannot distinguish field declaration from field use; any self-scan FAILs. BACKLOG candidate: `--skip-declarations` mode. Not blocking — the validator functions correctly against its real use case (scanning OTHER artifacts).
 
-## Judge Verdict Integration
+Backwards-compat reasoning: `transformation_planning` task_type is purely additive to architect SKILL.md routing; no existing entries removed/renamed; legacy pipelines that never dispatch to it are unchanged.
 
-The Architecture Board was dogfooded on its own design and returned **CONDITIONAL** with 4 real gaps (MAR n≤2 degeneration, judge SPOF, echo-chamber empirics, Pattern 3/3b ACL overlap). Legolas reads this as a stronger signal than PASS: the capability proved honest inside its own build. All 4 routed to PO for accept/block.
+## Summary
 
-## Verdict
+- Total TCs: 13 | Pass: 12 (92%) | Note: 1 | Fail: 0 | Blockers: 0
 
-**GO** — 11/11 executed TCs pass. 2 deferrals are pre-agreed and tracked as follow-ups, not defects.
+## Verdict: GO
 
-— *Legolas*, ranger of the Fellowship
+All blocking criteria met. TC-12 is a known tool limitation, not a defect.

@@ -1,33 +1,20 @@
-# PO Final DoD — Architecture Board (run-2026-04-08-b2c7)
+# PO Final DoD — transformation-planning (run c4d1)
 
-**Role:** Product Owner final gate — *Gandalf the White*
+**Role:** Gandalf (Product Owner) | 2026-04-08
 
 ## FR Pass Table
 
-| FR | Description | Status |
-|----|-------------|--------|
-| FR-1 | Configurable board at Stage 4 | PASS |
-| FR-2 | Multiple specialist personas supported | PASS (4 shipped) |
-| FR-3 | Judge persona produces consolidated verdict | PASS |
-| FR-4 | Artifacts land in `04-architect/board/` | PASS |
-| FR-5 | Config schema extended (v2.7) | PASS |
-| FR-6 | Default disabled (backwards compat) | PASS |
-| FR-7 | Pattern documented in `team-patterns.md` | PASS |
-| FR-8 | Dogfooded on its own build | PASS (CONDITIONAL verdict produced) |
+| FR | Requirement | Evidence | Status |
+|----|-------------|----------|--------|
+| FR-1 | architect skill exposes `transformation-planning` task_type | 3 refs in architect SKILL.md (TC-04) | PASS |
+| FR-2 | Four-phase sub-workflow docs exist (1A, 1B, 2, 3) | 4 files present (TC-02) | PASS |
+| FR-3 | Phase-2 TO-BE anchored by Golden Rule | 4 "Golden Rule" matches (TC-05) | PASS |
+| FR-4 | Constraints YAML primitive validates AS-IS + TO-BE + PO-refine | 3/3 exit 0 (TC-06/07/08) | PASS |
+| FR-5 | Dogfood produces >=5 use cases with >=1 LOW-confidence entry | 7 UCs, 3 LOW (TC-09/10) | PASS |
+| FR-6 | Roadmap has 3–7 reversible steps with change-% ceiling | 5 steps, max 16% (TC-11) | PASS |
+| FR-7 | Additive / backwards-compatible with existing pipelines | Additive routing only (TC-13) | PASS |
+| FR-8 | Dogfooded on Claude-Plugins itself (meta-circularity) | 08-transform/ outputs produced | PASS |
 
-## Judge CONDITIONAL — 4 Catches
+## Verdict: **GO**
 
-| # | Catch | Decision | Rationale |
-|---|-------|----------|-----------|
-| 1 | MAR rotation degenerates at n ≤ 2 | **ACCEPT as known limitation** | Documented in release notes; fallback guidance deferred to persona library follow-up. |
-| 2 | Judge SPOF (single judge) | **ACCEPT as intentional v1 scope** | Multi-judge consensus is post-v1, not a blocker. |
-| 3 | Echo-chamber risk unmeasured | **ACCEPT — empirical, deferred** | NFR-1 baseline needs ≥3 real runs; ops telemetry follow-up. |
-| 4 | Pattern 3/3b ACL overlap | **ACCEPT — intentional coexistence** | The two patterns are complementary by design. |
-
-All 4 routed to backlog as documented follow-ups. None block v1.
-
-## Verdict
-
-**GO** — ship it. The board was honest about its own architecture, and that honesty is the feature working as intended.
-
-— *Gandalf*, "you shall pass"
+All 8 FRs pass. Transformation-planning capability ships as an additive, validated, dogfooded architect extension. Real orchestrator dispatch (Step 5) tracked in BACKLOG-006.

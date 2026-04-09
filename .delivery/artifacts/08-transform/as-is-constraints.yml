@@ -1,0 +1,107 @@
+# as-is-constraints.yml — Claude-Plugins marketplace (Phase 1B structural reconstruction)
+#
+# Phase:  1B Structural Reconstruction (Architect-led)
+# Run:    US-8-dogfood-phase1b-2-3
+# Date:   2026-04-08
+# Input:  .delivery/artifacts/08-transform/as-is-use-cases.md (Gandalf, 7 UCs)
+# Scribe: Celebrimbor of Eregion — master craftsman
+#
+# Observed volatility (from git history & commit cadence on each path):
+#   delivery-flow orchestrator ......... HIGH    (schema churn v2.x, weekly commits)
+#   architect skill .................... HIGH    (transformation refs added in-run)
+#   developer skill .................... MEDIUM  (paradigm configs land periodically)
+#   product-delivery skill ............. MEDIUM  (PO refs stable, occasional expansion)
+#   quality skill ...................... LOW     (quiet for months)
+#   operations skill ................... LOW     (stable)
+#   ui skill ........................... LOW     (stable)
+#   user-feedback skill ................ LOW     (persona library stable)
+#   alias-creator skill ................ LOW     (themes land in batches)
+#   presentation skill ................. MEDIUM  (v1.1 enhancements, pptx path)
+#   godot skill ........................ LOW     (stable after initial lift)
+#   agentic-flow-builder plugin ........ LOW     (stable core)
+#   prompt-engineer plugin ............. LOW     (stable)
+#   prd-quality-gate-flow plugin ....... LOW     (stable SQLite core)
+#   research-agent plugin .............. LOW     (stable)
+#   mtg-commander plugin ............... MEDIUM  (feature-ward expansion)
+#   constraints.yml primitive .......... HIGH    (schema is load-bearing, actively evolving)
+#   architecture-board pattern ......... MEDIUM  (opt-in, exercised during transformation work)
+#   memory system ...................... MEDIUM  (index + chunked retrieval tuning)
+
+entities:
+  - delivery_flow_orchestrator
+  - product_delivery_skill
+  - architect_skill
+  - developer_skill
+  - godot_skill
+  - quality_skill
+  - operations_skill
+  - ui_skill
+  - user_feedback_skill
+  - alias_creator_skill
+  - presentation_skill
+  - agentic_flow_builder_plugin
+  - prompt_engineer_plugin
+  - prd_quality_gate_flow_plugin
+  - research_agent_plugin
+  - mtg_commander_plugin
+  - constraints_yml_primitive
+  - architecture_board_pattern
+  - memory_system
+
+state_variables:
+  - current_stage
+  - pipeline_id
+  - stages_completed
+  - memory_index_version
+  - marketplace_version
+  - active_backlog_count
+  - open_defect_count
+
+actions:
+  - run_delivery_pipeline          # UC-01
+  - resume_pipeline                # UC-01 variation (pipeline state persistence)
+  - configure_via_setup_wizard     # UC-02
+  - register_plugin_in_marketplace # UC-03
+  - log_and_track_defects          # UC-04
+  - run_prd_quality_gate           # UC-05
+  - build_mtg_deck                 # UC-06
+  - compose_team_presentation      # UC-07
+
+numeric_ceilings:
+  sprint_ceiling_pts_observed: 5
+  max_dod_rounds_observed: 3
+  max_parallel_agents: 3
+  total_skills: 11
+  total_plugins: 5
+
+mandatory_artifacts:
+  - ".delivery/artifacts/NN-stage/"         # per-stage artifact namespace pattern
+  - ".delivery/memory/index.md"
+  - ".delivery/config.yml"
+  - "SKILL.md"                              # one per skill directory
+  - ".claude-plugin/marketplace.json"
+
+invariants:
+  - "Two-channel communication: orchestrator signals and domain artifacts are separate"
+  - "Context isolation: sub-agents receive only role-scoped references"
+  - "DoD validation is multi-validator — ALL validators must say DONE"
+  - "Orchestrator does not produce domain artifacts itself"
+  - "Self-correction loops are capped at 3 rounds before escalation"
+  - "Retrospective is mandatory at Stop — enforced by hook"
+  - "Light stages reduce depth but never skip execution"
+
+# AS-IS is descriptive. Decomposition contamination is NOT currently guarded
+# at the schema level in the codebase — the enumerated forbidden list lives
+# inside architect references, not in this primitive. Left empty deliberately.
+forbidden_vocabulary: []
+
+citations:
+  - work: "as-is-use-cases.md"
+    chapter: "Phase 1A output"
+    page: "-"
+  - work: "CLAUDE.md"
+    chapter: "Repository Purpose"
+    page: "-"
+  - work: ".claude-plugin/marketplace.json"
+    chapter: "registry"
+    page: "-"

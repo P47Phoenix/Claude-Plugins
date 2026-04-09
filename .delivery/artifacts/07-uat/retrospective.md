@@ -1,28 +1,25 @@
-# Retrospective — run-2026-04-08-b2c7
+# Retrospective — run c4d1 (transformation-planning)
 
-**Role:** Retro facilitator — *Aragorn* (king returning, looking back at the road)
-**Scope:** Architecture Board capability build (BACKLOG-003 + -002)
+**Role:** Aragorn (Delivery Lead) | 2026-04-08
 
 ## What Went Well
 
-- **No-checkpoints mode** accelerated the pipeline dramatically — fewer context swaps, faster wave-to-wave cadence.
-- **`constraints.yml` dogfood validated green on first use** — zero false positives, shape confirmed.
-- **Architecture board dogfood caught 4 real gaps** the primary architect missed. The capability *proved itself inside its own build* — second instance of this meta-irony (first was a1f3). Self-validating capabilities are a pattern worth naming.
-- Team DoD across Legolas/Sam/Bilbo/Gandalf converged cleanly on GO.
+- **Consolidated fused dispatches** (multi-artifact, multi-role in one Agent call) kept the pipeline tight without sacrificing rigor. Used in b2c7 and c4d1 successfully.
+- **Dogfooding on Claude-Plugins itself** produced real artifacts with real numbers: 7 use cases captured, 5 roadmap steps drafted, 16% max subsystem-change per step — not hand-waved estimates.
+- **`constraints.yml` primitive + `validate_constraints.py`** worked on three separate YAML files in one run (AS-IS, TO-BE, and 02-refine PO constraints) — the primitive is proving reusable across stages.
+- **Phase-2 Golden Rule anchor** (preserved invariants before TO-BE speculation) gave Celebrimbor a concrete discipline and produced 4 explicit Golden-Rule references in the phase-2 doc.
 
 ## What Didn't
 
-- **US-1 hit API overload mid-wave** — retry succeeded, but wave pacing should account for provider turbulence.
-- **US-7 shipped as simulation, not real dispatch** — dogfood artifacts hand-produced to the exact shape the design calls for; real orchestrator wiring deferred. Honest, but v1 doesn't yet exercise the code path end-to-end.
+- **architecture.md namespace collision:** artifacts were appended to prior run b2c7's file. Not fatal, but conflates runs. Fix: include run-id in filenames or sub-directory per run for 07-uat.
+- **DoD self-check tool caveat** (TC-12): `check_dod_constraints.py` cannot self-scan the forbidden-vocabulary field without false-positive matches. Documented; BACKLOG candidate for `--skip-declarations` mode.
 
 ## Key Insight
 
-The board's **CONDITIONAL verdict on its own architecture is a stronger success signal than PASS would have been.** A PASS from a brand-new reviewer looks like a rubber stamp. A CONDITIONAL with 4 specific, actionable catches proves the reviewers are doing real work. *Honesty is the feature.*
+Transformation-planning now has a **REAL AS-IS → TO-BE → Roadmap on Claude-Plugins itself** that BACKLOG-005 can consume as canonical input. **Meta-circularity holds as planned** — the Marketplace can now describe its own brownfield migrations inside its own vocabulary.
 
 ## Action Items
 
-1. **Wire real orchestrator dispatch** for the board in a follow-up story (lift v1 simulation to v1.1 real).
-2. **Measure token overhead** (NFR-1 baseline) across ≥3 real pipeline runs with and without the board.
-3. **Address MAR rotation n ≤ 2 gap** in `architecture-board-personas.md` — add fallback guidance for small boards.
-
-— *Aragorn*
+- BACKLOG-006: wire transformation-planning real orchestrator dispatch (Step 5 of dogfood roadmap)
+- BACKLOG: namespace 07-uat artifacts by run-id
+- BACKLOG: `check_dod_constraints.py --skip-declarations`

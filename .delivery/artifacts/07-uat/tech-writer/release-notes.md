@@ -1,37 +1,32 @@
-# Release Notes — Architecture Board (run-2026-04-08-b2c7)
+# Release Notes — transformation-planning (run c4d1)
 
-**Role:** Technical Writer — *Bilbo Baggins* (there and back again, with notes)
-**Feature:** BACKLOG-003 (absorbs BACKLOG-002)
+**Role:** Bilbo (Technical Writer) | 2026-04-08
 
 ## What Changed
 
-The delivery-flow pipeline now supports a configurable **Architecture Board** at Stage 4. When enabled, multiple specialist architects independently review the solution, and a judge persona issues a consolidated verdict (PASS / CONDITIONAL / FAIL).
+The `delivery-team:architect` skill now supports a `transformation-planning` task type for brownfield migration engagements. Five new reference files describe a four-phase sub-workflow (1A Behavioral AS-IS, 1B Structural AS-IS, 2 TO-BE, 3 Roadmap) plus a planning orchestrator doc.
 
 ## New Capability
 
-- **4 board personas**: `volatility-architect`, `ddd-architect`, `risk-architect`, `chief-architect` (judge).
-- **Multi-Architect Review (MAR)** cross-persona rotation pattern in `team-patterns.md`.
-- **Config block** `architecture_board` in `.delivery/config.yml` (schema v2.7) with per-persona selection and judge designation.
-- **Artifacts** land in `.delivery/artifacts/04-architect/board/` — one review per reviewer plus `judge-verdict.md`.
+- **`transformation-planning` task_type** on the architect skill, dispatched via Product Owner pairing for brownfield/transformation engagements.
+- **Four-phase sub-workflow** separating behavioral discovery, structural discovery, TO-BE design (anchored by a Golden Rule — preserved invariants), and a migration roadmap with 3–7 reversible steps.
+- **PO + Architect pairing pattern** enforces collaborative capture of AS-IS use cases with explicit confidence grading (HIGH/MEDIUM/LOW) before TO-BE speculation begins.
+- **Dogfooded** on Claude-Plugins itself: produced 7 use cases (3 LOW-confidence flagged), a validated `to-be-constraints.yml`, and a 5-step roadmap with a max 16% subsystem-change per step — all verified by the existing `validate_constraints.py` primitive across three separate YAML files in a single run.
 
-## Backwards Compatibility
+## Limitations
 
-**Zero impact on existing pipelines.** Default is `architecture_board.enabled: false`. Existing runs behave identically. Opt-in per project.
-
-## Known Limitations
-
-- **MAR rotation degenerates at n ≤ 2 reviewers** — rotation collapses to single-path review; fallback guidance is a follow-up. Flagged by judge in dogfood run.
-- **Single judge is intentional for v1** — judge SPOF accepted; multi-judge consensus is a later enhancement.
-- **Token overhead not yet baselined** — NFR-1 empirical measurement requires ≥3 real runs; deferred.
-- **Real orchestrator dispatch is follow-up work** — v1 validates the design via dogfood artifact production; full wiring comes next.
+- **Real orchestrator dispatch deferred** (Step 5 of the dogfood roadmap, tracked in BACKLOG-006). Today the transformation-planning capability is exercised manually by the architect skill. Automatic routing from delivery-flow based on detected project_type is not yet wired.
 
 ## Fellowship Credits
 
-Frodo (PO), Gandalf (final DoD), Aragorn (retro), Legolas (QA), Sam (release), Bilbo (notes), Boromir/Gimli/Merry/Pippin (dev), Elrond/Galadriel/Saruman (architect board).
+- Gandalf — PO / Phase 1A behavioral AS-IS authoring
+- Celebrimbor — Architect / Phase 1B structural AS-IS, Phase 2 TO-BE, Phase 3 roadmap
+- Legolas — QA / validator runs and TC suite
+- Sam — DevOps / release plan
+- Bilbo — Technical Writer / these notes
+- Aragorn — retrospective
 
-## Tracking
+## References
 
-- BACKLOG-003 (primary)
-- BACKLOG-002 (absorbed)
-
-— *Bilbo*
+- BACKLOG-006: transformation-planning real orchestrator dispatch
+- `.delivery/artifacts/08-transform/` — canonical dogfood outputs

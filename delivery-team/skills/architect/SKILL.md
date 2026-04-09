@@ -239,6 +239,7 @@ If the PO lacks domain knowledge to answer, escalate using the dynamic escalatio
 | "audit preparation", "audit evidence", "control mapping", "audit readiness", "compliance audit" | **audit-preparation** | Compliance Officer | compliance-frameworks.md, security-requirements.md |
 | "risk assessment", "risk register", "risk matrix", "threat identification", "risk mitigation" | **risk-assessment** | Security/Compliance Officer | security-patterns.md, compliance-frameworks.md |
 | "policy document", "security policy", "data retention policy", "acceptable use policy", "privacy policy" | **policy-document** | Compliance Officer/Privacy Engineer | compliance-frameworks.md, privacy-patterns.md |
+| "brownfield", "legacy transformation", "AS-IS to TO-BE", "migration planning", "reconstruct use cases", "modernization roadmap" | **transformation-planning** | Solution + Product Owner | transformation-planning.md (master) + phase-specific refs |
 
 ### Software Task Type Instructions
 
@@ -262,6 +263,7 @@ If the PO lacks domain knowledge to answer, escalate using the dynamic escalatio
 | **audit-preparation** | Prepare audit readiness artifacts: control mapping, evidence collection plan, gap analysis, and remediation roadmap |
 | **risk-assessment** | Produce a risk assessment with threat identification, likelihood/impact scoring, mitigation strategies, and risk register |
 | **policy-document** | Draft organizational security or privacy policy documents with proper hierarchy (policy, standard, procedure, guideline) |
+| **transformation-planning** | Brownfield/legacy transformation as a 4-phase PO+Architect sub-workflow (1A behavioral AS-IS → 1B structural AS-IS → 2 TO-BE → 3 roadmap). See `references/transformation-planning.md` for the master protocol. |
 
 ---
 
@@ -516,7 +518,7 @@ For orchestration with other delivery-team skills, the architect skill accepts a
 
 ```json
 {
-  "task_type": "design | review | document | evaluate | decompose | model | analyze-quality | data-design | security-design | strategic | integration | compliance-checklist | security-requirements | incident-response-plan | privacy-assessment | audit-preparation | risk-assessment | policy-document | game-systems | level-design | netcode | render-pipeline | game-review | game-design-doc",
+  "task_type": "design | review | document | evaluate | decompose | model | analyze-quality | data-design | security-design | strategic | integration | compliance-checklist | security-requirements | incident-response-plan | privacy-assessment | audit-preparation | risk-assessment | policy-document | transformation-planning | game-systems | level-design | netcode | render-pipeline | game-review | game-design-doc",
   "role": "solution | enterprise | data | security | compliance-officer | privacy-engineer | incident-responder | game-systems | level-world | network-multiplayer | graphics-rendering",
   "context": {
     "system": "string — system or game name",
