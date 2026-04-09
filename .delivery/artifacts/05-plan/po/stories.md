@@ -1,165 +1,186 @@
-# Stories — Paired Constraints Primitive (`constraints.yml`)
+# User Stories — Configurable Architecture Board Review Pattern
 
-**Stage**: 5 (Plan) | **Role**: Product Owner (Gandalf)
-**Pipeline ID**: run-2026-04-08-a1f3
-**Date**: 2026-04-08
-**Inputs**: PRD FR-1..FR-8, `architecture.md`, ADR-001/002/003, `.delivery/memory/stages/plan.md`
-
-> *"The burden is named. Now we measure it in stones we can carry — no more, no less."*
-
----
+*Voice: Gandalf the Grey, Product Owner. Run: run-2026-04-08-b2c7.*
+*"A wizard chooses his council with care — and so shall we choose our reviewers."*
 
 ## Capacity Declaration
 
-| Field | Value |
-|---|---|
-| Team size | 1 |
-| Velocity baseline | 5 pts / sprint |
-| Ceiling (80% target) | 4 pts / sprint |
-| Hard cap (100%) | 5 pts / sprint (never exceed) |
-| Work class | Markdown + Schema + Content → estimates one tier lower (memory: run-h3k7) |
-| Sprints proposed | **4** |
-| Total committed | **17 pts** |
-
-Honesty note: three sprints was a hope; four is the truth. No story exceeds 3 pts; if Sprint Planning re-estimates any higher, split before commit.
-
-> *"A wizard commits precisely when he means to — and no story point later."*
+- **Velocity baseline:** 4 pts/sprint (markdown-tier; code work would be 5)
+- **Sprint ceiling:** 4 pts (80% target)
+- **Hard cap:** 5 pts (never exceed)
+- **DoD iteration ceiling:** 3 rounds
+- **Work nature:** 100% markdown/schema edits + one dogfood run — tier-lower estimates applied
+- **Total committed:** 7 stories, 13 pts, 4 sprints
+- **Forbidden vocabulary (per constraints.yml):** lambda, ecr, sqs, ec2, s3, dynamodb, kafka, python, node, typescript, golang — NONE appear in any story, AC, or artifact path below
+- **Amendments from Architect sequencing (merged here — per plan.md memory lesson):** US-1 schema IS the *interface contract* for US-4 and US-5; US-2 and US-3 collapse to a single authoritative file (architecture-board-personas.md) to avoid split-source drift; US-7 dogfood explicitly defers NFR-1 token measurement to UAT.
 
 ---
 
-## User Stories
+## US-1 — `architecture_board` config block schema
 
-### US-1 — `constraints.yml` JSON schema + validator
-- **Role**: Orchestrator / DoD validators
-- **Goal**: load and rule-check any `constraints.yml` against a canonical schema
-- **Value**: deterministic gate decisions; zero AI variance on structure
-- **Acceptance Criteria**:
-  - AC-1.1 JSON Schema defines exactly 8 top-level fields (`entities`, `state_variables`, `actions`, `numeric_ceilings`, `mandatory_artifacts`, `invariants`, `forbidden_vocabulary`, `citations`) ⇒ **PRD FR-1, AC-1**
-  - AC-1.2 `entities` and `invariants` required; remainder optional ⇒ **PRD FR-1**
-  - AC-1.3 Validator exits non-zero on missing required fields ⇒ **PRD FR-1 invariant check**
-  - AC-1.4 Schema is forward-compatible: additional top-level fields in a future `constraints.yml` are ignored rather than rejected by the validator ⇒ **PRD FR-1 extensibility**
-- **Estimate**: 3 pts
-- **Depends on**: none
-- **DoD**: schema under `delivery-team/skills/delivery-flow/references/`; validator headless; red/green fixtures pass
+**As the** Orchestrator
+**I want** a documented `architecture_board` block in `config-schema.md`
+**So that** humans can declare board composition per run without code edits.
 
-### US-2 — `constraints-model-guide.md` authoring canon
-- **Role**: PO/Architect sub-agents
-- **Goal**: one guide explaining every field + required/optional markers
-- **Value**: consistent authorship across Refine and Architect
-- **Acceptance Criteria**:
-  - AC-2.1 Guide documents all 8 fields with type + required/optional + example ⇒ **PRD FR-1, AC-1**
-  - AC-2.2 Guide cross-links Löwy golden rule for `citations` ⇒ **PRD FR-3, AC-4**
-- **Estimate**: 2 pts
-- **Depends on**: US-1
-- **DoD**: guide under `delivery-flow/references/`; linked from PRD dependency list
+**Estimate:** 2 pts (markdown + schema doc)
+**Dependencies:** none (leaf)
+**FR traceability:** FR-1
+**Contract role:** This story's documented field names ARE the interface contract consumed by US-4, US-5, and US-7. Any field rename cascades.
 
-### US-3 — Refine-stage PO constraints template + invocation
-- **Role**: PO sub-agent at Refine
-- **Goal**: emit `constraints.yml` with problem-scoped content as part of Refine
-- **Acceptance Criteria**:
-  - AC-3.1 Template instantiates all 8 fields with Refine-scoped guidance ⇒ **PRD FR-2**
-  - AC-3.2 `pipeline-stages.md` Refine invocation updated to require `constraints.yml` artifact ⇒ **PRD FR-2**
-  - AC-3.3 Sample emission passes US-1 validator ⇒ **PRD FR-2 invariant check**
-- **Estimate**: 2 pts
-- **Depends on**: US-1, US-2
-- **DoD**: template + invocation update shipped; sample validated
+**Acceptance Criteria:**
+1. `delivery-team/skills/delivery-flow/references/config-schema.md` contains a new top-level optional block `architecture_board` with fields: `enabled` (bool, default false), `reviewers` (list[str]), `max_iterations` (int, ≤3), `convergence` (enum: `all-done` | `judge-pass` | `majority-pass`), `judge` (str), `cross_persona_iteration2` (bool) → **FR-1**
+2. Schema version bumped per extension protocol → **FR-1**
+3. `validate_config.py` accepts a config with the block enabled AND a config without the block → **FR-1, NFR-2**
+4. Block documented as optional; absence = disabled (default) → **NFR-2**
 
-### US-4 — Architect-stage decomposition template + invocation
-- **Role**: Architect sub-agent
-- **Goal**: emit `constraints.yml` with volatility/DDD-scoped content
-- **Acceptance Criteria**:
-  - AC-4.1 Template instantiates 8 fields with Architect-scoped content ⇒ **PRD FR-3**
-  - AC-4.2 `forbidden_vocabulary` pre-populated with enumerated list (`lambda, ecr, sqs, ec2, s3, dynamodb, kafka, python, node, typescript, golang`) ⇒ **PRD FR-3, NFR-2, AC-3**
-  - AC-4.3 `citations` requires Löwy reference when volatility strategy selected ⇒ **PRD FR-3, AC-4**
-- **Estimate**: 2 pts
-- **Depends on**: US-1, US-2
-- **DoD**: template + invocation update shipped; sample emission validated; token list locked
-
-### US-5 — `volatility-decomposition.md` §0 Golden Rule insertion
-- **Role**: Architect reader
-- **Goal**: see Löwy's rule stated as a rule at the top of the reference
-- **Acceptance Criteria**:
-  - AC-5.1 New §0 "The Golden Rule" — Löwy, *Righting Software* Ch. 2, verbatim ⇒ **PRD FR-4, AC-4**
-  - AC-5.2 Functional-decomposition-trap anti-pattern with worked example ⇒ **PRD FR-4 (Gap 1)**
-- **Estimate**: 1 pt
-- **Depends on**: none
-- **DoD**: edit landed; no prose regressions
-
-### US-6 — `strategic-ddd.md` Decomposition Hygiene sidebar
-- **Role**: Architect reader (DDD path)
-- **Goal**: equivalent "no implementation nouns" guardrail across DDD phases
-- **Acceptance Criteria**:
-  - AC-6.1 Sidebar threaded into Phases 1–4 prohibiting cloud services/runtimes/languages ⇒ **PRD FR-5 (Gap 2 DDD parity)**
-  - AC-6.2 Bounded-context integrity rules added ⇒ **PRD FR-5**
-- **Estimate**: 1 pt
-- **Depends on**: none
-- **DoD**: sidebar present in all four phases
-
-### US-7 — Architect-in-Plan integration (`pipeline-stages.md`)
-- **Role**: Orchestrator
-- **Goal**: invoke Architect in Stage 5 Plan per ADR-002
-- **Acceptance Criteria**:
-  - AC-7.1 New invocation step between Plan steps 1 and 3, `task_type: implementation-sequencing` ⇒ **PRD FR-6, ADR-002**
-  - AC-7.2 Output `.delivery/artifacts/05-plan/architect/sequencing.md` declared ⇒ **PRD FR-6, AC-5**
-  - AC-7.3 Architect listed as participant (not owner) of Stage 5 ⇒ **PRD FR-6 (Gap 3)**
-- **Estimate**: 2 pts
-- **Depends on**: US-1
-- **DoD**: `pipeline-stages.md` updated; dry-run orchestrator loads new step
-
-### US-8 — DoD validator deterministic constraint checks
-- **Role**: DoD validators (Plan + Architect)
-- **Goal**: at least one rule-based check against `constraints.yml` per gate
-- **Acceptance Criteria**:
-  - AC-8.1 Forbidden-vocabulary grep blocks DoD on match ⇒ **PRD FR-7, AC-3, NFR-2**
-  - AC-8.2 Mandatory-artifact presence check ⇒ **PRD FR-7**
-  - AC-8.3 Numeric-ceiling compliance check ⇒ **PRD FR-7**
-  - AC-8.4 Missing Löwy citation on volatility artifact fails DoD ⇒ **PRD FR-7, AC-4**
-- **Estimate**: 3 pts
-- **Depends on**: US-1, US-4
-- **DoD**: validator integrated into `dod_validators` path; red/green fixtures; no new required `config.yml` key (NFR-4)
-
-### US-9 — Dogfood: emit this PRD's own `constraints.yml`
-- **Role**: Exhibit A
-- **Goal**: ship `.delivery/artifacts/02-refine/po/constraints.yml` that passes all checks in UAT
-- **Acceptance Criteria**:
-  - AC-9.1 File exists at exact path ⇒ **PRD FR-8, AC-7**
-  - AC-9.2 Passes US-1 schema validator ⇒ **PRD FR-8**
-  - AC-9.3 Passes US-8 deterministic DoD checks during UAT ⇒ **PRD FR-8, AC-7 (P0 dogfood)**
-  - AC-9.4 Dogfood run includes explicit installed-cache refresh step (source → cache sync) before validation, preventing stale-cache masking of source edits ⇒ **PRD FR-8, memory hot lesson #4**
-- **Estimate**: 1 pt
-- **Depends on**: US-1, US-2, US-3, US-8
-- **DoD**: file committed; UAT run green; memory lesson "no DoD before dogfood" honored
+**DoD:**
+- [ ] Schema doc updated, version bumped
+- [ ] Forbidden vocab grep clean
+- [ ] Validator passes enabled and absent configs
+- [ ] Architect endorses field names match ADR-001
 
 ---
 
-## Sprint Allocation
+## US-2 — Reviewer persona library (≥3 starter personas)
 
-| Sprint | Stories | Points | % of 5-pt cap |
-|---|---|---|---|
-| **S1 — Foundations** | US-1 (3), US-5 (1) | **4** | 80% target ✅ |
-| **S2 — Guides & Templates** | US-2 (2), US-6 (1), US-4 (2) | **5** | 100% hard cap ⚠ |
-| **S3 — Integration** | US-3 (2), US-7 (2) | **4** | 80% target ✅ |
-| **S4 — Validators & Dogfood** | US-8 (3), US-9 (1) | **4** | 80% target ✅ |
+**As a** reviewer sub-agent
+**I want** a curated persona library file with my id, perspective, context files, review prompt, and gate criteria
+**So that** I can load only my own slice and emit a review without cross-contamination.
 
-**Total: 17 pts / 4 sprints.** S2 rides the hard cap — watch it. If S1 slips, pull US-6 from S2 into S3 (trivially re-orderable — no dependency).
+**Estimate:** 2 pts
+**Dependencies:** US-1 (field `reviewers` references these persona ids)
+**FR traceability:** FR-2, FR-3
 
----
+**Acceptance Criteria:**
+1. File `delivery-team/skills/delivery-flow/references/architecture-board-personas.md` exists → **FR-2**
+2. File contains ≥3 H2 persona sections: `volatility-architect`, `ddd-architect`, `risk-architect` → **FR-2**
+3. Each persona declares: `id`, `name`, one-line `perspective`, `context-files-to-load` list, `review-prompt-template`, `gate-criteria`, `signal-format` → **FR-3**
+4. No two personas share the same `perspective` one-liner (R1 mitigation) → **FR-3**
+5. Volatility Architect `gate-criteria` cites Lowy's Golden Rule → **FR-3**
 
-## Cross-Cutting Risks (emergent from breakdown)
-
-- **CR-1** US-8 relies on US-4's enumerated token list — lock the list in US-4 DoD or US-8 re-opens.
-- **CR-2** US-9 cannot begin until US-1/2/3/8 are green; schedule last in S4.
-- **CR-3** US-3 and US-7 both edit `pipeline-stages.md` — coordinate across S3 to avoid merge collisions.
-- **CR-4** NFR-5 token delta (≤15%) is a post-land measurement — Data Analyst owns it at UAT, not per-sprint.
-
----
-
-## Out of Scope Reminder
-
-No BACKLOG-003, BACKLOG-005, BACKLOG-006. No `config.yml` v2.7→v2.8 bump (PRD §6 — earned only after the primitive survives both domains).
+**DoD:**
+- [ ] Structure matches ADR-001 / architecture.md §3
+- [ ] Persona ids match the example list in config-schema.md (from US-1)
+- [ ] Forbidden vocab grep clean
+- [ ] Architect endorses persona distinctness
 
 ---
 
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/05-plan/po/stories.md
-SUMMARY: Nine stories, 17 pts across 4 sprints (honest recalibration from 3). All ACs traced 1:1 to PRD FR-1..FR-8. No sprint over 5-pt hard cap. patched round 2 — +AC-1.4 +AC-9.4
+## US-3 — Judge persona spec + synthesis protocol (same library file)
+
+**As the** Orchestrator
+**I want** a judge persona with a cite-synthesize-verdict protocol in the same library file
+**So that** N reviews synthesize into a single verdict that cannot devolve into an echo chamber.
+
+**Estimate:** 2 pts
+**Dependencies:** US-2 (same file — prevents split-source drift)
+**FR traceability:** FR-4
+
+**Acceptance Criteria:**
+1. Same file contains `## chief-architect (judge)` H2 section → **FR-4**
+2. Section declares 6 protocol steps: Load, Cite-per-finding, Declare alignment (AGREE/DISAGREE/DEFER), Synthesize, Emit verdict, Persist → **FR-4** (ADR-002)
+3. Verdict schema: `VERDICT` (PASS | CONDITIONAL | BLOCK), `SYNTHESIZED_FINDINGS[]`, `DISSENT[]`, `CITATIONS[]` → **FR-4**
+4. Deadlock rule explicitly links to `team-patterns.md` Pattern 4 Debate DEADLOCK handler (no new mechanism) → **FR-4**
+5. Output path documented: `.delivery/artifacts/04-architect/board/judge-verdict.md` → **FR-4, FR-5**
+
+**DoD:**
+- [ ] Protocol matches ADR-002 on all 6 steps
+- [ ] Deadlock link resolves
+- [ ] Forbidden vocab grep clean
+
+---
+
+## US-4 — `architecture-board` pattern in team-patterns.md
+
+**As a** pipeline orchestrator reader
+**I want** a new Pattern 3b entry documenting the configurable board protocol
+**So that** the pattern is discoverable alongside Pattern 3 without replacing it.
+
+**Estimate:** 2 pts
+**Dependencies:** US-1 (consumes config contract), US-2, US-3
+**FR traceability:** FR-5
+
+**Acceptance Criteria:**
+1. `team-patterns.md` contains new section **Pattern 3b: Configurable Architecture Board** inserted after Pattern 3 → **FR-5**
+2. Pattern documents: trigger (`architecture_board.enabled`), parallel dispatch, per-reviewer isolation (NFR-3), output paths `.delivery/artifacts/04-architect/board/<persona-id>-review.md` + `judge-verdict.md`, iteration loop honoring `convergence` and `max_iterations` → **FR-5**
+3. Pattern 3 (fixed) is byte-untouched → **NFR-2**
+4. Pattern cross-links to US-1 config block and US-2/US-3 persona library → **FR-5**
+
+**DoD:**
+- [ ] New section present, Pattern 3 unchanged
+- [ ] Forbidden vocab grep clean
+- [ ] Architect endorses protocol matches architecture.md §5
+
+---
+
+## US-5 — Stage 4 Architect integration in pipeline-stages.md
+
+**As the** Stage 4 orchestrator
+**I want** a conditional board-dispatch sub-step after the primary architect produces `architecture.md`
+**So that** boards run automatically when enabled and are invisible when disabled.
+
+**Estimate:** 2 pts
+**Dependencies:** US-1 (config contract), US-4 (pattern to reference)
+**FR traceability:** FR-6, NFR-2
+
+**Acceptance Criteria:**
+1. `pipeline-stages.md` Stage 4 contains a new sub-step **2b. Architecture Board Review** inserted after Invoke Architect and before Team DoD Validation → **FR-6**
+2. Sub-step conditional on `architecture_board.enabled` — absent/false = skip silently → **NFR-2**
+3. Sub-step references Pattern 3b (US-4) and the judge verdict artifact path → **FR-6**
+4. On BLOCK verdict, orchestrator enters self-correction loop against primary architect → **FR-6**
+
+**DoD:**
+- [ ] Step inserted at correct location
+- [ ] Backwards-compat wording explicit
+- [ ] Forbidden vocab grep clean
+
+---
+
+## US-6 — MAR iteration-2 cross-persona routing
+
+**As the** Stage 4 orchestrator
+**I want** iteration 2 of self-correction to route to a *different* reviewer persona
+**So that** the corrected architecture is examined by fresh eyes (MAR paper technique; absorbs BACKLOG-002).
+
+**Estimate:** 1 pt
+**Dependencies:** US-4, US-5
+**FR traceability:** FR-7
+
+**Acceptance Criteria:**
+1. Pattern 3b documents iteration-2 routing: on round 2, select a different persona from `reviewers` (round-robin skipping the round-1 BLOCK reviewer) → **FR-7**
+2. Behavior disabled by `cross_persona_iteration2: false` → **FR-7, NFR-2**
+3. BACKLOG-002 referenced in a "supersedes" note → **FR-7**
+
+**DoD:**
+- [ ] Routing rule documented and testable
+- [ ] Forbidden vocab grep clean
+
+---
+
+## US-7 — Dogfood the board on this run's Stage 4
+
+**As the** PO (Gandalf)
+**I want** to run the new board retroactively against `run-2026-04-08-b2c7` Stage 4 with ≥3 reviewers
+**So that** we validate the capability on the very pipeline that introduced it.
+
+**Estimate:** 2 pts
+**Dependencies:** US-1..US-6 all DONE
+**FR traceability:** FR-8, NFR-1 (deferred to UAT), NFR-3
+
+**Acceptance Criteria:**
+1. `.delivery/config.yml` temporarily enables `architecture_board` with `reviewers: [volatility-architect, ddd-architect, risk-architect]`, `judge: chief-architect`, `max_iterations: 2` → **FR-8**
+2. Dogfood produces ≥3 distinct review artifacts at `.delivery/artifacts/04-architect/board/<persona-id>-review.md` → **FR-8, PRD AC-7**
+3. One `judge-verdict.md` persisted with cite-synthesize-verdict structure → **FR-8**
+4. Reviewer prompt audit hook confirms no cross-contamination → **NFR-3**
+5. Backwards-compat sanity: a second run with the block removed completes error-free → **NFR-2, PRD AC-9**
+6. Token overhead measurement **deferred to UAT stage** with explicit note in dogfood report — NOT a blocker for Plan DONE → **NFR-1 (deferred)**
+
+**DoD:**
+- [ ] 3 review artifacts + 1 verdict persisted
+- [ ] Backwards-compat run green
+- [ ] UAT deferral note present
+- [ ] Forbidden vocab grep clean across all dogfood artifacts
+
+---
+
+*"Three voices, one verdict, and the wisdom to know which to heed."* — G.

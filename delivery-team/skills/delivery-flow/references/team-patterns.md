@@ -417,6 +417,58 @@ SUMMARY: {one sentence, max 200 characters}
 
 ---
 
+## Architecture Board Review (Configurable)
+
+### Purpose
+
+A configurable variant of the Multi-Perspective Review Board specialized for Stage 4 (Architect) artifacts. Unlike the fixed Review Board above — whose panels and triggers are hard-coded per stage — the Architecture Board is driven entirely by an `architecture_board` block in `.delivery/config.yml`, letting teams pin the exact reviewer personas (e.g., Security Architect, Data Architect, SRE, Privacy Officer) and judge for their project without editing skill references. Use it when the architecture artifact warrants domain-specific scrutiny beyond the default Solution Architect pass, when compliance/regulatory sign-off is required, or when you want deterministic, reproducible board composition across pipeline runs.
+
+### Trigger Conditions
+
+- `architecture_board.enabled: true` is set in `.delivery/config.yml`, AND
+- The pipeline is executing Stage 4 Architect (or any later stage that future extensions explicitly opt into).
+
+When both conditions hold, the orchestrator runs the protocol below AFTER the architect produces the primary `architecture.md` artifact and BEFORE the stage DoD check.
+
+### Protocol
+
+1. **Read config** — Orchestrator reads the `architecture_board` block: `reviewers` (list of persona IDs), `judge` (persona ID), `convergence` (`all-done` | `judge-pass` | `majority-pass`), `max_iterations`.
+2. **Load personas** — For each persona ID in `reviewers` (and the `judge`), load the persona definition from `delivery-flow/references/architecture-board-personas.md`.
+3. **Parallel dispatch** — Dispatch N reviewers in PARALLEL via the Agent tool. Each reviewer is a separate Agent invocation with an isolated context containing ONLY the files listed in that persona's `context-files-to-load` field (plus the architecture artifact under review). No reviewer sees any other reviewer's prompt or output.
+4. **Collect signals** — Each reviewer returns a signal containing `STATUS` (DONE | CONCERNS | BLOCKED) and `FINDINGS` (path to its review artifact on disk).
+5. **Invoke judge** — Dispatch the judge persona as a separate Agent call. The judge prompt receives PATHS to all N findings files (not their contents inlined) and the original architecture artifact.
+6. **Judge verdict** — Judge writes a synthesis to `.delivery/artifacts/04-architect/board/judge-verdict.md` containing per-reviewer summary, cross-cutting themes, and an overall `VERDICT: PASS | FAIL`.
+7. **Convergence check** — Evaluate per configured rule:
+   - `all-done` — every reviewer STATUS is DONE.
+   - `judge-pass` — judge verdict is PASS regardless of individual signals.
+   - `majority-pass` — more than half of reviewers are DONE AND judge verdict is PASS.
+8. **Feedback loop** — If not converged and `iteration < max_iterations`, return the judge verdict to the architect for self-correction, then re-run the protocol (with the MAR iteration-2 routing rule below). If `iteration == max_iterations` without convergence, escalate via the Debate deadlock protocol (see Deadlock Handling below).
+
+### MAR Iteration-2 Cross-Persona Routing
+
+On self-correction round 2 and later, the orchestrator MUST pick a DIFFERENT persona from `reviewers` than the one(s) who drove the previous round's dominant findings. This breaks degeneration-of-thought — a single reviewer repeatedly re-reviewing its own feedback converges on its blind spots rather than exposing them. Rules:
+
+- If `reviewers` contains exactly 2 personas, round 2 uses the persona NOT used as primary in round 1.
+- If `reviewers` contains more than 2 personas, the orchestrator selects the persona whose domain is most divergent from the prior round's findings, using the judge's prior verdict as the signal (e.g., if round 1 was dominated by Security findings, round 2 promotes the Data or SRE reviewer as primary).
+- The non-primary reviewers still run in parallel each round; "primary" here means the reviewer whose findings the architect is directed to address first and whose persona frames the correction prompt.
+- This rule absorbs BACKLOG-002 (cross-persona routing) into the Architecture Board protocol.
+
+### Output Artifacts
+
+- `.delivery/artifacts/04-architect/board/<persona-id>-review.md` — one per reviewer, containing findings, risks, and STATUS.
+- `.delivery/artifacts/04-architect/board/judge-verdict.md` — judge synthesis and overall verdict.
+- Artifacts from prior iterations are preserved with an `-iter<N>` suffix; the unsuffixed file is always the latest.
+
+### Deadlock Handling
+
+If `max_iterations` is reached without convergence, the Architecture Board escalates using the DEADLOCK protocol from **Pattern 5: Debate Pattern** (see that section's "Deadlock resolution" steps). The judge verdict becomes the debate motion, the dissenting reviewers become debate participants, and the human checkpoint at the end of Stage 4 becomes the tiebreaker.
+
+### Context Isolation Rule
+
+Each reviewer's Agent prompt MUST NOT contain any other reviewer's findings, signal, or intermediate output. This is a hard MAR (Multi-Agent Review) diversity requirement — cross-contamination between reviewers collapses perspective diversity and produces correlated rather than independent signals. The ONLY place where reviewer outputs are combined is in the judge's prompt (and even there as file paths, not inlined content).
+
+---
+
 ## Pattern 4: Decision Ownership Routing
 
 **Dispatch rule**: The Decision Owner is a SEPARATE Agent tool call dispatched on demand. One role = one sub-agent invocation. Never ask another agent to "also make this decision".

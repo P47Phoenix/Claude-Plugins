@@ -390,6 +390,16 @@ Create technical architecture: system design, C4 models, ADRs, technology decisi
    - Each loop's reviewer writes to: `.delivery/artifacts/04-architect/challenger/loop-{N}.md`
    - Architect revisions between loops write to: `.delivery/artifacts/04-architect/solution/architecture.md` (in place)
    - See `references/team-patterns.md` Pattern 2b (Isolated Adversarial Loop) and ADR-003 for the full protocol.
+6.5. **Architecture Board Review** [CONDITIONAL] [after step 6, before DoD]:
+   If `architecture_board.enabled` is true in `.delivery/config.yml`, invoke the
+   Architecture Board Review pattern (see `references/team-patterns.md` §Architecture
+   Board Review (Configurable)) against `.delivery/artifacts/04-architect/solution/architecture.md`.
+   Dispatch N reviewer personas from `architecture_board.reviewers` in parallel
+   (single message, one Agent call per persona), then dispatch the judge sequentially
+   once all reviewer verdicts land. Feed the judge verdict into Team DoD Validation
+   (step 7) as an additional required signal. Iteration cap per
+   `architecture_board.max_iterations`. On round 2, rotate to a different persona
+   (MAR cross-persona routing) to avoid anchoring. If disabled, skip this step.
 7. **Team DoD Validation** [PARALLEL] -- dispatch all validators in a single message: Architect (soundness), QA (testability), DevOps (deployability), Security (posture)
 8. **Human Checkpoint 2** [SEQUENTIAL]: Present architecture summary for approval
 

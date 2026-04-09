@@ -1,7 +1,7 @@
 # Memory Index
 
 **Last updated**: 2026-04-08
-**Total runs**: 18
+**Total runs**: 19
 
 ## Stage Health (from last 5 runs)
 
@@ -22,6 +22,7 @@
 3. Dogfooding is a P0 UAT gate, not a follow-up — execute before DoD submission → stages/uat.md
 4. Installed↔source file sync is mandatory — Dev must commit to source, validators must check installed → stages/uat.md
 5. Propagate amendments to authoritative artifacts, not just referencing ones → topics/gate-patterns.md / stages/plan.md
+6. Dogfood the capability on its own architecture in the same build that introduces it — validates end-to-end AND catches gaps the primary authors miss. Second instance 2026-04-08-b2c7. → stages/development.md
 
 ## Topic Files (read when relevant)
 

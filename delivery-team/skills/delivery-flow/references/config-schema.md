@@ -102,6 +102,38 @@ When adding new config keys, bump the version and add a migration note.
 
 ---
 
+## `architecture_board` Config Block
+
+Optional top-level block enabling a **configurable Multi-Perspective Architecture Review Board** (Pattern 3b) at Stage 4. Distinct from the fixed Pattern 3 Review Board in `team-patterns.md`. Absent block = disabled (backwards compatible).
+
+| Key | Type | Required | Default | Valid Values | Consumed By |
+|-----|------|----------|---------|-------------|-------------|
+| `architecture_board.enabled` | boolean | yes (within block) | `false` | true/false | delivery-flow (Stage 4 board activation) |
+| `architecture_board.reviewers` | list[string] | no | `[]` | architect role identifiers (e.g., volatility-architect, ddd-architect, risk-architect, security-architect, data-architect) | delivery-flow (board roster) |
+| `architecture_board.max_iterations` | integer | no | `2` | 1-5 | delivery-flow (iteration ceiling) |
+| `architecture_board.convergence` | string | no | `all-done` | `all-done`, `judge-pass`, `majority-pass` | delivery-flow (convergence criterion) |
+| `architecture_board.judge` | string | no | `chief-architect` | architect role identifier | delivery-flow (tie-breaker / judge persona) |
+| `architecture_board.cross_persona_iteration2` | boolean | no | `true` | true/false | delivery-flow (enable cross-persona critique on iteration 2) |
+
+**Example:**
+
+```yaml
+architecture_board:
+  enabled: false        # default — backwards compat
+  reviewers:
+    - volatility-architect
+    - ddd-architect
+    - risk-architect
+  max_iterations: 2
+  convergence: all-done  # all-done | judge-pass | majority-pass
+  judge: chief-architect
+  cross_persona_iteration2: true
+```
+
+**Backwards compatibility:** The entire block is optional. When absent, Stage 4 uses the fixed Pattern 3 Review Board exactly as before — no behavior change for existing configs (NFR-2, AC-9). Opting in requires only setting `architecture_board.enabled: true` and a `reviewers` list. See ADR-001 for rationale.
+
+---
+
 ## Defaults by Project Type
 
 When a key is not set, use the default from the schema above. Some defaults vary by project type:

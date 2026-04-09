@@ -1,111 +1,75 @@
-# PRD — Paired Constraints Primitive (`constraints.yml`)
+# PRD — Configurable Architecture Board Review Pattern
 
-**Feature**: Shared Model-First `constraints.yml` primitive across Refine & Architect stages
-**Pipeline ID**: run-2026-04-08-a1f3
-**Stage**: 2 (Refine) | **Role**: Product Owner (Gandalf)
-**Date**: 2026-04-08
-**Source backlog**: BACKLOG-001 (Refine spike) ∥ BACKLOG-004 (decomposition depth)
-**Inputs**: `.delivery/artifacts/01-idea/po/idea-brief.md`, `.delivery/artifacts/research/architect-examine-decomposition-gaps.md`, `.delivery/artifacts/research/po-synthesis-model-first-mar.md`
+**Pipeline:** run-2026-04-08-b2c7
+**Date:** 2026-04-08
+**Source:** BACKLOG-003 (absorbs BACKLOG-002)
+**Type:** FEATURE
+**Inputs:**
+- `.delivery/backlog/BACKLOG-003-architecture-board-review-pattern.md`
+- `.delivery/backlog/BACKLOG-002-mar-cross-persona-iteration2.md`
+- `.delivery/artifacts/research/architect-examine-decomposition-gaps.md` (Gap 4)
+- `delivery-team/skills/delivery-flow/references/team-patterns.md` (Multi-Perspective Review Board, §Pattern 3)
+- `delivery-team/skills/delivery-flow/references/constraints-model-guide.md`
+- arXiv:2512.20845 — Multi-Agent Reflexion (MAR)
 
-> *"A product owner is never late, nor early. They prioritize precisely when they mean to."*
+## Problem
 
----
+A wizard does not choose his council by drawing lots, yet our pipeline does precisely that. Gap 4 of the architect decomposition examination finds the Multi-Perspective Review Board (`team-patterns.md:334-416`) frozen to a fixed 3-role roster (Technical / Business / Risk), with no configurable roster, no per-reviewer persona context, no iteration loop with convergence criterion, and no judge role. The config schema (`config-schema.md`) contains no `architecture_board` block. The primitive exists; the specialization does not. Architecture review — the very stage where persona diversity matters most — is being conducted with one eye closed.
 
-## 1. Problem
+## Users / Actors
 
-Four failure modes, one root. The burden is not vague; the stones of memory name it plainly.
+- **Orchestrator** — dispatches N reviewer sub-agents per configured board, enforces isolation, invokes the judge, emits the verdict
+- **Reviewer sub-agents (N)** — each loads only its own persona's context slice and prompt, emits one review artifact
+- **Judge sub-agent** — synthesizes the N reviews into a single verdict (PASS / CONDITIONAL / BLOCK) with findings
+- **PO / human** — selects board composition per run by editing `.delivery/config.yml`
 
-- **Plan stage drifts at 57% first-try pass** — `.delivery/memory/stages/plan.md` records 3 of 7 runs reworked on constraints *already known at Refine time*. The knowledge existed; the structure to carry it did not.
-- **The Golden Rule of volatility decomposition is unnamed.** `delivery-team/skills/architect/references/volatility-decomposition.md:7` speaks of "WHAT CHANGES" but never states Löwy's rule — *"decompose by volatility, not by functionality"* — as a rule. The anti-pattern at `volatility-decomposition.md:181` warns only of the layer-disguise variant, not the broader functional trap (evidence: `architect-examine-decomposition-gaps.md` Gap 1).
-- **Implementation-detail contamination bleeds upward.** `volatility-decomposition.md:49-96` (Phases 1–4) and `strategic-ddd.md` Phases 1–4 contain no prohibition against naming cloud services, runtimes, or languages during decomposition (Gap 2). Architects name Lambda, ECR, SQS where only volatility classes and bounded contexts belong.
-- **The Architect is absent from Stage 5 Plan.** `delivery-team/skills/delivery-flow/references/pipeline-stages.md:428-449` invokes PO, QA, Scrum Bag, DevOps — not the one who drew the map. `config-schema.md:57-63` keeps the Architect as a passive DoD validator only (Gap 3).
+## Functional Requirements
 
-Four faces, one burden: **constraints known but not structured, and therefore not consumed.**
+- **FR-1** — New `architecture_board` config block in `config-schema.md` with: `enabled` (bool), `reviewers` (list of persona IDs), `max_iterations` (int), `convergence_criterion` (enum: `all_reviewers_done` | `judge_verdict_pass`), `judge` (persona ID)
+- **FR-2** — Reviewer persona library at `delivery-team/skills/delivery-flow/references/architecture-board-personas.md` containing ≥3 starter personas: **Volatility Architect**, **DDD Architect**, **Risk Architect** (minimum); **Evolutionary Architect** and **Security Architect** as stretch
+- **FR-3** — Each persona declares: `id`, `name`, one-line perspective, context-loading instructions (what files to read), review prompt template, gate criteria (what the persona looks for), signal format
+- **FR-4** — Judge persona declares: synthesis protocol, deadlock rule (link to the existing debate pattern's DEADLOCK handling in `team-patterns.md`), final verdict schema (`PASS` | `CONDITIONAL` | `BLOCK` + synthesized findings list)
+- **FR-5** — New `architecture-board` collaboration pattern documented in `team-patterns.md` with full protocol: trigger conditions, parallel dispatch rules, iteration loop, judge invocation, output artifact paths (`.delivery/artifacts/04-architect/board/<persona-id>.md` + `judge-verdict.md`)
+- **FR-6** — Stage 4 Architect integration in `pipeline-stages.md` — orchestrator checks `architecture_board.enabled` and dispatches reviewers in parallel after the primary architect produces `architecture.md`
+- **FR-7** — MAR iteration-2 cross-persona routing — on iteration 2 of the self-correction loop, a *different* reviewer persona reviews the correction (absorbs BACKLOG-002)
+- **FR-8** — Dogfood — run the architecture_board on THIS pipeline's (`run-2026-04-08-b2c7`) Stage 4 with ≥3 configured reviewers
 
-## 2. Users / Actors
+## Non-Functional Requirements
 
-Five who will be served — and held to — the primitive:
+- **NFR-1** — Board adds ≤25% token overhead per Architect stage (MAR paper benchmark)
+- **NFR-2** — Backwards compat — pipelines without an `architecture_board` block run unchanged; default is disabled
+- **NFR-3** — Reviewer context isolation — no reviewer's prompt contains another reviewer's output (enforced by agent prompt audit hook)
 
-- **Orchestrator (delivery-flow)** — consumes `constraints.yml` at every gate to pre-load downstream stages with the burden they must carry.
-- **Architect sub-agents** — produce decomposition constraints: volatility classifications, boundary invariants, forbidden vocabulary, Golden Rule citation.
-- **PO sub-agents** — produce problem constraints at Refine: entities, state variables, actions, numeric ceilings, mandatory artifacts, invariants.
-- **DoD validators** — perform deterministic rule checks against `constraints.yml` alongside prose review. Rule-based, not AI-inferred — the Business Rules Engine philosophy wins the day.
-- **Human checkpoint reviewer** — reads `constraints.yml` as a terse, deterministic summary of what the stage has committed to, without spelunking the prose.
+## Acceptance Criteria
 
-> *"Even the smallest validator can change the course of the pipeline."*
+1. `architecture_board` block documented in `config-schema.md` and accepted by `validate_config.py`
+2. `architecture-board-personas.md` exists with ≥3 personas conforming to FR-3 shape
+3. Judge role defined per FR-4; deadlock rule cites existing debate pattern
+4. `team-patterns.md` contains the new `architecture-board` pattern (FR-5)
+5. `pipeline-stages.md` Stage 4 references board dispatch (FR-6)
+6. Iteration-2 cross-persona routing implemented and testable (FR-7)
+7. Dogfood run on `run-2026-04-08-b2c7` Stage 4 produces ≥3 review artifacts plus one judge verdict
+8. Token overhead measurement ≤25%
+9. A run with no `architecture_board` block completes without error (backwards compat)
 
-## 3. Functional Requirements
+## Out of Scope
 
-- **FR-1** `constraints.yml` schema — a single YAML document, ≤8 top-level fields: `entities`, `state_variables`, `actions`, `numeric_ceilings`, `mandatory_artifacts`, `invariants`, `forbidden_vocabulary`, `citations`. Each field typed; `entities` and `invariants` required, remainder optional. Schema documented in a new `delivery-team/skills/delivery-flow/references/constraints-model-guide.md`.
-- **FR-2** Refine-stage domain template — PO template instantiating FR-1 with problem-scoped content: entities (domain nouns), state_variables (observable pipeline state), actions (PO-authored state transitions), numeric_ceilings (e.g., sprint ceiling, token budget), mandatory_artifacts (required downstream files), invariants (ADR-level truths).
-- **FR-3** Architect-stage decomposition template — instantiates FR-1 with volatility/DDD-scoped content: entities (subsystems/bounded contexts), state_variables (volatility classifications), invariants (Golden Rule, anti-corruption), `forbidden_vocabulary` enumerated (`lambda`, `ecr`, `sqs`, `ec2`, `s3`, `dynamodb`, `kafka`, `python`, `node`, `typescript`, `golang`), and `citations` requiring Löwy golden-rule reference when volatility strategy is selected.
-- **FR-4** Volatility reference update — add a named "Golden Rule" section to `volatility-decomposition.md` with explicit Löwy citation (*Righting Software*, Ch. 2) and a functional-decomposition-trap anti-pattern with worked example (closes Gap 1).
-- **FR-5** DDD reference update — add "No Implementation Nouns at Decomposition" guardrail threaded through Phases 1–4 of `strategic-ddd.md`, plus bounded-context integrity rules (closes Gap 2 for DDD parity).
-- **FR-6** Architect integration into Stage 5 Plan — new invocation step in `pipeline-stages.md` between Plan steps 1 and 3, task_type `implementation-sequencing`, producing `.delivery/artifacts/05-plan/architect/sequencing.md`. Architect named as participant (not owner) in Stage 5 (closes Gap 3).
-- **FR-7** DoD validator augmentation — Plan and Architect DoD gates perform at least one deterministic rule check against `constraints.yml` (forbidden-vocabulary grep, mandatory-artifact presence, numeric-ceiling compliance) in addition to existing prose review.
-- **FR-8** Dogfood validation — this PRD's own companion `constraints.yml` must ship as Exhibit A at `.delivery/artifacts/02-refine/po/constraints.yml`, authored in Stage 3 Design, and must pass FR-7 checks during UAT.
+- BACKLOG-005 paradigm-as-skill (separate pipeline run)
+- BACKLOG-006 transformation planning (separate pipeline run)
+- Rewriting the existing fixed Multi-Perspective Review Board
+- Wiring the board into stages beyond Stage 4 Architect
+- New top-level collaboration pattern categories
 
-## 4. Non-Functional Requirements
+## Success Metrics
 
-- **NFR-1** Plan stage first-try pass rate ≥80% measured over 5 subsequent pipeline runs (baseline 57% from `.delivery/memory/stages/plan.md`).
-- **NFR-2** Zero implementation-detail vocabulary (`lambda`, `ecr`, `sqs`, `ec2`, `s3`, `dynamodb`, `kafka`, language names, specific cloud services) in any new decomposition artifact produced after this feature lands, verified by deterministic grep.
-- **NFR-3** Schema changes backwards-compatible for ≥1 minor version; optional fields may be added without breaking existing consumers.
-- **NFR-4** No new required `.delivery/config.yml` keys without a migration default; behind `experimental.constraints_model: true` during the 5-run A/B window.
-- **NFR-5** Token cost increase per Refine stage ≤15% (the MAR-style overhead ceiling).
-- **NFR-6** Installed↔source file sync: source-of-truth in `delivery-team/`, validators check the installed copy; sync asserted at SessionStart.
+- Dogfood run emits N=3 distinct review artifacts from 3 distinct personas
+- Judge verdict artifact synthesized and persisted
+- Token overhead ≤25% (NFR-1)
+- Backwards-compat test (no `architecture_board` block) passes green
 
-## 5. Acceptance Criteria
+## Risks + Mitigations
 
-- **AC-1** (rule-based) `constraints-model-guide.md` exists and documents exactly the 8 fields in FR-1 with type and required/optional markers.
-- **AC-2** (rule-based) Both domain templates (Refine, Architect) exist as reference files and are loadable by their respective sub-agents.
-- **AC-3** (rule-based) `grep -Eiw 'lambda|ecr|sqs|ec2|s3|dynamodb|kafka|python|node|typescript|golang' .delivery/artifacts/04-architect/**/*.md` returns zero matches on any post-feature pipeline run.
-- **AC-4** (rule-based) Every volatility-strategy Architect artifact cites Löwy's golden rule; absence fails DoD.
-- **AC-5** (rule-based) Stage 5 Plan artifacts include `.delivery/artifacts/05-plan/architect/sequencing.md` with at least one Architect validation note.
-- **AC-6** (empirical) Run the pipeline 5 times after landing; Plan first-try pass rate ≥80%. Measured via memory-index stage health table.
-- **AC-7** (empirical, dogfood P0) This feature's own `constraints.yml` exists and passes FR-7 checks in UAT. No DoD submission before the dogfood — per memory lesson.
-- **AC-8** (rule-based) Refine-stage token cost delta ≤15% versus prior 5-run rolling average.
-
-## 6. Out of Scope
-
-- BACKLOG-003 configurable architecture board pattern (consumes our output in the *next* run)
-- BACKLOG-005 paradigm-as-skill restructure
-- BACKLOG-006 transformation planning
-- MAR cross-persona pilot (absorbed into BACKLOG-003 per `po-revision-research-integration.md`)
-- Rewriting architect references beyond the three gaps confirmed in `architect-examine-decomposition-gaps.md`
-- `.delivery/config.yml` schema bump v2.7 → v2.8 (earned only after the primitive survives both domains)
-
-## 7. Success Metrics
-
-| Metric | Baseline | Target | Source | Method |
-|---|---|---|---|---|
-| Plan first-try pass rate | 57% (`.delivery/memory/stages/plan.md`) | ≥80% | Memory index stage health table | 5-run rolling window post-land |
-| Impl-detail vocab occurrences per Architect artifact | >0 (Gap 2 evidence) | 0 | Deterministic grep (NFR-2 token list) | DoD validator on every run |
-| Golden Rule citation rate (volatility runs) | ~0% (Gap 1) | 100% | Artifact scan | DoD validator |
-| Architect-in-Plan participation | 0 runs (Gap 3) | 100% of runs | `.delivery/artifacts/05-plan/architect/` presence | DoD validator |
-| Refine token cost delta | 0% | ≤+15% | Orchestrator token accounting | Per-run measurement |
-
-## 8. Risks + Mitigations
-
-> *"Even the wise cannot foretell all roads, but the wise plan for the dark ones."*
-
-- **R-1 Schema bloat.** The primitive grows arms and legs until it models everything and enforces nothing. *Mitigation*: MVP fields only (≤8), extension protocol deferred to v2.8, rejection criterion if any field lacks a rule-check consumer.
-- **R-2 Architect Stage 4 Light mode producing shallow decomposition.** Light means reduced depth, not skipped (memory lesson). *Mitigation*: FR-6 explicitly calls out Architect-in-Plan as the recovery point; Stage 4 Light still must emit `forbidden_vocabulary` and `citations`.
-- **R-3 Impl-detail guardrails too aggressive — false positives block legitimate artifacts.** *Mitigation*: forbidden vocabulary is **enumerated, not heuristic** (explicit token list in FR-3 and NFR-2); additions require PRD revision.
-- **R-4 Plan stage metric regression from increased Refine ceremony.** *Mitigation*: NFR-5 caps token delta at 15%; 5-run measurement window with pre-feature baseline; rollback protocol — if Plan first-try drops below 57% over any 3-run window, revert behind `experimental.constraints_model: false` and reopen BACKLOG-001 as REJECT.
-- **R-5 Produce-and-ignore (Architect's modeling-theater risk).** *Mitigation*: FR-7 makes downstream consumption mandatory; DoD fails if no deterministic check fires.
-
-## 9. Dependencies
-
-- Config schema bump deferred (v2.7 holds; `experimental.constraints_model` flag lives in the existing `experimental` block — no required-key addition).
-- New reference file: `delivery-team/skills/delivery-flow/references/constraints-model-guide.md`.
-- Updated references: `volatility-decomposition.md`, `strategic-ddd.md`, `pipeline-stages.md`, `config-schema.md` (`dod_validators` augmentation).
-- Installed↔source sync mandatory for the distributed theme cache and reference files; verified at SessionStart hook.
-- Memory write hooks to record the 5-run A/B window into `.delivery/memory/stages/plan.md` and `topics/defect-patterns.md`.
-
-## 10. Assumptions
-
-- The existing delivery-flow Business Rules Engine pattern (from `prd-quality-gate-flow`) is reusable for deterministic `constraints.yml` checks without new infrastructure.
-- The three gaps named in `architect-examine-decomposition-gaps.md` are the complete set; no further gaps will be introduced by this PRD's scope.
-- A single shared schema can serve both domains; if pressure-testing in Stage 3 Design reveals structural divergence, the PRD returns here for revision before Architect stage.
-- Pipeline runs producing measurable data exist within the 5-run window (i.e., real features, not synthetic).
-- Gandalf is never early, nor late.
+- **R1: Persona redundancy** — two personas produce near-identical reviews. *Mitigation:* persona library enforces distinct `perspective` one-liners and non-overlapping gate criteria; reviewer-set validator warns on overlap.
+- **R2: Judge echo chamber** — judge merely averages rather than synthesizes. *Mitigation:* judge prompt requires citing each reviewer's findings individually and declaring explicit agreement/disagreement per finding before issuing the verdict.
+- **R3: Token cost explosion** — N reviewers × iterations blows the budget. *Mitigation:* NFR-1 25% cap enforced via `max_iterations` (≤3) and `max_reviewers` (≤6) ceilings; measured in dogfood run.
+- **R4: Backwards compat breakage** — existing pipelines fail when loading new schema. *Mitigation:* NFR-2 default-disabled; `architecture_board` block marked optional in schema; regression test run against a prior pipeline config.
