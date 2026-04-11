@@ -1,50 +1,46 @@
-# Idea Brief: Paradigm-as-Skill Restructure (BACKLOG-005, Roadmap Steps 2+3)
+# Idea Brief: MTG Commander Adversarial Review + Price Rule Enhancements
 
-**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
-**PO:** Gandalf
-**Date:** 2026-04-10
+**Pipeline:** run-2026-04-11-e6f3 | **Type:** FEATURE | **Plugin:** mtg-commander
+
+---
 
 ## The Burden
 
-The architect skill is a monolith. It holds volatility decomposition, DDD strategic design, event storming, functional decomposition, 11 architect roles, transformation-planning, and 27 reference files in a single SKILL.md + references directory. When the orchestrator loads the architect for a volatility decomposition, the entire skill loads -- including DDD, event-storming, game architecture, compliance, and privacy references that have no bearing on the task. This violates context isolation: a volatility architect does not need DDD references in its prompt window.
+The MTG Commander pipeline runs four agents sequentially -- Deck Builder, Rules Judge, Optimizer, Price Evaluator -- but each agent is a lone voice in the wilderness. The Rules Judge checks legality and nobody second-guesses the Rules Judge. The Optimizer evaluates synergy and nobody challenges its card choices. The Price Evaluator enforces budget with a hard per-card cap and no negotiation when budget-optimal cards exceed it.
 
-The roadmap (Phase 3, Celebrimbor) already charted the path. Steps 2+3 are the work.
+This architecture produced DEFECT-001: the Rules Judge missed a color identity violation (Sejiri Refuge in an Orzhov deck) because it trusted LLM knowledge instead of deterministic validation. And DEFECT-002: TCGPlayer-only pricing diverged 50%+ from Card Kingdom, blindsiding users who buy from CK.
+
+The pipeline produces good decks. But it has no self-skepticism. No challenger. No second opinion at any step.
 
 ## The Vision
 
-Paradigm-as-skill. Each decomposition paradigm becomes its own sub-skill under `delivery-team/skills/architect/paradigms/`, with its own SKILL.md and references directory. The architect SKILL.md becomes a router that detects the paradigm from config or task context and delegates to the appropriate paradigm skill. A PO+Architect Design Sprint sub-workflow documents the collaboration loop: PO defines what, Architect routes to paradigm, paradigm skill produces decomposition.
+Each pipeline step gets an independent **Challenger agent** that reviews the primary agent's output from a skeptical, adversarial perspective before the pipeline advances. Challenger-primary loops are configurable per step via a user-repo config file (`.mtg-commander.yml`), not baked into the plugin. Enhanced price rules add a "no card over $X" soft goal with user escalation when the goal cannot be met. DEFECT-001 and DEFECT-002 fixes fold into the Challenger architecture naturally.
 
-## Scope IN (Roadmap Steps 2+3)
+## Scope IN
 
-- Extract `volatility-decomposition.md` + related refs into `architect/paradigms/volatility/` with its own SKILL.md
-- Extract `strategic-ddd.md` + related refs into `architect/paradigms/ddd/` with its own SKILL.md
-- Add paradigm routing logic to architect SKILL.md (detect from `architecture.decomposition` config or task context)
-- Create Design Sprint sub-workflow reference in delivery-flow
-- Preserve original references as redirect stubs (avoid breaking installed caches)
-- Dogfood: run a volatility decomposition through the new structure
-- Verify all AS-IS invariants still hold post-restructure
+- Per-step adversarial Challenger agent (4 challengers, one per pipeline step)
+- User-repo config file `.mtg-commander.yml` with loop counts, escalation rules, price rules
+- Enhanced price rules: soft per-card price goal + user escalation
+- DEFECT-001 fix: Rules Judge Challenger mandates `validate-deck` for color identity
+- DEFECT-002 fix: Price Evaluator Challenger fetches CK prices independently, escalates on divergence > 30%
 
 ## Scope OUT
 
-- Functional decomposition, event-storming (no existing deep reference to extract -- roadmap defers these)
-- Game architecture paradigms (stable, LOW volatility per AS-IS)
-- Rewriting transformation-planning references (just shipped in STEP-01)
-- Any restructure outside roadmap Steps 2+3
-- New paradigm content (reorganize only, do not author new guidance)
-- Changes to delivery-flow SKILL.md orchestrator protocol (routing is architect-internal)
+- New card evaluation engines or APIs beyond Scryfall + Archidekt
+- Partner commander support
+- New archetypes or archetype detection changes
+- UI/UX changes to output format (beyond escalation prompts)
+- Delivery-flow pipeline integration (mtg-commander remains standalone)
 
 ## The Stakes
 
-- Roadmap STEP-02 acceptance: volatility paradigm skill exists, independently loadable, context isolation measurable
-- Roadmap STEP-03 acceptance: DDD paradigm skill exists, registry proven for multi-paradigm selection
-- Architect SKILL.md references paradigm sub-skills instead of monolithic refs
-- Paradigm-specific agent loads ONLY its own refs (prompt token count measurable)
-- All 7 AS-IS invariants from `as-is-constraints.yml` preserved
-- Subsystem change under 20% per roadmap step (STEP-02: 11%, STEP-03: 16%)
+- DEFECT-001 closed: zero color identity misses (deterministic validation by Challenger)
+- DEFECT-002 addressed: CK pricing divergence triggers escalation with both vendor prices
+- Per-step adversarial catches errors the primary agent misses before they cascade
+- Users control loop depth and escalation behavior via their own config file
 
 ## Anti-Scope
 
-- No new paradigm content -- reorganize existing content only
-- No deletion of source refs until installed cache validates (keep as redirects)
-- No new config keys introduced
-- No changes to delivery-flow orchestrator protocol
+- Do NOT rewrite the 4 core agents -- augment with Challengers, do not replace
+- Do NOT add new external APIs beyond Scryfall and Archidekt
+- Do NOT change the intake flow or output format structure

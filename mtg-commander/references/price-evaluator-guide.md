@@ -299,3 +299,108 @@ Basic lands (Plains, Island, Swamp, Mountain, Forest) are effectively free. Pric
 ### 6.5 Replacement Cascade
 
 If replacing an over-cap card with a budget-friendly alternative causes the replacement to also be over-cap (unlikely but possible with very tight caps), note it in the violation and suggest an even cheaper option.
+
+---
+
+## 7. Per-Card Price Goal (Soft Goal)
+
+When `.mtg-commander.yml` sets `price_rules.max_card_price` to a non-null value, the Price Evaluator applies a soft per-card goal in addition to the hard 15% cap.
+
+### 7.1 Evaluation
+
+After completing all budget checks (Section 5 steps 1-15), scan every card against the soft goal. The price used depends on `price_rules.budget_source`:
+- `higher` — use the higher of TCG/CK price per card (default)
+- `tcgplayer` — use TCGPlayer price only
+- `cardkingdom` — use Card Kingdom price only
+
+### 7.2 Substitution-First Logic
+
+For each card exceeding the soft goal:
+1. Search for a replacement that is (a) under the goal, (b) synergy-preserving (same category role, >= 3 interactions or >= 2 for BUDGET_RELAXED), and (c) format-legal within the commander's color identity.
+2. If a valid substitute is found, suggest the swap in the verdict output.
+3. If no valid substitute exists, the card is flagged for escalation.
+
+### 7.3 Escalation (when `price_rules.escalation: true`)
+
+Unsubstitutable over-goal cards are grouped into a BLOCKING escalation prompt. The pipeline halts until the user responds. See SKILL.md > Agent 4 > Step 5b for the full escalation message format and user options (accept/raise/force-swap).
+
+### 7.4 Silent Mode (when `price_rules.escalation: false`)
+
+Auto-substitute via budget-wins logic. If no substitute exists, include the card silently with a metadata tag `[OVER_GOAL: $<price>/$<goal>]`. No user prompt. No pipeline halt.
+
+---
+
+## 8. Card Kingdom Divergence Check (DEFECT-002 Fix)
+
+The Price Evaluator fetches both TCGPlayer and Card Kingdom prices. After pricing is complete, apply divergence checks to detect single-vendor pricing blind spots.
+
+### 8.1 Per-Card Divergence
+
+For each card, compare TCG and CK prices. If divergence exceeds 30%:
+
+```
+divergence = abs(tcg_price - ck_price) / min(tcg_price, ck_price)
+if divergence > 0.30: flag card
+```
+
+Flagged cards are listed in the verdict output:
+
+```
+CK_DIVERGENCE_FLAGS:
+  - card: <name>
+    tcg_price: $<amount>
+    ck_price: $<amount>
+    divergence: <percentage>%
+    note: <brief explanation, e.g., "CK has this card in stock at premium" or "TCG has low-grade copies">
+```
+
+### 8.2 Total Divergence Escalation
+
+If the total CK cost diverges more than 20% from the total TCG cost:
+
+```
+total_divergence = abs(total_tcg - total_ck) / min(total_tcg, total_ck)
+if total_divergence > 0.20: escalate to user
+```
+
+Escalation message:
+
+```
+VENDOR PRICE DIVERGENCE — user decision required
+
+Total deck cost varies significantly between vendors:
+  TCGPlayer:    $<tcg_total>
+  Card Kingdom: $<ck_total>
+  Divergence:   <percentage>%
+
+Which vendor would you like to optimize for?
+  (a) TCGPlayer — optimize swaps against TCG prices
+  (b) Card Kingdom — optimize swaps against CK prices
+  (c) Keep current (higher of two) — conservative approach, no change
+```
+
+The user's choice updates `budget_source` for the remainder of this pipeline run (does not persist to config file).
+
+### 8.3 `budget_source` Config Key
+
+The `price_rules.budget_source` key in `.mtg-commander.yml` controls which vendor total is used for the budget check:
+- `higher` (default) — `max(total_tcg, total_ck)` — most conservative
+- `tcgplayer` — use TCGPlayer total only
+- `cardkingdom` — use Card Kingdom total only
+
+This key also determines which per-card price is used for the soft goal check and per-card cap check.
+
+---
+
+## 9. Challenger Verification
+
+After the Price Evaluator primary completes, a **Price Challenger** agent independently re-verifies pricing. The Challenger fetches Card Kingdom prices via `ck-batch-price` in a separate Agent spawn (clean context) and:
+
+1. Flags per-card divergence > 30% between TCG and CK prices
+2. Flags total cost divergence > 20% between vendors
+3. Checks per-card price goal violations if `price_rules.max_card_price` is set
+4. Attempts substitution suggestions for flagged cards before escalating
+
+If the Challenger finds pricing issues the primary missed (e.g., stale TCG prices, miscalculated totals), a CHALLENGE verdict triggers the adversarial loop (see SKILL.md > Adversarial Loop Protocol). A fresh Price Evaluator primary is spawned with the Challenger's findings.
+
+This independent verification ensures single-vendor blind spots are caught even if the primary agent's CK fetch was incomplete or contained calculation errors.

@@ -1,37 +1,54 @@
-# Release Notes — paradigm-as-skill extraction (run d5e2)
+# Release Notes — mtg-commander v2.18.0
 
-**Role:** Bilbo (Technical Writer) | 2026-04-10
+**Author**: Bilbo (Tech Writer)
+**Date**: 2026-04-11
 
-## What Changed
+## What's New
 
-The `delivery-team:architect` skill's decomposition paradigms (Volatility-Based Decomposition and Domain-Driven Design) have been extracted from inline reference files into standalone sub-skills under `paradigms/`. Each paradigm is now a self-contained skill directory with its own `SKILL.md` and `references/` folder, loaded on demand via a new Paradigm Router in the architect skill.
+### Adversarial Challenger Agents
+Every pipeline step now spawns dedicated Challenger agents that independently verify
+the primary agent's output. Four challengers operate across the pipeline:
 
-## New Capability
+- **Deck Challenger** — validates synergy density and card selection rationale
+- **Rules Challenger** — cross-checks format legality using deterministic validation
+- **Optimization Challenger** — stress-tests mana curve, land count, and draw consistency
+- **Price Challenger** — independently fetches Card Kingdom pricing for divergence checks
 
-- **Paradigm Router** in architect SKILL.md dispatches to `paradigms/{paradigm_id}/SKILL.md` based on the selected decomposition strategy, loading only the relevant paradigm context.
-- **82-90% context reduction**: volatility paradigm sub-skill is 66 lines vs 667-line monolithic architect skill. Only paradigm-relevant content enters the context window.
-- **Redirect stubs** at original reference paths preserve backwards compatibility for any existing references or bookmarks.
-- **Design Sprint reference** added to delivery-flow for design-stage support.
+### Configurable Adversarial Loops
+New optional `.mtg-commander.yml` in your project root controls loop iterations per step
+(default: 2, max: 5). No config file needed — defaults apply automatically.
+
+### Soft Per-Card Price Goal
+New `max_card_price` config key sets a soft ceiling per individual card. Violations trigger
+an escalation prompt to the user (blocking — no auto-accept). Hard 15%-of-budget cap unchanged.
+
+### Sub-Agent Dispatch Guardrail
+Structural enforcement that every pipeline step (primary + challenger) runs as a spawned
+sub-agent. Inlining is explicitly flagged as a guardrail violation in SKILL.md language.
+
+## Bug Fixes
+
+### DEFECT-001: Color Identity Validation (Critical)
+Rules Judge + Rules Challenger now mandate `validate-deck` programmatic command for color
+identity checks. Zero reliance on LLM card knowledge for legality decisions.
+
+### DEFECT-002: Card Kingdom Price Divergence (Major)
+Price Challenger independently fetches CK prices. Divergence >30% per card or >20% total
+triggers escalation to user. Multi-vendor awareness without requiring CK as primary source.
 
 ## Backwards Compatibility
 
-Default routing falls back to the monolithic architect skill. Existing pipelines that do not use paradigm routing are unaffected. Redirect stubs at original paths point to new locations.
+- No config file required (absence = defaults)
+- Existing pipeline behavior preserved for users who don't create `.mtg-commander.yml`
+- No new external APIs (still Scryfall + Archidekt only)
 
 ## Known Limitations
 
-- **Functional decomposition** and **event-storming** paradigms are not yet extracted -- tracked as future work in the transformation roadmap.
-- Paradigm sub-skills are intentionally not registered in `marketplace.json` per ADR-001 (internal sub-skills, not marketplace-visible).
+- Challengers are prompt-enforced via SKILL.md language, not code-enforced runtime checks
+- Effectiveness relies on the structural language strength of task blocks
+- SKILL.md now 1179 lines — future decomposition may be warranted
 
-## Fellowship Credits
+## Credits
 
-- Gandalf -- PO / FR validation and final verdict
-- Celebrimbor -- Architect / paradigm extraction and router design
-- Legolas -- QA / 15-TC verification suite
-- Sam -- DevOps / release plan
-- Bilbo -- Technical Writer / these notes
-- Aragorn -- Delivery Lead / retrospective
-
-## References
-
-- BACKLOG-005: paradigm-as-skill extraction (this work)
-- BACKLOG-006: transformation-planning orchestrator dispatch (related)
+Built by the Fellowship: Gandalf (PO), Aragorn (Architect), Legolas (QA),
+Sam (DevOps), Bilbo (Tech Writer), Gimli (Developer).

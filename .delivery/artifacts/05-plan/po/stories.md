@@ -1,132 +1,194 @@
-# Stories — BACKLOG-005 Paradigm-as-Skill Restructure
-**Role:** Gandalf (PO)
-**Stage:** 05-plan
-**Source:** PRD FR-1..FR-7, constraints.yml, architecture.md, ADR-001, ADR-002
-**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
-**Traced to:** roadmap.md STEP-02, STEP-03
+# User Stories: MTG Commander Adversarial Review Loops + Price Enhancements
+
+**Stage:** 05-Plan | **Role:** PO (Gandalf) | **Plugin:** mtg-commander
+**Pipeline:** run-2026-04-11-e6f3 | **Type:** FEATURE
+**Sprint ceiling:** 4 pts | **Hard cap:** 5 pts
 
 ---
 
 ## Capacity Declaration
-- Sprint ceiling: **4 pts** (80%); hard cap: **5 pts** (never exceed)
-- Estimate tier: **markdown/content + file-move** — ONE TIER LOWER than code per standing constraint
-- Scale: XS=1, S=2, M=3 (markdown ceiling for this work type)
-- Total budget: see Totals below
-- Amendments from Celebrimbor sequencing pass: **merged in-line** per a1f3 lesson (no round-2 correction)
-- Pre-loaded constraints: sprint ceiling, 1:1 AC-FR trace, markdown-tier estimates, propagate amendments, Architect-in-Plan sequencing per ADR-002
+
+- **Velocity baseline:** 8 pts/sprint (code), 6 pts/sprint (markdown-tier calibrated)
+- **80% ceiling:** 6 pts/sprint (markdown-tier work)
+- **Hard cap:** 5 pts single story
+- **Sprint commitment:** 3 sprints planned, 18 pts total capacity
+- **Total estimate:** 11 pts across 9 stories
 
 ---
 
 ## Stories
 
-### US-1 — Create volatility paradigm skill (XS=1)
-**As** the architect **I want** a `paradigms/volatility/SKILL.md` with paradigm-specific instructions and references **so that** volatility decomposition loads in isolation without cross-paradigm context bleeding.
+### US-1: Per-Step Challenger Agents (FR-1)
 
-**AC-1.1** (->FR-1) `delivery-team/skills/architect/paradigms/volatility/SKILL.md` exists with frontmatter: `paradigm_id: volatility`, `display_name`, `shared_refs` list, `task_types: [decompose, design]`.
-**AC-1.2** (->FR-1) Body contains: section-0 golden rule, Manager/Engine/Accessor/Utility hierarchy, dependency rules, volatility axis identification — extracted from monolithic SKILL.md.
-**AC-1.3** (->FR-1) `paradigms/volatility/references/volatility-decomposition.md` exists (moved from `architect/references/`).
-**AC-1.4** (->FR-1) `paradigms/volatility/references/domain-discovery-volatility.md` exists with volatility-specific interview questions extracted from `domain-discovery.md`.
-**AC-1.5** (->FR-1, Celebrimbor amendment) Paradigm skill loads fewer than 5 reference files (constraints.yml ceiling `paradigm_skill_max_references: 5`).
+**As** a deck builder user, **I want** independent Challenger agents for each pipeline step **so that** errors are caught adversarially before propagating downstream.
 
-**Deps:** none (independent). **Blocks:** US-3, US-5, US-6.
+**Size:** M (3 pts) | **Sprint:** 1
+**Dependencies:** None (foundational)
 
----
+**Acceptance Criteria:**
+- AC-1.1: Deck Challenger template added to SKILL.md with adversarial prompt (re-count 100 cards, spot-check 5 synergy claims, structural minimums)
+- AC-1.2: Rules Challenger template added with deterministic validation mandate
+- AC-1.3: Optimization Challenger template added (independent synergy recalc, isolation detection, mana curve)
+- AC-1.4: Price Challenger template added (independent CK fetch, divergence flags)
+- AC-1.5: Each Challenger outputs PASS or CHALLENGE with evidence format
 
-### US-2 — Create DDD paradigm skill (XS=1)
-**As** the architect **I want** a `paradigms/ddd/SKILL.md` with paradigm-specific instructions and references **so that** DDD decomposition loads in isolation.
-
-**AC-2.1** (->FR-2) `delivery-team/skills/architect/paradigms/ddd/SKILL.md` exists with frontmatter: `paradigm_id: ddd`, `display_name`, `shared_refs` list, `task_types: [decompose, design]`.
-**AC-2.2** (->FR-2) Body contains: subdomain classification, bounded context discovery, context mapping patterns, aggregate boundaries — extracted from monolithic SKILL.md.
-**AC-2.3** (->FR-2) `paradigms/ddd/references/strategic-ddd.md` exists (moved from `architect/references/`).
-**AC-2.4** (->FR-2) `paradigms/ddd/references/domain-discovery-ddd.md` exists with DDD-specific interview questions.
-**AC-2.5** (->FR-2, Celebrimbor amendment) Paradigm skill loads fewer than 5 reference files.
-
-**Deps:** none (independent). **Blocks:** US-3, US-5, US-6.
+**Traces:** FR-1, AC-1
 
 ---
 
-### US-3 — Update architect SKILL.md with paradigm router logic (S=2)
-**As** the orchestrator **I want** the architect SKILL.md to detect and route to paradigm sub-skills **so that** decomposition tasks dispatch to isolated paradigm agents.
+### US-2: Configurable Loop Protocol (FR-2)
 
-**AC-3.1** (->FR-3) Router detects paradigm using ADR-002 priority chain: (1) explicit user intent, (2) `architecture.decomposition` config, (3) decision matrix fallback.
-**AC-3.2** (->FR-3) `decomposition: volatility` routes to `paradigms/volatility/SKILL.md`; `decomposition: ddd` routes to `paradigms/ddd/SKILL.md`.
-**AC-3.3** (->FR-3) `decomposition: auto` or unset triggers existing decision matrix, then routes to detected paradigm sub-skill.
-**AC-3.4** (->FR-3) Non-decomposition task types (`review`, `document`, `evaluate`, `model`, `compliance-checklist`) bypass paradigm routing — existing logic unchanged.
-**AC-3.5** (->FR-3) Decomposition strategy routing table updated to point at paradigm sub-skills for `volatility` and `ddd` entries.
-**AC-3.6** (->FR-3, backwards compat) If `paradigms/` directory does not exist, router falls back to existing inline logic. No breakage for pre-migration state.
-**AC-3.7** (->FR-3, Celebrimbor amendment) Router spawns `Agent` with paradigm SKILL.md + only the shared refs declared in that SKILL.md's `shared_refs` frontmatter. No implicit loading.
-**AC-3.8** (->FR-3, ADR-001) Paradigm sub-skills are NOT registered in `plugin.json` — internal only.
+**As** a deck builder user, **I want** configurable per-step correction loops **so that** I control the tradeoff between thoroughness and speed.
 
-**Deps:** US-1, US-2 (paradigm dirs must exist). **Blocks:** US-6.
+**Size:** M (3 pts) | **Sprint:** 2
+**Dependencies:** US-1
 
----
+**Acceptance Criteria:**
+- AC-2.1: Loop protocol documented in SKILL.md: primary -> challenger -> PASS/CHALLENGE -> correct -> re-challenge
+- AC-2.2: Loop cap sourced from config (default 2 per step)
+- AC-2.3: `escalation.on_loop_exhaustion` behavior documented for all 3 modes (warn/block/best-effort)
+- AC-2.4: Per-step loops explicitly independent of pipeline-level correction counter (NFR-5)
+- AC-2.5: Each correction spawns a NEW primary agent (no context accumulation)
 
-### US-4 — Create design-sprint reference doc (XS=1)
-**As** the delivery-flow orchestrator **I want** a `design-sprint.md` reference **so that** the PO+Architect Design Sprint sub-workflow is documented and discoverable.
-
-**AC-4.1** (->FR-4) `delivery-team/skills/delivery-flow/references/design-sprint.md` exists.
-**AC-4.2** (->FR-4) Documents flow: PO defines problem scope/constraints -> Architect detects paradigm -> paradigm skill produces decomposition -> architecture board review (if configured) -> handoff to Plan stage.
-**AC-4.3** (->FR-4) Documents trigger: Design and Architect stages when project type involves decomposition.
-**AC-4.4** (->FR-4) Documents integration points with existing pipeline stages.
-
-**Deps:** none (independent). **Blocks:** US-6.
+**Traces:** FR-2, AC-10
 
 ---
 
-### US-5 — Create redirect stubs at original file paths (XS=1)
-**As** an operator **I want** redirect stubs at the original reference paths **so that** installed caches referencing old paths do not break.
+### US-3: `.mtg-commander.yml` Config Loading (FR-3, FR-7)
 
-**AC-5.1** (->FR-5) `delivery-team/skills/architect/references/volatility-decomposition.md` replaced with redirect stub: single line pointing to `paradigms/volatility/references/volatility-decomposition.md`.
-**AC-5.2** (->FR-5) `delivery-team/skills/architect/references/strategic-ddd.md` replaced with redirect stub: single line pointing to `paradigms/ddd/references/strategic-ddd.md`.
-**AC-5.3** (->FR-5) Each stub contains "Load the paradigm skill directly" instruction.
-**AC-5.4** (->FR-5, Celebrimbor amendment) Stubs created AFTER US-1/US-2 moves complete — redirect targets must exist first.
+**As** a deck builder user, **I want** a per-repo YAML config file **so that** my preferences persist across pipeline runs without re-specifying.
 
-**Deps:** US-1, US-2 (files must be at new paths before stubs replace originals). **Blocks:** US-6.
+**Size:** M (3 pts) | **Sprint:** 1
+**Dependencies:** None
 
----
+**Acceptance Criteria:**
+- AC-3.1: Config loaded from user's working directory after intake, before pipeline banner
+- AC-3.2: Missing file = all defaults, pipeline works identically to pre-config (AC-3)
+- AC-3.3: Partial overrides apply; missing keys use defaults (AC-4)
+- AC-3.4: Invalid keys/structure warns but does not fail pipeline (AC-9)
+- AC-3.5: Schema documented in new `references/config-reference.md` with version field, all keys, defaults, valid values
+- AC-3.6: Config status line shown after intake ("Config loaded" or "No config, using defaults")
 
-### US-6 — Dogfood volatility decomposition through new paradigm skill (S=2)
-**As** the team **I want** a volatility decomposition run through the new paradigm skill structure **so that** context isolation is empirically proven.
-
-**AC-6.1** (->FR-6) Invoke architect skill with `decomposition: volatility` in config.
-**AC-6.2** (->FR-6) Paradigm skill loads in isolation — only volatility references in prompt, no DDD/event-storming/game-architecture refs.
-**AC-6.3** (->FR-6) Decomposition output conforms to architect output contract (artifacts land at `.delivery/artifacts/04-architect/`).
-**AC-6.4** (->FR-6) Token count documented: paradigm skill prompt size vs. monolithic architect prompt size. Target: paradigm loads <5 refs vs. monolithic 27+.
-**AC-6.5** (->FR-6, Celebrimbor amendment) Dogfood validates router selects volatility via ADR-002 priority chain level 2 (config).
-
-**Deps:** US-1, US-3 (paradigm skill + router must exist). **Blocks:** US-7.
+**Traces:** FR-3, FR-7, AC-2, AC-3, AC-4, AC-9
 
 ---
 
-### US-7 — Invariant preservation verification (XS=1)
-**As** the team **I want** all AS-IS invariants verified post-restructure **so that** no regression is introduced.
+### US-4: Enhanced Price Rules -- Soft Goal + Escalation (FR-4)
 
-**AC-7.1** (->FR-7) Two-channel communication preserved — orchestrator signals separate from domain artifacts.
-**AC-7.2** (->FR-7) Context isolation preserved — paradigm sub-agents receive only paradigm-scoped references.
-**AC-7.3** (->FR-7) DoD validation multi-validator pattern unchanged.
-**AC-7.4** (->FR-7) Orchestrator does not produce domain artifacts itself.
-**AC-7.5** (->FR-7) Self-correction loops capped at 3 rounds.
-**AC-7.6** (->FR-7) Retrospective mandatory at Stop — hook unchanged.
-**AC-7.7** (->FR-7) Light stages reduce depth but never skip.
-**AC-7.8** (->FR-7, constraints.yml) Paradigm sub-skill loads ONLY its own references — no cross-paradigm bleeding.
-**AC-7.9** (->FR-7, constraints.yml) Existing pipelines without paradigm config continue to work unchanged.
-**AC-7.10** (->FR-7, constraints.yml) No new config keys introduced — `architecture.decomposition` already exists.
+**As** a deck builder user, **I want** a soft per-card price goal with substitution-first logic **so that** I stay within budget without losing critical cards unnecessarily.
 
-**Deps:** US-6 (dogfood proves isolation empirically; invariant check confirms the rest). **Blocks:** none (terminal).
+**Size:** S (2 pts) | **Sprint:** 2
+**Dependencies:** US-3 (config provides `max_card_price` value)
+
+**Acceptance Criteria:**
+- AC-4.1: Over-goal cards trigger substitution attempt first (synergy + legality preserved)
+- AC-4.2: Unsubstitutable cards grouped into BLOCKING escalation prompt with options a/b/c
+- AC-4.3: Pipeline halts on escalation (no timeout, no auto-accept)
+- AC-4.4: User-approved exceptions logged in PRICE_EXCEPTIONS section of deck output
+- AC-4.5: When `escalation: false`, auto-substitute via budget-wins; no sub = include silently with note
+- AC-4.6: Soft goal is separate from existing 15%-of-budget hard cap (hard cap unchanged)
+
+**Traces:** FR-4, AC-5, AC-6
 
 ---
 
-## Totals
-- Stories: **7**
-- Points: 1 + 1 + 2 + 1 + 1 + 2 + 1 = **9 pts**
-- Sprints: **3** (see sprint-plan.md)
-- All ACs 1:1 traced to FRs + constraints.yml invariants
-- Subsystem change: STEP-02 = 11%, STEP-03 = 16%, both under 20% ceiling
+### US-5: DEFECT-001 Fix -- Deterministic Color Identity (FR-5)
 
-## Amendments (merged from Celebrimbor sequencing pass — per a1f3 lesson)
-1. **AC-1.5, AC-2.5 added** — paradigm_skill_max_references ceiling (5) enforced per constraints.yml.
-2. **AC-3.7 added** — explicit shared_refs loading via frontmatter, no implicit loading (per architecture.md section 4).
-3. **AC-3.8 added** — ADR-001 internal sub-skill rule (no plugin.json registration).
-4. **AC-5.4 added** — redirect stubs depend on US-1/US-2 completing moves first.
-5. **AC-6.5 added** — dogfood must validate ADR-002 priority chain routing.
-6. **US-5 deps tightened** — depends on US-1+US-2 (not independent) per Celebrimbor sequencing.
+**As** a deck builder user, **I want** the Rules Challenger to run `validate-deck` deterministically **so that** color identity violations are never missed due to LLM inference.
+
+**Size:** S (1 pt) | **Sprint:** 2
+**Dependencies:** US-1 (Rules Challenger exists)
+
+**Acceptance Criteria:**
+- AC-5.1: Rules Challenger runs `card_lookup.py validate-deck --commander "<name>" --cards "<card1>" ... "<card99>"`
+- AC-5.2: Violations array parsed for `color_identity`, `format_legality`, `banned`
+- AC-5.3: Any violation triggers CHALLENGE verdict
+- AC-5.4: Rules Judge primary ALSO mandated to use `validate-deck` (belt and suspenders)
+
+**Traces:** FR-5, AC-7
+
+---
+
+### US-6: DEFECT-002 Fix -- CK Pricing Divergence (FR-6)
+
+**As** a deck builder user, **I want** the Price Challenger to independently verify CK prices **so that** single-vendor blind spots are surfaced.
+
+**Size:** S (1 pt) | **Sprint:** 3
+**Dependencies:** US-1 (Price Challenger exists)
+
+**Acceptance Criteria:**
+- AC-6.1: Price Challenger fetches CK prices independently via `ck-batch-price`
+- AC-6.2: Per-card divergence > 30% flagged in Challenger output with both prices
+- AC-6.3: Total CK vs TCG divergence > 20% escalates to user with both vendor totals
+- AC-6.4: User decides which vendor to optimize for
+
+**Traces:** FR-6, AC-8
+
+---
+
+### US-7: Sub-Agent Dispatch Guardrail Section (FR-9)
+
+**As** a pipeline maintainer, **I want** explicit guardrail language in SKILL.md **so that** Claude never inlines pipeline steps regardless of context pressure.
+
+**Size:** S (1 pt) | **Sprint:** 3
+**Dependencies:** US-1
+
+**Acceptance Criteria:**
+- AC-7.1: Guardrail section uses MUST, NEVER, NON-NEGOTIABLE, GUARDRAIL VIOLATION
+- AC-7.2: Lists all 8 mandatory Agent dispatches (4 primary + 4 challenger)
+- AC-7.3: Includes session 0876a59e anti-pattern callout (verbatim from PRD)
+- AC-7.4: `grep -cE "MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE" SKILL.md` >= 3 (AC-11)
+
+**Traces:** FR-9, AC-11
+
+---
+
+### US-8: Update Reference Guides (FR-8)
+
+**As** a pipeline maintainer, **I want** reference guides updated to reflect adversarial flow **so that** agents have accurate instructions.
+
+**Size:** S (1 pt) | **Sprint:** 3
+**Dependencies:** US-1, US-4, US-5, US-6
+
+**Acceptance Criteria:**
+- AC-8.1: `price-evaluator-guide.md` updated: per-card goal section (2.5), CK divergence section (2.6), escalation format
+- AC-8.2: `rules-judge-guide.md` updated: mandate `validate-deck` as SOLE legality mechanism
+- AC-8.3: New `references/config-reference.md` with full schema docs (if not created in US-3)
+- AC-8.4: Pipeline flow diagram in SKILL.md updated to show Challengers
+
+**Traces:** FR-8
+
+---
+
+### US-9: Dogfood -- Sub-Agent Enforcement Verification (FR-9 verification)
+
+**As** a pipeline maintainer, **I want** a structural grep test **so that** guardrail language is verified before shipping.
+
+**Size:** XS (0 pts -- verification only) | **Sprint:** 3
+**Dependencies:** US-7
+
+**Acceptance Criteria:**
+- AC-9.1: `grep -cE "MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE" mtg-commander/SKILL.md` returns >= 3
+- AC-9.2: SKILL.md reviewed for spawned-agent language that would be nonsensical if inlined
+- AC-9.3: If grep fails, US-7 is reopened and language strengthened
+
+**Traces:** FR-9, AC-11
+
+---
+
+## Summary & Sprint Allocation
+
+| Story | Size | Sprint | Deps | FR |
+|-------|------|--------|------|----|
+| US-1  | M (3) | 1 | -- | FR-1 |
+| US-3  | M (3) | 1 | -- | FR-3,7 |
+| US-2  | M (3) | 2 | US-1 | FR-2 |
+| US-5  | S (1) | 2 | US-1 | FR-5 |
+| US-4  | S (2) | 2 | US-3 | FR-4 |
+| US-6  | S (1) | 3 | US-1 | FR-6 |
+| US-7  | S (1) | 3 | US-1 | FR-9 |
+| US-8  | S (1) | 3 | US-1,4,5,6 | FR-8 |
+| US-9  | XS (0) | 3 | US-7 | FR-9 |
+
+**Sprint 1:** 6 pts (US-1+US-3) | **Sprint 2:** 6 pts (US-2+US-5+US-4) | **Sprint 3:** 3 pts (US-6+US-7+US-8+US-9)
+**Totals:** 9 stories, 11 pts, 3 sprints -- no sprint exceeds 6-pt ceiling. All 9 FRs traced.

@@ -22,3 +22,5 @@ The Rules Judge agent prompt relies on the LLM to check color identity rather th
 
 ## Impact
 Any deck could contain color identity violations that the Rules Judge misses. This undermines the core format legality guarantee.
+
+**Status: CLOSED** — fixed in run-2026-04-11-e6f3 (commit TBD). Rules Judge + Rules Challenger mandate `validate-deck` programmatic command.

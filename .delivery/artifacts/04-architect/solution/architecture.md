@@ -1,283 +1,87 @@
-# Architecture — Configurable Architecture Board Review Pattern
+# Solution Architecture: Adversarial Review Loops + Price Enhancements
 
-*Forged by Celebrimbor of the Gwaith-i-Mírdain, Stage 4 Architect (light). Run: run-2026-04-08-b2c7.*
+**Stage:** 04-Architect (Light) | **Role:** Celebrimbor | **Plugin:** mtg-commander
+**Pipeline:** run-2026-04-11-e6f3 | **Type:** FEATURE
+
+---
 
 ## 1. Context
 
-The existing Multi-Perspective Review Board in `delivery-team/skills/delivery-flow/references/team-patterns.md` (Pattern 3, line 334) is frozen to a fixed Technical/Business/Risk trio. PRD FR-1..FR-8 demand a configurable roster, a persona library, a judge, MAR-style iteration-2 cross-persona routing (BACKLOG-002 absorbed), and Stage 4 Architect integration — without breaking callers that know it not.
+Augmenting the existing 4-agent MTG pipeline with: per-step adversarial challengers (separate Agent spawns), `.mtg-commander.yml` user-repo config, and enhanced pricing (soft per-card goals + CK divergence). Existing flow, correction cycles, budget-wins tiebreaker, and output format are preserved.
 
-## 2. `architecture_board` Config Schema
+## 2. Resolved Open Questions from Galadriel
 
-Added to `delivery-team/skills/delivery-flow/references/config-schema.md` under a new top-level optional block. Absent block = disabled (NFR-2).
+**Q1 -- Context scope**: Challengers receive primary's output artifact + intake params (objective inputs for drift detection). Never the primary's chain-of-thought.
+
+**Q2 -- Cross-domain pipelining**: Strictly sequential. Step 2 waits for Step 1C PASS. Challengers may trigger corrections that change deck state.
+
+**Q3 -- Escalation stacking**: Loop exhaustion resolves first. Challenger must reach verdict before price goal flow evaluates.
+
+**Q4 -- Config versioning**: Add `version: 1`. Unknown keys warned/ignored, missing keys default.
+
+## 3. Adversarial Loop Architecture
+
+```
+Primary (Agent spawn) -> output -> Challenger (separate Agent spawn, clean context)
+  -> PASS: advance | CHALLENGE: NEW primary spawn with findings -> NEW challenger -> loop until PASS or cap
+```
+
+Per-step loops are independent of pipeline-level correction counter. Default cap: 2. Exhaustion: `escalation.on_loop_exhaustion` (warn/block/best-effort).
+
+## 4. `.mtg-commander.yml` Config Schema
 
 ```yaml
-architecture_board:
-  enabled: false
-  reviewers:
-    - volatility-architect
-    - ddd-architect
-    - risk-architect
-  max_iterations: 2
-  convergence: all-done        # all-done | judge-pass | majority-pass
-  judge: chief-architect
-  cross_persona_iteration2: true
+version: 1
+loops:
+  deck_builder: 2
+  rules_judge: 2
+  optimizer: 2
+  price_evaluator: 2
+price_rules:
+  max_card_price: null      # soft goal USD, null = off (15% cap remains)
+  escalation: true          # user prompt if goal unmet
+  budget_source: higher     # higher | tcgplayer | cardkingdom
+escalation:
+  on_loop_exhaustion: warn  # warn | block | best-effort
 ```
 
-Ceilings: `max_iterations ≤ 3`, `len(reviewers) ≤ 6` (NFR-1 token cap).
+Missing file = all defaults. Invalid keys = warned, ignored. Parse failure = warned, all defaults. Pipeline NEVER fails from config. Loaded after intake, before banner.
 
-## 3. Persona Library File Structure
+## 5. Challenger Agent Design
 
-Single file: `delivery-team/skills/delivery-flow/references/architecture-board-personas.md`. Each persona is one H2 section:
+**Deck Challenger**: re-counts cards (must be 100), spot-checks 5 random synergy claims against oracle text, checks structural minimums, flags obvious omissions.
 
-```
-## <persona-id>
-- id: volatility-architect
-- name: Volatility Architect
-- perspective: "Decompose along axes of change, per Lowy's Golden Rule"
-- context-files-to-load:
-    - delivery-team/skills/architect/references/volatility-strategy.md
-    - .delivery/artifacts/04-architect/solution/architecture.md
-- review-prompt-template: |
-    You are the {name}. Evaluate architecture.md solely through {perspective}.
-    Apply gate-criteria below. Emit signal-format verbatim.
-- gate-criteria:
-    - Every service boundary aligns with a volatility axis
-    - No functional decomposition leakage
-- signal-format: |
-    VERDICT: PASS | CONDITIONAL | BLOCK
-    FINDINGS: - <bullet>
-    CITATIONS: - <file:line>
-```
+**Rules Challenger**: runs `validate-deck` independently (DEFECT-001 fix), parses violations array for color_identity/format_legality/banned, cross-checks 3 random color identities via individual Scryfall lookups.
 
-## 4. Judge Persona Structure
+**Optimization Challenger**: recalculates synergy score independently, identifies isolated cards (< 3 interactions, < 2 for BUDGET_RELAXED), validates mana curve against actual CMC distribution.
 
-Same file, one H2 marked `## chief-architect (judge)`, with: synthesis protocol (cite each reviewer's findings individually; declare per-finding agreement; emit aggregated verdict), deadlock rule (links to `team-patterns.md` Pattern 4 Debate DEADLOCK), final verdict schema `{PASS | CONDITIONAL | BLOCK, synthesized_findings[], dissent[]}`. Full protocol in ADR-002.
+**Price Challenger**: fetches CK prices independently via `ck-batch-price`, flags per-card divergence > 30% and total divergence > 20% (DEFECT-002 fix), checks per-card goal violations, attempts substitution before escalation.
 
-## 5. `team-patterns.md` Augmentation
+## 6. Sub-Agent Dispatch Guardrail (FR-9)
 
-New section **Pattern 3b: Configurable Architecture Board** inserted immediately after Pattern 3 (line 416), referencing but not replacing it. Protocol:
+New SKILL.md section: `## Sub-Agent Dispatch Guardrail`. Lists all 8 Agent dispatches (4 primary + 4 challenger). Inlining ANY step = GUARDRAIL VIOLATION. Includes session 0876a59e anti-pattern callout. Task blocks use spawned-agent language ("your output", "write to disk", "{deck_state}" as input param) that produces nonsensical instructions if inlined.
 
-1. Orchestrator reads `architecture_board` from config; if `enabled: false`, skip.
-2. Dispatch each persona in `reviewers` as a parallel sub-agent (single message, isolated context per NFR-3).
-3. Each writes `.delivery/artifacts/04-architect/board/<persona-id>-review.md`.
-4. Judge sub-agent reads all N paths, writes `.delivery/artifacts/04-architect/board/judge-verdict.md`.
-5. Loop per `convergence` until `max_iterations` or verdict PASS.
+## 7. Price Goal Escalation Flow (FR-4)
 
-Triggers: Stage 4 Architect only (MVP). Loop rules: any BLOCK verdict → correction round; iteration 2 applies §7 routing.
+1. Price Evaluator prices all cards (TCG + CK)
+2. Over-goal cards identified if `max_card_price` is non-null
+3. Substitution attempted per card (synergy-preserving, legal, under goal)
+4. Unsubstitutable cards grouped into BLOCKING escalation prompt (Galadriel's table format, options a/b/c)
+5. Pipeline halts -- no timeout, no auto-accept
+6. User response logged in PRICE_EXCEPTIONS section
+7. If `escalation: false`: auto-substitute via budget-wins; no sub = include silently with note
 
-## 6. `pipeline-stages.md` Stage 4 Integration
+Separate from existing 15%-of-budget hard cap (unchanged).
 
-New sub-step **2b. Architecture Board Review** inserted after step 2 (Invoke Architect, line 355) and before Team DoD Validation. Conditional on `architecture_board.enabled`. On BLOCK, orchestrator triggers self-correction loop against the primary architect.
+## 8. File Changes
 
-## 7. MAR Iteration-2 Cross-Persona Routing
+| File | Action | Summary |
+|------|--------|---------|
+| `mtg-commander/SKILL.md` | UPDATE | Adversarial loop protocol, Sub-Agent Guardrail (FR-9), config loading, 4 challenger templates, price escalation, 8-step banner |
+| `references/price-evaluator-guide.md` | UPDATE | Per-card goal (2.5), CK divergence (2.6), escalation format |
+| `references/rules-judge-guide.md` | UPDATE | Mandate validate-deck as SOLE mechanism (DEFECT-001) |
+| `references/config-reference.md` | NEW | Full schema docs, defaults, valid values, version field |
 
-On round 2 of self-correction, the orchestrator selects a *different* persona from `reviewers` (round-robin, skipping the round-1 reviewer whose BLOCK triggered correction) to review the corrected `architecture.md`. Absorbs BACKLOG-002. Disabled by `cross_persona_iteration2: false`.
+## 9. Non-Goals
 
-## 8. Non-Goals (LIGHT)
-
-- No changes to the existing fixed Multi-Perspective Review Board (Pattern 3 stays).
-- No integration beyond Stage 4 Architect (Plan/Dev stages out of scope).
-- No dynamic persona generation — library is curated Markdown.
-- No automated token-budget enforcement beyond documented ceilings.
-
-## 9. Risks (blocking only)
-
-- **Persona echo chamber** — mitigated by FR-3 distinct `perspective` lines + reviewer-set overlap warning (deferred).
-- **Judge deadlock** — fallback: invoke existing debate pattern's DEADLOCK handler in `team-patterns.md` Pattern 4.
-
-*"A ring of three voices is stronger than a single hammer; but only if each voice sings a different note."* — C.
-
----
-
-# Architecture — Architect `transformation-planning` Task Type
-
-*Forged by Celebrimbor of the Gwaith-i-Mírdain, Stage 4 Architect (light). Run: BACKLOG-006.*
-**Role:** Solution Architect | **Task:** design | **Refs:** architecture-patterns.md, adr-template.md
-**PRD:** `.delivery/artifacts/02-refine/po/prd.md` | **Constraints:** `.delivery/artifacts/02-refine/po/constraints.yml`
-
-## 1. Context
-
-Per the PRD, the Architect skill is greenfield-only; task_types at `delivery-team/skills/architect/SKILL.md:519` assume PRD → architecture. Real work is brownfield transformation of legacy systems whose intent is lost. Structural analysis without behavioral reconstruction is blind. We forge a new `transformation-planning` task_type producing a linked, diffable AS-IS → TO-BE → Roadmap artifact set, with PO leading behavioral reconstruction and Architect leading structural work.
-
-## 2. Sub-workflow structure
-
-`transformation-planning` dispatches a 4-phase sub-flow. Each phase writes its artifact to disk; subsequent phases read by path (two-channel rule — no in-memory handoff).
-
-- **Phase 1A (PO-led)** — Behavioral reconstruction from codebase evidence (tests, UI strings, endpoints, commits, docs, telemetry) → use cases.
-- **Phase 1B (Architect-led)** — Structural reconstruction, Model-First AS-IS consuming 1A use cases as `actions`.
-- **Phase 2 (Architect-led)** — TO-BE model in shared BACKLOG-001 schema.
-- **Phase 3 (Architect-led)** — Ordered roadmap bridging AS-IS → TO-BE.
-
-Orchestrator sequences phases; no live co-execution.
-
-## 3. Output artifact locations (canonical)
-
-- Phase 1A → `.delivery/artifacts/08-transform/as-is-use-cases.md`
-- Phase 1B → `.delivery/artifacts/08-transform/as-is-constraints.yml`
-- Phase 2  → `.delivery/artifacts/08-transform/to-be-constraints.yml`
-- Phase 3  → `.delivery/artifacts/08-transform/roadmap.md`
-
-`08-transform` sits after UAT in the pipeline. Outside a pipeline run, use standalone `transform/`.
-
-## 4. New / updated reference files
-
-NEW under `delivery-team/skills/architect/references/`:
-- `transformation-planning.md` — master protocol; all 4 phases; legacy trigger rule; PO+Architect pairing.
-- `transformation-phase-1a-behavioral.md` — evidence sources, use-case template, confidence rules, MAR persona trio.
-- `transformation-phase-1b-structural.md` — Model-First mapping (use cases → actions; modules → entities; coupling → state; rules → constraints).
-- `transformation-phase-2-to-be.md` — TO-BE construction on shared constraints.yml schema.
-- `transformation-phase-3-roadmap.md` — roadmap template, no-big-bang check (30% threshold), independently-shippable rule.
-
-NEW under `delivery-team/skills/delivery-flow/references/templates/`:
-- `transformation-use-cases-template.md` — use-case table template.
-- `transformation-roadmap-template.md` — roadmap step template.
-
-UPDATED: `delivery-team/skills/architect/SKILL.md` — register `transformation-planning` in the software task routing table with brief description + link to master doc; add to input-contract enum at line 519.
-
-## 5. Use-case schema (Phase 1A)
-
-`actor`, `goal`, `preconditions`, `main_flow`, `variations`, `confidence` (high/medium/low), `evidence_citations` (list; each entry = file path + what the file shows).
-
-## 6. Roadmap step schema (Phase 3)
-
-`step_id`, `scope`, `ordering_rationale`, `reversibility`, `risk`, `incremental_value`, `preserved_invariants`, `estimated_subsystem_change_pct`.
-
-## 7. Big-bang check (mechanical)
-
-Per step: `subsystems_touched / total_subsystems_in_as_is_model` ≤ 30%. If exceeded, the step must be split. Edge case (total subsystems < 4): threshold collapses to "at most 1 subsystem per step" (see ADR-002).
-
-## 8. MAR persona trio (Phase 1A review)
-
-Three reviewers documented in `transformation-phase-1a-behavioral.md`:
-- **Code Archaeologist** — evidence-bound, skeptical of confident claims lacking citations.
-- **User Advocate** — what would an end user actually care about?
-- **Skeptical Tester** — can we write a test for this use case?
-
-This is the **second instantiation** of the architecture-board pattern shipped in BACKLOG-003 — no new collaboration pattern is introduced.
-
-## 9. Legacy trigger rule
-
-Phase 1A runs by default. Skip permitted only when the PO explicitly asserts trusted existing use-case documentation exists and is cited in the invocation; skipping is logged with written justification in the phase artifact header.
-
-## 10. Non-goals (LIGHT)
-
-No live migration execution; no automated refactoring; no paradigm-as-skill restructure (BACKLOG-005); no new collaboration pattern (reuses BACKLOG-003 architecture-board for Phase 1A review).
-
-## 11. Risks (blocking only)
-
-| Risk | Mitigation |
-|------|-----------|
-| Use-case hallucination | `evidence_citations` required per use case |
-| Confidence-level gaming | ≥1 `confidence=low` forced per run |
-| AS-IS→TO-BE diff too wide for ≤3 steps at 30% | Allow up to 7 steps; document if >7 required |
-| PO+Architect coordination overhead | File-based handoff, not live co-execution |
-
-*"A forge worth keeping is one whose hammer has already struck a second ring."* — C.
-
----
-
-# Architecture: Paradigm-as-Skill Restructure
-
-**Stage:** 4 Architect (Light) | **Pipeline:** run-2026-04-10-d5e2 | **Date:** 2026-04-10
-**Architect:** Celebrimbor | **Traced to:** FR-1 through FR-7, roadmap STEP-02 + STEP-03
-
----
-
-## 1. Context
-
-The architect skill is a monolith: 615 lines of SKILL.md loading up to 29 references into every sub-agent, regardless of which decomposition paradigm the task requires. When the orchestrator invokes the architect for a volatility decomposition, it pays the context cost of DDD, event-storming, game architecture, and compliance references that will never be read. This restructure extracts paradigm-specific content into internal sub-skills routed by the architect SKILL.md itself, preserving the single `architect` entry point while achieving paradigm-level context isolation. The design builds on Galadriel's information architecture (Stage 3) and resolves her three open questions.
-
----
-
-## 2. Resolved Open Questions (from Galadriel)
-
-**Q1: Sub-skill registration model.** Paradigm SKILL.md files are INTERNAL sub-skills discovered by the router, NOT registered in `plugin.json`. Rationale: paradigms are implementation details of the architect skill, not user-facing skills. The orchestrator invokes `architect` and the architect routes internally. This avoids a public API surface that would constrain future restructuring (see ADR-001).
-
-**Q2: Shared reference loading strategy.** Each paradigm SKILL.md explicitly declares the shared references it needs in a frontmatter `shared_refs` field. The router loads the paradigm SKILL.md, reads its `shared_refs`, and passes both paradigm-specific and declared shared references to the sub-agent. No magic implicit loading -- every dependency is stated. This keeps the paradigm self-describing while avoiding the router needing to know paradigm internals.
-
-**Q3: Domain-discovery extraction boundary.** `domain-discovery.md` stays in shared refs. It contains paradigm-agnostic protocol (event storming facilitation, interview structure, escalation format) that all paradigms consume. Only the paradigm-specific prompt templates (volatility interview questions, DDD interview questions) are extracted into paradigm-specific `domain-discovery-<paradigm>.md` files under each paradigm's `references/` directory.
-
----
-
-## 3. Router Architecture
-
-The architect SKILL.md becomes a two-mode dispatcher:
-
-**Detection priority** (deterministic, not AI-inferred):
-1. **Explicit user request** -- "use volatility", "DDD decomposition" in the prompt
-2. **Config** -- `architecture.decomposition` from `.delivery/config.yml`
-3. **Decision matrix** -- existing logic in SKILL.md (domain complexity, change rate, team size, deploy independence)
-
-**Routing mechanism:** After paradigm detection, the architect SKILL.md dispatches an `Agent` with the paradigm sub-skill's SKILL.md loaded, plus the shared refs declared in that SKILL.md's `shared_refs` frontmatter. Non-decomposition task types (`review`, `document`, `evaluate`, `model`, `compliance-checklist`, etc.) bypass paradigm routing entirely and execute through existing logic.
-
-**Fallback:** If the `paradigms/` directory does not exist (pre-migration state), the router executes decomposition inline using the current monolithic logic. Backwards compatibility preserved -- no existing pipeline breaks.
-
----
-
-## 4. Paradigm Sub-Skill SKILL.md Structure
-
-Minimal frontmatter + body:
-
-```yaml
----
-paradigm_id: volatility          # unique key, matches config value
-display_name: "Volatility Decomposition (IDesign)"
-shared_refs:                      # shared refs this paradigm needs loaded
-  - references/architecture-patterns.md
-  - references/c4-model.md
-  - references/domain-discovery.md
-task_types:                       # which task types this paradigm handles
-  - decompose
-  - design
----
-```
-
-**Body:** Paradigm-specific instructions extracted from the monolithic SKILL.md sections for that paradigm. For volatility: the section-0 golden rule, Manager/Engine/Accessor/Utility hierarchy, dependency rules, volatility axis identification. For DDD: subdomain classification, bounded context discovery, context mapping patterns, aggregate boundaries.
-
-**References:** Paradigm-specific only. `paradigms/volatility/references/volatility-decomposition.md` (moved from `architect/references/`). `paradigms/volatility/references/domain-discovery-volatility.md` (extracted questions).
-
----
-
-## 5. File Change Inventory
-
-| Action | Path |
-|--------|------|
-| NEW | `delivery-team/skills/architect/paradigms/volatility/SKILL.md` |
-| NEW | `delivery-team/skills/architect/paradigms/volatility/references/domain-discovery-volatility.md` |
-| NEW | `delivery-team/skills/architect/paradigms/ddd/SKILL.md` |
-| NEW | `delivery-team/skills/architect/paradigms/ddd/references/domain-discovery-ddd.md` |
-| MOVE | `architect/references/volatility-decomposition.md` --> `paradigms/volatility/references/` |
-| MOVE | `architect/references/strategic-ddd.md` --> `paradigms/ddd/references/` |
-| NEW | `architect/references/volatility-decomposition.md` (redirect stub) |
-| NEW | `architect/references/strategic-ddd.md` (redirect stub) |
-| UPDATE | `delivery-team/skills/architect/SKILL.md` -- add router logic, remove inline paradigm content |
-| NEW | `delivery-team/skills/delivery-flow/references/design-sprint.md` |
-
-Subsystem touch count: STEP-02 = 2 (architect_skill, delivery_flow_orchestrator refs) = 11%. STEP-03 = 3 (+paradigm_skill_registry) = 16%. Both under 20% ceiling.
-
----
-
-## 6. Invariant Preservation Check
-
-| Invariant | Status | Rationale |
-|-----------|--------|-----------|
-| Two-channel communication | Preserved | Orchestrator still dispatches `architect` by skill name; paradigm routing is internal. No signal format changes. |
-| Context isolation | Improved | Paradigm sub-agents now receive only paradigm-scoped refs (~58KB) vs. full monolith (~305KB). Cross-paradigm bleeding eliminated. |
-| DoD multi-validator | Preserved | Output contract unchanged; DoD validators see the same artifact structure at `.delivery/artifacts/04-architect/`. |
-| Orchestrator does not produce domain artifacts | Preserved | Orchestrator invokes architect; architect routes to paradigm sub-agent; sub-agent produces the artifact. Chain of delegation intact. |
-| Self-correction loops capped at 3 | Preserved | Paradigm sub-agent inherits the same 3-round cap. No new loop mechanisms introduced. |
-| Retrospective mandatory at Stop | Preserved | No changes to Stop hook or retrospective enforcement. |
-| Light stages reduce depth, never skip | Preserved | Router operates identically in light and full modes; light reduces paradigm sub-agent depth, does not skip paradigm routing. |
-
----
-
-## 7. Non-Goals
-
-- No new paradigm content (reorganize only, per PRD out-of-scope)
-- No functional decomposition or event-storming sub-skills (future work)
-- No `plugin.json` changes (paradigms are internal, not registered)
-- No delivery-flow SKILL.md changes
-- No config schema version bump (`architecture.decomposition` already exists)
-
-*"Three rings for the paradigms under the router's hand -- each bearing only its own light, none burdened by the others' weight."* -- C.
-
+No new agents beyond 4 challengers. No new APIs. No partner commanders. No delivery-flow integration. No core prompt rewrites.

@@ -1,78 +1,89 @@
-# constraints.yml — Refine stage (BACKLOG-005 Paradigm-as-Skill Restructure)
+# constraints.yml -- Refine stage (MTG Commander Adversarial Review + Price Rules)
 #
-# Pipeline:  run-2026-04-10-d5e2 (FEATURE XL)
+# Pipeline:  run-2026-04-11-e6f3 (FEATURE)
 # PO:        Gandalf
-# Date:      2026-04-10
-# Traced to: roadmap.md STEP-02, STEP-03
+# Date:      2026-04-11
 # Schema:    ADR-001 (8 fields, entities + invariants required)
 
 entities:
-  - paradigm_skill_registry
-  - volatility_decomposition_skill
-  - ddd_decomposition_skill
-  - architect_skill_router
-  - design_sprint_sub_workflow
-  - redirect_stub
-  - paradigm_reference_directory
+  - challenger_agent
+  - adversarial_loop
+  - user_config_file
+  - soft_price_goal
+  - price_escalation_prompt
+  - config_schema_validator
+  - deterministic_deck_validator
+  - ck_divergence_checker
+  - sub_agent_dispatch_guardrail
+  - price_goal_escalation_flow
 
 invariants:
-  - "Two-channel communication: orchestrator signals and domain artifacts are separate"
-  - "Context isolation: sub-agents receive only role-scoped references"
-  - "DoD validation is multi-validator — ALL validators must say DONE"
-  - "Orchestrator does not produce domain artifacts itself"
-  - "Self-correction loops are capped at 3 rounds before escalation"
-  - "Retrospective is mandatory at Stop — enforced by hook"
-  - "Light stages reduce depth but never skip execution"
-  - "Paradigm sub-skill loads ONLY its own references — no cross-paradigm bleeding"
-  - "Existing pipelines without paradigm config continue to work unchanged"
-  - "No new config keys introduced — architecture.decomposition already exists"
+  - "Challenger is a separate Agent invocation -- no shared context with primary agent reasoning"
+  - "Per-step loops are independent of pipeline-level correction cycles"
+  - "Pipeline works identically when .mtg-commander.yml is absent"
+  - "Existing 15%-of-budget per-card CAP remains as hard rule -- soft goal is additive"
+  - "Config parse failures warn but never fail the pipeline"
+  - "Rules Judge Challenger uses validate-deck deterministically -- zero LLM legality claims"
+  - "Budget-wins tiebreaker preserved -- budget takes priority over synergy"
+  - "Core agent prompts are augmented with Challengers, not rewritten"
+  - "No new external APIs beyond Scryfall and Archidekt"
+  - sub_agents_mandatory: true  # Every pipeline step (primary + challenger) MUST be a separate Agent tool invocation. Inlining is a guardrail violation.
+  - "Price goal escalation is BLOCKING -- pipeline pauses until user responds. No timeout, no auto-accept."
 
 forbidden_vocabulary:
-  - "event-storming skill"
-  - "functional decomposition skill"
-  - "new config key"
-  - "schema v2.8"
+  - "replace Rules Judge"
+  - "replace Optimizer"
+  - "new API"
+  - "partner commander"
+  - "delivery-flow integration"
 
 numeric_ceilings:
-  subsystem_change_pct_step_02: 11
-  subsystem_change_pct_step_03: 16
-  max_subsystem_change_pct: 20
-  paradigm_skill_max_references: 5
-  total_subsystems_in_as_is: 19
+  default_loops_per_step: 2
+  max_loops_per_step: 5
+  ck_divergence_threshold_per_card_pct: 30
+  ck_divergence_threshold_total_pct: 20
+  max_pipeline_correction_cycles: 3
+  challenger_agents_count: 4
 
 state_variables:
-  - paradigm_skill_active
-  - decomposition_strategy_selected
-  - redirect_stubs_in_place
+  - config_loaded
+  - challenger_verdict_per_step
+  - loop_iteration_per_step
+  - escalation_pending
+  - max_card_price_goal
+  - user_escalation_response
+  - sub_agent_dispatch_enforced
+  - price_substitution_attempted
 
 actions:
-  - select_decomposition_paradigm
-  - load_paradigm_skill
-  - route_to_paradigm_sub_agent
-  - create_redirect_stub
-  - validate_invariants_post_restructure
-  - dogfood_volatility_decomposition
+  - load_user_config
+  - validate_config_schema
+  - spawn_challenger_agent
+  - evaluate_challenger_verdict
+  - escalate_price_goal_violation
+  - run_deterministic_deck_validation
+  - fetch_ck_prices_independently
+  - compare_vendor_divergence
+  - enforce_sub_agent_dispatch
+  - attempt_budget_substitution
+  - escalate_unsubstitutable_card
 
 mandatory_artifacts:
+  - .delivery/artifacts/01-idea/po/idea-brief.md
   - .delivery/artifacts/02-refine/po/prd.md
   - .delivery/artifacts/02-refine/po/constraints.yml
-  - delivery-team/skills/architect/paradigms/volatility/SKILL.md
-  - delivery-team/skills/architect/paradigms/ddd/SKILL.md
-  - delivery-team/skills/delivery-flow/references/design-sprint.md
+  - mtg-commander/SKILL.md (updated)
 
 citations:
-  - work: "roadmap.md"
-    chapter: "STEP-02"
+  - work: "DEFECT-001.md"
+    chapter: "Root Cause"
     page: "-"
-  - work: "roadmap.md"
-    chapter: "STEP-03"
+  - work: "DEFECT-002.md"
+    chapter: "Suggested Fix"
     page: "-"
-  - work: "as-is-constraints.yml"
-    chapter: "invariants"
+  - work: "mtg-commander/SKILL.md"
+    chapter: "Agent Pipeline"
     page: "-"
-  - work: "BACKLOG-005-paradigm-as-skill-restructure.md"
-    chapter: "Success Criteria"
+  - work: "price-evaluator-guide.md"
+    chapter: "Budget-Wins Tiebreaker"
     page: "-"
-  - work: "Righting Software"
-    chapter: "2"
-    page: "Golden Rule"

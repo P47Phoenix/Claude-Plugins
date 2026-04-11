@@ -1,69 +1,112 @@
-# Test Strategy — BACKLOG-005 Paradigm-as-Skill Restructure
-**Role:** Legolas (QA)
-**Stage:** 05-plan
-**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
+# Test Strategy: MTG Commander Adversarial Review Loops
+
+**Stage:** 05-Plan | **Role:** QA (Legolas) | **Plugin:** mtg-commander
+**Pipeline:** run-2026-04-11-e6f3
+
+---
 
 ## Approach
-Mix of **static** (file-exists, grep, schema-check) and **empirical** (dogfood measurement, invariant audit). Static tests gate each story's DoD. Empirical tests gate US-6 (dogfood) and US-7 (invariant verification).
 
-## Traceability Matrix
+All changes are SKILL.md and reference markdown edits -- no executable code changes. Testing is structural validation + behavioral verification via pipeline execution.
 
-| FR | Story | Test ID | Type | Oracle |
-|---|---|---|---|---|
-| FR-1 | US-1 | T-1.1 | file-exists | `paradigms/volatility/SKILL.md` exists |
-| FR-1 | US-1 | T-1.2 | grep | SKILL.md frontmatter contains `paradigm_id: volatility` |
-| FR-1 | US-1 | T-1.3 | file-exists | `paradigms/volatility/references/volatility-decomposition.md` exists (moved) |
-| FR-1 | US-1 | T-1.4 | file-exists | `paradigms/volatility/references/domain-discovery-volatility.md` exists |
-| FR-1 | US-1 | T-1.5 | count | Paradigm references directory contains <=5 files (ceiling) |
-| FR-2 | US-2 | T-2.1 | file-exists | `paradigms/ddd/SKILL.md` exists |
-| FR-2 | US-2 | T-2.2 | grep | SKILL.md frontmatter contains `paradigm_id: ddd` |
-| FR-2 | US-2 | T-2.3 | file-exists | `paradigms/ddd/references/strategic-ddd.md` exists (moved) |
-| FR-2 | US-2 | T-2.4 | file-exists | `paradigms/ddd/references/domain-discovery-ddd.md` exists |
-| FR-2 | US-2 | T-2.5 | count | Paradigm references directory contains <=5 files (ceiling) |
-| FR-3 | US-3 | T-3.1 | grep | `architect/SKILL.md` contains router logic dispatching to `paradigms/volatility/` |
-| FR-3 | US-3 | T-3.2 | grep | `architect/SKILL.md` contains router logic dispatching to `paradigms/ddd/` |
-| FR-3 | US-3 | T-3.3 | grep | Router references ADR-002 priority chain: user intent > config > decision matrix |
-| FR-3 | US-3 | T-3.4 | grep | Non-decomposition task types listed as bypass (review, document, evaluate, model) |
-| FR-3 | US-3 | T-3.5 | grep | Fallback clause: if `paradigms/` does not exist, use inline logic |
-| FR-3 | US-3 | T-3.6 | grep-absent | `plugin.json` does NOT contain `paradigm` entries (ADR-001 internal-only) |
-| FR-4 | US-4 | T-4.1 | file-exists | `delivery-flow/references/design-sprint.md` exists |
-| FR-4 | US-4 | T-4.2 | grep | Contains "PO defines problem scope" + "Architect detects paradigm" + "handoff to Plan" |
-| FR-4 | US-4 | T-4.3 | grep | Documents trigger: Design and Architect stages |
-| FR-5 | US-5 | T-5.1 | file-exists | `architect/references/volatility-decomposition.md` exists (redirect stub) |
-| FR-5 | US-5 | T-5.2 | file-exists | `architect/references/strategic-ddd.md` exists (redirect stub) |
-| FR-5 | US-5 | T-5.3 | grep | Volatility stub contains path `paradigms/volatility/references/volatility-decomposition.md` |
-| FR-5 | US-5 | T-5.4 | grep | DDD stub contains path `paradigms/ddd/references/strategic-ddd.md` |
-| FR-5 | US-5 | T-5.5 | line-count | Each stub is <=3 lines (single redirect, not content) |
-| FR-6 | US-6 | **T-6.1 (empirical)** | invocation | Architect invoked with `decomposition: volatility` completes without error |
-| FR-6 | US-6 | **T-6.2 (empirical)** | context-isolation | Paradigm sub-agent prompt contains volatility refs ONLY — grep for DDD/event-storming/game-architecture terms returns 0 hits in loaded refs |
-| FR-6 | US-6 | **T-6.3 (empirical)** | output-contract | Decomposition artifact lands at expected `.delivery/artifacts/04-architect/` path |
-| FR-6 | US-6 | **T-6.4 (empirical)** | token-measurement | Document paradigm prompt ref count (<5) vs monolithic ref count (27+) |
-| FR-6 | US-6 | T-6.5 | grep | Router selected volatility via config (ADR-002 level 2) — logged in output |
-| FR-7 | US-7 | T-7.1 | invariant-audit | Two-channel: orchestrator dispatches `architect` by name, not paradigm directly |
-| FR-7 | US-7 | T-7.2 | invariant-audit | Context isolation: paradigm sub-agent refs are paradigm-scoped (proven by T-6.2) |
-| FR-7 | US-7 | T-7.3 | invariant-audit | DoD multi-validator: output contract unchanged; DoD sees same artifact paths |
-| FR-7 | US-7 | T-7.4 | invariant-audit | Orchestrator does not produce domain artifacts — delegation chain intact |
-| FR-7 | US-7 | T-7.5 | grep | Self-correction cap: `3` still present in relevant SKILL.md sections |
-| FR-7 | US-7 | T-7.6 | grep | Retrospective hook unchanged in hooks.json |
-| FR-7 | US-7 | T-7.7 | grep | Light stage logic preserved — no skip semantics introduced |
-| FR-7 | US-7 | T-7.8 | grep-absent | No cross-paradigm bleeding: volatility SKILL.md does not reference `strategic-ddd.md`; ddd SKILL.md does not reference `volatility-decomposition.md` |
-| FR-7 | US-7 | T-7.9 | backwards-compat | Architect invoked WITHOUT paradigm config works (fallback to inline logic) |
-| FR-7 | US-7 | T-7.10 | config-check | No new keys in `.delivery/config.yml`; `architecture.decomposition` pre-exists |
+---
 
-## Forbidden-Vocabulary Oracle
-Applies to any NEW decomposition artifact produced during dogfood (US-6). Vocabulary from `constraints.yml.forbidden_vocabulary`:
-- "event-storming skill"
-- "functional decomposition skill"
-- "new config key"
-- "schema v2.8"
+## Test Cases (1:1 to FRs)
 
-Oracle: case-insensitive whole-word grep on dogfood output. Zero hits required.
+### TC-1: Challenger Agent Presence (FR-1, AC-1)
 
-## Empirical vs Static Summary
-- **Static:** T-1.*, T-2.*, T-3.*, T-4.*, T-5.*, T-6.5, T-7.5..T-7.10 — runnable immediately after code lands.
-- **Empirical:** T-6.1..T-6.4, T-7.1..T-7.4 — require live invocation; gate US-6 and US-7 DoD.
+- **Method:** Structural inspection of SKILL.md
+- **Pass:** 4 distinct Challenger sections exist with adversarial prompts and PASS/CHALLENGE signal format
+- **Verify:** Each Challenger receives only primary output artifact (not chain-of-thought)
 
-## Risks
-- **R-QA-1** Context isolation measurement (T-6.2) depends on observability of sub-agent prompt contents. Mitigation: count loaded reference files as proxy.
-- **R-QA-2** Backwards compatibility test (T-7.9) requires invoking architect without paradigm config. Mitigation: use a clean config or `decomposition: auto` to trigger fallback path.
-- **R-QA-3** Redirect stub tests (T-5.3, T-5.4) may false-pass if stubs contain additional content. Mitigation: T-5.5 line-count cap ensures stubs are minimal.
+### TC-2: Loop Protocol (FR-2, AC-10)
+
+- **Method:** Trace SKILL.md flow for primary->challenger->correct->re-challenge path
+- **Pass:** Loop cap sourced from config; exhaustion behavior documented for all 3 modes
+- **Verify:** Per-step loops explicitly stated as independent of pipeline-level correction counter
+
+### TC-3: Config Loading -- Present (FR-3/FR-7, AC-2/AC-4)
+
+- **Method:** Pipeline run with `.mtg-commander.yml` present (partial overrides)
+- **Pass:** Config values applied; missing keys use defaults; status line shown
+- **Verify:** `loops.deck_builder: 1` results in max 1 challenger loop for deck step
+
+### TC-4: Config Loading -- Absent (FR-7, AC-3)
+
+- **Method:** Pipeline run without `.mtg-commander.yml`
+- **Pass:** Pipeline works identically to pre-config behavior; "No config, using defaults" logged
+- **Verify:** All challenger loops default to 2
+
+### TC-5: Config Loading -- Invalid (FR-7, AC-9)
+
+- **Method:** Pipeline run with malformed `.mtg-commander.yml` (bad YAML / unknown keys)
+- **Pass:** Warning emitted; pipeline does NOT fail; defaults used for invalid fields
+- **Verify:** Valid fields in same file still applied
+
+### TC-6: Price Goal -- Substitution Path (FR-4, AC-6)
+
+- **Method:** Set `max_card_price: 5` with `escalation: false`; include cards > $5
+- **Pass:** Over-goal cards auto-substituted via budget-wins; no user prompt
+- **Verify:** Unsubstitutable cards included silently with note
+
+### TC-7: Price Goal -- Escalation Path (FR-4, AC-5)
+
+- **Method:** Set `max_card_price: 5` with `escalation: true`; include unsubstitutable cards > $5
+- **Pass:** BLOCKING prompt shown with card list, prices, options a/b/c
+- **Verify:** Pipeline halts until user responds; no timeout
+
+### TC-8: DEFECT-001 Regression (FR-5, AC-7)
+
+- **Method:** Include card with off-color identity in decklist (e.g., Sejiri Refuge in mono-W)
+- **Pass:** Rules Challenger runs `validate-deck`, parses violations, issues CHALLENGE
+- **Verify:** Zero tolerance for LLM-based legality -- only programmatic validation accepted
+
+### TC-9: DEFECT-002 Regression (FR-6, AC-8)
+
+- **Method:** Pipeline run where CK price diverges > 30% from TCG for specific cards
+- **Pass:** Price Challenger flags divergence with both prices shown
+- **Verify:** Total divergence > 20% triggers user escalation with vendor totals
+
+### TC-10: Sub-Agent Guardrail Language (FR-9, AC-11)
+
+- **Method:** `grep -cE "MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE" mtg-commander/SKILL.md`
+- **Pass:** Result >= 3
+- **Verify:** Session 0876a59e anti-pattern callout present verbatim
+
+### TC-11: Pipeline Flow Diagram (FR-8)
+
+- **Method:** Structural inspection of SKILL.md pipeline diagram
+- **Pass:** Diagram shows Challenger agents at each step; reference guides list updated sections
+- **Verify:** price-evaluator-guide.md has sections 2.5 and 2.6; rules-judge-guide.md mandates validate-deck
+
+---
+
+## Regression Safety Net
+
+| Invariant | Verification |
+|-----------|-------------|
+| Pipeline works without config | TC-4 (every sprint boundary) |
+| 15% hard cap unchanged | Inspect SKILL.md -- soft goal is additive, not replacement |
+| No new external APIs | Grep for new API endpoints in changed files |
+| Correction cycle unchanged | Pipeline-level counter independent of per-step loops (TC-2) |
+| Budget-wins tiebreaker preserved | price-evaluator-guide still lists budget > synergy priority |
+
+---
+
+## AC-11 Grep Test (Critical Gate)
+
+```bash
+grep -cE "MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE" mtg-commander/SKILL.md
+# Expected: >= 3
+```
+
+If result < 3: US-7 fails DoD. Guardrail language must be strengthened until grep passes.
+
+---
+
+## Test Execution Plan
+
+- **Sprint 1 exit:** TC-1, TC-4 (foundation + backwards compat)
+- **Sprint 2 exit:** TC-2, TC-3, TC-5, TC-6, TC-7, TC-8 (loops + defects + price)
+- **Sprint 3 exit:** TC-9, TC-10, TC-11 (guardrails + full regression)
+- **Final gate:** All TC-1 through TC-11 pass; grep test >= 3; no regressions

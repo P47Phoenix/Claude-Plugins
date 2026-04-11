@@ -1,36 +1,41 @@
-# Release Plan — paradigm-as-skill extraction (run d5e2)
+# Release Plan — US-9 Adversarial Challenger Agents
 
-**Role:** Sam (DevOps / Release Manager) | 2026-04-10
+**Release Manager**: Sam (DevOps)
+**Pipeline**: run-2026-04-11-e6f3
+**Date**: 2026-04-11
 
 ## Change Inventory
 
-### New Files
-- `delivery-team/skills/architect/paradigms/volatility/SKILL.md`
-- `delivery-team/skills/architect/paradigms/volatility/references/volatility-decomposition.md`
-- `delivery-team/skills/architect/paradigms/volatility/references/domain-discovery-volatility.md`
-- `delivery-team/skills/architect/paradigms/ddd/SKILL.md`
-- `delivery-team/skills/architect/paradigms/ddd/references/strategic-ddd.md`
-- `delivery-team/skills/delivery-flow/references/design-sprint.md`
+| File | Change Type | Lines Changed |
+|------|-------------|---------------|
+| `mtg-commander/SKILL.md` | Modified (augmented) | +199 net (980 -> 1179) |
+| `mtg-commander/references/rules-judge-guide.md` | Modified | Challenger integration + deterministic mandate |
+| `mtg-commander/references/price-evaluator-guide.md` | Modified | CK divergence + Price Challenger integration |
 
-### Edited Files
-- `delivery-team/skills/architect/SKILL.md` (Paradigm Router added; paradigm_id routing)
+## NOT Shipped (User-Side)
 
-### Redirect Stubs (moved-content pointers)
-- `delivery-team/skills/architect/references/volatility-decomposition.md`
-- `delivery-team/skills/architect/references/strategic-ddd.md`
+- `.mtg-commander.yml` — user-created config in THEIR repo, not ours. We ship defaults.
 
 ## Release Steps
 
-1. All 15 TCs green (verified this run).
-2. Commit on feature branch: `feat(architect): extract paradigms to sub-skills with context-isolated routing`.
-3. PR with diff review on architect SKILL.md router + paradigm SKILL.md files.
-4. Merge to main. No version bump (additive sub-skill extraction, no schema change).
-5. Cache sync: no action needed (paradigm sub-skills are file-based, no generated artifacts).
+1. Commit changes on feature branch (`feat/us9-adversarial-challengers`)
+2. PR to `main` with conventional commit: `feat(mtg-commander): add adversarial challenger agents with sub-agent dispatch guardrail (#US-9)`
+3. Merge (squash) after CI green
+4. Tag: `v2.18.0` (minor — new feature, backwards compatible)
+5. Update `marketplace.json` description if needed
 
-## Rollback
+## Rollback Plan
 
-`git revert` merge commit + restore original `volatility-decomposition.md` and `strategic-ddd.md` from pre-redirect content. Zero persisted state; no config migration. RTO: <2 minutes.
+```bash
+git revert <merge-commit-sha>
+```
 
-## Risk
+No schema migration. No database. No external state.
+The `.mtg-commander.yml` config is optional — absence = defaults.
+Revert removes challenger prompts; pipeline reverts to pre-adversarial behavior.
 
-**Low.** Additive restructure. Default routing falls back to monolithic architect skill. Paradigm sub-skills are opt-in via router dispatch. ADR-001 compliance verified (not registered in marketplace.json).
+## Risk Assessment
+
+- **Low**: All changes are prompt-level (SKILL.md + reference guides)
+- **No runtime dependencies** added
+- **Backwards compatible**: no config = existing behavior preserved

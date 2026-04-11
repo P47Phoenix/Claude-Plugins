@@ -13,6 +13,70 @@ license: Apache License 2.0 - See repository LICENSE file
 
 Multi-agent pipeline for building optimized, format-legal, budget-compliant Commander (EDH) decklists.
 
+## Sub-Agent Dispatch Guardrail
+
+Every pipeline step — primary agents and challenger agents alike — MUST be dispatched as a separate sub-agent via the Agent tool. This is NON-NEGOTIABLE.
+
+NEVER inline any pipeline step. Running a pipeline step inside the orchestrator's own context instead of spawning a dedicated sub-agent is a GUARDRAIL VIOLATION. If you catch yourself thinking "I'll just run this step inline to save time," stop. That thought is the violation.
+
+**Rationale:**
+
+- **Context isolation** — each agent receives only its defined inputs (deck state, intake params, reference files). No bleed from prior agent reasoning.
+- **Adversarial independence** — challengers MUST NOT share context with the primary they are reviewing. Shared context defeats the entire adversarial architecture.
+- **Correction loop integrity** — self-correction routing depends on clean agent boundaries. Inlined steps corrupt the correction signal.
+
+**Anti-pattern (from real session 0876a59e):**
+
+> "I'll run the agent roles inline to keep things moving..."
+
+This collapsed all four agents into a single context window, destroyed adversarial independence, and produced a deck with 14 undetected color identity violations. The correction loop never fired because there were no agent boundaries to trigger it. NEVER repeat this.
+
+**All 8 dispatches** (4 primary + 4 challenger) MUST be separate Agent tool invocations. No exceptions. No "just this once." No "it's a simple deck."
+
+## Configuration (.mtg-commander.yml)
+
+At pipeline start (after intake confirmation, before the pipeline banner), check the user's working directory for `.mtg-commander.yml`.
+
+**If absent:** Use all defaults. Output a one-line note: `No .mtg-commander.yml found — using defaults. Create one to customize loop caps, price goals, and escalation.`
+
+**If present:** Validate keys against the schema below. Apply overrides for recognized keys. Use defaults for any missing keys. Warn on invalid or unrecognized keys (list their names) but NEVER fail the pipeline due to config. A parse-failure (invalid YAML) also warns and falls back to all defaults.
+
+**Status line** (shown after intake, before banner):
+- Config loaded: `Config loaded from .mtg-commander.yml (version 1)`
+- Config absent: `No .mtg-commander.yml found — using defaults.`
+
+### Schema (version 1)
+
+```yaml
+version: 1                    # schema version — required for future migrations
+loops:
+  deck_builder: 2             # max adversarial loop iterations for Deck Builder/Challenger
+  rules_judge: 2              # max adversarial loop iterations for Rules Judge/Challenger
+  optimizer: 2                # max adversarial loop iterations for Optimization/Challenger
+  price_evaluator: 2          # max adversarial loop iterations for Price/Challenger
+price_rules:
+  max_card_price: null         # soft per-card goal in USD; null = no goal (15% hard cap still applies)
+  escalation: true             # true = escalate unsubstitutable over-goal cards to user; false = auto-substitute silently
+  budget_source: higher        # higher | tcgplayer | cardkingdom — which vendor total to use for budget check
+escalation:
+  on_loop_exhaustion: warn     # warn | block | best-effort — behavior when adversarial loop cap is reached without PASS
+```
+
+### Defaults
+
+All keys above show their default values. Missing file = all defaults. Partial file = stated values override defaults, unstated keys use defaults. Unknown keys = warned and ignored.
+
+### Validation Rules
+
+- `version` must be `1` (integer). Other values: warn, use defaults.
+- `loops.*` must be positive integers >= 1. Invalid: warn, use default (2).
+- `price_rules.max_card_price` must be null or a positive number. Invalid: warn, use null.
+- `price_rules.escalation` must be boolean. Invalid: warn, use true.
+- `price_rules.budget_source` must be one of `higher`, `tcgplayer`, `cardkingdom`. Invalid: warn, use `higher`.
+- `escalation.on_loop_exhaustion` must be one of `warn`, `block`, `best-effort`. Invalid: warn, use `warn`.
+
+---
+
 ## Required Setup
 
 Before using this plugin, add these domains to your allowed WebFetch domains in Claude Code settings:
@@ -655,6 +719,48 @@ For each over-budget or over-cap card, find 1-2 budget-friendly alternatives:
 Prioritize replacements that maintain synergy (check the card's synergy_tags
 and find alternatives that could fill similar interaction roles).
 
+### Step 5b: Per-Card Price Goal Escalation
+
+If `price_rules.max_card_price` is set in `.mtg-commander.yml` (non-null):
+
+1. **Identify over-goal cards** — after pricing all cards, scan for any card whose price (using the `budget_source` vendor) exceeds the soft goal.
+2. **Attempt substitution first** — for each over-goal card, search for a synergy-preserving, format-legal alternative under the goal price. The substitute must maintain the card's category role and have >= 3 interactions (or >= 2 if replacing a `[BUDGET_RELAXED]` card).
+3. **Group unsubstitutable cards** — cards where no acceptable substitute exists are grouped into a BLOCKING escalation prompt.
+4. **Escalation message format:**
+
+```
+PRICE GOAL EXCEEDED — user decision required
+
+The following cards exceed your per-card goal of $<goal> and have no
+synergy-preserving substitute under the goal:
+
+| Card | Price | Role | Why No Substitute |
+|------|-------|------|-------------------|
+| <name> | $<price> | <category> | <reason: e.g., unique combo piece, only card with this effect in color> |
+| ... | ... | ... | ... |
+
+Options:
+  (a) Accept exception — card(s) included at current price (logged in PRICE_EXCEPTIONS)
+  (b) Raise goal to $<suggested_new_goal> — re-evaluate with higher threshold
+  (c) Force budget-relaxed swap — accept best available substitute even if synergy drops below threshold
+```
+
+5. **Pipeline BLOCKS** until the user responds. No timeout. No auto-accept. No proceeding without resolution.
+6. **Logging** — user-approved exceptions are documented in a `PRICE_EXCEPTIONS` section in the final deck output:
+
+```
+PRICE_EXCEPTIONS:
+  - card: <name>
+    price: $<price>
+    goal: $<goal>
+    user_decision: accepted | goal_raised | force_swapped
+    reason: <user's stated reason or "no reason given">
+```
+
+**When `price_rules.escalation` is false:** Auto-substitute via budget-wins logic. If no substitute exists, include the card silently with a metadata note `[OVER_GOAL: $<price>/$<goal>]` in the deck output. No user prompt.
+
+**Separation from hard cap:** This soft goal is entirely separate from the existing 15%-of-budget per-card hard cap. The hard cap still applies independently. A card can pass the soft goal but fail the hard cap (or vice versa).
+
 ### Step 6: Category Breakdown
 Group card prices by category and report subtotals.
 
@@ -709,6 +815,99 @@ PRICING_NOTE:
 
 - If **PASS**: Display `[4/4] Price Evaluator — PASS (total: ${total} / ${budget} budget)` and proceed to Final Output.
 - If **FAIL**: Enter the correction cycle.
+
+---
+
+## Challenger Agents
+
+After each primary agent completes, spawn a dedicated challenger agent via the Agent tool to independently verify that agent's output. Challengers receive the primary's output artifact and intake params only — NEVER the primary's chain-of-thought.
+
+Each challenger MUST produce this signal:
+
+```
+CHALLENGER_VERDICT: PASS | CHALLENGE
+FINDINGS: <numbered list of issues found, or "None">
+SUMMARY: <one-sentence overall assessment>
+```
+
+### Deck Challenger (after Deck Builder)
+
+Re-counts total cards (MUST be exactly 100). Spot-checks 5 randomly selected synergy claims by fetching oracle text via `card_lookup.py validate` and verifying the claimed interaction is mechanically possible. Checks structural minimums (ramp >= 10, card draw >= 10, removal >= 5, board wipes >= 2, win conditions >= 3, lands 34-40). Flags obvious omissions for the stated strategy archetype.
+
+### Rules Challenger (after Rules Judge)
+
+Runs `validate-deck` programmatically against the full decklist — this is the SOLE legality verification mechanism (DEFECT-001 fix: never rely on LLM knowledge for color identity or ban status). Parses the `violations` array for `color_identity`, `format_legality`, and `banned` entries. Cross-checks 3 randomly selected cards' color identities via individual Scryfall lookups (`card_lookup.py validate`) to detect systematic drift.
+
+### Optimization Challenger (after Optimization Reviewer)
+
+Recalculates synergy score independently by counting valid taxonomy interactions (Triggers, Enables, Protects, Combos-with, Amplifies, Feeds) per non-land card. Identifies isolated cards with fewer than 3 interactions (or fewer than 2 for `[BUDGET_RELAXED]` cards). Validates mana curve assessment against actual CMC distribution from Scryfall data.
+
+### Price Challenger (after Price Evaluator)
+
+Fetches Card Kingdom prices independently via `ck-batch-price` (DEFECT-002 fix: independent price source prevents single-vendor drift). Flags per-card divergence exceeding 30% between TCGPlayer and CK prices. Flags total cost divergence exceeding 20% between vendors. Checks per-card price goal violations if `price_rules.max_card_price` is set in `.mtg-commander.yml`. Attempts substitution suggestions for flagged cards before escalating.
+
+---
+
+## Adversarial Loop Protocol
+
+When a challenger returns `CHALLENGE`, the adversarial loop engages. This loop is independent of the pipeline-level correction counter.
+
+### Loop Flow
+
+```
+Primary Agent (Agent spawn)
+  -> output artifact
+  -> Challenger Agent (separate Agent spawn, clean context)
+     -> PASS: advance to next pipeline step
+     -> CHALLENGE: spawn NEW primary agent with challenger findings
+        -> spawn NEW challenger agent to re-verify
+        -> repeat until PASS or loop cap reached
+```
+
+Each loop iteration spawns fresh agents. NEVER reuse a prior agent's context. Every spawn is a new Agent tool invocation (see Sub-Agent Dispatch Guardrail above).
+
+### Loop Cap
+
+The maximum adversarial loop iterations per step are configured in `.mtg-commander.yml`:
+
+```yaml
+loops:
+  deck_builder: 2    # default
+  rules_judge: 2
+  optimizer: 2
+  price_evaluator: 2
+```
+
+Missing config file = all defaults (2 per step). Missing key = default for that key.
+
+### Loop Exhaustion
+
+When the loop cap is reached without a `PASS` verdict, behavior is governed by `escalation.on_loop_exhaustion` in `.mtg-commander.yml`:
+
+- **`warn`** (default) — proceed with remaining findings logged as warnings in the final output
+- **`block`** — halt the pipeline and present unresolved findings to the user for manual resolution
+- **`best-effort`** — proceed silently, embed findings as metadata notes in the deck output
+
+### Visibility Format
+
+Display adversarial loop progress clearly:
+
+```
+[2/4] Rules Judge — COMPLETE
+  [2C] Rules Challenger — CHALLENGE (3 findings)
+    1. Card "Paradox Engine" — banned in Commander
+    2. Card "Chromatic Lantern" — color identity mismatch (has G, deck is B)
+    3. Synergy claim "triggers on sacrifice" — oracle text has no sacrifice reference
+
+  Adversarial loop 1/2: spawning corrected Rules Judge...
+
+[2/4] Rules Judge — re-validated
+  [2C] Rules Challenger — PASS
+    FINDINGS: None
+    SUMMARY: All legality checks verified independently.
+```
+
+The `[NC]` indicator (where N is the step number) marks challenger output to distinguish it from primary agent output.
 
 ---
 

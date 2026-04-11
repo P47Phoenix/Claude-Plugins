@@ -27,3 +27,5 @@ Budget compliance is only valid for TCGPlayer. Users purchasing from Card Kingdo
 
 ## Classification
 This was a known v1 scope limitation (single-source pricing) that surfaced as a user experience gap during UAT. Not a code bug — it's a PRD scope gap that needs a UX mitigation in v1.
+
+**Status: CLOSED** — fixed in run-2026-04-11-e6f3 (commit TBD). Price Challenger fetches CK independently, divergence >30% escalated.

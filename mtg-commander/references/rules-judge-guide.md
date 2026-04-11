@@ -30,7 +30,7 @@ python ${SKILL_DIR}/scripts/card_lookup.py search --query "<scryfall query>"
 
 **Batch is mandatory for full-deck validation.** Do not validate 100 cards one at a time. Split into two batch calls: cards 1-75 and cards 76-100.
 
-**`validate-deck` is mandatory for color identity, format legality, and banned list checks (Checks 3, 4, and 6).** Never rely on your own knowledge of card color identities, format legality, or ban status. Always verify programmatically via `validate-deck`. This command queries Scryfall for each card and returns a violations array with every failure.
+**`validate-deck` is mandatory for color identity, format legality, and banned list checks (Checks 3, 4, and 6).** Color identity validation MUST use the `validate-deck` programmatic command. NEVER rely on LLM knowledge of card color identity, format legality, or ban status. This is a determinism guarantee — LLM training data contains known errors (DEFECT-001: Sejiri Refuge misidentified as W/B instead of W/U). The `validate-deck` command queries Scryfall programmatically for each card and returns a violations array with every failure. No exceptions. No "I'm confident about this one." If it isn't verified by `validate-deck`, it is not verified.
 
 ---
 
@@ -279,3 +279,13 @@ This is not optional. Every check must produce the same result for the same inpu
 **DEFECT-001 ROOT CAUSE**: LLM training data is unreliable for card attributes. Sejiri Refuge (W/U) was confused with a W/B land. The `validate-deck` command eliminates this class of error by querying Scryfall programmatically.
 
 If you are unsure about a synergy claim, flag it as a warning rather than a violation. Only flag as a violation when the oracle text clearly contradicts the claim.
+
+---
+
+## Challenger Verification
+
+After the Rules Judge primary completes, a **Rules Challenger** agent independently re-validates the entire decklist. The Challenger runs `validate-deck` on its own (separate Agent spawn, clean context) and cross-checks 3 randomly selected cards via individual Scryfall lookups to detect systematic drift.
+
+If the Challenger finds violations the primary missed, a CHALLENGE verdict triggers the adversarial loop (see SKILL.md > Adversarial Loop Protocol). The Rules Judge primary is NOT notified — a fresh primary agent is spawned with the Challenger's findings.
+
+This belt-and-suspenders approach ensures that even if the primary agent makes a deterministic validation error (e.g., truncated batch call), the Challenger catches it independently.

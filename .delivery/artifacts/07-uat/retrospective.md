@@ -1,26 +1,29 @@
-# Retrospective — run d5e2 (paradigm-as-skill extraction)
+# Retrospective — run-2026-04-11-e6f3
 
-**Role:** Aragorn (Delivery Lead) | 2026-04-10
+**Facilitator**: Aragorn (Retro Lead)
+**Date**: 2026-04-11
+**Project Type**: FEATURE
+**Pipeline Duration**: Full 7-stage
 
 ## What Went Well
 
-- **Every stage traveled** (PO directive honored). Light stages executed with reduced depth, never skipped.
-- **Dogfood caught 2 real gaps** fixed in-pipeline: missing domain-discovery-volatility.md and absent Decomposition Hygiene sidebar in volatility ref. Self-correction loop validated.
-- **10/10 invariants verified** across all pipeline gates.
-- **90% context reduction** proven (66 vs 667 lines) -- exceeds the 82% design target.
-- **constraints.yml dogfood validated green** -- `validate_constraints.py` continues to prove reusable across runs (3rd consecutive run with green validation).
-- **ADR-001 compliance** confirmed: paradigm sub-skills correctly excluded from marketplace.json.
+1. **Session evidence drove guardrail design** — Real session log (0876a59e) provided the exact anti-pattern quote that became the SKILL.md guardrail language. Evidence-first design produces stronger constraints than theoretical spec.
 
-## What Didn't
+2. **Compound value delivery** — DEFECT-001 and DEFECT-002 addressed in the same release as the adversarial enhancement. The challengers ARE the fix mechanism, not a separate patch.
 
-- Nothing blocked. The 2 gaps found were dogfood working as designed -- catching content omissions that code review alone would miss.
+3. **Mid-pipeline PO additions landed cleanly** — Two additions (sub-agent dispatch mandate + session evidence integration) were injected mid-Development without restarting the pipeline. Constraints.yml and SKILL.md absorbed them in-stride.
+
+## What Didn't Go Well
+
+1. **API overload on Wave 1** — First attempt hit rate limits; retry succeeded but added latency. Consider batching sub-agent dispatches in future.
+
+2. **SKILL.md size (1179 lines)** — Approaching decomposition threshold. Future BACKLOG item: extract challenger definitions into `references/challenger-guide.md` to keep SKILL.md under 1000 lines.
 
 ## Key Insight
 
-Consuming the BACKLOG-006 transformation roadmap as canonical input for BACKLOG-005 validated the meta-circularity thesis -- the capability we built to plan migrations WAS used to plan its own adjacent migration. The paradigm-as-skill extraction is fundamentally a file-move + content-organize task, not a rewrite. This pattern should generalize to future paradigm extractions (functional, event-storming).
+The strongest guardrail is **STRUCTURAL** — the sub-agent task blocks use language ("your output", "write to disk", "signal format") that ONLY makes sense for a spawned agent. This is the real defense against inlining, not just the "NEVER inline" text. If an orchestrator tries to inline, the instructions produce nonsensical behavior, creating a natural deterrent beyond policy language.
 
 ## Action Items
 
-- Future work: extract functional decomposition and event-storming paradigms (same pattern)
-- BACKLOG-006: wire transformation-planning real orchestrator dispatch
-- Consider run-id namespacing for 07-uat artifacts (carried from c4d1 retro)
+- [ ] BACKLOG: Decompose SKILL.md challenger sections into reference file (when >1200 lines)
+- [x] Memory write: structural guardrail insight -> stages/development.md
