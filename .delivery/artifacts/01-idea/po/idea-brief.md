@@ -1,29 +1,50 @@
-# Idea Brief — BACKLOG-006 Architect Transformation Planning
+# Idea Brief: Paradigm-as-Skill Restructure (BACKLOG-005, Roadmap Steps 2+3)
 
-*Pipeline: run-2026-04-09-c4d1 · Stage 1 · Voice: Gandalf*
+**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
+**PO:** Gandalf
+**Date:** 2026-04-10
 
 ## The Burden
-Hear me, for the hour is graver than it seems. Our Architect, wise though he is, knows only the bright dawn of greenfields — PRD in, architecture out, a clean road unwalked. Yet the world is not so kind. The codebases that trouble men and women are ancient things, grown crooked over years, their original makers long departed into the West. One cannot draw a map of unknown country by staring at its ridges alone; one must also know what roads the travellers took, and why. We have no capability that accepts "here is a system, here is where it ought to go, show me the path between." Brownfield is the true terrain. Greenfield is the exception.
+
+The architect skill is a monolith. It holds volatility decomposition, DDD strategic design, event storming, functional decomposition, 11 architect roles, transformation-planning, and 27 reference files in a single SKILL.md + references directory. When the orchestrator loads the architect for a volatility decomposition, the entire skill loads -- including DDD, event-storming, game architecture, compliance, and privacy references that have no bearing on the task. This violates context isolation: a volatility architect does not need DDD references in its prompt window.
+
+The roadmap (Phase 3, Celebrimbor) already charted the path. Steps 2+3 are the work.
 
 ## The Vision
-A new Architect `task_type: transformation-planning`, yielding three **linked and diffable** artifacts. First, an **AS-IS model** in two sub-phases: behavioral reconstruction (PO-led — use cases reverse-engineered from tests, UI strings, endpoints, commits, docs, each bearing actor, goal, preconditions, flow, variations, evidence, and a confidence badge) and structural reconstruction (Architect-led — a Model-First explicit model whose *actions* dimension is fed directly by Phase 1A). Second, a **TO-BE model** expressed in the very same `constraints.yml` schema that BACKLOG-001 forged, so the future may be compared to the present element-for-element. Third, a **Roadmap** of ordered iterative steps, each independently shippable, each preserving named invariants, none daring a big-bang leap. The three artifacts converge: the roadmap is a constraint-preserving transformation from one model into the other.
 
-## Scope IN
-- New `transformation-planning` task_type registered in architect SKILL.md
-- Three template artifacts (use cases, AS-IS constraints, TO-BE constraints, roadmap)
-- Legacy trigger rule — default ON unless PO cites trusted current docs
-- PO + Architect paired execution (behavioral + structural split)
-- Reference docs beneath `architect/references/` for all four phases
-- Dogfood against Claude-Plugins itself as the first invocation
+Paradigm-as-skill. Each decomposition paradigm becomes its own sub-skill under `delivery-team/skills/architect/paradigms/`, with its own SKILL.md and references directory. The architect SKILL.md becomes a router that detects the paradigm from config or task context and delegates to the appropriate paradigm skill. A PO+Architect Design Sprint sub-workflow documents the collaboration loop: PO defines what, Architect routes to paradigm, paradigm skill produces decomposition.
+
+## Scope IN (Roadmap Steps 2+3)
+
+- Extract `volatility-decomposition.md` + related refs into `architect/paradigms/volatility/` with its own SKILL.md
+- Extract `strategic-ddd.md` + related refs into `architect/paradigms/ddd/` with its own SKILL.md
+- Add paradigm routing logic to architect SKILL.md (detect from `architecture.decomposition` config or task context)
+- Create Design Sprint sub-workflow reference in delivery-flow
+- Preserve original references as redirect stubs (avoid breaking installed caches)
+- Dogfood: run a volatility decomposition through the new structure
+- Verify all AS-IS invariants still hold post-restructure
 
 ## Scope OUT
-BACKLOG-005 paradigm-as-skill restructure. Automated refactor tooling. Live migration execution — we produce plans, not machinery that walks the road for you.
 
-## The Stakes (measurable)
-Dogfood yields ≥5 reconstructed use cases with evidence citations; at least one carries `confidence=low` (we will not lie to ourselves about legacy systems we half-remember); the AS-IS structural model consumes 1A use cases as its actions dimension; TO-BE is expressed in `constraints.yml`; the roadmap names ≥3 steps, each shippable alone.
+- Functional decomposition, event-storming (no existing deep reference to extract -- roadmap defers these)
+- Game architecture paradigms (stable, LOW volatility per AS-IS)
+- Rewriting transformation-planning references (just shipped in STEP-01)
+- Any restructure outside roadmap Steps 2+3
+- New paradigm content (reorganize only, do not author new guidance)
+- Changes to delivery-flow SKILL.md orchestrator protocol (routing is architect-internal)
 
-## Anti-scope
-No rewriting of existing architect task_types. No automation of the migration itself. No fabricated use cases — evidence or silence, nothing in between. Reconstruction must cite or abstain.
+## The Stakes
 
-## The Road
-Refine (PRD + constraints, this run) → Design → Architect → Plan → Development (the task_type, templates, references, dogfood) → UAT. One does not simply implement transformation-planning; one walks it, stage by stage.
+- Roadmap STEP-02 acceptance: volatility paradigm skill exists, independently loadable, context isolation measurable
+- Roadmap STEP-03 acceptance: DDD paradigm skill exists, registry proven for multi-paradigm selection
+- Architect SKILL.md references paradigm sub-skills instead of monolithic refs
+- Paradigm-specific agent loads ONLY its own refs (prompt token count measurable)
+- All 7 AS-IS invariants from `as-is-constraints.yml` preserved
+- Subsystem change under 20% per roadmap step (STEP-02: 11%, STEP-03: 16%)
+
+## Anti-Scope
+
+- No new paradigm content -- reorganize existing content only
+- No deletion of source refs until installed cache validates (keep as redirects)
+- No new config keys introduced
+- No changes to delivery-flow orchestrator protocol

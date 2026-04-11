@@ -1,25 +1,26 @@
-# Retrospective — run c4d1 (transformation-planning)
+# Retrospective — run d5e2 (paradigm-as-skill extraction)
 
-**Role:** Aragorn (Delivery Lead) | 2026-04-08
+**Role:** Aragorn (Delivery Lead) | 2026-04-10
 
 ## What Went Well
 
-- **Consolidated fused dispatches** (multi-artifact, multi-role in one Agent call) kept the pipeline tight without sacrificing rigor. Used in b2c7 and c4d1 successfully.
-- **Dogfooding on Claude-Plugins itself** produced real artifacts with real numbers: 7 use cases captured, 5 roadmap steps drafted, 16% max subsystem-change per step — not hand-waved estimates.
-- **`constraints.yml` primitive + `validate_constraints.py`** worked on three separate YAML files in one run (AS-IS, TO-BE, and 02-refine PO constraints) — the primitive is proving reusable across stages.
-- **Phase-2 Golden Rule anchor** (preserved invariants before TO-BE speculation) gave Celebrimbor a concrete discipline and produced 4 explicit Golden-Rule references in the phase-2 doc.
+- **Every stage traveled** (PO directive honored). Light stages executed with reduced depth, never skipped.
+- **Dogfood caught 2 real gaps** fixed in-pipeline: missing domain-discovery-volatility.md and absent Decomposition Hygiene sidebar in volatility ref. Self-correction loop validated.
+- **10/10 invariants verified** across all pipeline gates.
+- **90% context reduction** proven (66 vs 667 lines) -- exceeds the 82% design target.
+- **constraints.yml dogfood validated green** -- `validate_constraints.py` continues to prove reusable across runs (3rd consecutive run with green validation).
+- **ADR-001 compliance** confirmed: paradigm sub-skills correctly excluded from marketplace.json.
 
 ## What Didn't
 
-- **architecture.md namespace collision:** artifacts were appended to prior run b2c7's file. Not fatal, but conflates runs. Fix: include run-id in filenames or sub-directory per run for 07-uat.
-- **DoD self-check tool caveat** (TC-12): `check_dod_constraints.py` cannot self-scan the forbidden-vocabulary field without false-positive matches. Documented; BACKLOG candidate for `--skip-declarations` mode.
+- Nothing blocked. The 2 gaps found were dogfood working as designed -- catching content omissions that code review alone would miss.
 
 ## Key Insight
 
-Transformation-planning now has a **REAL AS-IS → TO-BE → Roadmap on Claude-Plugins itself** that BACKLOG-005 can consume as canonical input. **Meta-circularity holds as planned** — the Marketplace can now describe its own brownfield migrations inside its own vocabulary.
+Consuming the BACKLOG-006 transformation roadmap as canonical input for BACKLOG-005 validated the meta-circularity thesis -- the capability we built to plan migrations WAS used to plan its own adjacent migration. The paradigm-as-skill extraction is fundamentally a file-move + content-organize task, not a rewrite. This pattern should generalize to future paradigm extractions (functional, event-storming).
 
 ## Action Items
 
-- BACKLOG-006: wire transformation-planning real orchestrator dispatch (Step 5 of dogfood roadmap)
-- BACKLOG: namespace 07-uat artifacts by run-id
-- BACKLOG: `check_dod_constraints.py --skip-declarations`
+- Future work: extract functional decomposition and event-storming paradigms (same pattern)
+- BACKLOG-006: wire transformation-planning real orchestrator dispatch
+- Consider run-id namespacing for 07-uat artifacts (carried from c4d1 retro)

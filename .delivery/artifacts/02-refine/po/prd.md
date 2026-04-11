@@ -1,57 +1,112 @@
-# PRD — Architect Transformation Planning Capability
+# PRD: Paradigm-as-Skill Restructure (BACKLOG-005, Roadmap Steps 2+3)
 
-**Pipeline:** run-2026-04-09-c4d1
-**Date:** 2026-04-09
-**Source:** BACKLOG-006-architect-transformation-planning.md
-**Owner:** PO (Gandalf) + Architect (paired)
-**Stage:** 02-refine
+**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
+**PO:** Gandalf
+**Date:** 2026-04-10
+**Traced to:** `.delivery/artifacts/08-transform/roadmap.md` STEP-02, STEP-03
 
-## Problem
-Per BACKLOG-006, the Architect skill is effectively greenfield-only: its task_types (`design`, `decompose`, `model`, etc. at `architect/SKILL.md:519`) assume PRD → architecture, and the closest brownfield-adjacent capability (`audit-preparation`) is compliance-focused. Real-world architecture work is dominated by brownfield migrations of legacy systems whose original authors and intent are gone. Worse, structural analysis alone is blind: one can map modules and coupling without knowing what the system is *for*. Phase 1A behavioral reconstruction — use cases reverse-engineered from code, tests, UI, docs, and history — is missing entirely. No capability today produces a linked, diffable AS-IS → TO-BE → Roadmap artifact set.
+---
 
-## Users / Actors
-- **PO** — Phase 1A owner; reconstructs use cases from codebase evidence.
-- **Architect** — Phase 1B / Phase 2 / Phase 3 owner; builds structural AS-IS, TO-BE model, roadmap.
-- **Downstream engineers** — consume the roadmap as an execution plan; each step is independently shippable work.
-- **Orchestrator (delivery-flow)** — dispatches the sub-workflow and enforces phase ordering / handoffs.
+## Problem Statement
+
+The architect skill bundles all decomposition paradigms into a single 615-line SKILL.md with 27 reference files. When the orchestrator loads the architect for a volatility decomposition, the entire skill loads -- including DDD, event-storming, game architecture, compliance, and privacy references. This wastes context tokens, violates the "context isolation: sub-agents receive only role-scoped references" invariant at the paradigm level, and makes paradigm extension require modifying a monolith.
+
+## Success Criteria (from Roadmap)
+
+- **STEP-02**: Volatility paradigm skill exists as a separate skill; independently loadable; context isolation measurable by prompt token count delta.
+- **STEP-03**: DDD paradigm skill exists; paradigm registry proven for multi-paradigm selection; adding a third paradigm requires only a new skill, not router changes.
+- Subsystem change per step stays under 20% (roadmap ceiling is 30%; our target is tighter).
+- All 7 AS-IS invariants preserved.
+
+---
 
 ## Functional Requirements
-- **FR-1** — Register new architect `task_type: transformation-planning` in `delivery-team/skills/architect/SKILL.md`.
-- **FR-2 — Phase 1A Behavioral Reconstruction (PO-led):** reads codebase evidence (tests, UI strings, endpoints, commits, docs, telemetry if any) and produces `as-is-use-cases.md`. Each use case carries: `actor`, `goal`, `preconditions`, `main_flow`, `variations`, `evidence_citations`, `confidence` (high/medium/low). A dogfood run must yield ≥5 use cases; ≥1 MUST carry `confidence=low` with a written reason.
-- **FR-3 — Phase 1B Structural Reconstruction (Architect-led):** Model-First AS-IS with four elements — `entities` (current modules/services), `state` (volatility/coupling), `actions` (the Phase 1A use cases), `constraints` (implicit rules the code follows today). Emitted as `as-is-constraints.yml` conforming to the shared BACKLOG-001 schema.
-- **FR-4 — Phase 2 TO-BE (Architect-led):** explicit TO-BE model expressed as `to-be-constraints.yml` in the same schema. Must cite the volatility golden rule (BACKLOG-004) when available.
-- **FR-5 — Phase 3 Roadmap (Architect-led):** ordered iterative steps bridging AS-IS → TO-BE. Each step names: `scope`, `ordering_rationale`, `reversibility`, `risk`, `incremental_value`, `preserved_invariants`. ≥3 steps. Each step independently shippable (no step depends on a future step for value). "No big-bang" check: no single step changes more than 30% of subsystems.
-- **FR-6 — Legacy trigger rule:** documented in architect references. Phase 1A default ON. Skippable ONLY when the PO explicitly asserts trusted current use-case documentation exists and is cited in the invocation; skipping is logged with justification.
-- **FR-7 — Reference docs:** four reference documents under `architect/references/` covering Phase 1A (behavioral), Phase 1B (structural), Phase 2 (TO-BE), Phase 3 (roadmap). Phase 1A reference includes a MAR-style persona trio — code archaeologist, user advocate, skeptical tester — for use-case review.
-- **FR-8 — Dogfood:** first invocation runs against Claude-Plugins itself, producing all three linked artifacts committed to `.delivery/artifacts/`.
+
+### FR-1: Volatility Paradigm Skill (STEP-02)
+
+Create `delivery-team/skills/architect/paradigms/volatility/` containing:
+- `SKILL.md` -- paradigm-specific instructions for volatility-based decomposition (IDesign/Lowy method). Content extracted from existing `references/volatility-decomposition.md` plus the section-0 golden rule.
+- `references/volatility-decomposition.md` -- the full reference, moved from `architect/references/`.
+- `references/domain-discovery-volatility.md` -- volatility-specific interview questions extracted from `domain-discovery.md`.
+
+The paradigm skill SKILL.md must declare its scope, loading trigger, and output contract compatible with the architect output contract.
+
+### FR-2: DDD Paradigm Skill (STEP-03)
+
+Create `delivery-team/skills/architect/paradigms/ddd/` containing:
+- `SKILL.md` -- paradigm-specific instructions for strategic DDD decomposition (subdomain classification, bounded context discovery, context mapping). Content extracted from existing `references/strategic-ddd.md`.
+- `references/strategic-ddd.md` -- the full reference, moved from `architect/references/`.
+- `references/domain-discovery-ddd.md` -- DDD-specific interview questions extracted from `domain-discovery.md`.
+
+### FR-3: Architect SKILL.md Paradigm Router
+
+Update `delivery-team/skills/architect/SKILL.md` to act as a paradigm router:
+1. Detect paradigm from `.delivery/config.yml` field `architecture.decomposition` (existing config key -- no new keys).
+2. If `decomposition: volatility` -- delegate to `paradigms/volatility/SKILL.md`.
+3. If `decomposition: ddd` -- delegate to `paradigms/ddd/SKILL.md`.
+4. If `decomposition: auto` or unset -- use existing decision matrix logic to select paradigm, then delegate.
+5. Non-decomposition task types (design, review, document, evaluate, etc.) continue to route through existing architect logic unchanged.
+6. The decomposition strategy routing table in SKILL.md updates to point at paradigm sub-skills for `volatility` and `ddd` entries.
+
+### FR-4: Design Sprint Sub-Workflow Reference
+
+Create `delivery-team/skills/delivery-flow/references/design-sprint.md` documenting:
+- The PO+Architect Design Sprint sub-workflow pattern.
+- Flow: PO defines the problem scope and constraints --> Architect detects paradigm --> paradigm skill produces decomposition --> architecture board review (if configured) --> handoff to Plan stage.
+- When it triggers: Design and Architect stages of delivery-flow when project type involves decomposition.
+- Integration points with existing pipeline stages.
+
+### FR-5: Redirect Stubs for Original References
+
+Replace original `architect/references/volatility-decomposition.md` and `architect/references/strategic-ddd.md` with redirect stubs:
+- Each stub contains a single line: "This content has moved to `paradigms/<paradigm>/references/<filename>`. Load the paradigm skill directly."
+- Purpose: avoid breaking installed caches that reference the original paths. Stubs remain until the next cache refresh cycle.
+
+### FR-6: Dogfood Validation
+
+Run a volatility decomposition through the new paradigm skill structure:
+- Invoke the architect skill with `decomposition: volatility` config.
+- Verify the paradigm skill loads in isolation (only volatility references in prompt).
+- Verify the decomposition output conforms to the architect output contract.
+- Document token count: paradigm skill prompt vs. monolithic architect prompt.
+
+### FR-7: AS-IS Invariant Verification
+
+After restructure, verify all 7 invariants from `as-is-constraints.yml` still hold:
+1. Two-channel communication preserved (orchestrator signals separate from domain artifacts).
+2. Context isolation preserved (paradigm sub-agents receive only paradigm-scoped references).
+3. DoD validation multi-validator pattern unchanged.
+4. Orchestrator does not produce domain artifacts itself.
+5. Self-correction loops capped at 3 rounds.
+6. Retrospective mandatory at Stop.
+7. Light stages reduce depth but never skip.
+
+---
 
 ## Non-Functional Requirements
-- **NFR-1** — AS-IS and TO-BE artifacts conform to the shared `constraints.yml` schema from BACKLOG-001 (cross-backlog consistency).
-- **NFR-2** — No new required config keys in `.delivery/config.yml`; backwards compatible with schema v2.7.
-- **NFR-3** — Roadmap steps are diffable against AS-IS and TO-BE models (measurable convergence — each step closes a named delta).
 
-## Acceptance Criteria
-1. `transformation-planning` appears in the architect SKILL.md task_type list and is dispatchable.
-2. A dogfood run against Claude-Plugins produces `as-is-use-cases.md` with ≥5 entries, each with evidence citations, ≥1 carrying `confidence=low`.
-3. `as-is-constraints.yml` validates against the shared schema and references 1A use cases in its `actions` field.
-4. `to-be-constraints.yml` validates against the shared schema and cites the volatility golden rule.
-5. `roadmap.md` lists ≥3 ordered steps, each with all six required fields, each independently shippable, none exceeding the 30% subsystem-change ceiling.
-6. All four reference docs exist under `architect/references/`.
-7. `validate_constraints.py` exits 0 on both AS-IS and TO-BE outputs.
+- **No new config keys**: `architecture.decomposition` already exists (values: auto, volatility, ddd, team-topology, event-storming, business-capability). No schema version bump needed.
+- **Backwards compatibility**: Existing pipelines that do not reference paradigm sub-skills continue to work. The architect SKILL.md falls back to existing inline logic if paradigm sub-skill directory does not exist.
+- **Context isolation measurable**: Paradigm skill prompt must be measurably smaller than full architect prompt. Target: paradigm skill loads fewer than 5 reference files vs. the monolithic 27.
+- **Subsystem change ceiling**: STEP-02 touches 2 subsystems (11% of 19). STEP-03 touches 3 subsystems (16% of 19). Both under the 20% target and well under the 30% roadmap ceiling.
+- **Independently shippable**: STEP-02 ships without STEP-03. If only volatility lands, the system is strictly better. DDD extraction is additive.
+
+---
+
+## Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Broken paradigm selection blocks Architect stage | High | Low | Registry defaults to existing inline logic until new skill proves over 3 runs |
+| Cross-paradigm contamination (volatility language in DDD refs) | Medium | Medium | Forbidden-vocabulary check per paradigm skill at DoD |
+| Installed cache references stale paths | Low | Medium | Redirect stubs preserve old paths; removal deferred to cache refresh |
+
+---
 
 ## Out of Scope
-- BACKLOG-005 paradigm-as-skill restructure.
-- Automated refactor tooling.
-- Live migration execution — this capability produces *plans*, not automation of the plans.
-- Behavioral reconstruction beyond cited evidence; no hallucinated use cases.
 
-## Success Metrics
-- Dogfood run produces real use cases with real evidence citations (not stubs).
-- Roadmap ≥3 independently-shippable steps named against real Claude-Plugins subsystems.
-- All three linked artifacts committed and diffable; validator exits 0.
-
-## Risks + Mitigations
-- **R-1 Hallucinated use cases** — Mitigation: `evidence_citations` required field; `confidence` forced; ≥1 low-confidence mandate prevents false certainty.
-- **R-2 Scope creep into BACKLOG-005** — Mitigation: explicit anti-scope in FR and Out of Scope sections; paradigm-as-skill restructure stays on -005.
-- **R-3 AS-IS → TO-BE gap too wide to be roadmap-able** — Mitigation: 30% subsystem ceiling forces incremental decomposition; if the gap cannot be closed in ≥3 shippable steps, the TO-BE is wrong and returns to Phase 2.
-- **R-4 PO + Architect coordination overhead** — Mitigation: file-based handoff (1A artifact → 1B consumer), not live co-execution; orchestrator sequences the phases.
+- Functional decomposition, event-storming paradigm extraction (no deep reference exists yet)
+- Game architecture paradigm restructuring
+- New paradigm authoring (reorganize only)
+- Delivery-flow orchestrator protocol changes
+- Config schema version bump

@@ -1,84 +1,132 @@
-# Stories — BACKLOG-006 transformation-planning
+# Stories — BACKLOG-005 Paradigm-as-Skill Restructure
 **Role:** Gandalf (PO)
 **Stage:** 05-plan
-**Source:** PRD FR-1..FR-8, constraints.yml, ADR-001, ADR-002
-**Pipeline:** run-2026-04-09-c4d1
+**Source:** PRD FR-1..FR-7, constraints.yml, architecture.md, ADR-001, ADR-002
+**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
+**Traced to:** roadmap.md STEP-02, STEP-03
+
+---
 
 ## Capacity Declaration
-- Sprint ceiling: **4 pts**; hard cap: **5 pts**
-- Estimate tier: markdown (XS=1, S=2, M=3, L=4, XL=5)
-- Amendments merged from Celebrimbor sequencing pass: see §Amendments
-- Dogfood output path per constraints.yml: `.delivery/artifacts/dogfood/transformation-planning/` (NOT `08-transform/` — constraints.yml is authoritative)
+- Sprint ceiling: **4 pts** (80%); hard cap: **5 pts** (never exceed)
+- Estimate tier: **markdown/content + file-move** — ONE TIER LOWER than code per standing constraint
+- Scale: XS=1, S=2, M=3 (markdown ceiling for this work type)
+- Total budget: see Totals below
+- Amendments from Celebrimbor sequencing pass: **merged in-line** per a1f3 lesson (no round-2 correction)
+- Pre-loaded constraints: sprint ceiling, 1:1 AC-FR trace, markdown-tier estimates, propagate amendments, Architect-in-Plan sequencing per ADR-002
+
+---
 
 ## Stories
 
-### US-1 — Register `transformation-planning` task_type  (XS=1)
-**As** the orchestrator **I want** a dispatchable `transformation-planning` task_type in architect SKILL.md **so that** Phase 1A..3 can be invoked.
-**AC-1.1** (→FR-1) `delivery-team/skills/architect/SKILL.md` task_type list includes `transformation-planning` with 1-line description + 4-phase pointer.
-**AC-1.2** (→FR-1) Entry names PO as Phase 1A owner and Architect as Phase 1B/2/3 owner (ADR-001).
-**Deps:** none. **Blocks:** US-2..US-6.
+### US-1 — Create volatility paradigm skill (XS=1)
+**As** the architect **I want** a `paradigms/volatility/SKILL.md` with paradigm-specific instructions and references **so that** volatility decomposition loads in isolation without cross-paradigm context bleeding.
 
-### US-2 — Master protocol doc `transformation-planning.md`  (S=2)
-**As** an operator **I want** a single entry reference **so that** the 4-phase flow, legacy trigger, and file-handoff contract are discoverable.
-**AC-2.1** (→FR-6) Documents phase sequence, ownership, file-handoff rule (write-before-read).
-**AC-2.2** (→FR-6) Documents legacy trigger: Phase 1A default ON; skippable only with logged PO justification citing trusted docs.
-**AC-2.3** (→FR-7) Links to the four phase reference docs (1A, 1B, 2, 3).
-**Deps:** US-1.
+**AC-1.1** (->FR-1) `delivery-team/skills/architect/paradigms/volatility/SKILL.md` exists with frontmatter: `paradigm_id: volatility`, `display_name`, `shared_refs` list, `task_types: [decompose, design]`.
+**AC-1.2** (->FR-1) Body contains: section-0 golden rule, Manager/Engine/Accessor/Utility hierarchy, dependency rules, volatility axis identification — extracted from monolithic SKILL.md.
+**AC-1.3** (->FR-1) `paradigms/volatility/references/volatility-decomposition.md` exists (moved from `architect/references/`).
+**AC-1.4** (->FR-1) `paradigms/volatility/references/domain-discovery-volatility.md` exists with volatility-specific interview questions extracted from `domain-discovery.md`.
+**AC-1.5** (->FR-1, Celebrimbor amendment) Paradigm skill loads fewer than 5 reference files (constraints.yml ceiling `paradigm_skill_max_references: 5`).
 
-### US-3 — Phase 1A reference `transformation-phase-1a-behavioral.md`  (M=3)
-**As** the PO **I want** the Phase 1A protocol **so that** I can reconstruct use cases from evidence.
-**AC-3.1** (→FR-2) Use-case schema: `actor, goal, preconditions, main_flow, variations, evidence_citations, confidence{high|medium|low}`.
-**AC-3.2** (→FR-2) Enumerates evidence sources: tests, UI strings, endpoints, commits, docs, telemetry.
-**AC-3.3** (→FR-7) Includes MAR persona trio (code archaeologist, user advocate, skeptical tester) + architecture-board review step.
-**AC-3.4** (→FR-6) Documents legacy trigger rule.
-**Deps:** US-1, US-2.
+**Deps:** none (independent). **Blocks:** US-3, US-5, US-6.
 
-### US-4 — Phase 1B reference `transformation-phase-1b-structural.md`  (M=3)
-**As** the Architect **I want** the Phase 1B protocol **so that** I can produce `as-is-constraints.yml` under Model-First.
-**AC-4.1** (→FR-3) Documents 4-element Model-First mapping: entities, state, actions, constraints; `actions` MUST consume Phase 1A use cases.
-**AC-4.2** (→FR-3, NFR-1) Points to BACKLOG-001 shared constraints schema.
-**Deps:** US-1, US-2.
+---
 
-### US-5 — Phase 2 + Phase 3 reference docs  (M=3)
-**As** the Architect **I want** Phase 2 and Phase 3 protocols **so that** I can build `to-be-constraints.yml` and `roadmap.md`.
-**AC-5.1** (→FR-4) `transformation-phase-2-to-be.md` documents TO-BE schema (same as AS-IS) and requires citation of volatility golden rule (BACKLOG-004) when available.
-**AC-5.2** (→FR-5) `transformation-phase-3-roadmap.md` documents step schema (`scope, ordering_rationale, reversibility, risk, incremental_value, preserved_invariants`).
-**AC-5.3** (→FR-5) Documents 30% big-bang check per ADR-002, including the <4 subsystems collapse and >7-step justification escape.
-**AC-5.4** (→FR-5, NFR-3) Requires each step to close a named AS-IS↔TO-BE delta (diffable convergence).
-**Deps:** US-1, US-2.
+### US-2 — Create DDD paradigm skill (XS=1)
+**As** the architect **I want** a `paradigms/ddd/SKILL.md` with paradigm-specific instructions and references **so that** DDD decomposition loads in isolation.
 
-### US-6 — Template files  (S=2)
-**As** an executor **I want** starter templates **so that** artifacts are schema-conformant on first draft.
-**AC-6.1** (→FR-2) `architect/references/templates/as-is-use-cases.md` with the FR-2 schema and a worked stub.
-**AC-6.2** (→FR-3, FR-4) `templates/as-is-constraints.yml` and `to-be-constraints.yml` matching the BACKLOG-001 8-field constraints shape.
-**AC-6.3** (→FR-5) `templates/roadmap.md` with the 6-field step schema + big-bang check header.
-**Deps:** US-3, US-4, US-5.
+**AC-2.1** (->FR-2) `delivery-team/skills/architect/paradigms/ddd/SKILL.md` exists with frontmatter: `paradigm_id: ddd`, `display_name`, `shared_refs` list, `task_types: [decompose, design]`.
+**AC-2.2** (->FR-2) Body contains: subdomain classification, bounded context discovery, context mapping patterns, aggregate boundaries — extracted from monolithic SKILL.md.
+**AC-2.3** (->FR-2) `paradigms/ddd/references/strategic-ddd.md` exists (moved from `architect/references/`).
+**AC-2.4** (->FR-2) `paradigms/ddd/references/domain-discovery-ddd.md` exists with DDD-specific interview questions.
+**AC-2.5** (->FR-2, Celebrimbor amendment) Paradigm skill loads fewer than 5 reference files.
 
-### US-7 — Dogfood Phase 1A (Claude-Plugins)  (M=3)
-**As** the team **I want** Phase 1A executed against this repo **so that** behavioral reconstruction is validated empirically.
-**AC-7.1** (→FR-8, AC-2) Produces `.delivery/artifacts/dogfood/transformation-planning/as-is-use-cases.md` with **≥5** use cases.
-**AC-7.2** (→FR-2) Every use case carries ≥1 `evidence_citations` pointing to real repo paths (file:line or commit hash).
-**AC-7.3** (→FR-2) **≥1** use case carries `confidence=low` with a written reason.
-**AC-7.4** (→FR-7) Architecture-board MAR review recorded.
-**Deps:** US-2, US-3, US-6.
+**Deps:** none (independent). **Blocks:** US-3, US-5, US-6.
 
-### US-8 — Dogfood Phases 1B + 2 + 3  (L=4)
-**As** the team **I want** structural AS-IS, TO-BE, and roadmap produced against this repo **so that** the full capability is proven.
-**AC-8.1** (→FR-3, AC-3) `.delivery/artifacts/dogfood/transformation-planning/as-is-constraints.yml` validates against shared schema; `actions` references US-7 use cases.
-**AC-8.2** (→FR-4, AC-4) `to-be-constraints.yml` validates against shared schema; cites volatility golden rule when available.
-**AC-8.3** (→FR-5, AC-5) `roadmap.md` lists **≥3** steps, each with all 6 fields, each independently shippable, none exceeding 30% subsystem-change (or <4 collapse, or logged >7 justification).
-**AC-8.4** (→AC-7, NFR-2) `validate_constraints.py` exits 0 on both AS-IS and TO-BE outputs; no new required keys added to `.delivery/config.yml`.
-**AC-8.5** (→NFR-3) Each roadmap step names the AS-IS↔TO-BE delta it closes (diffable convergence).
-**AC-8.6** (forbidden-vocab oracle — TO-BE only) `to-be-constraints.yml` contains zero tokens from `constraints.yml.forbidden_vocabulary`; AS-IS exempt.
-**Deps:** US-7, US-4, US-5, US-6.
+---
+
+### US-3 — Update architect SKILL.md with paradigm router logic (S=2)
+**As** the orchestrator **I want** the architect SKILL.md to detect and route to paradigm sub-skills **so that** decomposition tasks dispatch to isolated paradigm agents.
+
+**AC-3.1** (->FR-3) Router detects paradigm using ADR-002 priority chain: (1) explicit user intent, (2) `architecture.decomposition` config, (3) decision matrix fallback.
+**AC-3.2** (->FR-3) `decomposition: volatility` routes to `paradigms/volatility/SKILL.md`; `decomposition: ddd` routes to `paradigms/ddd/SKILL.md`.
+**AC-3.3** (->FR-3) `decomposition: auto` or unset triggers existing decision matrix, then routes to detected paradigm sub-skill.
+**AC-3.4** (->FR-3) Non-decomposition task types (`review`, `document`, `evaluate`, `model`, `compliance-checklist`) bypass paradigm routing — existing logic unchanged.
+**AC-3.5** (->FR-3) Decomposition strategy routing table updated to point at paradigm sub-skills for `volatility` and `ddd` entries.
+**AC-3.6** (->FR-3, backwards compat) If `paradigms/` directory does not exist, router falls back to existing inline logic. No breakage for pre-migration state.
+**AC-3.7** (->FR-3, Celebrimbor amendment) Router spawns `Agent` with paradigm SKILL.md + only the shared refs declared in that SKILL.md's `shared_refs` frontmatter. No implicit loading.
+**AC-3.8** (->FR-3, ADR-001) Paradigm sub-skills are NOT registered in `plugin.json` — internal only.
+
+**Deps:** US-1, US-2 (paradigm dirs must exist). **Blocks:** US-6.
+
+---
+
+### US-4 — Create design-sprint reference doc (XS=1)
+**As** the delivery-flow orchestrator **I want** a `design-sprint.md` reference **so that** the PO+Architect Design Sprint sub-workflow is documented and discoverable.
+
+**AC-4.1** (->FR-4) `delivery-team/skills/delivery-flow/references/design-sprint.md` exists.
+**AC-4.2** (->FR-4) Documents flow: PO defines problem scope/constraints -> Architect detects paradigm -> paradigm skill produces decomposition -> architecture board review (if configured) -> handoff to Plan stage.
+**AC-4.3** (->FR-4) Documents trigger: Design and Architect stages when project type involves decomposition.
+**AC-4.4** (->FR-4) Documents integration points with existing pipeline stages.
+
+**Deps:** none (independent). **Blocks:** US-6.
+
+---
+
+### US-5 — Create redirect stubs at original file paths (XS=1)
+**As** an operator **I want** redirect stubs at the original reference paths **so that** installed caches referencing old paths do not break.
+
+**AC-5.1** (->FR-5) `delivery-team/skills/architect/references/volatility-decomposition.md` replaced with redirect stub: single line pointing to `paradigms/volatility/references/volatility-decomposition.md`.
+**AC-5.2** (->FR-5) `delivery-team/skills/architect/references/strategic-ddd.md` replaced with redirect stub: single line pointing to `paradigms/ddd/references/strategic-ddd.md`.
+**AC-5.3** (->FR-5) Each stub contains "Load the paradigm skill directly" instruction.
+**AC-5.4** (->FR-5, Celebrimbor amendment) Stubs created AFTER US-1/US-2 moves complete — redirect targets must exist first.
+
+**Deps:** US-1, US-2 (files must be at new paths before stubs replace originals). **Blocks:** US-6.
+
+---
+
+### US-6 — Dogfood volatility decomposition through new paradigm skill (S=2)
+**As** the team **I want** a volatility decomposition run through the new paradigm skill structure **so that** context isolation is empirically proven.
+
+**AC-6.1** (->FR-6) Invoke architect skill with `decomposition: volatility` in config.
+**AC-6.2** (->FR-6) Paradigm skill loads in isolation — only volatility references in prompt, no DDD/event-storming/game-architecture refs.
+**AC-6.3** (->FR-6) Decomposition output conforms to architect output contract (artifacts land at `.delivery/artifacts/04-architect/`).
+**AC-6.4** (->FR-6) Token count documented: paradigm skill prompt size vs. monolithic architect prompt size. Target: paradigm loads <5 refs vs. monolithic 27+.
+**AC-6.5** (->FR-6, Celebrimbor amendment) Dogfood validates router selects volatility via ADR-002 priority chain level 2 (config).
+
+**Deps:** US-1, US-3 (paradigm skill + router must exist). **Blocks:** US-7.
+
+---
+
+### US-7 — Invariant preservation verification (XS=1)
+**As** the team **I want** all AS-IS invariants verified post-restructure **so that** no regression is introduced.
+
+**AC-7.1** (->FR-7) Two-channel communication preserved — orchestrator signals separate from domain artifacts.
+**AC-7.2** (->FR-7) Context isolation preserved — paradigm sub-agents receive only paradigm-scoped references.
+**AC-7.3** (->FR-7) DoD validation multi-validator pattern unchanged.
+**AC-7.4** (->FR-7) Orchestrator does not produce domain artifacts itself.
+**AC-7.5** (->FR-7) Self-correction loops capped at 3 rounds.
+**AC-7.6** (->FR-7) Retrospective mandatory at Stop — hook unchanged.
+**AC-7.7** (->FR-7) Light stages reduce depth but never skip.
+**AC-7.8** (->FR-7, constraints.yml) Paradigm sub-skill loads ONLY its own references — no cross-paradigm bleeding.
+**AC-7.9** (->FR-7, constraints.yml) Existing pipelines without paradigm config continue to work unchanged.
+**AC-7.10** (->FR-7, constraints.yml) No new config keys introduced — `architecture.decomposition` already exists.
+
+**Deps:** US-6 (dogfood proves isolation empirically; invariant check confirms the rest). **Blocks:** none (terminal).
+
+---
 
 ## Totals
-- Stories: **8**; Points: 1+2+3+3+3+2+3+4 = **21 pts**
-- All ACs 1:1 traced to FRs / NFRs / Acceptance Criteria.
-- Out-of-scope guardrails honored: no BACKLOG-005, no refactor tooling, no live migration, no hallucinated use cases.
+- Stories: **7**
+- Points: 1 + 1 + 2 + 1 + 1 + 2 + 1 = **9 pts**
+- Sprints: **3** (see sprint-plan.md)
+- All ACs 1:1 traced to FRs + constraints.yml invariants
+- Subsystem change: STEP-02 = 11%, STEP-03 = 16%, both under 20% ceiling
 
-## Amendments (merged from Celebrimbor sequencing pass — memory lesson run a1f3)
-1. **Dogfood path corrected** to `.delivery/artifacts/dogfood/transformation-planning/` (matches `constraints.yml.mandatory_artifacts`; dispatch prompt's `08-transform/` was a drafting artifact and is overridden).
-2. **AC-8.6 added** — forbidden-vocab oracle scoped to TO-BE only (AS-IS may legitimately contain those terms as descriptive evidence).
-3. **US-2 promoted to hard prerequisite** of US-3..US-5 — master protocol doc fixes the handoff contract all phase docs depend on.
-4. **US-6 held as one story, four files** — templates must land before dogfood as the write-contract between reference docs and dogfood output.
+## Amendments (merged from Celebrimbor sequencing pass — per a1f3 lesson)
+1. **AC-1.5, AC-2.5 added** — paradigm_skill_max_references ceiling (5) enforced per constraints.yml.
+2. **AC-3.7 added** — explicit shared_refs loading via frontmatter, no implicit loading (per architecture.md section 4).
+3. **AC-3.8 added** — ADR-001 internal sub-skill rule (no plugin.json registration).
+4. **AC-5.4 added** — redirect stubs depend on US-1/US-2 completing moves first.
+5. **AC-6.5 added** — dogfood must validate ADR-002 priority chain routing.
+6. **US-5 deps tightened** — depends on US-1+US-2 (not independent) per Celebrimbor sequencing.

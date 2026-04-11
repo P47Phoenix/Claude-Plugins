@@ -1,82 +1,78 @@
-# constraints.yml — Refine stage (BACKLOG-006 transformation-planning)
-# Pipeline: run-2026-04-09-c4d1
-# Source: .delivery/backlog/BACKLOG-006-architect-transformation-planning.md
-# Schema: ADR-001 (8 fields, entities + invariants required)
+# constraints.yml — Refine stage (BACKLOG-005 Paradigm-as-Skill Restructure)
+#
+# Pipeline:  run-2026-04-10-d5e2 (FEATURE XL)
+# PO:        Gandalf
+# Date:      2026-04-10
+# Traced to: roadmap.md STEP-02, STEP-03
+# Schema:    ADR-001 (8 fields, entities + invariants required)
 
 entities:
-  - PO
-  - Architect
-  - use_case_reconstructor
-  - as_is_behavioral_model
-  - as_is_structural_model
-  - to_be_model
-  - roadmap
-  - roadmap_step
-
-state_variables:
-  - current_phase
-  - use_case_count
-  - confidence_distribution
-  - roadmap_step_count
-
-actions:
-  - reconstruct_use_cases
-  - build_structural_model
-  - build_to_be_model
-  - derive_roadmap
-  - validate_shippability
-  - check_big_bang_threshold
-
-numeric_ceilings:
-  min_use_cases: 5
-  min_low_confidence: 1
-  min_roadmap_steps: 3
-  max_subsystem_change_per_step_pct: 30
-  sprint_ceiling_pts: 4
-  hard_cap_pts: 5
-
-mandatory_artifacts:
-  - delivery-team/skills/architect/SKILL.md#transformation-planning
-  - delivery-team/skills/architect/references/phase-1a-behavioral.md
-  - delivery-team/skills/architect/references/phase-1b-structural.md
-  - delivery-team/skills/architect/references/phase-2-to-be.md
-  - delivery-team/skills/architect/references/phase-3-roadmap.md
-  - delivery-team/skills/architect/references/templates/as-is-use-cases.md
-  - delivery-team/skills/architect/references/templates/as-is-constraints.yml
-  - delivery-team/skills/architect/references/templates/to-be-constraints.yml
-  - delivery-team/skills/architect/references/templates/roadmap.md
-  - .delivery/artifacts/dogfood/transformation-planning/as-is-use-cases.md
-  - .delivery/artifacts/dogfood/transformation-planning/as-is-constraints.yml
-  - .delivery/artifacts/dogfood/transformation-planning/to-be-constraints.yml
-  - .delivery/artifacts/dogfood/transformation-planning/roadmap.md
+  - paradigm_skill_registry
+  - volatility_decomposition_skill
+  - ddd_decomposition_skill
+  - architect_skill_router
+  - design_sprint_sub_workflow
+  - redirect_stub
+  - paradigm_reference_directory
 
 invariants:
-  - "Every reconstructed use case carries at least one evidence citation"
-  - "At least one reconstructed use case carries confidence=low with a written reason"
-  - "Every roadmap step is independently shippable (no step depends on a future step for value)"
-  - "No roadmap step changes more than max_subsystem_change_per_step_pct of subsystems (no big-bang)"
-  - "PO owns Phase 1A; Architect owns Phases 1B, 2, 3; phases are paired but file-handoff sequential"
-  - "AS-IS structural model consumes Phase 1A use cases as its actions dimension"
-  - "AS-IS and TO-BE artifacts both conform to the shared constraints.yml schema"
+  - "Two-channel communication: orchestrator signals and domain artifacts are separate"
+  - "Context isolation: sub-agents receive only role-scoped references"
+  - "DoD validation is multi-validator — ALL validators must say DONE"
+  - "Orchestrator does not produce domain artifacts itself"
+  - "Self-correction loops are capped at 3 rounds before escalation"
+  - "Retrospective is mandatory at Stop — enforced by hook"
+  - "Light stages reduce depth but never skip execution"
+  - "Paradigm sub-skill loads ONLY its own references — no cross-paradigm bleeding"
+  - "Existing pipelines without paradigm config continue to work unchanged"
+  - "No new config keys introduced — architecture.decomposition already exists"
 
 forbidden_vocabulary:
-  - microservices
-  - monolith
-  - layered
-  - n-tier
-  - hexagonal
-  - clean architecture
-  - onion
-  - MVC
-  - MVVM
-  - service-oriented
-  - SOA
-  - event-driven
-  - CQRS
-  - DDD
-  - bounded context
+  - "event-storming skill"
+  - "functional decomposition skill"
+  - "new config key"
+  - "schema v2.8"
+
+numeric_ceilings:
+  subsystem_change_pct_step_02: 11
+  subsystem_change_pct_step_03: 16
+  max_subsystem_change_pct: 20
+  paradigm_skill_max_references: 5
+  total_subsystems_in_as_is: 19
+
+state_variables:
+  - paradigm_skill_active
+  - decomposition_strategy_selected
+  - redirect_stubs_in_place
+
+actions:
+  - select_decomposition_paradigm
+  - load_paradigm_skill
+  - route_to_paradigm_sub_agent
+  - create_redirect_stub
+  - validate_invariants_post_restructure
+  - dogfood_volatility_decomposition
+
+mandatory_artifacts:
+  - .delivery/artifacts/02-refine/po/prd.md
+  - .delivery/artifacts/02-refine/po/constraints.yml
+  - delivery-team/skills/architect/paradigms/volatility/SKILL.md
+  - delivery-team/skills/architect/paradigms/ddd/SKILL.md
+  - delivery-team/skills/delivery-flow/references/design-sprint.md
 
 citations:
-  - {work: "arXiv:2512.14474 Model-First Reasoning", chapter: "-", page: "-"}
-  - {work: "arXiv:2512.20845 Multi-Agent Reflexion", chapter: "-", page: "-"}
-  - {work: "BACKLOG-006-architect-transformation-planning.md", chapter: "proposed direction", page: "-"}
+  - work: "roadmap.md"
+    chapter: "STEP-02"
+    page: "-"
+  - work: "roadmap.md"
+    chapter: "STEP-03"
+    page: "-"
+  - work: "as-is-constraints.yml"
+    chapter: "invariants"
+    page: "-"
+  - work: "BACKLOG-005-paradigm-as-skill-restructure.md"
+    chapter: "Success Criteria"
+    page: "-"
+  - work: "Righting Software"
+    chapter: "2"
+    page: "Golden Rule"

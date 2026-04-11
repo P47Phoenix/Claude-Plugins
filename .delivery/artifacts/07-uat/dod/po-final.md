@@ -1,20 +1,28 @@
-# PO Final DoD — transformation-planning (run c4d1)
+# PO Final DoD — paradigm-as-skill extraction (run d5e2)
 
-**Role:** Gandalf (Product Owner) | 2026-04-08
+**Role:** Gandalf (Product Owner) | 2026-04-10
 
 ## FR Pass Table
 
 | FR | Requirement | Evidence | Status |
 |----|-------------|----------|--------|
-| FR-1 | architect skill exposes `transformation-planning` task_type | 3 refs in architect SKILL.md (TC-04) | PASS |
-| FR-2 | Four-phase sub-workflow docs exist (1A, 1B, 2, 3) | 4 files present (TC-02) | PASS |
-| FR-3 | Phase-2 TO-BE anchored by Golden Rule | 4 "Golden Rule" matches (TC-05) | PASS |
-| FR-4 | Constraints YAML primitive validates AS-IS + TO-BE + PO-refine | 3/3 exit 0 (TC-06/07/08) | PASS |
-| FR-5 | Dogfood produces >=5 use cases with >=1 LOW-confidence entry | 7 UCs, 3 LOW (TC-09/10) | PASS |
-| FR-6 | Roadmap has 3–7 reversible steps with change-% ceiling | 5 steps, max 16% (TC-11) | PASS |
-| FR-7 | Additive / backwards-compatible with existing pipelines | Additive routing only (TC-13) | PASS |
-| FR-8 | Dogfooded on Claude-Plugins itself (meta-circularity) | 08-transform/ outputs produced | PASS |
+| FR-1 | Volatility paradigm extracted to sub-skill | SKILL.md + 2 refs exist (TC-01/02/03) | PASS |
+| FR-2 | DDD paradigm extracted to sub-skill | SKILL.md + 1 ref exist (TC-04/05) | PASS |
+| FR-3 | Paradigm Router in architect SKILL.md | 6 matches for router terms (TC-09) | PASS |
+| FR-4 | Redirect stubs at original paths | 3 "moved" matches each (TC-07/08) | PASS |
+| FR-5 | Golden Rule + Decomposition Hygiene preserved | 2+1 matches volatility, 4 matches ddd (TC-10/11/12) | PASS |
+| FR-6 | ADR-001: paradigms not in marketplace.json | 0 matches (TC-13) | PASS |
+| FR-7 | Context isolation >= 82% reduction | 90% actual (66 vs 667 lines, TC-15) | PASS |
+
+## Dogfood Gaps Found + Fixed
+
+1. **Missing domain-discovery-volatility.md** -- initial extraction omitted the volatility-specific domain discovery guide. Caught during dogfood file-existence check; added to paradigm references before DoD.
+2. **Decomposition Hygiene sidebar absent in volatility ref** -- first draft lacked the hygiene checklist. Grep check revealed 0 matches; content restored from monolithic source. Self-correction loop working as designed.
+
+## Invariants (10/10)
+
+All 10 pipeline invariants verified: every stage traveled, no stage skipped, DoD gates enforced, dogfood executed, constraints validated, memory written, artifacts produced, redirect stubs present, backwards compat confirmed, ADR-001 honored.
 
 ## Verdict: **GO**
 
-All 8 FRs pass. Transformation-planning capability ships as an additive, validated, dogfooded architect extension. Real orchestrator dispatch (Step 5) tracked in BACKLOG-006.
+7/7 FRs pass. 15/15 TCs green. 2 dogfood gaps caught and fixed in-pipeline. Ship it.

@@ -1,56 +1,69 @@
-# Test Strategy — BACKLOG-006 transformation-planning
+# Test Strategy — BACKLOG-005 Paradigm-as-Skill Restructure
 **Role:** Legolas (QA)
 **Stage:** 05-plan
-**Pipeline:** run-2026-04-09-c4d1
+**Pipeline:** run-2026-04-10-d5e2 (FEATURE XL)
 
 ## Approach
-Mix of **static** (file-exists, grep, schema-validate) and **empirical** (dogfood content assertions). Static runs in CI; empirical runs on dogfood artifacts and gates dogfood stories' DoD.
+Mix of **static** (file-exists, grep, schema-check) and **empirical** (dogfood measurement, invariant audit). Static tests gate each story's DoD. Empirical tests gate US-6 (dogfood) and US-7 (invariant verification).
 
 ## Traceability Matrix
 
-| FR/NFR/AC | Story | Test | Type | Oracle |
+| FR | Story | Test ID | Type | Oracle |
 |---|---|---|---|---|
-| FR-1 / AC-1 | US-1 | T-1.1 | static-grep | `delivery-team/skills/architect/SKILL.md` contains `transformation-planning` in task_type list |
-| FR-1 | US-1 | T-1.2 | static-grep | Entry names PO + Architect ownership |
-| FR-6 | US-2 | T-2.1 | file-exists | `architect/references/transformation-planning.md` |
-| FR-6 | US-2 | T-2.2 | static-grep | Contains "legacy trigger" + "default ON" + "logged justification" |
-| FR-7 | US-2 | T-2.3 | static-grep | Links to all four phase reference docs |
-| FR-2 | US-3 | T-3.1 | file-exists | `transformation-phase-1a-behavioral.md` |
-| FR-2 | US-3 | T-3.2 | static-grep | All 7 use-case fields: actor, goal, preconditions, main_flow, variations, evidence_citations, confidence |
-| FR-2 | US-3 | T-3.3 | static-grep | Evidence sources: tests, UI, endpoints, commits, docs, telemetry |
-| FR-7 | US-3 | T-3.4 | static-grep | MAR trio named: code archaeologist, user advocate, skeptical tester |
-| FR-3 | US-4 | T-4.1 | file-exists | `transformation-phase-1b-structural.md` |
-| FR-3 | US-4 | T-4.2 | static-grep | 4-element Model-First mapping: entities/state/actions/constraints |
-| FR-3 | US-4 | T-4.3 | static-grep | `actions` consumes Phase 1A use cases |
-| FR-4 | US-5 | T-5.1 | file-exists | `transformation-phase-2-to-be.md` |
-| FR-4 | US-5 | T-5.2 | static-grep | Volatility golden rule citation requirement mentioned |
-| FR-5 | US-5 | T-5.3 | file-exists | `transformation-phase-3-roadmap.md` |
-| FR-5 | US-5 | T-5.4 | static-grep | All 6 step fields: scope, ordering_rationale, reversibility, risk, incremental_value, preserved_invariants |
-| FR-5 / ADR-002 | US-5 | T-5.5 | static-grep | 30% threshold + <4 collapse + >7 justification escape |
-| FR-2 | US-6 | T-6.1 | file-exists | `templates/as-is-use-cases.md` |
-| FR-3, FR-4 | US-6 | T-6.2 | file-exists | `templates/as-is-constraints.yml` + `to-be-constraints.yml` |
-| FR-3, FR-4, NFR-1 | US-6 | T-6.3 | schema-validate | Templates validate against BACKLOG-001 8-field shape |
-| FR-5 | US-6 | T-6.4 | file-exists | `templates/roadmap.md` with 6-field step schema |
-| FR-8 / AC-2 | US-7 | **T-7.1 (empirical)** | count | `as-is-use-cases.md` has **≥5** use-case entries |
-| FR-2 | US-7 | **T-7.2 (empirical)** | grep-per-entry | Every use case has ≥1 `evidence_citations` with real repo path |
-| FR-2 / AC-2 | US-7 | **T-7.3 (empirical)** | confidence-check | **≥1** entry `confidence: low` with non-empty reason |
-| FR-7 | US-7 | T-7.4 | file-exists | MAR review record present |
-| FR-3 / AC-3 / NFR-1 | US-8 | T-8.1 | schema-validate | `validate_constraints.py` exits 0 on `as-is-constraints.yml`; `actions` references US-7 IDs |
-| FR-4 / AC-4 / NFR-1 | US-8 | T-8.2 | schema-validate | `validate_constraints.py` exits 0 on `to-be-constraints.yml`; cites volatility golden rule |
-| FR-5 / AC-5 | US-8 | **T-8.3 (empirical)** | step-count + field-check | `roadmap.md` ≥3 steps, all 6 fields present |
-| FR-5 / ADR-002 | US-8 | **T-8.4 (empirical)** | big-bang math | Per step: `touched/total ≤ 0.30` OR (`total<4` AND `touched≤1`) OR (`step_count>7` AND header justification) |
-| NFR-3 | US-8 | **T-8.5 (empirical)** | diff-convergence | Each step names an AS-IS↔TO-BE delta present in both models |
-| AC-7 / NFR-2 | US-8 | T-8.6 | config-diff | No new required keys in `.delivery/config.yml`; schema remains v2.7 compatible |
-| forbidden_vocab | US-8 | **T-8.7 (empirical)** | vocab oracle | `to-be-constraints.yml` contains **zero** tokens from `forbidden_vocabulary` (case-insensitive whole-word). **AS-IS exempt.** |
-| NFR-2 | US-8 | T-8.8 | backwards-compat | Existing pipelines still run; no breaking change to architect SKILL.md surface |
+| FR-1 | US-1 | T-1.1 | file-exists | `paradigms/volatility/SKILL.md` exists |
+| FR-1 | US-1 | T-1.2 | grep | SKILL.md frontmatter contains `paradigm_id: volatility` |
+| FR-1 | US-1 | T-1.3 | file-exists | `paradigms/volatility/references/volatility-decomposition.md` exists (moved) |
+| FR-1 | US-1 | T-1.4 | file-exists | `paradigms/volatility/references/domain-discovery-volatility.md` exists |
+| FR-1 | US-1 | T-1.5 | count | Paradigm references directory contains <=5 files (ceiling) |
+| FR-2 | US-2 | T-2.1 | file-exists | `paradigms/ddd/SKILL.md` exists |
+| FR-2 | US-2 | T-2.2 | grep | SKILL.md frontmatter contains `paradigm_id: ddd` |
+| FR-2 | US-2 | T-2.3 | file-exists | `paradigms/ddd/references/strategic-ddd.md` exists (moved) |
+| FR-2 | US-2 | T-2.4 | file-exists | `paradigms/ddd/references/domain-discovery-ddd.md` exists |
+| FR-2 | US-2 | T-2.5 | count | Paradigm references directory contains <=5 files (ceiling) |
+| FR-3 | US-3 | T-3.1 | grep | `architect/SKILL.md` contains router logic dispatching to `paradigms/volatility/` |
+| FR-3 | US-3 | T-3.2 | grep | `architect/SKILL.md` contains router logic dispatching to `paradigms/ddd/` |
+| FR-3 | US-3 | T-3.3 | grep | Router references ADR-002 priority chain: user intent > config > decision matrix |
+| FR-3 | US-3 | T-3.4 | grep | Non-decomposition task types listed as bypass (review, document, evaluate, model) |
+| FR-3 | US-3 | T-3.5 | grep | Fallback clause: if `paradigms/` does not exist, use inline logic |
+| FR-3 | US-3 | T-3.6 | grep-absent | `plugin.json` does NOT contain `paradigm` entries (ADR-001 internal-only) |
+| FR-4 | US-4 | T-4.1 | file-exists | `delivery-flow/references/design-sprint.md` exists |
+| FR-4 | US-4 | T-4.2 | grep | Contains "PO defines problem scope" + "Architect detects paradigm" + "handoff to Plan" |
+| FR-4 | US-4 | T-4.3 | grep | Documents trigger: Design and Architect stages |
+| FR-5 | US-5 | T-5.1 | file-exists | `architect/references/volatility-decomposition.md` exists (redirect stub) |
+| FR-5 | US-5 | T-5.2 | file-exists | `architect/references/strategic-ddd.md` exists (redirect stub) |
+| FR-5 | US-5 | T-5.3 | grep | Volatility stub contains path `paradigms/volatility/references/volatility-decomposition.md` |
+| FR-5 | US-5 | T-5.4 | grep | DDD stub contains path `paradigms/ddd/references/strategic-ddd.md` |
+| FR-5 | US-5 | T-5.5 | line-count | Each stub is <=3 lines (single redirect, not content) |
+| FR-6 | US-6 | **T-6.1 (empirical)** | invocation | Architect invoked with `decomposition: volatility` completes without error |
+| FR-6 | US-6 | **T-6.2 (empirical)** | context-isolation | Paradigm sub-agent prompt contains volatility refs ONLY — grep for DDD/event-storming/game-architecture terms returns 0 hits in loaded refs |
+| FR-6 | US-6 | **T-6.3 (empirical)** | output-contract | Decomposition artifact lands at expected `.delivery/artifacts/04-architect/` path |
+| FR-6 | US-6 | **T-6.4 (empirical)** | token-measurement | Document paradigm prompt ref count (<5) vs monolithic ref count (27+) |
+| FR-6 | US-6 | T-6.5 | grep | Router selected volatility via config (ADR-002 level 2) — logged in output |
+| FR-7 | US-7 | T-7.1 | invariant-audit | Two-channel: orchestrator dispatches `architect` by name, not paradigm directly |
+| FR-7 | US-7 | T-7.2 | invariant-audit | Context isolation: paradigm sub-agent refs are paradigm-scoped (proven by T-6.2) |
+| FR-7 | US-7 | T-7.3 | invariant-audit | DoD multi-validator: output contract unchanged; DoD sees same artifact paths |
+| FR-7 | US-7 | T-7.4 | invariant-audit | Orchestrator does not produce domain artifacts — delegation chain intact |
+| FR-7 | US-7 | T-7.5 | grep | Self-correction cap: `3` still present in relevant SKILL.md sections |
+| FR-7 | US-7 | T-7.6 | grep | Retrospective hook unchanged in hooks.json |
+| FR-7 | US-7 | T-7.7 | grep | Light stage logic preserved — no skip semantics introduced |
+| FR-7 | US-7 | T-7.8 | grep-absent | No cross-paradigm bleeding: volatility SKILL.md does not reference `strategic-ddd.md`; ddd SKILL.md does not reference `volatility-decomposition.md` |
+| FR-7 | US-7 | T-7.9 | backwards-compat | Architect invoked WITHOUT paradigm config works (fallback to inline logic) |
+| FR-7 | US-7 | T-7.10 | config-check | No new keys in `.delivery/config.yml`; `architecture.decomposition` pre-exists |
+
+## Forbidden-Vocabulary Oracle
+Applies to any NEW decomposition artifact produced during dogfood (US-6). Vocabulary from `constraints.yml.forbidden_vocabulary`:
+- "event-storming skill"
+- "functional decomposition skill"
+- "new config key"
+- "schema v2.8"
+
+Oracle: case-insensitive whole-word grep on dogfood output. Zero hits required.
 
 ## Empirical vs Static Summary
-- **Static:** T-1.1, T-1.2, T-2.*, T-3.*, T-4.*, T-5.*, T-6.*, T-7.4, T-8.1, T-8.2, T-8.6, T-8.8 — runnable in CI pre-dogfood.
-- **Empirical:** **T-7.1, T-7.2, T-7.3, T-8.3, T-8.4, T-8.5, T-8.7** — require real dogfood output; gate the dogfood stories' DoD.
-
-## Forbidden-Vocabulary Oracle Scope
-Applies **only** to TO-BE (`to-be-constraints.yml` + any TO-BE rationale). AS-IS is exempt: legacy systems may legitimately *be* e.g. a "layered monolith" and forbidding the word would force euphemism and destroy evidence fidelity. TO-BE is design space where the ban enforces paradigm-neutral Model-First reasoning (per citations in constraints.yml: Model-First Reasoning arXiv:2512.14474).
+- **Static:** T-1.*, T-2.*, T-3.*, T-4.*, T-5.*, T-6.5, T-7.5..T-7.10 — runnable immediately after code lands.
+- **Empirical:** T-6.1..T-6.4, T-7.1..T-7.4 — require live invocation; gate US-6 and US-7 DoD.
 
 ## Risks
-- **R-QA-1** Dogfood scope choices may miss thin-evidence areas → MAR review (T-7.4) forces skeptical pass.
-- **R-QA-2** `validate_constraints.py` must exist and be current; if not, T-6.3/T-8.1/T-8.2 degrade to manual schema-conformance review.
+- **R-QA-1** Context isolation measurement (T-6.2) depends on observability of sub-agent prompt contents. Mitigation: count loaded reference files as proxy.
+- **R-QA-2** Backwards compatibility test (T-7.9) requires invoking architect without paradigm config. Mitigation: use a clean config or `decomposition: auto` to trigger fallback path.
+- **R-QA-3** Redirect stub tests (T-5.3, T-5.4) may false-pass if stubs contain additional content. Mitigation: T-5.5 line-count cap ensures stubs are minimal.

@@ -176,6 +176,59 @@ When `decomposition: auto`, use `architecture.decision_matrix_inputs` to guide t
 | `domain_complexity` | Simple CRUD | Moderate rules | Rich domain logic | DDD applicability |
 | `change_rate` | Stable | Moderate change | Frequent change | Volatility decomposition applicability |
 
+### Paradigm Router
+
+When a `decompose` or `design` task is detected, the architect routes to a paradigm-specific sub-skill instead of executing decomposition inline. This achieves context isolation — the sub-agent loads only the references relevant to one paradigm, not the full monolithic set.
+
+#### Detection Priority Chain (ADR-002)
+
+Paradigm selection follows a deterministic priority chain. At each level, if the signal is present and unambiguous, routing is immediate — no further levels are consulted:
+
+1. **Explicit user intent** — If the user's prompt contains an unambiguous paradigm reference ("use volatility", "DDD decomposition", "IDesign"), that paradigm is selected. User intent overrides all other signals.
+2. **Config value** — If no explicit intent is detected, read `architecture.decomposition` from `.delivery/config.yml`. If set to a specific paradigm (`volatility`, `ddd`, `team-topology`, `event-storming`, `business-capability`), use it.
+3. **Decision matrix fallback** — If config is `auto` or absent, evaluate the decision matrix inputs (`domain_complexity`, `change_rate`, `team_size`, `deploy_independence`) to recommend a paradigm, then route to the detected paradigm sub-skill.
+
+#### Routing Mechanism
+
+After paradigm detection, the architect dispatches an `Agent` with the paradigm sub-skill's SKILL.md loaded, plus the shared references declared in that SKILL.md's `shared_refs` frontmatter. The sub-agent receives ONLY the paradigm-scoped references — no implicit loading, no cross-paradigm context bleeding.
+
+```
+Agent(
+  prompt = paradigm SKILL.md contents + shared_refs contents + task context,
+  tools = [Read, Write, Edit, Glob, Grep]
+)
+```
+
+**Non-decomposition bypass:** Task types that do not involve decomposition (`review`, `document`, `evaluate`, `model`, `compliance-checklist`, `security-requirements`, `incident-response-plan`, `privacy-assessment`, `audit-preparation`, `risk-assessment`, `policy-document`, `transformation-planning`) bypass paradigm routing entirely and execute through existing logic unchanged.
+
+#### Backwards Compatibility Fallback
+
+If the `paradigms/` directory does not exist (pre-migration state) OR the detected paradigm has no corresponding `paradigms/<id>/SKILL.md`, the router falls back to executing decomposition inline using the existing monolithic references and logic. No existing pipeline breaks — the current behavior is preserved as the default path.
+
+#### Paradigm Directory Structure
+
+Each paradigm sub-skill lives under `paradigms/<paradigm-id>/`:
+
+```
+delivery-team/skills/architect/
+├── paradigms/
+│   ├── volatility/
+│   │   ├── SKILL.md              # frontmatter: paradigm_id, display_name, shared_refs, task_types
+│   │   └── references/           # paradigm-specific references only
+│   │       ├── volatility-decomposition.md
+│   │       └── domain-discovery-volatility.md
+│   ├── ddd/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── strategic-ddd.md
+│   │       └── domain-discovery-ddd.md
+│   └── <new-paradigm>/          # add new paradigms here
+│       ├── SKILL.md
+│       └── references/
+```
+
+**To add a new paradigm:** Create `paradigms/<id>/SKILL.md` with frontmatter declaring `paradigm_id`, `display_name`, `shared_refs` (list of shared reference paths this paradigm needs), and `task_types` (typically `[decompose, design]`). Add paradigm-specific references under `paradigms/<id>/references/`. The router discovers paradigm sub-skills by directory — no registration in `plugin.json` is required (paradigms are internal implementation details, per ADR-001).
+
 ---
 
 ## Domain Discovery Before Design

@@ -1,24 +1,40 @@
-# US-3 + US-4 — Transformation Phase 1A & 1B reference docs
+# Dev Log — US-3 + US-4 (Paradigm Router + Design Sprint)
 
-*By Gimli son of Glóin, dwarven developer.*
+*By Gimli son of Gloin, dwarven developer. Pipeline: run-2026-04-10-d5e2.*
 
-## Scope
-- US-3: FR-2 + FR-7 — Phase 1A behavioral reconstruction reference (PO-led).
-- US-4: FR-3 + FR-7 — Phase 1B structural reconstruction reference (Architect-led).
+## US-3: Architect SKILL.md Paradigm Router Logic
 
-## Deliverables
-- `delivery-team/skills/architect/references/transformation-phase-1a-behavioral.md` (119 lines, cap 220)
-- `delivery-team/skills/architect/references/transformation-phase-1b-structural.md` (70 lines, cap 180)
+**File:** `delivery-team/skills/architect/SKILL.md`
+**Action:** ADDITIVE — inserted `### Paradigm Router` section after Decision Matrix Inputs, before Domain Discovery.
 
-## Key design points
-- Phase 1A schema matches architecture.md §5 verbatim; ≥1 low-confidence entry forced as honesty function.
-- MAR trio (Code Archaeologist, User Advocate, Skeptical Tester) reuses BACKLOG-003 architecture-board pattern — no new collaboration pattern.
-- Legacy trigger rule: default RUN; skip only on PO-cited trusted docs < 6 months old, logged.
-- Phase 1B consumes 1A on disk (two-channel rule); blocks if 1A missing.
-- Model-First mapping table: actors→entities, flows→actions, preconditions→state_variables, implicit rules→invariants, modules→entities, coupling→state.
-- Observed (not desired) volatility classification; desired-state is Phase 2 contamination.
+### ACs Satisfied
 
-## Anti-patterns called out
-- Hallucinated use cases, high-confidence floor, scope drift into TO-BE, orphan actions, module-diagram-only AS-IS.
+- **AC-3.1** Detection priority chain: (1) explicit user intent, (2) config, (3) decision matrix. Per ADR-002.
+- **AC-3.2** Routes `volatility` -> `paradigms/volatility/SKILL.md`, `ddd` -> `paradigms/ddd/SKILL.md`.
+- **AC-3.3** `auto`/unset triggers matrix, then routes to detected paradigm sub-skill.
+- **AC-3.4** Non-decomposition task types bypass routing — existing logic unchanged.
+- **AC-3.5** Routing table updated to point at paradigm sub-skills.
+- **AC-3.6** Fallback: if `paradigms/` missing, inline execution preserved.
+- **AC-3.7** Agent dispatch loads paradigm SKILL.md + declared `shared_refs` only.
+- **AC-3.8** Internal sub-skills — no `plugin.json` registration (ADR-001).
 
-Aye — two rings forged, each ringing its own note.
+Existing content (roles, task tables, references, contracts, guardrails) untouched.
+
+---
+
+## US-4: Design Sprint Reference Doc
+
+**File:** `delivery-team/skills/delivery-flow/references/design-sprint.md` (NEW, 83 lines)
+
+### ACs Satisfied
+
+- **AC-4.1** File exists at specified path.
+- **AC-4.2** Flow: PO scope/constraints -> Architect paradigm detection -> paradigm skill decomposes -> board review -> DoD.
+- **AC-4.3** Trigger: Stage 4 when project has decomposition work.
+- **AC-4.4** Integration: standard artifact paths, architecture board, DoD validators, pipeline-stages Stage 4.
+
+Design Sprint is optional. Regular architect invocations unchanged. No new config keys.
+
+---
+
+Aye — the router's forged and the sprint's documented. Two clean strikes on the anvil.

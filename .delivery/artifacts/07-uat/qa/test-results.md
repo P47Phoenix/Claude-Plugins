@@ -1,35 +1,38 @@
-# Test Results — Stage 7 UAT (transformation-planning, run c4d1)
+# Test Results — Stage 7 UAT (paradigm-as-skill extraction, run d5e2)
 
-**Role:** Legolas (QA Engineer) | **Date:** 2026-04-08
+**Role:** Legolas (QA Engineer) | **Date:** 2026-04-10
 
 ## Test Case Results
 
-| # | Test Case | Expected | Actual | Status |
-|---|-----------|----------|--------|--------|
-| TC-01 | transformation-planning.md exists | present | present | PASS |
-| TC-02 | 4 phase docs (1a/1b/2/3) exist | 4 | 4 | PASS |
-| TC-03 | Dogfood outputs at 08-transform/ (as-is-constraints, as-is-use-cases, to-be-constraints, roadmap) | 4 | 4 | PASS |
-| TC-04 | grep -c transformation-planning in architect SKILL.md | >=1 | 3 | PASS |
-| TC-05 | grep -c "Golden Rule" phase-2 ref | >=1 | 4 | PASS |
-| TC-06 | validate_constraints as-is-constraints.yml | exit 0 | exit 0 | PASS |
-| TC-07 | validate_constraints to-be-constraints.yml | exit 0 | exit 0 | PASS |
-| TC-08 | validate_constraints 02-refine/po/constraints.yml | exit 0 | exit 0 | PASS |
-| TC-09 | Use cases in as-is-use-cases.md | >=5 | 7 | PASS |
-| TC-10 | >=1 low-confidence UC entry | >=1 | 3 | PASS |
-| TC-11 | Roadmap steps (STEP-NN) | >=3 | 5 | PASS |
-| TC-12 | DoD self-check on to-be-constraints.yml | exit 0 | exit 1 | NOTE |
-| TC-13 | Backwards compat: task_type additive | unaffected | additive-only | PASS |
+| # | Test Case | Method | Expected | Actual | Status |
+|---|-----------|--------|----------|--------|--------|
+| TC-01 | volatility SKILL.md exists | `test -f` | present | present | PASS |
+| TC-02 | volatility-decomposition.md exists | `test -f` | present | present | PASS |
+| TC-03 | domain-discovery-volatility.md exists | `test -f` | present | present | PASS |
+| TC-04 | ddd SKILL.md exists | `test -f` | present | present | PASS |
+| TC-05 | strategic-ddd.md exists | `test -f` | present | present | PASS |
+| TC-06 | design-sprint.md exists | `test -f` | present | present | PASS |
+| TC-07 | Redirect stub: volatility-decomposition (original) | `grep -c "moved\|Moved"` | >=1 | 3 | PASS |
+| TC-08 | Redirect stub: strategic-ddd (original) | `grep -c "moved\|Moved"` | >=1 | 3 | PASS |
+| TC-09 | Router in architect SKILL.md | `grep -c "Paradigm Router\|paradigm_id\|paradigms/"` | >=1 | 6 | PASS |
+| TC-10 | Golden Rule in volatility ref | `grep -c "Golden Rule"` | >=1 | 2 | PASS |
+| TC-11 | Decomposition Hygiene in volatility ref | `grep -c "Decomposition Hygiene"` | >=1 | 1 | PASS |
+| TC-12 | Decomposition Hygiene in ddd ref | `grep -c "Decomposition Hygiene"` | >=1 | 4 | PASS |
+| TC-13 | Paradigms NOT in marketplace.json (ADR-001) | `grep -c "paradigms" marketplace.json` | 0 | 0 | PASS |
+| TC-14 | Constraints validate green | `validate_constraints.py` | exit 0 | exit 0 | PASS |
+| TC-15 | Context isolation: paradigm << monolithic | `wc -l` comparison | paradigm < architect | 66 vs 667 (90% smaller) | PASS |
 
-## TC-12 Caveat
+## Context Isolation Detail
 
-check_dod_constraints.py was run with to-be-constraints.yml as BOTH rules and text. It FAILED exit=1 because the `forbidden_vocabulary` list literally contains the tokens (lambda, ecs, python…) as list items — self-match, not contamination. The brief noted exit=0 expectation but empirically the grep phase cannot distinguish field declaration from field use; any self-scan FAILs. BACKLOG candidate: `--skip-declarations` mode. Not blocking — the validator functions correctly against its real use case (scanning OTHER artifacts).
-
-Backwards-compat reasoning: `transformation_planning` task_type is purely additive to architect SKILL.md routing; no existing entries removed/renamed; legacy pipelines that never dispatch to it are unchanged.
+- `delivery-team/skills/architect/paradigms/volatility/SKILL.md`: 66 lines
+- `delivery-team/skills/architect/SKILL.md`: 667 lines
+- **Reduction**: 90% fewer lines loaded when routing to volatility paradigm sub-skill vs monolithic architect skill
+- Exceeds the 82% target from design spec
 
 ## Summary
 
-- Total TCs: 13 | Pass: 12 (92%) | Note: 1 | Fail: 0 | Blockers: 0
+- Total TCs: 15 | Pass: 15 (100%) | Fail: 0 | Blockers: 0
 
-## Verdict: GO
+## Verdict: **GO**
 
-All blocking criteria met. TC-12 is a known tool limitation, not a defect.
+All 15 test cases pass. File existence, redirect stubs, router wiring, content integrity (Golden Rule + Decomposition Hygiene), ADR-001 compliance, constraints validation, and context isolation all verified with actual Bash checks.

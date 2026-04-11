@@ -174,3 +174,110 @@ No live migration execution; no automated refactoring; no paradigm-as-skill rest
 
 *"A forge worth keeping is one whose hammer has already struck a second ring."* — C.
 
+---
+
+# Architecture: Paradigm-as-Skill Restructure
+
+**Stage:** 4 Architect (Light) | **Pipeline:** run-2026-04-10-d5e2 | **Date:** 2026-04-10
+**Architect:** Celebrimbor | **Traced to:** FR-1 through FR-7, roadmap STEP-02 + STEP-03
+
+---
+
+## 1. Context
+
+The architect skill is a monolith: 615 lines of SKILL.md loading up to 29 references into every sub-agent, regardless of which decomposition paradigm the task requires. When the orchestrator invokes the architect for a volatility decomposition, it pays the context cost of DDD, event-storming, game architecture, and compliance references that will never be read. This restructure extracts paradigm-specific content into internal sub-skills routed by the architect SKILL.md itself, preserving the single `architect` entry point while achieving paradigm-level context isolation. The design builds on Galadriel's information architecture (Stage 3) and resolves her three open questions.
+
+---
+
+## 2. Resolved Open Questions (from Galadriel)
+
+**Q1: Sub-skill registration model.** Paradigm SKILL.md files are INTERNAL sub-skills discovered by the router, NOT registered in `plugin.json`. Rationale: paradigms are implementation details of the architect skill, not user-facing skills. The orchestrator invokes `architect` and the architect routes internally. This avoids a public API surface that would constrain future restructuring (see ADR-001).
+
+**Q2: Shared reference loading strategy.** Each paradigm SKILL.md explicitly declares the shared references it needs in a frontmatter `shared_refs` field. The router loads the paradigm SKILL.md, reads its `shared_refs`, and passes both paradigm-specific and declared shared references to the sub-agent. No magic implicit loading -- every dependency is stated. This keeps the paradigm self-describing while avoiding the router needing to know paradigm internals.
+
+**Q3: Domain-discovery extraction boundary.** `domain-discovery.md` stays in shared refs. It contains paradigm-agnostic protocol (event storming facilitation, interview structure, escalation format) that all paradigms consume. Only the paradigm-specific prompt templates (volatility interview questions, DDD interview questions) are extracted into paradigm-specific `domain-discovery-<paradigm>.md` files under each paradigm's `references/` directory.
+
+---
+
+## 3. Router Architecture
+
+The architect SKILL.md becomes a two-mode dispatcher:
+
+**Detection priority** (deterministic, not AI-inferred):
+1. **Explicit user request** -- "use volatility", "DDD decomposition" in the prompt
+2. **Config** -- `architecture.decomposition` from `.delivery/config.yml`
+3. **Decision matrix** -- existing logic in SKILL.md (domain complexity, change rate, team size, deploy independence)
+
+**Routing mechanism:** After paradigm detection, the architect SKILL.md dispatches an `Agent` with the paradigm sub-skill's SKILL.md loaded, plus the shared refs declared in that SKILL.md's `shared_refs` frontmatter. Non-decomposition task types (`review`, `document`, `evaluate`, `model`, `compliance-checklist`, etc.) bypass paradigm routing entirely and execute through existing logic.
+
+**Fallback:** If the `paradigms/` directory does not exist (pre-migration state), the router executes decomposition inline using the current monolithic logic. Backwards compatibility preserved -- no existing pipeline breaks.
+
+---
+
+## 4. Paradigm Sub-Skill SKILL.md Structure
+
+Minimal frontmatter + body:
+
+```yaml
+---
+paradigm_id: volatility          # unique key, matches config value
+display_name: "Volatility Decomposition (IDesign)"
+shared_refs:                      # shared refs this paradigm needs loaded
+  - references/architecture-patterns.md
+  - references/c4-model.md
+  - references/domain-discovery.md
+task_types:                       # which task types this paradigm handles
+  - decompose
+  - design
+---
+```
+
+**Body:** Paradigm-specific instructions extracted from the monolithic SKILL.md sections for that paradigm. For volatility: the section-0 golden rule, Manager/Engine/Accessor/Utility hierarchy, dependency rules, volatility axis identification. For DDD: subdomain classification, bounded context discovery, context mapping patterns, aggregate boundaries.
+
+**References:** Paradigm-specific only. `paradigms/volatility/references/volatility-decomposition.md` (moved from `architect/references/`). `paradigms/volatility/references/domain-discovery-volatility.md` (extracted questions).
+
+---
+
+## 5. File Change Inventory
+
+| Action | Path |
+|--------|------|
+| NEW | `delivery-team/skills/architect/paradigms/volatility/SKILL.md` |
+| NEW | `delivery-team/skills/architect/paradigms/volatility/references/domain-discovery-volatility.md` |
+| NEW | `delivery-team/skills/architect/paradigms/ddd/SKILL.md` |
+| NEW | `delivery-team/skills/architect/paradigms/ddd/references/domain-discovery-ddd.md` |
+| MOVE | `architect/references/volatility-decomposition.md` --> `paradigms/volatility/references/` |
+| MOVE | `architect/references/strategic-ddd.md` --> `paradigms/ddd/references/` |
+| NEW | `architect/references/volatility-decomposition.md` (redirect stub) |
+| NEW | `architect/references/strategic-ddd.md` (redirect stub) |
+| UPDATE | `delivery-team/skills/architect/SKILL.md` -- add router logic, remove inline paradigm content |
+| NEW | `delivery-team/skills/delivery-flow/references/design-sprint.md` |
+
+Subsystem touch count: STEP-02 = 2 (architect_skill, delivery_flow_orchestrator refs) = 11%. STEP-03 = 3 (+paradigm_skill_registry) = 16%. Both under 20% ceiling.
+
+---
+
+## 6. Invariant Preservation Check
+
+| Invariant | Status | Rationale |
+|-----------|--------|-----------|
+| Two-channel communication | Preserved | Orchestrator still dispatches `architect` by skill name; paradigm routing is internal. No signal format changes. |
+| Context isolation | Improved | Paradigm sub-agents now receive only paradigm-scoped refs (~58KB) vs. full monolith (~305KB). Cross-paradigm bleeding eliminated. |
+| DoD multi-validator | Preserved | Output contract unchanged; DoD validators see the same artifact structure at `.delivery/artifacts/04-architect/`. |
+| Orchestrator does not produce domain artifacts | Preserved | Orchestrator invokes architect; architect routes to paradigm sub-agent; sub-agent produces the artifact. Chain of delegation intact. |
+| Self-correction loops capped at 3 | Preserved | Paradigm sub-agent inherits the same 3-round cap. No new loop mechanisms introduced. |
+| Retrospective mandatory at Stop | Preserved | No changes to Stop hook or retrospective enforcement. |
+| Light stages reduce depth, never skip | Preserved | Router operates identically in light and full modes; light reduces paradigm sub-agent depth, does not skip paradigm routing. |
+
+---
+
+## 7. Non-Goals
+
+- No new paradigm content (reorganize only, per PRD out-of-scope)
+- No functional decomposition or event-storming sub-skills (future work)
+- No `plugin.json` changes (paradigms are internal, not registered)
+- No delivery-flow SKILL.md changes
+- No config schema version bump (`architecture.decomposition` already exists)
+
+*"Three rings for the paradigms under the router's hand -- each bearing only its own light, none burdened by the others' weight."* -- C.
+

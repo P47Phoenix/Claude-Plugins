@@ -73,3 +73,107 @@ Two-channel rule: no phase assumes in-memory state; every handoff by path.
 
 Engineer opens `roadmap.md` → picks a step → follows citations back to `to-be-constraints.yml` (target) and `as-is-constraints.yml` (current) → reads `as-is-use-cases.md` to understand user-visible behavior that must survive the step. Reading order: roadmap-first, model-second. No wireframes — text artifacts only.
 
+---
+
+# Information Architecture — Paradigm-as-Skill Restructure (STEP-02 + STEP-03)
+
+**Stage:** 3 Design (UX) | **Pipeline:** run-2026-04-10-d5e2 | **Date:** 2026-04-10
+**Designer:** Galadriel | **Traced to:** FR-1 through FR-7
+
+*I have looked into the Mirror of the architect's monolith and seen 29 references bound together where they need not be. What follows is the shape of their unbinding.*
+
+## 1. Directory Structure Proposal
+
+```
+delivery-team/skills/architect/
+├── SKILL.md                          # STAYS — becomes paradigm router + all non-decomposition logic
+├── references/                       # STAYS — shared references (25 files remain)
+│   ├── architecture-patterns.md
+│   ├── c4-model.md
+│   ├── adr-template.md, adr-lifecycle.md
+│   ├── quality-attributes.md
+│   ├── enterprise-patterns.md
+│   ├── data-modeling.md
+│   ├── security-patterns.md, security-requirements.md
+│   ├── compliance-frameworks.md, privacy-patterns.md, incident-response.md
+│   ├── technology-evaluation.md
+│   ├── domain-discovery.md           # Shared — paradigms extract their own question subsets
+│   ├── team-topology.md, event-storming.md
+│   ├── game-systems.md, level-world.md, network-multiplayer.md, graphics-rendering.md
+│   ├── transformation-planning.md, transformation-phase-*.md (4 files)
+│   ├── volatility-decomposition.md   # REDIRECT STUB (FR-5)
+│   └── strategic-ddd.md              # REDIRECT STUB (FR-5)
+└── paradigms/
+    ├── volatility/
+    │   ├── SKILL.md                  # Volatility-specific decomposition skill
+    │   └── references/
+    │       ├── volatility-decomposition.md   # MOVED from architect/references/
+    │       └── domain-discovery-volatility.md # EXTRACTED from domain-discovery.md
+    └── ddd/
+        ├── SKILL.md                  # DDD-specific decomposition skill
+        └── references/
+            ├── strategic-ddd.md              # MOVED from architect/references/
+            └── domain-discovery-ddd.md       # EXTRACTED from domain-discovery.md
+```
+
+**MOVES (2 files):** `volatility-decomposition.md` (14.6KB), `strategic-ddd.md` (16.6KB) move into their paradigm directories.
+**CREATES (2 files):** `domain-discovery-volatility.md`, `domain-discovery-ddd.md` extracted from `domain-discovery.md` (11.4KB shared).
+**STAYS (25 files):** All 11 role references, 4 game architecture refs, ADR templates, quality-attributes, technology-evaluation, domain-discovery (shared), transformation-planning suite (5 files), team-topology, event-storming.
+**REDIRECT STUBS (2 files):** Original paths become single-line redirects per FR-5.
+
+## 2. Author Flows
+
+### Flow A — Orchestrator Routing to Paradigm
+
+1. Delivery-flow Stage 4 invokes `architect` skill (unchanged entry point)
+2. Architect `SKILL.md` detects task type. If `decompose` or `design` with decomposition:
+   - Read `architecture.decomposition` from `.delivery/config.yml`
+   - If `volatility` -- delegate to `paradigms/volatility/SKILL.md`
+   - If `ddd` -- delegate to `paradigms/ddd/SKILL.md`
+   - If `auto` or unset -- run decision matrix, then delegate to selected paradigm
+3. Non-decomposition tasks (review, document, evaluate, etc.) route through existing logic untouched
+
+### Flow B — Paradigm Author (Adding a New Paradigm)
+
+1. Create `paradigms/<name>/SKILL.md` with: scope declaration, loading trigger, output contract (must match architect output contract from current `SKILL.md` lines 329-430)
+2. Create `paradigms/<name>/references/` with paradigm-specific refs
+3. Extract paradigm-specific questions from `domain-discovery.md` into `domain-discovery-<name>.md`
+4. Add the paradigm value to the router's dispatch table in architect `SKILL.md`
+5. No registration in `plugin.json` required (router-discovered, not top-level)
+
+### Flow C — Developer Consuming Decomposition Output
+
+Output path is unchanged: `.delivery/artifacts/04-architect/`. The paradigm that produced the artifact is invisible to downstream consumers. Developers and validators navigate to the same location regardless of which paradigm was selected.
+
+## 3. Context Isolation Check
+
+**Current monolithic load:** Architect SKILL.md (615 lines) + up to 29 reference files (~305KB total).
+**Paradigm load (volatility example):** Paradigm SKILL.md (~80 lines) + 2 paradigm refs (~26KB) + task-relevant shared refs (architecture-patterns 10KB, c4-model 11KB, domain-discovery 11KB) = ~58KB.
+**Estimated reduction:** ~80% fewer reference tokens in the decomposition sub-agent context. DDD references (16.6KB) excluded from volatility; volatility references (14.6KB) excluded from DDD. The invariant "sub-agents receive only role-scoped references" now holds at paradigm granularity.
+
+## 4. Design Sprint Sub-Workflow IA (FR-4)
+
+**Reference location:** `delivery-team/skills/delivery-flow/references/design-sprint.md` (to be created)
+**Flow:** PO defines problem scope/constraints --> Architect router detects paradigm from config --> paradigm skill produces decomposition --> architecture board review (if configured) --> artifact at standard path --> DoD validates --> handoff to Plan stage.
+**Trigger:** Stage 4 (Architect) when project type involves decomposition (GREENFIELD, FEATURE, GAME_DEV). Does not trigger for BUG_FIX, DOCS_ONLY, SPIKE, or DESIGN (terminates after Architect per v2.7).
+
+## 5. Backwards Compatibility Check
+
+When an existing pipeline invokes `architect` without paradigm awareness:
+1. Router reads `architecture.decomposition` from config
+2. If `auto` or absent -- router uses existing decision matrix logic to select paradigm, then delegates
+3. If `paradigms/` directory does not exist (pre-migration) -- router falls back to inline logic entirely
+4. Non-decomposition task types never enter paradigm routing
+
+*The old roads still lead to the same halls. Only the halls within have been reordered.*
+
+## 6. Open Questions for Architect (Stage 4)
+
+**Q1: Sub-skill registration model.** Should paradigm SKILL.md files register in `plugin.json` as top-level skills, or remain internal sub-skills discovered only by the router? *Non-binding recommendation:* internal. External registration creates a public API surface constraining future restructuring.
+
+**Q2: Shared reference loading strategy.** Does the paradigm SKILL.md list shared refs to load, or does the router pre-load them before delegating? *Non-binding recommendation:* router pre-loads task-relevant shared refs (architecture-patterns, c4-model, domain-discovery) and passes them to the paradigm sub-agent. Paradigm SKILL.md declares only its own refs.
+
+**Q3: Domain-discovery extraction boundary.** The shared `domain-discovery.md` (11.4KB) contains strategy-agnostic interview protocol plus strategy-specific question sets. Only the question sets are paradigm-specific. How much moves?
+
+*These questions I leave for the smith. The mirror shows the shape; only the forge reveals the metal's true temper.*
+

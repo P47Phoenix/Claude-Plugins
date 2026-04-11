@@ -1,32 +1,37 @@
-# Release Notes — transformation-planning (run c4d1)
+# Release Notes — paradigm-as-skill extraction (run d5e2)
 
-**Role:** Bilbo (Technical Writer) | 2026-04-08
+**Role:** Bilbo (Technical Writer) | 2026-04-10
 
 ## What Changed
 
-The `delivery-team:architect` skill now supports a `transformation-planning` task type for brownfield migration engagements. Five new reference files describe a four-phase sub-workflow (1A Behavioral AS-IS, 1B Structural AS-IS, 2 TO-BE, 3 Roadmap) plus a planning orchestrator doc.
+The `delivery-team:architect` skill's decomposition paradigms (Volatility-Based Decomposition and Domain-Driven Design) have been extracted from inline reference files into standalone sub-skills under `paradigms/`. Each paradigm is now a self-contained skill directory with its own `SKILL.md` and `references/` folder, loaded on demand via a new Paradigm Router in the architect skill.
 
 ## New Capability
 
-- **`transformation-planning` task_type** on the architect skill, dispatched via Product Owner pairing for brownfield/transformation engagements.
-- **Four-phase sub-workflow** separating behavioral discovery, structural discovery, TO-BE design (anchored by a Golden Rule — preserved invariants), and a migration roadmap with 3–7 reversible steps.
-- **PO + Architect pairing pattern** enforces collaborative capture of AS-IS use cases with explicit confidence grading (HIGH/MEDIUM/LOW) before TO-BE speculation begins.
-- **Dogfooded** on Claude-Plugins itself: produced 7 use cases (3 LOW-confidence flagged), a validated `to-be-constraints.yml`, and a 5-step roadmap with a max 16% subsystem-change per step — all verified by the existing `validate_constraints.py` primitive across three separate YAML files in a single run.
+- **Paradigm Router** in architect SKILL.md dispatches to `paradigms/{paradigm_id}/SKILL.md` based on the selected decomposition strategy, loading only the relevant paradigm context.
+- **82-90% context reduction**: volatility paradigm sub-skill is 66 lines vs 667-line monolithic architect skill. Only paradigm-relevant content enters the context window.
+- **Redirect stubs** at original reference paths preserve backwards compatibility for any existing references or bookmarks.
+- **Design Sprint reference** added to delivery-flow for design-stage support.
 
-## Limitations
+## Backwards Compatibility
 
-- **Real orchestrator dispatch deferred** (Step 5 of the dogfood roadmap, tracked in BACKLOG-006). Today the transformation-planning capability is exercised manually by the architect skill. Automatic routing from delivery-flow based on detected project_type is not yet wired.
+Default routing falls back to the monolithic architect skill. Existing pipelines that do not use paradigm routing are unaffected. Redirect stubs at original paths point to new locations.
+
+## Known Limitations
+
+- **Functional decomposition** and **event-storming** paradigms are not yet extracted -- tracked as future work in the transformation roadmap.
+- Paradigm sub-skills are intentionally not registered in `marketplace.json` per ADR-001 (internal sub-skills, not marketplace-visible).
 
 ## Fellowship Credits
 
-- Gandalf — PO / Phase 1A behavioral AS-IS authoring
-- Celebrimbor — Architect / Phase 1B structural AS-IS, Phase 2 TO-BE, Phase 3 roadmap
-- Legolas — QA / validator runs and TC suite
-- Sam — DevOps / release plan
-- Bilbo — Technical Writer / these notes
-- Aragorn — retrospective
+- Gandalf -- PO / FR validation and final verdict
+- Celebrimbor -- Architect / paradigm extraction and router design
+- Legolas -- QA / 15-TC verification suite
+- Sam -- DevOps / release plan
+- Bilbo -- Technical Writer / these notes
+- Aragorn -- Delivery Lead / retrospective
 
 ## References
 
-- BACKLOG-006: transformation-planning real orchestrator dispatch
-- `.delivery/artifacts/08-transform/` — canonical dogfood outputs
+- BACKLOG-005: paradigm-as-skill extraction (this work)
+- BACKLOG-006: transformation-planning orchestrator dispatch (related)
