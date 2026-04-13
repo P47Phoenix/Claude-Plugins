@@ -1,29 +1,22 @@
-## Stage 6: Development — Summary
+# Stage 6: Development — Summary
 
-**Pipeline**: run-2026-04-05-3d92
-**Project Type**: BUG_FIX
+**Pipeline:** run-2026-04-12-hw01
+**Project type:** GREENFIELD (hardware-team plugin)
+**Status:** COMPLETE
 
-### Stories Implemented
+## Files Created
+- 57 files in hardware-team/ (7 SKILL.md, 30 reference docs, 6 hook scripts, 2 Python scripts, 1 hooks.json, 1 LICENSE.txt, 1 alias theme, test fixture spec, getting started, prerequisites)
+- CLAUDE.md updated with hardware-team plugin documentation
+- marketplace.json updated with hardware-team registration
 
-| Story | ID | Status | Changes |
-|-------|-----|--------|---------|
-| Stale Hook Migration Logic | B-011-A | DONE | +migration section in setup-wizard.md |
-| Post-Install Hook Validation | B-011-B | DONE | +validation section + expected hooks table |
-| Documentation Update | B-011-C | DONE | +conflict detection logic docs |
+## Stories Implemented (31 stories across 4 sprints)
+Sprint 1: US-101, US-108, US-102, US-104, US-201, US-202, US-203, US-205
+Sprint 2: US-204, US-206, US-103, US-301, US-401
+Sprint 3: US-105, US-106, US-107, US-302, US-303, US-304, US-305, US-306
+Sprint 4: US-400, US-402, US-403, US-404, US-405, US-501, US-502, US-503, US-504, US-505
 
-### Total Changes
-- 173 lines added, 0 deleted in setup-wizard.md
-- All existing content preserved unchanged
+## DoD Validation
+### Round 1 — 0/3 DONE (2 BLOCKING: missing hook scripts)
+### Round 2 — ALL DONE (after FIX-001: created check_pipeline_bypass.py, check_kicad_file.py, aligned schema_version)
 
-### Agents Dispatched
-
-| Agent | Role | Status | Artifact |
-|-------|------|--------|----------|
-| Developer (Gimli) | Primary — implementation | DONE | 06-dev/developer/B-011-all.md |
-| QA Engineer (Legolas) | Evaluator-Optimizer | DONE | 06-dev/qa-evaluator/B-011-all-round-1.md |
-| Developer (Gimli) | DoD Validator | DONE | 06-dev/dod/B-011-all-developer-review.md |
-| QA Engineer (Legolas) | DoD Validator | DONE | 06-dev/dod/B-011-all-qa-review.md |
-| Architect (Celebrimbor) | DoD Validator | DONE | 06-dev/dod/B-011-all-architect-review.md |
-
-### Gate Result
-ALL validators DONE. Stage advances.
+Advancing to Stage 7: UAT.

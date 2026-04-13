@@ -1,90 +1,213 @@
-# Architect DoD Self-Review — Orchestration Discipline Bundle (LIGHT)
+# Stage 4 Architecture DoD Validation: hardware-team Plugin
 
-**Reviewer**: Celebrimbor, Master Craftsman
-**Stage**: 04 — Architect (FEATURE-light)
-**Date**: 2026-04-05
-
-> *"Before the work leaves the forge, the smith must turn it once more in the light."*
-
----
-
-## 1. Architecture is internally consistent — PASS
-
-Cross-checked load-bearing claims across the four documents:
-
-- **Activation gating** (architecture §2.5, ADR-001) agrees verbatim: deny requires `schema_version >= 2.7` AND `pipeline.enforce_self_write_block: true`; default `true` for fresh v2.7, `false` under tolerantly-parsed v2.6.
-- **Allowlist** (architecture §2.3, ADR-001) lists the same five path patterns in the same order.
-- **Layered detection** (architecture §2.2, ADR-001) — three layers, identical fall-through, identical NFR-05 justification for soft-deny.
-- **Convergence rules** (architecture §4.1, ADR-003) — two-clean, no-new-classes, hard cap; default `max_self_correction: 3`; `cap_reached` framed as documented exit, not failure, in both places.
-- **Taxonomy** (architecture §4.2, ADR-003) — same seven classes, same `misc` fallback policy.
-- **Migration matrix** (architecture §3.2, ADR-002) — five rows match cell-for-cell, including the both-keys-present tiebreaker.
-- **NFR budget** (architecture §6) traces back to PRD NFR-01..NFR-08; each has a named architectural position.
-- **Risk treatment** (architecture §7) covers R1–R8 and each response appears in either the architecture body or an ADR.
-- The §5 edit map's FR column is consistent with the FRs each ADR claims to satisfy.
-
-A minor internal tension is acknowledged but not a defect: ADR-003 §Consequences notes that with `max_self_correction: 3` plus the two-clean rule, only one true "fixing" loop exists before cap. Architecture forwards the tuning question to Design/Plan rather than hiding it. Acceptable for LIGHT.
-
-## 2. ADRs capture real trade-offs, not just restate the decision — PASS
-
-Each ADR has Context, an enumerated alternatives list, and a reasoned rejection per alternative:
-
-- **ADR-001** weighs four mechanisms (env var, hook input metadata, stack inspection, allowlist-only) plus a hard-deny variant. Each rejection cites a specific failure mode (single point of failure, harness coupling, brittleness, NFR-05 violation). Negative consequences explicitly name the "missed dispatch site silently falls to Layer 3" correctness hole and document a mitigation path rather than waving it away.
-- **ADR-002** weighs silent drop, warn-and-drop, preserve-as-alias, hard error. The Option C rejection is the sharpest — it names exactly *why* preserving the alias defeats issue #69 ("re-arms the v2.6 footgun"). Negatives acknowledge user friction and parser complexity without minimizing.
-- **ADR-003** weighs five strategies (one-clean, two-clean, severity threshold, no-new-classes, hard cap) and explains why each *alone* fails. The combined two-clean + class-saturation choice is justified against C4's non-monotonicity argument with a concrete invariant (Architect revision sub-agent sees only the current loop's findings). Negatives include taxonomy-evasion risk and the "only one fixing loop before cap" tension.
-
-These are genuine trade-off records — losing options have explicit failure modes rather than dismissive one-liners.
-
-## 3. Origin detection strategy is implementable — PASS WITH PLAN-STAGE VERIFICATION
-
-- **Layer 1 (env var)** — fully implementable today. `os.environ.get()` is stdlib. The orchestrator-side change is "set env var before every Agent dispatch," mitigated by ADR-001's centralized-dispatch requirement.
-- **Layer 2 (hook input metadata)** — partially implementable. Architecture §8 PQ-1 explicitly forwards this as an open question to Plan. The architecture does *not* assume Layer 2 works; it treats Layer 1 as deterministic primary and Layer 2 as best-effort secondary. If Layer 2 turns out to be a no-op, Layer 3's soft-deny is the safety net.
-- **Layer 3 (soft-deny)** — fully implementable. `systemMessage` JSON write is an existing pattern in the hook codebase.
-- **Bash redirection coverage** — implementable as a single regex over the command string. Patterns enumerated in §2.4 (`>`, `>>`, `tee`, `cat <<EOF`, `dd of=`, `cp`/`mv`).
-- **Allowlist** — trivial: module-level constant + `fnmatch.fnmatch`.
-- **Activation gating** — depends on v2.7 schema fields delivered by the same bundle. No circular dependency because gating defaults to `false` under v2.6, so rollout cannot deadlock on itself.
-- **Performance** — NFR-01 budget (50ms p95) has 35ms headroom after the 15ms architecture allocation. All ops are O(1) dict/string + one regex pass. Believable.
-
-The strategy is implementable as specified, with one acknowledged unknown that is correctly forwarded to Plan rather than hand-waved.
-
-## 4. Edit map covers all files in scope — PASS
-
-Cross-referenced architecture §5 against the PRD's 16 FRs:
-
-- FR-01 ✓ config-schema.md
-- FR-02 ✓ config-schema.md
-- FR-03 ✓ SKILL.md
-- FR-04 ✓ setup-wizard.md
-- FR-05 ✓ SKILL.md, project-types.md
-- FR-06 ✓ SKILL.md
-- FR-07 ✓ SKILL.md
-- FR-08 ✓ SKILL.md
-- FR-09 ✓ enforce_pipeline_scope.py, hooks.json, quality-gates.md
-- FR-10 ✓ SKILL.md
-- FR-11 ✓ pipeline-stages.md, team-patterns.md, quality-gates.md
-- FR-12 ✓ audit_agent_prompt.py (correctly marked OPTIONAL/MAY)
-- FR-13 ✓ team-patterns.md
-- FR-14 ✓ pipeline-stages.md
-- FR-15 ✓ config-schema.md
-- FR-16 ✓ CLAUDE.md, README.md, marketplace.json, docs/**
-
-All 16 FRs land on at least one file. The §5.4 explicit non-targets (other delivery-team skills, other plugins, no DB, no MCP) match the PRD scope statement. The MkDocs `docs/**` entry correctly expands C7's grep concern across 25 pages rather than scoping to a single file.
+**Reviewer:** Celebrimbor (Solution Architect)
+**Artifact:** Architecture v1.4 (`04-architect/solution/architecture.md`)
+**Date:** 2026-04-12
+**Pipeline:** run-2026-04-12-hw01
+**Prior Version Reviewed:** v1.3 (DONE)
+**Purpose:** Re-validate after security findings SEC-01 through SEC-06; confirm no regressions.
 
 ---
 
-## Residuals Forwarded to Plan
-
-- **PQ-1** Layer 2 verification against current harness (only correctness-bearing unknown).
-- **PQ-2** legacy v2.6 fixture location (procedural).
-- **PQ-3** `routing.force_type` enum parity (one-line clarification, defaultable).
-
-None block the Architect → Plan handoff at LIGHT depth.
+> "A blade reforged must be tested anew -- not merely at the weld, but along the entire edge. The security revisions have added new metal; I must ensure the old work holds true beside it."
 
 ---
 
-## Verdict
+## Gate 4 Criteria Evaluation
 
-All four LIGHT-mode DoD criteria are satisfied.
+### [DONE] Trade-offs documented [blocking]
 
-*"The seams hold. The hammer is laid down. Pass it onward."*
+The architecture documents trade-offs in a comprehensive table (8 decisions with Option A, Option B, chosen option, and rationale) plus inline trade-off analyses:
 
-— Celebrimbor
+- **Section 7.1**: State file format (Markdown+YAML vs. pure YAML) -- parsing fragility cost explicitly acknowledged (F-03).
+- **Section 10.1.1**: Deterministic vs. LLM-based deduplication -- rationale grounded in Business Rules Engine principle.
+- **Section 5.1**: Cross-plugin trust boundary -- explicit statement that semantic validation of kicad-happy output is NOT performed; only structural contract checks.
+- **Section 7.2.1 (v1.4)**: State tampering as accepted risk vs. cryptographic integrity enforcement -- justified by local development tool context.
+- **Section 14.4 (v1.4)**: Three accepted risks with justification and mitigating controls.
+
+**Regression check:** The v1.4 security additions introduced new trade-off discussions (accepted risks in Sections 7.2.1 and 14.4) without removing or contradicting any pre-existing trade-off documentation. No regression.
+
+**Verdict: PASS.**
+
+---
+
+### [DONE] NFRs quantified [blocking]
+
+Quantified NFRs with specific targets:
+
+| NFR | Target | Section |
+|-----|--------|---------|
+| NFR-001 (No pip install) | Python stdlib only | Throughout |
+| NFR-003 (No reimplementation) | Zero kicad-happy reimplementation | 5.4 |
+| NFR-005 (Gate usability) | Findings include: what, where, why, fix | Quality Attributes |
+| NFR-008 (Memory retrieval) | p95 < 2 seconds | 8.4 |
+| Rework termination | max 3/path, max 10 total | 3.3 |
+| Staleness thresholds | 7-day warning, 30-day critical | 3.4.1 |
+| Memory archival | relevance < 0.1 after 10 runs; 100 entries/stage; decay floor 0.05 | 8.6 |
+| Review coverage | All 7 categories examined | 10.3 |
+| Path component whitelist | `^[a-zA-Z0-9._-]+$` (v1.4) | 7.2 |
+
+**Regression check:** v1.4 added the path component whitelist (Section 7.2) -- a new quantified constraint. No existing NFR was weakened or removed. No regression.
+
+**Verdict: PASS.**
+
+---
+
+### [DONE] Failure modes addressed [blocking]
+
+The unified Error Taxonomy (Section 13) now contains **25 error codes** across **11 component categories** (the 11th, `SEC`, added in v1.4). Key v1.4 additions:
+
+| Code | v1.4 Addition | Component |
+|------|---------------|-----------|
+| HW-STA-005 | Path traversal detected | State management |
+| HW-SEC-001 | Pricing data in memory entry | Security controls |
+
+Both new error codes have: defined severity, detecting component, and response behavior consistent with the existing taxonomy structure.
+
+**Regression check:** All 23 pre-existing error codes (HW-DIS-001 through HW-HOK-001) remain unchanged. The two new codes are additive. The severity definitions (Section 13.3) are unchanged. No regression.
+
+**Verdict: PASS.**
+
+---
+
+### [DONE] Data flows described [blocking]
+
+Data flows documented at seven levels:
+
+1. **Pipeline stage flow** (Section 3.1): Stage-to-stage with execution modes, roles, gates, kicad-happy skills.
+2. **Sub-agent dispatch flow** (Section 2.3): Orchestrator -> role -> kicad-happy chain.
+3. **Context loading flow** (Section 4): Three-level with token cost estimates.
+4. **State operations** (Section 7.3): 6 state transitions with triggers and effects.
+5. **Memory read/write** (Section 8.3): Tiered injection with no-pricing filter.
+6. **Rework execution** (Section 3.3): 6-step semantics with downstream re-validation.
+7. **C4 diagrams** (Section 11): Context and Container level.
+
+**Regression check:** v1.4 added the `safe_join()` API (Section 7.2) which introduces a new data flow constraint (path construction must pass through sanitization). This constraint is correctly integrated into the State Operations (Section 7.3) where `sanitize_path_component()` and `safe_join()` are explicitly referenced at the Create operation. The no-pricing filter (Section 8.3 step 5) adds a new data flow transformation point in the memory write path. Both are additive and consistent with existing flows. No regression.
+
+**Verdict: PASS.**
+
+---
+
+### [DONE] Security addressed [blocking]
+
+This is the primary focus of the v1.4 revision. Six security findings were addressed:
+
+| Finding | Severity | Resolution | Section |
+|---------|----------|------------|---------|
+| SEC-01 | BLOCKING | Path sanitization: whitelist + canonicalization + `safe_join()` API + HW-STA-005 | 7.2 |
+| SEC-02 | BLOCKING | BOM data classification (SENSITIVE/INTERNAL/PUBLIC) + `.gitignore` + no-pricing filter + HW-SEC-001 | 14.2 |
+| SEC-03 | ADVISORY | `yaml.safe_load()` mandate across all scripts | 7.1, 14.1 |
+| SEC-04 | ADVISORY | Cross-plugin trust boundary documented | 5.1 |
+| SEC-05 | ADVISORY | State tampering accepted risk with integrity hash | 7.2.1 |
+| SEC-06 | ADVISORY | Hook input sanitization standards + template | 9.6, 14.1 |
+
+**Depth of security coverage:**
+
+- **Coding Standards** (Section 14.1): 5 mandatory standards covering YAML parsing, JSON parsing, subprocess invocation, path construction, and environment variable handling. Each standard cites the security finding it addresses.
+- **Data Classification** (Section 14.2): Three-tier model with per-field and per-artifact classification. `.gitignore` integration in setup wizard.
+- **Trust Boundaries** (Section 14.3): 5 boundaries with documented trust assumptions.
+- **Accepted Risks** (Section 14.4): 3 risks with justification and mitigating controls.
+- **Testability** (Section 12.1): 4 security-specific test cases (path sanitization, no-pricing filter, safe_load enforcement, hook input sanitization) -- all marked as fully automated.
+
+**Regression analysis (security revisions vs. pre-existing architecture):**
+
+I examined each v1.4 addition against the surrounding architecture for contradictions, weakened guarantees, or unintended side effects:
+
+1. **Path sanitization (SEC-01) vs. State Operations (Section 7.3):** The `safe_join()` requirement is correctly referenced at the Create operation (pipeline_id sanitized, config snapshot path via safe_join). However, the artifact registry paths in Section 7.1 (e.g., `.hardware/artifacts/01-concept/requirements.md`) are hardcoded stage names, not user-derived, so they do not require sanitization. This is correct and consistent -- only user-controlled path components are sanitized.
+
+2. **No-pricing filter (SEC-02) vs. Memory Protocol (Section 8.3):** The filter is applied during the memory write phase (step 5) and is documented as "best-effort pattern matching" with the primary defense being the sub-agent prompt instruction. This layered approach is sound -- the prompt instruction is the first line of defense, the filter is a safety net.
+
+3. **yaml.safe_load() (SEC-03) vs. State Manager (Section 7.1):** The security invariant note in Section 7.1 is positioned immediately before the state file YAML example, making it impossible to miss when implementing. Consistent with Section 14.1.
+
+4. **Hook input sanitization (SEC-06) vs. Hook Definitions (Section 9.1-9.5):** Each hook script's logic description in Sections 9.2-9.5 does not contradict the sanitization standards in Section 9.6. The `check_kicad_file.py` hook (Section 9.5) extracts a file path from `$TOOL_INPUT` -- Section 9.6 explicitly requires path validation for this case.
+
+5. **State tampering detection (SEC-05) vs. Resume Protocol (Section 7.4):** The integrity hash warning in Section 7.2.1 states the pipeline "proceeds regardless of the user's answer." This is consistent with the accepted-risk classification -- the warning is advisory, not blocking. No conflict with the resume protocol flow.
+
+**No regressions detected.** All security additions are additive and consistent with the pre-existing architecture.
+
+**Verdict: PASS.**
+
+---
+
+### [DONE] ADRs written [warning]
+
+Four ADRs are referenced and cross-linked:
+
+| ADR | Decision | Reversibility |
+|-----|----------|---------------|
+| ADR-001 | Plugin structure | Two-way door |
+| ADR-002 | kicad-happy integration | One-way door |
+| ADR-003 | Pipeline stages | Implicit (no explicit section) |
+| ADR-004 | Human-execution stages | Two-way door |
+
+All updated with reversibility statements in v1.1. v1.4 did not add new ADRs, which is appropriate -- the security controls are implementation standards, not contested architectural decisions requiring ADR treatment.
+
+**Observation (non-blocking):** ADR-003 still lacks an explicit Reversibility section, as noted in the v1.3 review. This remains a minor consistency gap.
+
+**Verdict: PASS.**
+
+---
+
+### [DONE] Performance budgets set [warning]
+
+Performance-relevant budgets:
+
+| Budget | Target | Section |
+|--------|--------|---------|
+| Memory retrieval | p95 < 2 seconds | 8.4 |
+| Context loading | ~200 (L1), 500-2000 (L2), 1000-5000 (L3) tokens | 4 |
+| Hook timeout | 5-10 seconds | 9.1 |
+| Memory entries | 100 per stage file | 8.6 |
+| Review passes | 1-5, default 2 | 10.3 |
+
+**Regression check:** v1.4 did not modify any performance budget. No regression.
+
+**Observation (non-blocking, carried forward):** No per-stage AI-execution time budget is defined. A p95 target for stage execution duration would aid regression detection.
+
+**Verdict: PASS.**
+
+---
+
+## Security Revision Regression Summary
+
+| Check | Result |
+|-------|--------|
+| Pre-existing trade-offs preserved | No regression |
+| Pre-existing NFRs preserved | No regression |
+| Pre-existing error codes preserved | No regression |
+| Pre-existing data flows consistent | No regression |
+| Security additions internally consistent | Confirmed |
+| Security additions cross-referenced correctly | Confirmed |
+| Security test cases added (Section 12.1) | 4 new automated tests |
+| Coding standards consolidated (Section 14.1) | 5 standards, each citing source finding |
+| Trust boundaries enumerated (Section 14.3) | 5 boundaries documented |
+| Accepted risks justified (Section 14.4) | 3 risks with mitigating controls |
+
+---
+
+## Final Assessment
+
+| # | Criterion | Type | Result |
+|---|-----------|------|--------|
+| 1 | Trade-offs documented | BLOCKING | **DONE** |
+| 2 | NFRs quantified | BLOCKING | **DONE** |
+| 3 | Failure modes addressed | BLOCKING | **DONE** |
+| 4 | Data flows described | BLOCKING | **DONE** |
+| 5 | Security addressed | BLOCKING | **DONE** |
+| 6 | ADRs written | WARNING | **DONE** |
+| 7 | Performance budgets set | WARNING | **DONE** |
+
+### Non-Blocking Observations (Carried Forward)
+
+1. **ADR-003 missing explicit Reversibility section** -- consistency gap with ADR-001, 002, 004.
+2. **No per-stage AI-execution time budget** -- would aid context bloat and model regression detection.
+
+### Commendations
+
+The v1.4 revision demonstrates disciplined security engineering. The consolidation of all security controls into Section 14 (with cross-references to implementation sections) creates a single authoritative security reference. The addition of 4 fully-automated security test cases in Section 12.1 ensures the security invariants are verifiable, not merely documented. The accepted-risk documentation in Section 14.4 is particularly well-crafted -- each risk states its justification and mitigating controls, avoiding the common trap of accepting risks without reasoning.
+
+---
+
+> "This architecture has been forged, tested, reviewed by adversaries, and hardened by the scrutiny of those who think in threats. The v1.4 revisions add strength without introducing brittleness. The metal rings true. I set my seal upon this work."
+
+**GATE 4 RESULT: DONE**

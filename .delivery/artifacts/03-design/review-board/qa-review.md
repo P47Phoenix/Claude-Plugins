@@ -1,81 +1,145 @@
-# QA Risk Review: Design Spec Testability Assessment
+# QA Testability Review: Hardware Delivery Team Plugin Design Artifacts
 
-**Reviewer**: Legolas (QA Engineer) -- Risk Reviewer, Multi-Perspective Review Board
-**Artifact**: `.delivery/artifacts/03-design/ux/design-spec.md` v1.0
-**Date**: 2026-03-30
-
----
-
-## Verdict: PASS
-
-The design spec demonstrates strong testability across all four review dimensions. Two advisory findings are noted below -- neither rises to BLOCK severity, but both should be addressed during implementation.
+**Reviewer**: QA Engineer (Legolas)
+**Date**: 2026-04-12
+**Review Type**: Design-stage testability review (Multi-Perspective Review Board)
+**Scope**: User flows, wireframes, component specs, accessibility review
 
 ---
 
-## 1. Can Each Refactoring Step Be Verified Independently?
-
-**Finding: PASS**
-
-All 11 steps include explicit verification commands. Steps 1-5 (additive, new modules) each have a one-liner Python import/assertion test that can be run in isolation. Steps 6-9 (modifications to existing files) include structural verification (line counts, grep checks, node/rule count assertions). Steps 10-11 (deletion and docs) have grep-based negative checks.
-
-The verification commands are concrete and automatable -- they are not vague statements like "verify it works." Each command produces a deterministic, inspectable output (e.g., `_count_nodes(fid) == 15`, `_count_rules(fid) == 20`).
-
-**Strength**: Step 6 (the highest-risk transformation) has the most thorough verification: line count check, node count check, rule count check, and flow diagram structural diff. This is proportional to the risk.
+> *"My eyes miss nothing from this perch. Every state undefined is an orc uncounted, every edge case ignored a shadow in the wood. That bug still only counts as one."*
 
 ---
 
-## 2. Are There Clear Before/After States for Validation?
+## Artifact 1: User Flows (`ux/user-flows.md`)
 
-**Finding: PASS**
+### Rating: APPROVE
 
-Section 1 (Current State Diagram) provides precise baselines: file inventory with exact line counts, hardcoded string counts (10 occurrences of `"prd_flows.db"` across 6 files), dependency graph with import/export lists, and a line-range breakdown of `PRDFlowBuilder` internals (9 segments mapped by line range).
+**Testability strengths:**
 
-Section 2 (Target State Diagram) provides exact target line counts per file with delta calculations. The net line delta (-499) is calculated and shown. Section 9 (Structural Equivalence Verification Plan) maps each CLI entry point to its pre-refactoring baseline and post-refactoring check with specific metrics.
+1. **States are clearly defined.** Every flow identifies explicit entry points (E1, E2, E3), a numbered happy path, alternative paths (2a-2d), and error paths (E1, E2). Each state transition has a defined trigger and output. I can write test cases directly from these flow definitions.
 
-The Behavioral Compatibility Matrix (Section 5.2) explicitly defines what "equivalent" means per entry point: output structure, exit codes, and DB side effects. This removes ambiguity from "it should work the same." The note that timestamp-based IDs are excluded from comparison (per NFR-04) is a mature testability decision -- it prevents false negatives from non-deterministic values.
+2. **Success/failure conditions are measurable.** Gate results are binary: PASS or NOT_DONE. Rework limits are numeric: current/limit. Config validation outputs specify which fields failed and why. There is no ambiguity about what constitutes success at any decision point.
 
----
+3. **Edge cases are addressed.** The flows explicitly cover: kicad-happy not installed (2a), partially installed (2b), version mismatch (2c), config already exists (2d), invalid config fields (E1), outdated config schema (E2). The rework flow covers both per-path and total limit exhaustion. The resume flow covers stale state detection.
 
-## 3. Is Behavioral Compatibility Verifiable Without a Test Suite?
+4. **Rework paths are enumerable.** Flow 4 defines a fixed table of 6 valid rework paths (Source Stage --> Target Stage). This is directly testable -- I can verify that only these paths are triggered and that undefined paths (e.g., Concept --> Production Release) are rejected.
 
-**Finding: PASS with advisory**
+5. **kicad-happy degradation is graceful, not fatal.** Flow 5C defines that a missing skill produces a WARNING and continues, with the gate potentially flagging the gap. This is testable: remove a skill, verify warning output, verify pipeline continues, verify gate behavior.
 
-The design relies on manual CLI execution and count-based comparison rather than automated tests, which is appropriate given the PRD scope (no test runner configured, per CLAUDE.md). The verification plan in Section 9 is executable by hand. The 42 acceptance criteria in the FR Traceability Matrix (Section 6) each have a concrete verification method -- grep commands, Python one-liners, or code review checks.
+**Testability observations (non-blocking):**
 
-However, there is one gap:
+- **COMMENT**: Flow 2 (Pipeline Execution) shows the happy path through all 8 stages but does not define what happens if the user types an unrecognized command at a human checkpoint (e.g., neither "prototype complete" nor "prototype failed" nor "save pipeline state"). The expected behavior for invalid input at checkpoints should be specified -- likely an error message prompting the user to use a recognized command. Without this, testers must guess the expected behavior.
 
-**Advisory F-01: No intermediate behavioral snapshot protocol for Step 6.** The design says to "capture pre-refactoring baseline" before Step 6 and compare afterward, but does not specify *where* that baseline is stored or *in what format* the comparison is performed. During implementation, the developer could skip this or do it inconsistently.
+- **COMMENT**: Flow 3C (Gate Failure Self-Correction Loop) states the loop is "bounded by session context" but does not define a numeric limit. This means the self-correction loop has no explicit exit condition other than gate pass or session end. For testability, a maximum self-correction attempt count (or a clear statement that the session context window is the only bound) would let me write a deterministic test for loop termination.
 
-**Recommendation**: Add an explicit instruction to Step 6 mitigation: "Before modifying `prd_flow_builder.py`, run `python prd_flow_builder.py > /tmp/baseline_builder_output.txt` and capture node/rule counts to a file. After modification, diff the outputs." This makes the before/after comparison a concrete, repeatable action rather than a suggestion.
-
----
-
-## 4. Are Rollback Points Defined for Each Step?
-
-**Finding: PASS with advisory**
-
-Section 8 (Risk Mitigations Summary) provides explicit rollback commands for all 11 steps. Additive steps roll back with `git rm`. Modification steps roll back with `git checkout <file>`. Deletion steps (Step 10) roll back with `git checkout` of the deleted files. The global rollback is a single atomic PR revert (PRD R7).
-
-The rollback strategy is sound because each step leaves the codebase in a working state (stated in Section 4 intro), meaning any step's rollback returns to the previous working state.
-
-**Advisory F-02: Step 3 rollback dependency chain unclear.** Step 3 wires `shared.get_connection()` to call `ensure_schema()`. The stated rollback is "revert `shared.py` edit." If Steps 4 or 5 have already been completed before a Step 3 regression is discovered, the rollback table implies Step 3 can be reverted independently. This is actually safe -- Steps 4 and 5 are purely additive data modules with zero internal imports (dependency rule 1), so they do not depend on Step 3's wiring. But this non-obvious safety should be stated explicitly.
-
-**Recommendation**: Add a note to the Step 3 rollback cell: "Safe to revert independently -- Steps 4/5 are leaf modules with no dependency on `get_connection()` wiring."
+- **COMMENT**: Flow 6B (P2 Dynamic Pipeline Adaptation) is marked as "Future -- not in Phase 1." This is fine, but the boundary between P1 and P2 behavior should be tested: verify that in P1, all 8 stages always execute regardless of config values like `layers: 1` or `volume: prototype`. A test case asserting "pipeline does NOT skip stages in P1" prevents premature P2 behavior from leaking in.
 
 ---
 
-## Summary of Findings
+## Artifact 2: CLI Wireframes (`ux/wireframes.md`)
 
-| ID | Severity | Category | Description |
-|----|----------|----------|-------------|
-| F-01 | Advisory | Behavioral verification | Step 6 pre-refactoring baseline capture needs explicit file-based snapshot instructions |
-| F-02 | Advisory | Rollback clarity | Step 3 rollback independence from Steps 4-5 should be stated explicitly |
+### Rating: APPROVE
 
-**Blocking findings**: 0
-**Advisory findings**: 2
+**Testability strengths:**
 
-Neither finding represents a testability risk that would block the design. The spec is unusually thorough for a refactoring design -- the FR traceability matrix (42 acceptance criteria, each with a verification method), the structural equivalence verification plan, and the per-step verification commands provide a strong foundation for validation without a formal test suite. The PIPELINE_SEQUENCE design decision (Section 7) correctly identifies the non-trivial stage/gate ordering as orchestration logic rather than data, which is the right separation for testability.
+1. **Design tokens create a verifiable vocabulary.** The token table (box drawing characters, severity icons, status markers, width constraints) defines exact characters and their Unicode code points. I can write assertions that verify output contains exactly these tokens and no others (e.g., no Unicode box-drawing characters leak in).
+
+2. **Width constraint is testable.** All output targets 60 characters wide, content wraps at 56. Every wireframe can be validated against this constraint programmatically. No line should exceed 60 characters.
+
+3. **Theme token mapping is a lookup table.** The neutral-to-LOTR mapping is a finite, enumerable substitution table (14 entries). I can test that every neutral token has a themed counterpart and vice versa, and that switching themes produces the expected substitutions without data loss.
+
+4. **Every wireframe references source flows and FR/Story coverage.** This traceability means I can verify that every flow decision point has a corresponding wireframe, and every wireframe traces back to a requirement.
+
+5. **Dual-theme examples provided.** Every wireframe shows both neutral and LOTR theme variants. This gives me two concrete expected outputs per component for snapshot/golden-file testing.
+
+**Testability observations (non-blocking):**
+
+- **COMMENT**: Wireframe 1E (Config Already Exists) shows `Config already exists (schema v1.0). Overwrite? [y/N] _` as a bare line without box borders. This is the only wireframe without a box. The inconsistency is likely intentional (simple confirmation prompt), but a test should verify that this specific prompt is unboxed while all other outputs are boxed. The design should state explicitly whether this is intentional.
+
+- **COMMENT**: The LOTR theme stage name mapping (Concept=Shire, Schematic=Rivendell, etc.) appears in Wireframe 2A but is not in the Design Token table. It is in the component specs' theme token map but only for token keys like `PIPELINE_TITLE`, not for individual stage names. The stage-to-themed-name mapping should be enumerated somewhere testable so that theme regression tests can verify all 8 stage names.
 
 ---
 
-**VERDICT**: PASS
+## Artifact 3: Component Specifications (`ui/component-specs.md`)
+
+### Rating: APPROVE with COMMENT
+
+**Testability strengths:**
+
+1. **Every component has explicit states.** Each component defines a States table with State/Behavior pairs. For example, Component 3 (Gate Result) has 5 states: all pass, partial failure, all fail, DRB with dedup, pipeline complete. Each state has defined behavior. I can write a test for every state.
+
+2. **Placeholder definitions are typed.** Every placeholder specifies Required (Yes/No), Type (string, integer, theme-token, severity-token, boolean, status-token, whitespace), and Description. This typing makes validation testable -- I can verify that integer placeholders receive integers, theme-tokens resolve to known values, etc.
+
+3. **Theme injection points are numbered.** Each component lists exactly which placeholders are theme-sensitive. This means I can test that non-injection-point content remains unchanged across themes, and injection-point content changes correctly.
+
+4. **Templates are structural contracts.** The templates for each variant define the exact line-by-line structure of the output. These can be converted directly into format-validation tests.
+
+**Testability concerns (non-blocking):**
+
+- **COMMENT**: Component 2 (Agent Status) defines `[!]` as the Error state prefix, but this indicator does not appear in the Design Token table (which lists `[>]`, `[~]`, `[+]` only). The `[!]` token is mentioned in the States table ("Error: Shows `[!]` prefix") but has no formal definition as a Progress Indicator Token. It should be added to the token table or explicitly documented as an extension. Without this, a tester cannot verify whether `[!]` is a valid progress indicator or an undefined symbol.
+
+- **COMMENT**: Component 3, Variant D (Design Review Board Results) template ends with a Summary line but has no explicit `Result: PASS/NOT_DONE` line. The DRB output in the wireframes (5F) also lacks a Result line -- it shows findings and a summary tally but no gate result. The question is: does the DRB produce its own gate result, or does the unified severity ranking feed into a separate gate component? This ambiguity affects test design. If the DRB has no Result line, then the test expectation is "DRB output has no Result line; the subsequent gate component determines pass/fail." If it should have one, it is missing from the template.
+
+- **COMMENT**: The Theme Injection Architecture section should define what happens when a themed token value exceeds `WIDTH_INNER` (56 chars). The LOTR tokens are generally shorter than 56 chars, but `THE FELLOWSHIP OF THE BOARD` is 28 characters, and combined with a project name like `sensor-board-v2` in the Pre-Flight Summary line `{{PIPELINE_TITLE}}: {{project_name}}`, the result is 48 characters -- within limits. However, a longer project name (e.g., 30+ chars) combined with a themed token could overflow. The truncation/wrapping behavior for this case should be specified for testability.
+
+---
+
+## Artifact 4: Accessibility Review (`ui/accessibility.md`)
+
+### Rating: APPROVE
+
+**Testability strengths:**
+
+1. **Every finding has a severity rating.** The three-level system (BLOCKING, WARNING, SUGGESTION) with clear definitions makes it straightforward to verify that all BLOCKING issues are resolved before implementation and all WARNING issues are tracked.
+
+2. **The Summary Matrix is a testable checklist.** 26 findings with finding number, severity, category, and fix-required status. This directly converts to a verification checklist: for each finding marked "Fix Required," verify the fix is implemented.
+
+3. **Fixes are specific and implementable.** Each fix includes concrete before/after examples (e.g., plain-text mode, summary-first pattern, short-form commands). These examples are themselves test cases -- I can verify that the implementation matches the prescribed fix.
+
+4. **No BLOCKING findings exist.** All 6 actionable findings are WARNING level. This means the design does not exclude any user group -- it has friction points but no barriers. The design can proceed to implementation with WARNINGs tracked as backlog items.
+
+**Testability observations (non-blocking):**
+
+- **COMMENT**: Finding 1B recommends a `display.plain_text_mode` config key, and Finding 2B recommends a `display.color_mode` config key. These are new config keys not present in the current schema (v1.0) defined in the user flows. These additions should be coordinated with the config schema -- either added to v1.0 before implementation or planned for v1.1. For testability, the config schema must include these keys so tests can toggle modes and verify behavior.
+
+- **COMMENT**: The accessibility review references wireframe numbers (e.g., "Wireframe 5B", "Wireframe 5G", "Wireframe 7A") which I verified exist in the wireframes document. Good traceability. No phantom references detected.
+
+---
+
+## Cross-Artifact Testability Assessment
+
+### Positive Patterns
+
+1. **Consistent state vocabulary.** All four artifacts use the same status tokens (DONE, NOT_DONE, PASS, PAUSED, REWORK, COMPLETE, ABORTED). No artifact introduces conflicting terminology. This means test assertions can use a single vocabulary.
+
+2. **Full traceability chain.** User flows reference FRs and Stories. Wireframes reference flows. Component specs reference wireframes. Accessibility review references wireframes and component specs. Every artifact traces backward to requirements and forward to implementation. Test cases can trace any failure back to a specific requirement.
+
+3. **Dual-theme coverage.** Every visual artifact shows both neutral and LOTR theme variants. Theme testing is not an afterthought -- it is built into the design from the start.
+
+4. **Enumerable gate behavior.** Gates are binary (PASS/NOT_DONE), validators are ALL-must-pass, rework paths are a fixed set, limits are numeric. All gate behavior is deterministic and testable without runtime judgment calls.
+
+### Gaps for Test Planning
+
+| Gap | Impact | Recommendation |
+|-----|--------|----------------|
+| Unrecognized command at checkpoint | Cannot test error handling for typos | Define expected response for invalid checkpoint input |
+| Self-correction loop bound | Cannot test loop termination deterministically | Add explicit max self-correction attempts or document the implicit bound |
+| `[!]` error indicator undefined in tokens | Ambiguous test expectation for error states | Add to Design Token table |
+| DRB Result line ambiguity | Cannot determine whether DRB output includes a gate result | Clarify in Component 3 Variant D template |
+| Config key additions from accessibility | Schema drift risk | Coordinate `display.*` keys with config schema before implementation |
+
+---
+
+## Final Verdict
+
+> *"I have looked upon these designs from every vantage point. The states are clear, the transitions are defined, the edge cases are addressed with the care of a Mirkwood archer counting arrows before battle. The gaps I have found are observations, not blockers. That bug still only counts as one."*
+
+| Artifact | Rating | Blocking Issues |
+|----------|--------|-----------------|
+| User Flows | APPROVE | 0 |
+| Wireframes | APPROVE | 0 |
+| Component Specs | APPROVE | 0 |
+| Accessibility Review | APPROVE | 0 |
+
+**Overall: APPROVE** -- All four design artifacts demonstrate strong testability. States are well-defined, success/failure conditions are measurable, and edge cases are thoughtfully addressed. The non-blocking comments above should be resolved during or before the Architect stage to prevent ambiguity during test case design.

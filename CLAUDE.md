@@ -36,6 +36,7 @@ Each plugin should include an `ARCHITECTURE.md` with Mermaid diagrams documentin
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
 | `research-agent/` | Research agent with 5 research types and academic frameworks |
 | `mtg-commander/` | MTG Commander deck builder: synergy-first multi-agent pipeline, Scryfall integration, configurable price goals + adversarial Challenger agents via `.mtg-commander.yml` |
+| `hardware-team/` | Hardware delivery pipeline over kicad-happy skills: 8 stages from Concept to Production Release (7 roles, 5 gates, 11 kicad-happy integrations) |
 
 ### delivery-team Plugin (11 skills)
 
@@ -64,6 +65,29 @@ Each plugin should include an `ARCHITECTURE.md` with Mermaid diagrams documentin
 | GDScript validation | PostToolUse (Write/Edit) | Parse-validates `.gd` files via `godot --headless --check-only` |
 | Skill load verification | PostToolUse (Agent) | Verifies SKILL_LOADED signal in agent responses |
 | Empirical validation | SubagentStop (developer/godot) | Detects runtime-only acceptance criteria |
+
+### hardware-team Plugin (7 skills)
+
+| Skill | Roles / Purpose |
+|-------|----------------|
+| `hardware-flow/` | Pipeline orchestrator: 8 stages (Concept, Schematic, Layout, Prototype, DFM/DFA, Compliance, Pilot Run, Production Release), rework loops, gate validation, kicad-happy dispatch |
+| `hw-product-owner/` | Hardware Product Owner: requirements, constraints, feasibility analysis, make-vs-buy, BOM budgeting |
+| `electrical-engineer/` | Electrical Engineer: schematic design, component selection (4 distributor skills), SPICE simulation, firmware interface docs |
+| `pcb-layout-engineer/` | PCB Layout Engineer: physical layout, routing, stackup design, impedance control, DRC |
+| `manufacturing-engineer/` | Manufacturing Engineer: DFM/DFA review, panelization, test point coverage, fab-house integration (JLCPCB, PCBWay) |
+| `compliance-engineer/` | Compliance Engineer: EMC pre-compliance, safety standards (IEC 62368-1), environmental (RoHS/REACH/WEEE), market requirements (FCC/CE/UL) |
+| `test-engineer/` | Test Engineer: test strategy, fixture design, production test, validation planning |
+
+### hardware-team Hooks (6 hooks across 3 event types)
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| Session validation | SessionStart | Validates `.hardware/config.yml` exists and is current, checks paused pipeline staleness |
+| kicad-happy check | SessionStart | Verifies all 11 kicad-happy skills are available, reports missing dependencies |
+| Pipeline bypass detection | PreToolUse (Skill) | Warns when hardware roles invoked outside hardware-flow |
+| KiCad file notification | PostToolUse (Write/Edit) | Notifies when KiCad project files are modified |
+| Schematic DRC | PostToolUse (Write/Edit) | Auto-runs basic DRC validation on `.kicad_sch` modifications, reports findings as warnings |
+| BOM drift detection | PostToolUse (Write/Edit) | Detects when schematic changes invalidate the current BOM, warns about inconsistencies |
 
 **CI regression guards** (under `.github/workflows/`):
 - `workflow-injection-lint.yml` — fails PRs that interpolate `${{ github.event.* }}` directly inside workflow `run:` blocks (DEFECT-004 regression guard).

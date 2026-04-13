@@ -1,72 +1,90 @@
-# DevOps DoD Review — Stage 07 UAT
+# DevOps DoD Review: Stage 7 UAT -- Release Readiness
 
-**Reviewer**: Samwise Gamgee (DevOps)
-**Artifact under review**: `.delivery/artifacts/07-uat/devops/release-plan.md`
-**Bundle**: Orchestration Discipline (v2.7), marketplace 2.17.1 -> 2.18.0
-**Verdict**: **DONE**
+**Reviewer:** Samwise Gamgee (DevOps)
+**Artifact under review:** `.delivery/artifacts/07-uat/devops/release-plan.md`
+**Pipeline:** run-2026-04-12-hw01 | **Type:** GREENFIELD
+**Date:** 2026-04-12
 
-> *"Right then, Mr. Frodo — let's walk the path one more time before we lock the door. Boots tied, kettle off, lembas counted twice."*
+---
+
+> "Now then, let's have a proper look at this release plan. A good gardener doesn't just plant seeds and hope for the best -- he checks the soil, the weather, and makes sure there's a path to the shed if it rains."
 
 ---
 
 ## DoD Criteria
 
-### 1. Release plan complete
+### 1. Release plan is complete and executable [BLOCKING] -- PASS
 
-| Requirement | Status | Evidence |
-|---|---|---|
-| Pre-release checklist covers working tree, artifacts, schema, hooks, docs, dogfood, PR readiness | DONE | §1.1–§1.7, seven sub-sections, every box actionable |
-| Release steps are linear and unambiguous | DONE | §2.1–§2.9, nine numbered steps from sanity sweep through announce |
-| Commit-per-story discipline preserved | DONE | §2.2 enforces edit-map scope, conventional-commits, `refs #NN` vs `Closes`, co-author trailer |
-| Branch + push flow matches deploy plan | DONE | §2.3 single rebase, §2.4 push gated on §1 + §2.1–§2.3 green |
-| PR creation uses draft -> CI -> ready transition | DONE | §2.5 draft PR, §2.6 CI watch, §2.7 `gh pr ready` only after CI green |
-| Human checkpoint defined with merge-method guard | DONE | §2.8 explicitly requires **Merge commit** (not squash, not rebase), preserving the 12–13-commit history |
-| Post-release verification covers GitHub state, CI, schema parity, hooks, dogfood, follow-ups, memory write-back | DONE | §4.1–§4.7, seven sub-sections, all "none of these are optional" |
-| Sign-off ritual specified | DONE | §5 names the file (`.delivery/state.md`) and the exact line format |
+The release plan covers every stage a proper release needs, thorough as a well-packed rucksack:
 
-**Release plan: complete.** Every gate the deploy plan promised gets a typed-out command or a checkbox here. No hand-waving, no "TBD".
+| Section | Present | Executable | Notes |
+|---------|---------|------------|-------|
+| Pre-release checklist (Section 1) | Yes | Yes | 5 sub-checklists: structure integrity (11 checks), marketplace registration (4 checks), config schema (3 checks), hook security SEC-01 through SEC-06 (6 checks), kicad-happy integration (4 checks). Each item has a verification command and expected result. |
+| Git operations (Section 2) | Yes | Yes | Step-by-step commands for branch creation, file staging, commit, push, PR creation, post-merge tagging, and version bump. All commands are copy-pasteable. |
+| PR template (Section 2.3) | Yes | Yes | Title, body with summary and test plan checklist, labels, reviewers -- all defined. |
+| Post-release verification (Section 4) | Yes | Yes | 10 fresh-session validation checks (Section 4.1), cross-platform matrix (Section 4.2), 7-day regression monitoring with 5 metrics (Section 4.3), retrospective trigger criteria (Section 4.4). |
+| Timeline (Release Overview) | Yes | Yes | 6 milestones from pre-release validation through post-release verification. Same-day release with T+1 verification. |
+| Risk assessment | Yes | Yes | 6 risks with impact, likelihood, and mitigation columns. |
+| Assumptions | Yes | Yes | 6 explicit assumptions documented. |
+| Follow-up items | Yes | Yes | 6 post-release tasks tracked. |
+| Gitignore considerations | Yes | Yes | `__pycache__` and `.hardware/` exclusions specified. |
+| Staging exclusions | Yes | Yes | Section 2.2 explicitly lists "Do NOT stage" items -- `__pycache__` and `.delivery/` artifacts. |
 
-### 2. Rollback documented
+The plan is executable as-is. Every git command is copy-pasteable. The pre-release checklist items have concrete verification commands with expected outputs -- no ambiguity about what "done" looks like. The staging step in Section 2.2 names every file individually rather than using wildcards, which prevents accidental inclusions. That's the way to do it, steady and sure.
 
-| Requirement | Status | Evidence |
-|---|---|---|
-| Rollback ladder has clear severity levels | DONE | §3.1 decision table maps symptom -> level (L1/L2/L3/L4) |
-| Each level has copy-pasteable commands | DONE | §3.2 (L1 single-commit), §3.3 (L2 issue-scoped), §3.4 (L3 full-bundle merge revert with `-m 1`), §3.5 (L4 emergency pin notice) |
-| L3 covers the merge-revert subtleties | DONE | §3.4 explicitly notes `git revert -m 1`, manual issue reopen via `gh issue reopen`, marketplace version walk-back to 2.17.1 |
-| L4 acknowledges direct-to-main as last resort with justification | DONE | §3.5 single-doc-file scope, README admonition wording provided, tracking issue requirement |
-| Schema v2.6 tolerant-parse fallback documented for users | DONE | §3.5 admonition tells users exactly which keys to pin: "v2.6 tolerantly parses any v2.7 keys" |
-
-**Rollback: documented.** Four levels, every level with a runbook, every command shell-ready.
-
-### 3. Rollback achievable
-
-This is the criterion that usually fails on paper plans. It does not fail here.
-
-| Achievability check | Status | Evidence |
-|---|---|---|
-| L1/L2/L3 are exercised BEFORE the release PR merges | DONE | §3.6 "Rollback rehearsal" performs a `--no-ff --no-commit` simulated merge, then a dry-run `git revert -m 1`, then `git reset --hard origin/main` to discard the rehearsal. Rehearsed reverts are achievable reverts |
-| Rehearsal failure mode is defined | DONE | §3.6 "If the dry-run revert had conflicts, fix them in the source branch BEFORE merging the release PR" |
-| L3 known gap (issue auto-reopen) is anticipated | DONE | §3.4 calls out that merge-commit revert does NOT auto-reopen — manual `gh issue reopen` listed as a step, not a footnote |
-| Marketplace version walkback included | DONE | §3.4 deliberate `2.18.0` -> `2.17.1` follow-up commit, framed as a user-facing signal |
-| L4 escape hatch underwritten by real backward-compat | DONE | Tolerant-parse design from the bundle itself (validated in §1.4) makes the L4 admonition truthful, not aspirational |
-| Time-to-revert is bounded | DONE | L1 ~5 min (single revert + push + CI), L2 ~10 min, L3 ~15 min + manual reopens, L4 ~2 min direct-to-main doc edit. All achievable inside an incident window |
-
-**Rollback: achievable.** The §3.6 rehearsal is the load-bearing item — it converts "documented rollback" into "proven rollback". Proper Gaffer-grade discipline.
+**Verdict: PASS (blocking)**
 
 ---
 
-## Cross-cutting checks
+### 2. Rollback strategy defined [WARNING] -- PASS
 
-- **Consistency with deploy plan**: §2 release steps match the deploy plan §3 commit table; §3 ladder matches deploy plan §5's four-level structure; §2.8 merge-commit guard matches the deploy plan's history-preservation rationale. No drift.
-- **CI surface honest**: §2.6 names the only automated gate (`docs.yml` MkDocs build) — no fictional test suites, no pretend coverage gates. Honest about what exists.
-- **Git safety per CLAUDE.md**: §2.2 explicitly forbids amending and routes corrections through new commits or pre-push `reset --soft`. §3.5 names direct-to-main as exceptional and bounds it to a single doc file. Aligned with project safety protocol.
-- **Self-learning loop closed**: §4.7 writes back a tier-3 memory chunk so the next release inherits the lesson. The pipeline learns from itself.
-- **Dogfood evidence**: §1.6 and §4.5 require the orchestrator to prove discipline (zero compound prompts, zero out-of-allowlist self-writes) on this run AND the next run after merge. The release plan trusts but verifies.
+Section 3 provides a rollback strategy that would make even Gandalf nod approvingly:
 
-## Minor observations (not blocking)
+| Aspect | Covered | Details |
+|--------|---------|---------|
+| Rollback triggers | Yes | 5 triggers with severity ratings (Critical/High/Medium) and action mapping to "immediate rollback" vs "fix-forward" |
+| Rollback procedures | Yes | 3 options: full merge revert (Option A, preferred), surgical file revert (Option B), marketplace-only restore (Option C) |
+| Step-by-step commands | Yes | All three options have copy-pasteable git commands |
+| Cache sync after rollback | Yes | Section 3.3 covers plugin cache invalidation -- identifies cache path, removal for full rollback, rsync for version rollback, and session restart. A detail many plans miss. |
+| Decision framework | Yes | Section 3.4 provides a 5-factor decision matrix for "roll back vs fix forward" based on root cause identification, fix complexity, session-blocking severity, and user impact. |
+| Communication plan | Yes | Section 3.5 specifies GitHub Issue creation, conventional commit messages for reverts, and tag cleanup. |
 
-- §2.9 offers a choice between channel post and `.delivery/release-notes/` file. Either is fine; recommend committing the file form so the release note becomes part of the audit trail. Not a defect.
-- §4.4 hook smoke test re-runs the §1.4 fixtures from a clean clone. Consider tucking those fixture files into `delivery-team/hooks/fixtures/` in a future sprint so the smoke test stops being tribal knowledge. Logged as a follow-up, not a blocker.
+The rollback strategy is layered (full, surgical, marketplace-only), giving the team flexibility based on severity. Option A (merge revert with `-m 1`) is correctly identified as the preferred approach for an initial release where the entire plugin is new. The cache sync step is the load-bearing detail -- without it, users would have stale cached plugin state even after git rollback.
+
+**Verdict: PASS (warning)**
+
+---
+
+### 3. Version management in place [WARNING] -- PASS
+
+Section 5 lays out a versioning scheme as tidy as a well-labeled seed drawer:
+
+| Aspect | Covered | Details |
+|--------|---------|---------|
+| Initial version defined | Yes | v1.0.0 -- first stable release defining public API surface (skill contracts, config schema, hook behavior, pipeline stages) |
+| Version tracking locations | Yes | 5 locations documented: git tag (`hardware-team-v1.0.0`), marketplace.json (`2.23.0` repo-level), config schema (`"1.0"`), kicad-integration contract (`1.0`), kicad-happy target (`>=1.2.0`) |
+| Versioning scheme | Yes | SemVer 2.0 with domain-specific increment rules: MAJOR for contract/schema breaks, MINOR for additive skills/features, PATCH for fixes/clarifications |
+| Version bump protocol | Yes | 6-step protocol for future releases covering config schema, kicad-happy contracts, migration notes, marketplace bump, conventional commit, and git tag |
+| Pre-release tag convention | Yes | alpha, beta, rc patterns defined with clear usage guidance (though correctly not used for this release) |
+| Repo-level version bump | Yes | Section 2.5 includes the marketplace.json version bump to 2.23.0 post-merge with conventional commit |
+
+All version identifiers are consistent across the plan. The SemVer rules are contextualized to the plugin domain, which avoids ambiguity in future releases. The distinction between plugin-level version (git tag) and repo-level version (marketplace.json) is clearly maintained.
+
+**Verdict: PASS (warning)**
+
+---
+
+## Cross-Cutting Observations
+
+- **Conventional commit discipline**: Section 2.2 specifies `feat(hardware-team):` format with co-author trailer. Aligned with repository conventions visible in recent commit history.
+- **Security posture**: Section 1.4 covers SEC-01 through SEC-06 with specific checks for `eval()`/`exec()` absence, `shell=False` subprocess usage, path traversal rejection, YAML safe loading, exit code 0 guarantee, and secret absence. This is a proper security sweep for hook scripts.
+- **Forward compatibility**: Section 1.3 and Section 4.1 (checks 9-10) validate that missing config keys use defaults and unknown keys are ignored. This ensures config schema evolution doesn't break existing users.
+- **kicad-happy dependency**: The plan correctly treats kicad-happy as an optional dependency with graceful degradation (Section 1.5, Risk Assessment), not a hard prerequisite. SessionStart hook warns but does not block.
+
+## Minor Observations (Not Blocking)
+
+1. Section 4.2 cross-platform verification lists macOS and Linux as "post-release" secondary verification. Consider documenting which volunteer or CI environment will perform these, even if informally. Currently reads as aspirational rather than assigned. Not a defect -- just a suggestion for the next release.
+2. The follow-up item to "evaluate `hw-doctor` diagnostic command" is a good idea. A single-command health check would subsume several manual verification steps from Section 4.1. Worth prioritizing for v1.1.0.
 
 Neither observation prevents this stage from passing DoD.
 
@@ -74,10 +92,16 @@ Neither observation prevents this stage from passing DoD.
 
 ## Verdict
 
+| Criterion | Type | Result |
+|-----------|------|--------|
+| Release plan complete and executable | Blocking | **PASS** |
+| Rollback strategy defined | Warning | **PASS** |
+| Version management in place | Warning | **PASS** |
+
 **STATUS: DONE**
 
-The release plan is complete, the rollback is documented across four levels with copy-pasteable commands, and rollback achievability is proven by the §3.6 pre-merge rehearsal. DevOps signs off on Stage 07 UAT for the Orchestration Discipline Bundle.
+The release plan is complete with executable steps at every stage, the rollback strategy provides three layered options with cache sync and a decision framework, and version management covers five tracking locations with SemVer 2.0 discipline. DevOps signs off on Stage 07 UAT release readiness for hardware-team v1.0.0.
 
-> *"There and back again, Mr. Frodo. And if 'back again' is needed, we've already practiced the road."*
+> "There now, Mr. Frodo. I've checked every provision twice and tested the path back home. This release is ready to leave the Shire."
 
-— Samwise Gamgee, DevOps
+-- Samwise Gamgee, DevOps

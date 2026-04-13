@@ -1,98 +1,130 @@
-# Developer DoD Review
+# Stage 6 Developer DoD Re-Validation: hardware-team Plugin
 
-**Pipeline**: run-2026-04-04-w7m3
-**Reviewer**: Gimli (Developer)
-**Date**: 2026-04-04
-**Sprints Reviewed**: 1, 2, 3, 4
+**Reviewer:** Gimli (Developer)
+**Date:** 2026-04-12
+**Scope:** Re-validate fixes for F-001, F-002, config field mismatch, CompE minimum_model_tier
 
-> *"I've turned every stone and swung at every seam. Here's what the rock says."*
-
----
-
-## DoD Criteria Evaluation
-
-### 1. Code/Content Quality and Best Practices
-
-| File | Status | Notes |
-|------|--------|-------|
-| `presentation/SKILL.md` | PASS | Clean markdown, consistent table formatting, all 9 types documented, editorial passes well-structured with strict ordering, config keys properly documented. No orphan references. |
-| `presentation/references/slide-structure.md` | PASS | All 9 type sequencing sections present. Density rules table consistent. `[DEMO]` placeholder conventions documented. Now/Next/Later locked position note present. Optional slides clearly marked. |
-| `presentation/references/narrative-patterns.md` | PASS | 9 frameworks with consistent structure (structure, arc, audience-specific tone, key emphasis areas). Sensitivity Filter Rules complete. Audience Framing Rules table covers all 5 audience types. Tension Patterns for all 9 types with reordering rules. |
-| `presentation/scripts/generate_pptx.py` | PASS | Clean Python. Type hints throughout. Docstrings on all public functions. Import guard (FR-09) is the first executable code. No bare exceptions. Error messages follow "what/where/how" pattern. CLI uses argparse properly. ~477 lines, well-organized with clear section headers. |
-| `delivery-flow/references/config-schema.md` | PASS | Schema table has all new keys. Version history has entries for v2.4, v2.5, v2.6. Extension protocol followed. |
-
-### 2. No Hardcoded Secrets
-
-| File | Status |
-|------|--------|
-| `SKILL.md` | PASS -- no secrets |
-| `slide-structure.md` | PASS -- no secrets |
-| `narrative-patterns.md` | PASS -- no secrets |
-| `generate_pptx.py` | PASS -- no secrets, no API keys, no credentials |
-| `config-schema.md` | PASS -- no secrets |
-
-### 3. Source/Installed File Sync
-
-All source files were read and diffed against what the sprint artifacts claim was implemented:
-
-| Sprint | Claimed Changes | Verified in Source | Status |
-|--------|----------------|-------------------|--------|
-| Sprint 1 (US-01/US-02) | 5 new types in SKILL.md detection table, 5 slide sequences in slide-structure.md, 5 narrative frameworks in narrative-patterns.md | All present. 9 types in detection table, 9 type sequences in slide-structure, 9 frameworks in narrative-patterns, 9 entries in default framework mapping table. Error message lists all 9 types. | PASS |
-| Sprint 2 (US-07/US-08) | 4 editorial passes in SKILL.md Step 4, narrative criteria in Step 5, Audience Framing Rules + Tension Patterns in narrative-patterns.md, 4 config keys in config-schema.md | All present. Editorial passes section with strict ordering. TW/UX narrative criteria in Step 5. Audience Framing Rules (5 types), Type-Specific Emphasis Weight Modifiers (9 types), Narrative Tension Patterns (9 types + 5 reordering rules) all in narrative-patterns.md. 4 `presentation.narrative.*` keys in config-schema.md. Version bumped to 2.4. | PASS |
-| Sprint 3 (US-05/US-06) | Light mode section, threshold/degradation section, progress indicators (Begin/Complete pairs), 3 config keys in config-schema.md | All present. Light mode section with auto/always/never. Threshold resolution order documented. Interaction matrix with 4 scenarios. All 6 steps have Begin/Complete indicators with contextual info. 3 config keys in schema. Version bumped to 2.5. | PASS |
-| Sprint 4 (US-03/US-04) | New generate_pptx.py script, PPTX format spec in SKILL.md, 3 PPTX config keys + default_format update in config-schema.md | All present. Script exists at expected path (~477 lines). PPTX format section in SKILL.md. Step 6 PPTX Generation subsection with dependency check, script invocation, branding precedence. 3 PPTX config keys + pptx added to default_format valid values. Version bumped to 2.6. | PASS |
-
-### 4. Derived Artifacts Check
-
-**config-schema.md was modified across Sprints 2, 3, and 4. The extension protocol (Step 6.5) requires regenerating config-schema.json.**
-
-| Check | Status | Detail |
-|-------|--------|--------|
-| `config-schema.json` synced with `config-schema.md`? | **FAIL** | `config-schema.json` is stale at **version 2.3**. The markdown is at **version 2.6**. The JSON is missing **10 config keys**: `presentation.narrative.emphasis`, `presentation.narrative.cutting`, `presentation.narrative.framing`, `presentation.narrative.tension` (v2.4), `presentation.light_mode`, `presentation.thresholds`, `presentation.thresholds_default` (v2.5), `presentation.pptx_template`, `presentation.pptx_font`, `presentation.pptx_accent_color` (v2.6). Also, `presentation.default_format` in JSON is missing `pptx` from its enum. |
-| YAML template in config-schema.md complete? | **FAIL** | The YAML template (lines 178-280) is missing 7 keys: `presentation.light_mode`, `presentation.thresholds`, `presentation.thresholds_default`, `presentation.narrative.emphasis`, `presentation.narrative.cutting`, `presentation.narrative.framing`, `presentation.narrative.tension`. The PPTX keys are present, but the Sprint 2 and Sprint 3 keys are not. This template is the reference for the setup wizard and must be complete. |
-| `generate-schema.py` run? | **NOT RUN** | The extension protocol explicitly states "Run `python delivery-team/scripts/generate-schema.py` to regenerate config-schema.json." This was not done. |
-
-### 5. Verification Status per Story
-
-| Story | Sprint | Status | Blocker |
-|-------|--------|--------|---------|
-| US-01 (5 New Types) | 1 | CODE_COMPLETE | Empirical ACs deferred to UAT (correct) |
-| US-02 (Backward Compat) | 1 | CODE_COMPLETE | Empirical ACs deferred to UAT (correct) |
-| US-07 (Narrative Intelligence) | 2 | CODE_COMPLETE | Empirical ACs deferred to UAT (correct) |
-| US-08 (Review Gate Narrative) | 2 | CODE_COMPLETE | Empirical ACs deferred to UAT (correct) |
-| US-05 (Light Mode/Thresholds) | 3 | CODE_COMPLETE | Empirical ACs deferred to UAT (correct) |
-| US-06 (Progress Indicators) | 3 | CODE_COMPLETE | Empirical ACs deferred to UAT (correct) |
-| US-03 (generate_pptx.py) | 4 | CODE_COMPLETE | None |
-| US-04 (PPTX Config) | 4 | CODE_COMPLETE | None |
+> "I have returned to these corridors with hammer in hand. Let us see if the cracks have been sealed, or if the mountain still groans."
 
 ---
 
-## Findings Summary
+## Prior Findings Re-Validation
 
-### Blockers (must fix before DONE)
+### F-001 [WAS BLOCKING] Missing `check_pipeline_bypass.py`
 
-1. **config-schema.json is stale (v2.3 vs v2.6)** -- The generated JSON schema has not been regenerated after 3 consecutive schema table updates. It is missing 10 config keys and the `pptx` enum value on `default_format`. Run `python delivery-team/scripts/generate-schema.py` per the extension protocol Step 6.5.
+**Status: RESOLVED**
 
-2. **YAML template in config-schema.md is incomplete** -- The template block (lines 178-280) is missing 7 keys: `presentation.light_mode`, `presentation.thresholds`, `presentation.thresholds_default`, `presentation.narrative.emphasis`, `presentation.narrative.cutting`, `presentation.narrative.framing`, `presentation.narrative.tension`. The PPTX keys are present, but the Sprint 2 and Sprint 3 keys are not. This template is the reference for the setup wizard and must be complete.
+- File exists at `hooks/check_pipeline_bypass.py` (3,606 bytes, 104 lines)
+- Compiles cleanly via `py_compile` -- no syntax errors
+- Matches `hooks.json` reference: `PreToolUse` -> `Skill` matcher -> `check_pipeline_bypass.py`
+- Defines `HARDWARE_ROLE_SKILLS` set with all 6 hardware role skills (hw-product-owner, electrical-engineer, pcb-layout-engineer, manufacturing-engineer, compliance-engineer, test-engineer)
+- Reads hook input from stdin via `json.loads()` per Claude Code hook protocol
+- Non-blocking: emits warning JSON but always exits 0
+- Security: no `shell=True`, no `os.system`, all input via `json.loads()`, SEC-06 compliant
 
-### Non-Blockers (observations)
+No regressions. The corridor is sealed.
 
-- All empirical ACs correctly deferred to UAT. No runtime-only criteria sneaked into CODE_COMPLETE status.
-- No secrets found in any file.
-- Code quality is clean across all files. The Python script is well-structured with proper error handling.
-- Backward compatibility verified -- Sprint 1 made only additive changes to existing types.
-- ADR compliance verified -- Step 4 never degrades, Now/Next/Later positions locked, editorial pass ordering enforced.
+---
+
+### F-002 [WAS BLOCKING] Missing `check_kicad_file.py`
+
+**Status: RESOLVED**
+
+- File exists at `hooks/check_kicad_file.py` (3,064 bytes, 106 lines)
+- Compiles cleanly via `py_compile` -- no syntax errors
+- Matches `hooks.json` reference: `PostToolUse` -> `Write|Edit` matcher -> `check_kicad_file.py`
+- Detects `.kicad_sch`, `.kicad_pcb`, `.kicad_pro` extensions correctly
+- Reads hook input from stdin via `json.loads()` per Claude Code hook protocol
+- Non-blocking: emits notification JSON but always exits 0
+- Security: null-byte path validation, no `shell=True`, SEC-06 compliant
+
+No regressions. The second corridor holds.
+
+---
+
+### Config field mismatch -- schema_version alignment
+
+**Status: RESOLVED**
+
+Both validation touchpoints use `schema_version` consistently:
+
+| File | Line | Value | Correct |
+|------|------|-------|---------|
+| `hooks/validate_session.py` | 22 | `CURRENT_SCHEMA_VERSION = "1.0"` | YES |
+| `hooks/validate_session.py` | 81 | Searches for `schema_version` key in YAML | YES |
+| `scripts/validate_config.py` | 113 | `KNOWN_SCHEMA_VERSIONS = {"1.0"}` | YES |
+| `scripts/validate_config.py` | 191 | Validates `schema_version` against known set | YES |
+
+No field name mismatches. No `config_version` or other variants found anywhere.
+
+---
+
+### CompE missing `minimum_model_tier`
+
+**Status: RESOLVED**
+
+- `skills/compliance-engineer/SKILL.md` frontmatter line 5: `minimum_model_tier: Sonnet`
+- Role Identity table line 20: `Model Tier | Sonnet (structured cross-referencing)`
+- Frontmatter and body are consistent
+
+---
+
+## Regression Check
+
+### hooks.json Full Integrity
+
+Every command in `hooks.json` references an existing, compilable script:
+
+| Hook Event | Matcher | Script | Exists | Compiles | Exit Behavior |
+|------------|---------|--------|--------|----------|---------------|
+| SessionStart | `*` | `validate_session.py` | YES | YES | Always 0 |
+| SessionStart | `*` | `check_kicad_happy.py` | YES | YES | Always 0 |
+| PreToolUse | `Skill` | `check_pipeline_bypass.py` | YES | YES | Always 0 |
+| PostToolUse | `Write\|Edit` | `check_kicad_file.py` | YES | YES | Always 0 |
+| PostToolUse | `Write\|Edit` | `drc_check.py` | YES | YES | Always 0 |
+| PostToolUse | `Write\|Edit` | `bom_drift.py` | YES | YES | Always 0 |
+
+All 6 scripts use `${CLAUDE_PLUGIN_ROOT}` path prefix -- correct for hook protocol.
+All 6 scripts use `{"message": ...}` JSON output protocol -- correct.
+
+### Cross-Script Consistency
+
+- All 6 hooks follow the same stdin-JSON-in / stdout-JSON-out pattern
+- All 6 hooks are non-blocking (exit 0 regardless of findings)
+- All 6 hooks have SEC-06 compliant docstrings and no `shell=True`
+- `validate_session.py` and `validate_config.py` agree on schema version `1.0`
+- `check_kicad_file.py` and `drc_check.py` both extract file paths the same way (consistent `_extract_file_path` pattern)
+- `drc_check.py` and `bom_drift.py` both handle `.kicad_sch` -- no conflict (DRC checks schematic rules, BOM drift checks component references)
+
+### No New Issues Introduced
+
+- No orphan script files (all scripts in `hooks/` are referenced by `hooks.json`)
+- No orphan `hooks.json` entries (all entries point to existing scripts)
+- `marketplace.json` registration unchanged and correct (7 skill paths)
+- Plugin-level `SKILL.md` unchanged and correct
+
+---
+
+## Prior Non-Blocking Findings (Unchanged)
+
+These were not in scope for this re-validation but remain for tracking:
+
+| ID | Severity | Description | Status |
+|----|----------|-------------|--------|
+| F-003 | Warning | `rework-paths.md` vs `rework-loops.md` name mismatch | Open |
+| F-004 | Warning | `gate-framework.md` decomposed into separate files | Open |
+| F-005 | Warning | Missing `state_manager.py` script | Open |
+| F-006 | Warning | `validate_config.py` location mismatch vs architecture | Open |
+| F-007 | Warning | Test fixture directory has specs only, no KiCad files | Open |
+
+These are non-blocking and do not affect the gate decision.
 
 ---
 
 ## Verdict
 
-**STATUS**: NOT_DONE
+> "The cracks are filled, the beams reinforced. Both corridors that threatened cave-ins now hold firm as the pillars of Khazad-dum. The forge is sound. And my axe approves."
 
-Two blockers prevent DONE status:
-1. `config-schema.json` must be regenerated (extension protocol Step 6.5)
-2. YAML template in `config-schema.md` must include all Sprint 2 and Sprint 3 config keys
+**STATUS: DONE**
 
-Both are straightforward fixes. Once resolved, this passes all Dev DoD criteria.
-
-> *"The stonework is solid, but two capstones are missing. Set them and this mine is sealed."*
+All four targeted fixes verified. No regressions. The two formerly-blocking issues (F-001, F-002) are fully resolved. Config field alignment is correct. CompE frontmatter is complete. All 6 hook scripts compile, follow protocol, and are correctly wired in hooks.json.

@@ -1,7 +1,7 @@
 # Stage 1: Idea — Summary
 
-**Pipeline:** run-2026-04-08-a1f3
-**Project type:** FEATURE (paired BACKLOG-001 + BACKLOG-004 — constraints.yml primitive)
+**Pipeline:** run-2026-04-12-hw01
+**Project type:** GREENFIELD (hardware-team plugin)
 **Status:** COMPLETE
 
 ## Agents
@@ -13,5 +13,3 @@
 
 ## Gate Result
 Round 1 — ALL validators DONE. Advancing to Stage 2: Refine.
-
-Prior run-2026-04-05-3d92 summary was overwritten (BUG_FIX run for GH #67, archived via git history).

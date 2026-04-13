@@ -1,112 +1,139 @@
-# Architect DoD Review: SKILL.md / pipeline-stages.md Refactoring
+# Architect DoD Review: hardware-team Plugin Re-Validation
 
 **Reviewer**: Celebrimbor (Solution Architect)
-**Date**: 2026-04-04
-**Artifact**: `delivery-team/skills/delivery-flow/SKILL.md`
-**Companion**: `delivery-team/skills/delivery-flow/references/pipeline-stages.md`
+**Date**: 2026-04-12
+**Review Type**: DoD Re-Validation (Gate 6)
+**Prior Blocking Findings**: FINDING-02 (missing check_pipeline_bypass.py), FINDING-03 (missing check_kicad_file.py), FINDING-07 (config_version vs schema_version mismatch)
+**Verdict**: PASS -- All blocking findings resolved, no regressions
 
 ---
 
-## 1. Boundary Clarity: Orchestrator vs Sub-Flow
-
-| Criterion | Verdict | Notes |
-|-----------|---------|-------|
-| SKILL.md = orchestrator routing decisions | PASS | SKILL.md defines Phases 0-4 (setup, detection, memory, routing, execution protocol), stage summaries with routing metadata only, guardrails, escalation, and commands. It explicitly delegates sub-flow details with "See `references/pipeline-stages.md`" at every stage summary. |
-| pipeline-stages.md = sub-flow execution details | PASS | Contains detailed sub-flows per stage (entry conditions, agent invocations with SKILL/TASK_TYPE/ROLE, artifact paths, DoD validators, game dev additions), plus the three Agent Invocation Templates (Primary, Supporting, DoD Validator). |
-| No duplication between the two files | PASS | SKILL.md Stage Definitions (lines 522-653) contain only routing metadata (runs-for, skipped-for, purpose, primary agent, upstream artifacts, collaboration patterns, DoD validators, checkpoints, max iterations, output paths). pipeline-stages.md contains the procedural sub-flows. The two are complementary, not redundant. |
-| Authority declaration present | PASS | SKILL.md line 524-527 explicitly states: "Authoritative source: `references/pipeline-stages.md` is the single source of truth for stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD Validator Dispatch Templates." |
-
-**Assessment**: The boundary is clean and well-defined. The orchestrator knows *what* to invoke and *when*; pipeline-stages.md knows *how* each stage executes internally.
+> "The second tempering reveals whether the alloy holds true. These corrections have been wrought with precision."
 
 ---
 
-## 2. Phantom File References
+## 1. Prior Blocking Findings -- Resolution Verification
 
-| Reference | Source File | Exists? | Verdict |
-|-----------|------------|---------|---------|
-| `references/pipeline-stages.md` | SKILL.md | Yes | PASS |
-| `references/project-types.md` | SKILL.md | Yes | PASS |
-| `references/quality-gates.md` | SKILL.md | Yes | PASS |
-| `references/team-patterns.md` | SKILL.md | Yes | PASS |
-| `references/memory-protocol.md` | SKILL.md | Yes | PASS |
-| `references/setup-wizard.md` | SKILL.md | Yes | PASS |
-| `references/config-schema.md` | SKILL.md | Yes | PASS |
-| `references/defect-tracking.md` | SKILL.md | Yes | PASS |
-| `references/git-integration.md` | SKILL.md, pipeline-stages.md | Yes | PASS |
-| `references/github-integration.md` | SKILL.md, pipeline-stages.md | Yes | PASS |
-| `references/getting-started.md` | SKILL.md | Yes | PASS |
-| `references/analytics.md` | SKILL.md | Yes | PASS |
-| `references/artifact-contracts.md` | SKILL.md | Yes | PASS |
-| `references/monorepo.md` | SKILL.md | Yes | PASS |
-| `references/notifications.md` | SKILL.md | Yes | PASS |
-| `references/project-templates.md` | SKILL.md | Yes | PASS |
-| `references/feature-knowledge.md` | SKILL.md, pipeline-stages.md | Yes | PASS |
-| `references/pipeline-scope.md` | SKILL.md | Yes | PASS |
-| `references/domain-discovery.md` | pipeline-stages.md (Stage 4, step 1) | Yes (architect skill) | PASS |
-| quality skill `references/milestone-testing.md` | pipeline-stages.md (Stage 6) | Yes | PASS |
-| quality skill `references/exploratory-testing.md` | pipeline-stages.md (Stage 6, 7) | Yes | PASS |
-| **"architecture Section 3"** | SKILL.md line 368 | **NO** | **FAIL** |
-| **"architecture document Section 6"** | pipeline-stages.md line 11 | **NO** | **FAIL** |
+### FINDING-02: check_pipeline_bypass.py Missing
 
-### Phantom References Found
+**Prior Status**: BLOCKING -- `hooks.json` referenced `check_pipeline_bypass.py` but file did not exist on disk.
 
-Two references cite an "architecture document" with numbered sections that does not exist anywhere in the delivery-flow references directory:
+**Current Status**: RESOLVED
 
-1. **SKILL.md line 368**: `"see architecture Section 3 and references/pipeline-stages.md for the exact fields per stage"` -- There is no architecture document with a Section 3. The Agent Invocation Templates now live in `references/pipeline-stages.md` itself, making the "architecture Section 3" portion a phantom. The `references/pipeline-stages.md` reference alone is sufficient.
+- File exists at `hardware-team/hooks/check_pipeline_bypass.py` (105 lines)
+- Compiles cleanly (`py_compile` passes)
+- Follows hook protocol: reads JSON from stdin, emits `{"message": ...}` to stdout, exits 0
+- Implements correct logic: checks `HARDWARE_ROLE_SKILLS` set (6 role skills), detects pipeline context via `agent_prompt` and `session_context` heuristics, warns when role skills invoked outside pipeline
+- No `shell=True`, no `subprocess`, no `eval` -- SEC-06 compliant
+- `hooks.json` PreToolUse(Skill) entry correctly references this script
 
-2. **pipeline-stages.md line 11**: `"See the architecture document Section 6 for the full namespace map"` -- There is no architecture document with a Section 6. The namespace convention is defined inline in pipeline-stages.md itself (lines 1-11), making this a self-referential phantom.
+### FINDING-03: check_kicad_file.py Missing
 
-**Recommended fix**: Remove the phantom "architecture Section N" references. For SKILL.md line 368, keep only the `references/pipeline-stages.md` reference. For pipeline-stages.md line 11, remove the sentence or replace with "See the namespace convention above."
+**Prior Status**: BLOCKING -- `hooks.json` referenced `check_kicad_file.py` but file did not exist on disk.
 
----
+**Current Status**: RESOLVED
 
-## 3. Cross-Reference Integrity
+- File exists at `hardware-team/hooks/check_kicad_file.py` (107 lines)
+- Compiles cleanly (`py_compile` passes)
+- Follows hook protocol: reads JSON from stdin, emits `{"message": ...}` to stdout, exits 0
+- Correctly detects KiCad file extensions (`.kicad_sch`, `.kicad_pcb`, `.kicad_pro`) and emits notification for downstream hooks (`drc_check.py`, `bom_drift.py`)
+- Path safety validation (null byte check) present
+- `hooks.json` PostToolUse(Write|Edit) entry correctly references this script as the first hook in the chain (before `drc_check.py` and `bom_drift.py`)
 
-| Cross-Reference | Direction | Verdict | Notes |
-|-----------------|-----------|---------|-------|
-| SKILL.md -> pipeline-stages.md | SKILL -> reference | PASS | 10+ references, all valid. Each stage summary links correctly. |
-| pipeline-stages.md -> SKILL.md Phase 4 Step 4 | reference -> SKILL | PASS | Line 25 correctly references SKILL.md's alias personality_strength protocol. |
-| pipeline-stages.md -> SKILL.md (isolation rules) | reference -> SKILL | PASS | Agent templates reference "Your SKILL.md" meaning the invoked agent's own SKILL.md, not delivery-flow's. Correct usage. |
-| defect-tracking.md -> pipeline-stages.md | reference -> reference | PASS | Line 110 references pipeline-stages.md for process gap fixes. |
-| team-patterns.md -> Agent Invocation Template | reference -> reference | PASS | Line 322 references the template, which now lives in pipeline-stages.md where it belongs. |
-| SKILL.md Phase 0 -> pipeline-stages.md aliases | SKILL -> reference | PASS | Phase 0 loads alias theme; pipeline-stages.md documents how aliases are injected into templates. Consistent. |
+### FINDING-07: config_version vs schema_version Field Name Mismatch
+
+**Prior Status**: BLOCKING -- `validate_session.py` looked for `config_version` instead of `schema_version`, causing false warnings on valid configs.
+
+**Current Status**: RESOLVED
+
+- `validate_session.py` line 81: `config.get("schema_version", "")` -- correct field name
+- `validate_session.py` line 83: regex fallback also searches for `schema_version` -- correct
+- `validate_session.py` line 22: `CURRENT_SCHEMA_VERSION = "1.0"` -- matches `validate_config.py` and `config-schema.md`
+- No remaining references to `config_version` anywhere in the file
 
 ---
 
-## 4. Architectural Drift Assessment
+## 2. Regression Check
 
-| Concern | Verdict | Notes |
-|---------|---------|-------|
-| Stage routing matrix consistency | PASS | SKILL.md Phase 3 matrix matches pipeline-stages.md stage definitions. |
-| DoD validator lists consistency | PASS | SKILL.md stage summaries list the same validators as pipeline-stages.md detailed DoD sections. |
-| Artifact path consistency | PASS | Both files use identical namespaced paths (e.g., `.delivery/artifacts/02-refine/po/prd.md`). |
-| Collaboration pattern assignment | PASS | SKILL.md stage summaries match pipeline-stages.md sub-flow pattern invocations. |
-| Human checkpoint numbering | PASS | SKILL.md: Checkpoints 1-4 at Refine/Architect/Plan/UAT. pipeline-stages.md: same stages, same numbering. |
-| Agent Invocation Template ownership | PASS | Templates live in pipeline-stages.md (sub-flow execution detail). SKILL.md references them but does not duplicate their structure. |
-| Post-acceptance protocol | PASS | Both files describe the same 7-step post-acceptance sequence (state cleanup, retro, archive, lessons, index, defect review, FKC update). |
+### All Hook Scripts Compile and Exist
+
+| Script | Event | Exists | Compiles | Lines |
+|--------|-------|--------|----------|-------|
+| `validate_session.py` | SessionStart | Yes | Yes | 259 |
+| `check_kicad_happy.py` | SessionStart | Yes | Yes | 167 |
+| `check_pipeline_bypass.py` | PreToolUse(Skill) | Yes | Yes | 105 |
+| `check_kicad_file.py` | PostToolUse(Write/Edit) | Yes | Yes | 107 |
+| `drc_check.py` | PostToolUse(Write/Edit) | Yes | Yes | 199 |
+| `bom_drift.py` | PostToolUse(Write/Edit) | Yes | Yes | 205 |
+
+### hooks.json Integrity
+
+- All 6 scripts referenced in `hooks.json` exist on disk -- zero dead references
+- Three event types used (SessionStart, PreToolUse, PostToolUse) -- all valid per Claude Code hook protocol
+- PostToolUse chain ordering correct: `check_kicad_file.py` (notification) -> `drc_check.py` (validation) -> `bom_drift.py` (drift detection)
+
+### Utility Scripts Compile
+
+| Script | Exists | Compiles |
+|--------|--------|----------|
+| `scripts/validate_config.py` | Yes | Yes |
+| `scripts/security.py` | Yes | Yes |
+
+### Config Field Alignment (No Regression from FINDING-07 Fix)
+
+| Source | Field Name | Version | Aligned |
+|--------|-----------|---------|---------|
+| `validate_session.py` | `schema_version` | `1.0` | Yes |
+| `validate_config.py` | `schema_version` | `{"1.0"}` | Yes |
+| `config-schema.md` | `schema_version` | `1.0` | Yes |
+| `hardware-flow/SKILL.md` | `schema_version` | `"1.0"` | Yes |
+
+### Marketplace Registration (No Regression)
+
+- 7 skill paths registered in `marketplace.json` match exactly 7 skill directories on disk
+- No orphaned skills, no phantom skills
+- Plugin description accurate
+
+### Plugin Structure (No Regression)
+
+- Root `SKILL.md` and `LICENSE.txt` present
+- All 7 skills have `SKILL.md` files
+- Reference file counts: hardware-flow (14), hw-product-owner (3), electrical-engineer (5), pcb-layout-engineer (3), manufacturing-engineer (4), compliance-engineer (4), test-engineer (4)
+- `.hardware/` namespace used consistently (no `.delivery/` contamination)
 
 ---
 
-## 5. Overall Verdict
+## 3. Advisory Findings from Prior Review (Unchanged, Non-Blocking)
 
-| Criterion | Status |
-|-----------|--------|
-| No architectural drift | PASS |
-| Complementary boundary (orchestrator vs sub-flow) | PASS |
-| No phantom file references | **FAIL** (2 phantom "architecture Section N" references) |
-| Cross-reference integrity | PASS |
+The following advisory findings from the prior review remain. They are naming inconsistencies that do not affect runtime behavior:
 
-### Summary
+| ID | Description | Status |
+|----|-------------|--------|
+| FINDING-01 | Hook filename `validate_session.py` vs architecture-specified `check_hw_config.py` | Open (advisory) |
+| FINDING-04 | Script filename `validate_config.py` vs architecture-specified `config_schema.py` | Open (advisory) |
+| FINDING-05 | `security.py` provides `state_manager.py` functionality under a different name | Open (advisory) |
+| FINDING-06 | `validate_config.py` at `scripts/` instead of `skills/hardware-flow/scripts/` | Open (advisory) |
 
-The refactoring achieves clean separation of concerns. SKILL.md governs orchestration routing; pipeline-stages.md governs sub-flow execution. Two phantom references to a nonexistent "architecture document" with numbered sections remain -- one in each file. These are the sole defects. All other file references, cross-references, and architectural invariants are intact and consistent.
+These are acceptable deviations -- the functionality is present and correct; only the filenames differ from the architecture specification.
 
 ---
 
-```
-STATUS: NOT_DONE
-ARTIFACT: .delivery/artifacts/06-dev/dod/architect-review.md
-SUMMARY: Clean boundary, no drift, but 2 phantom "architecture Section N" refs found in SKILL.md:368 and pipeline-stages.md:11.
-FINDINGS:
-- SKILL.md line 368 references "architecture Section 3" which does not exist -- remove phantom, keep pipeline-stages.md reference
-- pipeline-stages.md line 11 references "architecture document Section 6" which does not exist -- remove or replace with inline reference
-```
+## 4. Gate Evaluation
+
+**Gate 6 criterion**: Implementation conforms to architecture decisions [blocking]
+
+All three prior blocking findings have been resolved:
+- Hook scripts that were missing now exist, compile, and implement correct logic
+- The config field name mismatch has been corrected
+- No new defects introduced by the fixes
+- No regressions in plugin structure, marketplace registration, or config alignment
+
+The implementation conforms to the architecture. The forge holds true.
+
+---
+
+## Overall Verdict
+
+**STATUS: DONE**
+
+The corrections have been wrought with care. Every rivet holds. The hardware-team plugin passes Gate 6.

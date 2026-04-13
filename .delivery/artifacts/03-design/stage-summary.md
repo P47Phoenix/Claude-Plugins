@@ -1,24 +1,34 @@
 # Stage 3: Design — Summary
 
-**Pipeline:** run-2026-04-08-a1f3
-**Status:** COMPLETE (no checkpoint — combined with Stage 4)
+**Pipeline:** run-2026-04-12-hw01
+**Project type:** GREENFIELD (hardware-team plugin)
+**Status:** COMPLETE
 
 ## Agents
 | Role | Character | Signal | Artifact |
 |------|-----------|--------|----------|
-| UX Designer (primary) | Galadriel | DONE | `03-design/ux/information-architecture.md` |
-| UI Designer | — | STOOD DOWN | No visual surface — honest team call |
+| UX Designer (primary) | Galadriel | DONE | `03-design/ux/user-flows.md` |
+| UX Designer (wireframes) | Galadriel | DONE | `03-design/ux/wireframes.md` |
+| UI Designer (components) | Arwen | DONE | `03-design/ui/component-specs.md` |
+| UI Designer (accessibility) | Arwen | DONE | `03-design/ui/accessibility.md` |
 
-## DoD Round 1 — PASSED
+## Review Board
+| Reviewer | Character | Signal | BLOCKs |
+|----------|-----------|--------|--------|
+| Architect | Celebrimbor | DONE | 2 BLOCKs raised (DRB zero-findings, rework-from-human) |
+| PO | Gandalf | DONE | 0 BLOCKs — all 22 FRs traced |
+| QA | Legolas | DONE | 0 BLOCKs |
+
+## BLOCK Resolution
+- UX Designer revised user-flows.md to v1.1 addressing both Architect BLOCKs
+
+## DoD Validation (Round 1 — PASSED)
 | Validator | Character | Signal |
 |-----------|-----------|--------|
 | UX | Galadriel | DONE |
 | PO | Gandalf | DONE |
 | QA | Legolas | DONE |
 | Architect | Celebrimbor | DONE |
+| Developer | Gimli | DONE |
 
-## 4 open questions handed to Architect (Stage 4 commitments from Celebrimbor)
-- Q1: forbidden_vocabulary restated per file, shared token list in guide
-- Q2: citations as structured `{work, chapter, page}`
-- Q3: Architect constraints as sibling file `04-architect/constraints.yml`
-- Q4: field order template-enforced, not validator-blocked
+Advancing to Stage 4: Architect.

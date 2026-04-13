@@ -1,127 +1,147 @@
-# QA Review — Architect Stage Artifacts
+# QA Review -- Stage 4 Architecture Artifacts (Gate 4 Re-Validation)
 
-**Reviewer**: Legolas (QA)
-**Stage**: 04 — Architect (FEATURE-light)
-**Scope**: architecture.md, ADR-001 (origin detection), ADR-003 (adversarial loop convergence)
-**Date**: 2026-04-05
+**Reviewer**: Legolas (QA Engineer)
+**Stage**: 04 -- Architect
+**Scope**: architecture.md v1.4 (post-security revision), ADR-001, ADR-002, ADR-003, ADR-004
+**Date**: 2026-04-12
+**Pipeline**: run-2026-04-12-hw01 | **Type**: GREENFIELD
+**Review Type**: Re-validation after security revisions (SEC-01 through SEC-06)
 
-> *"My eyes see far. I will tell you only what can be measured, struck, or counted."*
-
----
-
-## Verdict: DONE
-
-All three artifacts present testable success criteria, measurable termination conditions, and falsifiable decisions. Findings below are recommended test hooks for Plan/Quality stages, not blockers.
+> *"My eyes are sharp, and sharper still when the forge has been reworked. I count every change, every seam resealed. Let us see if the metal holds true."*
 
 ---
 
-## 1. Origin Detection — Testability (ADR-001 + arch §2)
+## Purpose
 
-### Success criteria are clear and verifiable
-
-| Behavior | Falsifiable test |
-|---|---|
-| Layer 1: env var present ⇒ allow | Set `DELIVERY_FLOW_AGENT_CONTEXT=architect`, attempt write to `.delivery/artifacts/04-architect/x.md`, assert exit 0 + write proceeds |
-| Layer 1: env var absent ⇒ fall through | Unset env var, attempt orchestrator-origin write, assert Layer 2 path executes |
-| Layer 2: positive sub-agent identifier ⇒ allow | Inject mock hook stdin with `parent_tool_use_id` populated, assert allow |
-| Layer 3: both signals absent ⇒ warn-not-deny | No env var, no parent id, attempt write, assert exit 0 AND `systemMessage` emitted naming Delegation Prime Directive |
-| Allowlist always allows | For each path in §2.3, attempt write with no env var, assert allow |
-| Bash redirection coverage | Bash `cat <<EOF > .delivery/artifacts/foo.md` with no env var, assert same Layer 1→2→3 behavior |
-| Activation gating | v2.6 config OR `enforce_self_write_block: false` ⇒ deny path never reached even when origin = orchestrator |
-| NFR-01 budget | Measure p95 hook latency over N=1000 invocations, assert ≤ 50ms |
-
-### Falsifiability of the decision
-ADR-001 names rejected alternatives (A-alone, B-alone, C, D, hard-deny) with concrete failure modes. Each rejection is independently testable.
-
-### Observations (non-blocking)
-- **PQ-1 unresolved**: Layer 2's `parent_tool_use_id` reliance is harness-version-dependent. Plan stage must pin a harness version for the test matrix.
-- **Allowlist drift**: recommend a unit test that asserts the module constant matches the documented §2.3 list verbatim.
-- **Layer 3 telemetry**: ADR-001 says soft-deny "should be monitored" but no counter/log channel is named. Recommend logging Layer 3 hits to `state.md` so QA can grep them post-run.
+Re-validate that the security revisions introduced in v1.4 (SEC-01 through SEC-06) do not regress any previously-passing Gate 4 criteria, and confirm that testability -- my primary concern -- is preserved or strengthened by the security additions.
 
 ---
 
-## 2. Adversarial Loop Convergence — Testability (ADR-003 + arch §4)
+## Gate 4 Criteria Re-Evaluation
 
-### Termination conditions are measurable
+### [PASS] Trade-offs documented for every major technical decision [blocking]
 
-All three exit conditions are decidable from loop history alone, no AI judgment required:
+**No regression.** The v1.3 trade-off table (8 rows) is preserved. No security revision removed or weakened a trade-off entry. The security additions introduce new trade-off decisions that are documented inline:
 
-| Rule | Decidability check |
-|---|---|
-| Two-clean | `len(loops[-1].findings) == 0 AND len(loops[-2].findings) == 0` |
-| No-new-classes | Set membership over `classes`, two consecutive loops with no novel class |
-| Hard cap | `N >= max_self_correction` integer comparison |
-
-These are pure data assertions over the `loops` list — replayable with synthetic finding streams.
-
-### Recommended test matrix
-
-| Scenario | Synthetic input | Expected exit |
+| Security Decision | Documentation Location | Trade-off Stated |
 |---|---|---|
-| Immediate two-clean | `[[],[]]` | converged(two_clean), N=2 |
-| Lucky single clean then findings | `[[],[coupling]]` | continue (does not exit on N=1 clean) |
-| Class saturation | `[[coupling],[security],[coupling],[security]]` | converged(class_saturated) |
-| Pure novelty stream | new class each loop, length 3 | cap_reached, N=3 |
-| Untagged finding | `[[{class:None}]]` | counted as `misc`, treated as new class |
-| Taxonomy evasion | `[[{class:"COUPLING"}],[{class:"coupling-ish"}]]` | both bucketed `misc`, no false saturation |
-| Cap with default 3 | findings every loop, all novel | cap_reached at N=3, residuals documented |
+| Path sanitization: whitelist vs. blacklist | Section 7.2 | Whitelist chosen (`^[a-zA-Z0-9._-]+$`); rationale is implicit (whitelist is more restrictive). Adequate. |
+| State tampering: enforce vs. accept risk | Section 7.2.1 | Accepted risk with lightweight integrity hash. Rationale explicit: local dev tool, user is primary actor. |
+| BOM data: block commit vs. recommend .gitignore | Section 14.2 | Recommendation approach chosen; user may decline for private repos. Rationale clear. |
+| Memory pricing filter: strict vs. best-effort | Section 14.2 | Best-effort pattern matching with prompt instruction as primary defense. Limitation stated: may miss obfuscated pricing. |
+| Trust boundary: plugin-level vs. platform-level | Section 5.1 (SEC-04) | Platform responsibility. Limitation stated: semantic attacks undetectable. |
 
-### Falsifiability
-ADR-003 rejects A (one-clean), C (severity), E-alone, B-alone, three-clean — each with a stated failure mode that the matrix above can reproduce.
+**Previous observation (still standing)**: The summary trade-off table still does not include the deduplication algorithm decision or the state file format decision. Non-blocking; recommend adding for completeness.
 
-### Observations (non-blocking)
-- **Default cap = 3 + two-clean rule = only 1 fix iteration**. ADR-003 acknowledges this. Recommend Quality stage measure cap_reached frequency on the dogfood run; if > 50%, raise default to 4 in a follow-up.
-- **Architect-revision context scoping** is asserted as invariant. Recommend a test that inspects the dispatched Architect prompt and asserts it does NOT contain prior-loop finding strings.
-- **Reviewer context isolation**: unit test should mock the dispatcher and assert each reviewer prompt contains exactly `[artifact, reviewer_brief, taxonomy]` and nothing else.
-- **Pseudocode timing**: §4.3 `if len(loops) >= 3` means class-saturation cannot fire until N=3. With default cap=3 it can only fire on the very last loop before cap_reached. Consistent with spec but should be noted in `team-patterns.md` so reviewers understand it.
+### [PASS] NFRs quantified with measurable targets and validation approach [blocking]
 
----
+**No regression.** All previously-documented NFR targets (p95 < 2s memory retrieval, zero pip install, finding structure, context isolation, no reimplementation, rework termination, config forward-compat) are preserved.
 
-## 3. ADR Falsifiability — Per Decision
+**Security revisions add testable invariants.** The v1.4 security controls are specified with sufficient precision to be tested:
 
-| Decision | Falsifiable? | How to falsify |
-|---|---|---|
-| ADR-001: layered detection > single mechanism | Yes | Demonstrate that A or B alone meets all FR-09 + NFR-05 cases on the harness in use |
-| ADR-001: soft-deny on uncertainty | Yes | Show a production incident where soft-deny allowed a destructive write, AND a hard-deny variant would not have bricked the pipeline |
-| ADR-001: allowlist scope | Yes | Find a legitimate orchestrator bookkeeping path NOT in §2.3, OR an in-list path that should have been denied |
-| ADR-003: two-clean > one-clean | Yes | Show a stream where one-clean exits correctly and two-clean wastes a loop with no benefit, repeated across N runs |
-| ADR-003: class saturation > severity threshold | Yes | Run both on the dogfood corpus, compare false-converge / false-continue rates |
-| ADR-003: misc bucket counts as new class | Yes | Show a reviewer using `misc` legitimately and having class-saturation incorrectly delayed |
-| ADR-003: cap_reached is exit not failure | Yes (policy) | Show human checkpoint cannot in practice make an informed accept/reject decision from the residuals format |
+| New Invariant | Measurable | Testable | Test Method (from Section 12.1) |
+|---|---|---|---|
+| Path whitelist `^[a-zA-Z0-9._-]+$` | Yes (regex match) | Yes | Input/output pairs for safe/unsafe values (fully automated) |
+| `safe_join()` sandbox check | Yes (resolved path prefix check) | Yes | Path traversal test cases (fully automated) |
+| `yaml.safe_load()` mandate | Yes (call signature audit) | Yes | Malicious YAML fixture (fully automated) |
+| No-pricing filter in memory | Yes (pattern detection) | Yes | Pricing pattern fixtures (fully automated) |
+| Hook `json.loads()` only | Yes (code audit) | Yes | Malformed JSON + shell metacharacter fixtures (fully automated) |
 
-Every decision is bound to an observable outcome on a finite test stream.
+**Previous observation (still standing)**: No latency budgets for hooks, config validation, state parsing, or gate evaluation beyond the memory p95 target. Non-blocking.
 
----
+### [PASS] Failure modes addressed for each component [blocking]
 
-## 4. Cross-Cutting QA Concerns
+**No regression.** All 26 error codes from v1.3 are preserved.
 
-### Pass
-- Edit map (§5) is gateable: each row has FR back-reference and a concrete file. Doc-parity DoD can be a deterministic grep.
-- NFR table (§6) gives every NFR a budget AND an architectural hook.
-- Activation gating (§2.5) makes the dogfood run testable without circular dependency.
+**Security revisions add 2 new error codes to the taxonomy:**
 
-### Recommendations for Plan stage (non-blocking)
-1. Define the test fixture path for `enforce_pipeline_scope.py` (PQ-2 mentions `delivery-team/tests/fixtures/legacy-v2.6-config.yml`). Standalone Python script that exits non-zero on assertion failure.
-2. Specify the `routing.force_type` enum exhaustively (PQ-3) so parser tests can be table-driven.
-3. Bash-redirection regex needs a positive AND negative test set (e.g., `grep > /dev/null` must not match an artifact path).
-4. End-to-end smoke test for the dogfood activation gate: v2.6 config (deny unreachable), v2.7 + flag false (same), v2.7 + flag true (deny fires).
-
----
-
-## 5. Falsifiability Summary
-
-| Artifact | Testable | Measurable | Falsifiable | Verdict |
+| Code | Error Condition | Detection | Severity | Response |
 |---|---|---|---|---|
-| architecture.md | Yes | Yes | Yes | Pass |
-| ADR-001 | Yes | Yes | Yes | Pass |
-| ADR-003 | Yes | Yes | Yes | Pass |
+| `HW-STA-005` | Path traversal detected | `safe_join()` in `state_manager.py` | Critical | Path construction blocked. User must fix config value. |
+| `HW-SEC-001` | Pricing data detected in memory entry | Orchestrator (memory write phase) | Warning | Entry redacted; pipeline continues. |
+
+Both new error codes follow the existing taxonomy conventions (component code, severity, response behavior). Both are structurally detectable (regex match for STA-005, pattern match for SEC-001). Neither introduces LLM-dependent failure classification.
+
+**Previous observation (still standing)**: No `HW-DIS-005` for role-stage mismatch detection. Non-blocking.
+
+### [PASS] Data flows described [blocking]
+
+**No regression.** All data flow descriptions from v1.3 are preserved.
+
+**Security revisions add data flow constraints:**
+
+1. **Path construction flow** (Section 7.2): New `sanitize_path_component()` and `safe_join()` functions are interposed on every path construction point. The data flow is: config/state value --> whitelist validation --> path join --> canonicalization check --> filesystem operation. This is a tighter flow than v1.3 (which had no validation step).
+
+2. **Memory write flow** (Section 8.3, step 5 + Section 14.2): New no-pricing filter interposed between lesson capture and persistence. The flow is: pipeline event --> lesson extraction --> pricing pattern scan --> redaction if detected --> persistence. This adds a filter step that was absent in v1.3.
+
+3. **Hook input flow** (Section 9.6): New explicit flow: `$TOOL_INPUT` env var --> `json.loads()` --> field extraction --> validation --> use. Template provided. This formalizes what was implicit in v1.3.
+
+All new data flow constraints are deterministic (regex/pattern matching), not LLM-dependent.
+
+### [PASS] Security addressed [blocking]
+
+**This criterion was the focus of the v1.4 revision.** The security review (SEC-01 through SEC-06) identified 2 blocking and 4 advisory findings. All 6 have been addressed:
+
+| Finding | Severity | Resolution | Section | Adequate |
+|---|---|---|---|---|
+| SEC-01: Path traversal | BLOCKING | Whitelist + canonicalization in `state_manager.py` | 7.2 | Yes. `safe_join()` API with sandbox check. `HW-STA-005` error code. Applied to all construction points (config snapshot, archives, artifact registry). |
+| SEC-02: BOM data exposure | BLOCKING | SENSITIVE/INTERNAL/PUBLIC classification, `.gitignore` recommendations, no-pricing memory filter | 14.2 | Yes. Three-tier classification. Setup wizard integration. `HW-SEC-001` error code. Best-effort limitation acknowledged. |
+| SEC-03: YAML injection | Advisory | `yaml.safe_load()` mandate | 7.1, 14.1 | Yes. Coding standard table. Security invariant note. |
+| SEC-04: Cross-plugin trust | Advisory | Trust assumption documented | 5.1, 14.3 | Yes. Explicit statement of what is trusted and what is not. Limitation stated. |
+| SEC-05: State tampering | Advisory | Accepted risk with integrity hash | 7.2.1, 14.4 | Yes. SHA-256 advisory hash. Warning-only on mismatch. Rationale for acceptance clear. |
+| SEC-06: Hook input injection | Advisory | Coding standards + template | 9.6, 14.1 | Yes. `json.loads()` only, no `shell=True`, path validation. Template provided. |
+
+**Testability of security controls:** Section 12.1 was updated with 4 new test rows covering the security additions: path sanitization (SEC-01), memory no-pricing filter (SEC-02), YAML safe_load enforcement (SEC-03), and hook input sanitization (SEC-06). All 4 are classified as "Fully automated" with specific test fixture descriptions. This is the strongest signal that testability was not regressed.
+
+### [PASS with observations] ADRs written [warning]
+
+**No regression.** All 4 ADRs from v1.3 are preserved. No ADR was modified or weakened by the security revisions. The Follow-Up section (Section 15 item 5) documents the security review findings and their resolution locations.
 
 ---
 
-## STATUS
+## Testability-Specific Regression Check
 
-**DONE** — Architecture and ADRs are testable, success criteria are measurable, and every decision is falsifiable. Observations above are recommended Plan-stage test inputs, not gate failures.
+As QA Engineer, testability is my primary Gate 4 concern. The following checks verify that the security revisions did not degrade the architecture's testability posture:
 
-> *"The arrow flies true when the bow is straight. This bow is straight."*
+| Testability Dimension | v1.3 Status | v1.4 Status | Regression? |
+|---|---|---|---|
+| Gate evaluation determinism | All gates use structural checks | Unchanged. New `gate_strictness` behavior (F-13) is a lookup table, not LLM inference | No |
+| Deduplication determinism | Exact-match algorithm on component+category | Unchanged | No |
+| Error detection mechanisms | 26 codes, all structurally detectable | 28 codes (+HW-STA-005, +HW-SEC-001), all structurally detectable | No (improved) |
+| Test fixture coverage | 4 fixture components covering gates and BOM | Unchanged, plus 4 new automated security test categories | No (improved) |
+| State file testability | CRUD operations testable via `state_manager.py` | New `validate_state()` function adds corruption recovery testing. Integrity hash adds tamper detection testing. | No (improved) |
+| Memory system testability | Round-trip injection testing | New pricing filter adds redaction testing. New `MEMORY_APPLIED`/`MEMORY_NOTED` observability aids round-trip verification. | No (improved) |
+| Hook testability | Exit-0 guarantee, informational only | New coding standard template provides consistent structure. New security test fixtures for hook input. | No (improved) |
 
-— Legolas
+**Verdict**: No testability regression detected. The security revisions strictly improved testability by adding 4 new automated test categories and 2 new error codes with deterministic detection.
+
+---
+
+## Observations (Non-Blocking, Carried Forward from v1.3 Review)
+
+1. **Deduplication and state format trade-offs not in summary table**: The trade-off table covers 8 decisions but omits the deduplication algorithm decision (Section 10.1.1) and state file format decision (Section 7.1). Both have inline rationale; suggest surfacing them in the summary table.
+
+2. **No latency budgets beyond memory retrieval**: Only NFR-008 (p95 < 2s memory retrieval) has a latency target. Hook timeouts in hooks.json (5s, 10s) are operational limits, not performance budgets. Suggest adding p95 targets for config validation and state parsing.
+
+3. **No role-stage mismatch detection**: No error code for dispatching the wrong role to a stage (e.g., CompE for Schematic). Suggest adding HW-DIS-005 in a future revision.
+
+4. **Config snapshot `.gitignore` entry**: Section 14.2 recommends `.hardware/config-snapshot-*.yml` in `.gitignore`. This is appropriate since config snapshots may contain sensitive values (e.g., `bom_budget`), but note that losing config snapshots from version control means resume-from-snapshot depends on local file integrity only. This is consistent with the local-tool design philosophy.
+
+---
+
+## Summary Verdict
+
+| Gate 4 Criterion | v1.3 Result | v1.4 Result | Change |
+|---|---|---|---|
+| Trade-offs documented [blocking] | PASS | PASS | No regression |
+| NFRs quantified [blocking] | PASS | PASS | No regression; 5 new testable invariants added |
+| Failure modes addressed [blocking] | PASS | PASS | No regression; 2 new error codes added |
+| Data flows described [blocking] | PASS | PASS | No regression; 3 new flow constraints added |
+| Security addressed [blocking] | PASS | PASS | Strengthened; 6 security findings resolved |
+| ADRs written [warning] | PASS | PASS | No regression |
+
+**Status: DONE**
+
+All blocking Gate 4 criteria pass. No testability regression from security revisions. The architecture v1.4 is stronger than v1.3 in both security posture and testability.
+
+> *"The metal rings true. Six flaws in the forge have been sealed, and the blade is sharper for it. I see no cracks -- not one. This architecture may pass."*

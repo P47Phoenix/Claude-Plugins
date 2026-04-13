@@ -70,6 +70,21 @@
       "skills": [
         "./mtg-commander"
       ]
+    },
+    {
+      "name": "hardware-team",
+      "description": "Hardware delivery team with 8-stage pipeline orchestrator for structured hardware product development. Coordinates 6 hardware roles (HW Product Owner, Electrical Engineer, PCB Layout Engineer, Manufacturing Engineer, Compliance Engineer, Test Engineer) through concept-to-production pipeline. Consumes kicad-happy skills for component sourcing, fabrication, analysis, and documentation.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./hardware-team/skills/hardware-flow",
+        "./hardware-team/skills/hw-product-owner",
+        "./hardware-team/skills/electrical-engineer",
+        "./hardware-team/skills/pcb-layout-engineer",
+        "./hardware-team/skills/manufacturing-engineer",
+        "./hardware-team/skills/compliance-engineer",
+        "./hardware-team/skills/test-engineer"
+      ]
     }
   ]
 }

@@ -1,17 +1,30 @@
-## Stage 5: Plan (Light Mode) — Summary
+# Stage 5: Plan — Summary
 
-**Pipeline**: run-2026-04-05-3d92
-**Project Type**: BUG_FIX
+**Pipeline:** run-2026-04-12-hw01
+**Project type:** GREENFIELD (hardware-team plugin)
+**Status:** COMPLETE
 
-### Agents Dispatched
+## Agents
+| Role | Character | Signal | Artifact |
+|------|-----------|--------|----------|
+| PO (stories) | Gandalf | DONE | `05-plan/po/stories.md` |
+| Architect (sequencing) | Celebrimbor | DONE | `05-plan/architect/sequencing.md` |
+| SM (sprint plan) | Aragorn | DONE | `05-plan/sm/sprint-plan.md` |
+| QA (test strategy) | Legolas | DONE | `05-plan/qa/test-strategy.md` |
+| DevOps (deploy plan) | Samwise | DONE | `05-plan/devops/deploy-plan.md` |
 
-| Agent | Role | Status | Artifact |
-|-------|------|--------|----------|
-| Product Owner (Gandalf) | Stories + test cases | DONE | 05-plan/po/stories.md |
-| Scrum Bag (Aragorn) | Sprint plan | DONE | 05-plan/sm/sprint-plan.md |
-| QA Engineer (Legolas) | Test strategy | DONE | 05-plan/qa/test-strategy.md |
-| Scrum Bag (Aragorn) | DoD Validator | DONE | 05-plan/dod/sm-review.md |
-| QA Engineer (Legolas) | DoD Validator | DONE | 05-plan/dod/qa-review.md |
+## Adversarial Review
+- Sprint 2 at 100% ceiling (BLOCKING), Sprint 1 at 95% (WARNING)
+- SM rebalanced to enforce 80% ceiling across all sprints
+- Confidence: 3/5 → plan revised
 
-### Gate Result
-ALL validators DONE. Stage advances to Human Checkpoint 3.
+## DoD Validation (Round 1 — PASSED)
+| Validator | Character | Signal |
+|-----------|-----------|--------|
+| SM | Aragorn | DONE |
+| PO | Gandalf | DONE |
+| QA | Legolas | DONE |
+| DevOps | Samwise | DONE |
+| Developer | Gimli | DONE |
+
+Advancing to Stage 6: Development.
