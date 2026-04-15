@@ -1,80 +1,77 @@
-# Sprint Plan: MTG Commander Adversarial Review Loops
+# Sprint Plan — DOCS_ONLY Documentation Refresh
 
-**Stage:** 05-Plan | **Role:** SM (Aragorn) | **Plugin:** mtg-commander
-**Pipeline:** run-2026-04-11-e6f3
+**Author:** Aragorn, son of Arathorn (Scrum Bag, `lotr-full` alias)
+**Stage:** 05-Plan · Project type: DOCS_ONLY · Tier: markdown
+**Input:** `tech-writer/doc-stories.md` (Bilbo) · 8 stories · 8 pts
 
----
-
-## Capacity
-
-- **Velocity baseline:** 8 pts/sprint (code), 6 pts/sprint (markdown-tier calibrated)
-- **80% ceiling:** 6 pts/sprint (markdown-tier work)
-- **Hard cap:** 5 pts single story
-- **Team size:** 1 developer (all work is SKILL.md + reference markdown edits)
+> "A day may come when the courage of men fails... but it is not this day. This day we ship markdown."
 
 ---
 
-## Sprint 1: Foundation (6 pts)
+## Capacity Check
 
-**Goal:** Establish challenger templates and config loading -- the two independent pillars.
+- **Sprint ceiling:** 4 pts · **Hard cap:** 5 pts
+- **Total plan:** 8 pts
+- **Sprint count:** 2 (4 + 4) — fits exactly under ceiling, zero headroom burned
+- **Tier:** markdown — small estimates, no code, no schema, no tests beyond grep + JSON-load
 
-| Story | Pts | Assignee | Notes |
-|-------|-----|----------|-------|
-| US-1: Challenger agents | 3 | Developer | 4 challenger templates in SKILL.md + signal format |
-| US-3: Config loading | 3 | Developer | Config protocol + schema docs + references/config-reference.md |
+## Dependency Graph
 
-**Rationale:** US-1 and US-3 have no mutual dependency. Parallel-capable. US-2 depends on US-1 so deferred.
+```
+US-3 (CLAUDE.md)  ──────────────── independent
+US-6 (marketplace.json) ───────── independent
+US-1 (mtg-commander README) ──┐
+                              ├──► US-2 (same file section)
+                              └──► US-4 (links into it)
+US-5 (delivery-team README) ──┬──► US-7 (cross-link audit)
+US-4 (root README) ──────────┘
+                              └──► US-8 (troubleshooting block appends)
+```
 
-**Exit criteria:** SKILL.md contains 4 challenger sections; config-reference.md exists; pipeline works without config file.
+Critical path: **US-1 → US-4 → US-7** (new plugin README must exist before root README links to it; cross-link audit runs last).
 
----
+## Sprint 1 — Foundation (4 pts)
 
-## Sprint 2: Loop Protocol + Defect Fixes (6 pts)
+Goal: Close the mtg-commander discoverability gap at the plugin level + correct CLAUDE.md drift + verify marketplace registry. Everything self-contained; no cross-file dependencies leave the sprint unfinished.
 
-**Goal:** Wire challengers into loop protocol; close DEFECT-001; add price goal flow.
+| ID | Title | Pts | Rationale |
+|----|-------|-----|-----------|
+| US-1 | Create `mtg-commander/README.md` | 2 | Highest-severity convergent gap (Bilbo #1 + Galadriel #1). Biggest single user-value delivery. |
+| US-2 | `.mtg-commander.yml.example` + walkthrough | 1 | Directly follows US-1 (same file's Configuration section). Bundling reduces re-read cost. |
+| US-3 | CLAUDE.md refresh | 1 | Independent; touches a different file; parallelizable. Agent-facing drift fix. |
+| US-6 | marketplace.json verification | 0.5 | Independent, quick. Bundled with S1 to lock registry truth before S2 README edits consume it. |
 
-| Story | Pts | Assignee | Notes |
-|-------|-----|----------|-------|
-| US-2: Loop protocol | 3 | Developer | Depends on US-1 (challenger templates exist) |
-| US-5: DEFECT-001 fix | 1 | Developer | Depends on US-1 (Rules Challenger exists) |
-| US-4: Price rules | 2 | Developer | Depends on US-3 (config provides max_card_price) |
+**Sprint 1 total:** 4.5 pts — **exceeds 4-pt ceiling by 0.5**.
 
-**Rationale:** US-2 builds on US-1's templates. US-5 is small, scoped to Rules Challenger. US-4 needs config from US-3.
+**Mitigation:** US-6 is a 0.5-pt verification story; if on-disk matches registry (high likelihood per Bilbo §2 — "matches top-level directories exactly"), actual work collapses to ~15 min and stays inside ceiling. If a real mismatch surfaces, promote US-6 to Sprint 2 and reclaim capacity.
+**Decision:** keep US-6 in S1, monitor at mid-sprint checkpoint.
 
-**Exit criteria:** Full loop flow documented; validate-deck mandated; price escalation format in SKILL.md.
+## Sprint 2 — Surface + Integrate (4 pts)
 
----
+Goal: Root-level discoverability (README) + delivery-team advanced-capabilities surfacing + cross-link integrity + lightweight troubleshooting. Consumes S1 outputs (links to mtg-commander/README.md).
 
-## Sprint 3: Guardrails + Polish (3 pts)
+| ID | Title | Pts | Rationale |
+|----|-------|-----|-----------|
+| US-4 | README.md roster + recent additions | 1 | Links to US-1 artifact; must run after S1. |
+| US-5 | delivery-team/README.md Advanced section | 1 | Independent of S1; surfaces constraints / board / transformation / paradigms. |
+| US-8 | Troubleshooting inline blocks | 1 | Appends to US-5's file + root README; runs after US-4 and US-5 land. |
+| US-7 | Cross-link audit | 0.5 | Runs last — validates all new links across touched files. |
 
-**Goal:** Harden guardrails, update reference guides, verify with dogfood grep.
+**Sprint 2 total:** 3.5 pts — comfortably under ceiling, absorbs any US-6 spillover from S1.
 
-| Story | Pts | Assignee | Notes |
-|-------|-----|----------|-------|
-| US-6: DEFECT-002 fix | 1 | Developer | CK divergence in Price Challenger |
-| US-7: Sub-agent guardrail | 1 | Developer | NON-NEGOTIABLE section + anti-pattern callout |
-| US-8: Reference guide updates | 1 | Developer | price-evaluator-guide, rules-judge-guide |
-| US-9: Dogfood verification | 0 | QA | Grep test, structural review |
+## Adversarial Self-Check
 
-**Rationale:** US-8 aggregates all guide updates after functional stories complete. US-9 is zero-cost verification.
+- **Q: Is this actually 2 sprints of effort or 1 bloated sprint?** A: 8 pts at markdown tier ≈ 8 hours of focused authoring. Two sprints is honest pacing with review time; one sprint would skip the US-7 cross-link verification pass.
+- **Q: Are we smuggling a feature in?** A: No. Every story is content creation/refresh on existing files. `.mtg-commander.yml.example` is a config example, not a new primitive — schema already shipped in SKILL.md.
+- **Q: Sprint 1 is 4.5 — are we kidding ourselves?** A: US-6 is genuinely a 15-minute verification if the registry matches disk (Bilbo confirmed it does in §2). The 0.5-pt estimate is a buffer, not realistic work. Acceptable.
+- **Q: Does the plan honor "light means reduced depth, not skip"?** A: Yes. Deferred `docs/user-guide/*` pages are not "skipped light stages" — they are explicitly deferred to a named follow-on cycle in the story doc. Current cycle still executes in full at its chosen scope.
+- **Q: Will out-of-scope vocabulary leak?** A: US-3 and US-5 AC explicitly forbid impl-detail language (no "sub-skill refactor," describe as "paradigm selection"). Tech Writer owns wording; QA grep strategy catches regressions.
 
-**Exit criteria:** Grep test passes (>=3 matches); reference guides reflect adversarial flow; AC-11 verified.
+## Exit Criteria
 
----
+- All 8 stories meet their AC
+- QA test strategy (Legolas) passes end-to-end
+- No new broken links introduced (US-7 gate)
+- Total work delivered: 8 files touched (2 new, 6 edits), 0 code changes, 0 schema changes.
 
-## Risks & Mitigations
-
-| Risk | Mitigation |
-|------|-----------|
-| US-1 at 3 pts is largest single item | 4 independent templates -- can split if blocked |
-| Sprint 2 at ceiling (6 pts) | US-5 is 1pt safety margin; can slip to Sprint 3 |
-| Reference guide updates depend on 4 stories | US-8 deliberately last; all inputs stable by Sprint 3 |
-
----
-
-## Definition of Done (Sprint-level)
-
-- All stories in sprint meet their AC
-- SKILL.md compiles (no broken markdown references)
-- No new external dependencies introduced (NFR-1)
-- Pipeline works without `.mtg-commander.yml` at every sprint boundary (NFR-2)
+> "By all the signs, we are come to the end of this stretch of road. Two sprints and we sup in Rivendell."

@@ -1,41 +1,39 @@
-# Release Plan — US-9 Adversarial Challenger Agents
+# Release Plan — Documentation Harmonization
 
-**Release Manager**: Sam (DevOps)
-**Pipeline**: run-2026-04-11-e6f3
-**Date**: 2026-04-11
+**DevOps**: Sam | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Run**: run-2026-04-11-f7g4
 
 ## Change Inventory
 
-| File | Change Type | Lines Changed |
-|------|-------------|---------------|
-| `mtg-commander/SKILL.md` | Modified (augmented) | +199 net (980 -> 1179) |
-| `mtg-commander/references/rules-judge-guide.md` | Modified | Challenger integration + deterministic mandate |
-| `mtg-commander/references/price-evaluator-guide.md` | Modified | CK divergence + Price Challenger integration |
+**New docs (5)**:
+- `mtg-commander/README.md`
+- `mtg-commander/.mtg-commander.yml.example`
+- `mtg-commander/references/config-walkthrough.md`
+- `delivery-team/skills/delivery-flow/references/constraints-quickstart.md`
+- `delivery-team/skills/delivery-flow/references/troubleshooting.md`
 
-## NOT Shipped (User-Side)
-
-- `.mtg-commander.yml` — user-created config in THEIR repo, not ours. We ship defaults.
+**Updated docs (5+)**:
+- `CLAUDE.md` (mtg-commander + paradigms/ + transformation-planning + constraints.yml surfaced)
+- `README.md` (root — What's new + mtg-commander surfacing)
+- `.claude-plugin/marketplace.json` (6 plugins registered)
+- `delivery-team/skills/architect/references/volatility-decomposition.md` (redirect stub -> `../paradigms/`)
+- `delivery-team/skills/architect/references/strategic-ddd.md` (redirect stub -> `../paradigms/`)
 
 ## Release Steps
 
-1. Commit changes on feature branch (`feat/us9-adversarial-challengers`)
-2. PR to `main` with conventional commit: `feat(mtg-commander): add adversarial challenger agents with sub-agent dispatch guardrail (#US-9)`
-3. Merge (squash) after CI green
-4. Tag: `v2.18.0` (minor — new feature, backwards compatible)
-5. Update `marketplace.json` description if needed
+1. Stage modified + new files via `git add -p` (selective, no secret leakage).
+2. Commit: `docs: harmonize mtg-commander + constraints + troubleshooting references`.
+3. Push to `main` (docs-only).
+4. Verify GitHub renders landing pages (root + mtg-commander dir).
+5. Announce in retrospective + memory index bump.
 
-## Rollback Plan
+## Risk
 
-```bash
-git revert <merge-commit-sha>
-```
+**Minimal** — docs-only. No code paths or plugin manifests restructured beyond registry entry count (verified 6). No hooks, skills, scripts altered.
 
-No schema migration. No database. No external state.
-The `.mtg-commander.yml` config is optional — absence = defaults.
-Revert removes challenger prompts; pipeline reverts to pre-adversarial behavior.
+## Rollback
 
-## Risk Assessment
+`git revert <commit-sha>` — single atomic commit restores prior state. No downstream consumers to notify.
 
-- **Low**: All changes are prompt-level (SKILL.md + reference guides)
-- **No runtime dependencies** added
-- **Backwards compatible**: no config = existing behavior preserved
+## Sign-off
+
+DevOps: APPROVED for release.

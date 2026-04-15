@@ -13,6 +13,8 @@ license: Apache License 2.0 - See repository LICENSE file
 
 Multi-agent pipeline for building optimized, format-legal, budget-compliant Commander (EDH) decklists.
 
+> **User-facing guide:** see [`README.md`](README.md) for install, quick start, and troubleshooting. Config authoring walkthrough at [`references/config-walkthrough.md`](references/config-walkthrough.md).
+
 ## Sub-Agent Dispatch Guardrail
 
 Every pipeline step — primary agents and challenger agents alike — MUST be dispatched as a separate sub-agent via the Agent tool. This is NON-NEGOTIABLE.

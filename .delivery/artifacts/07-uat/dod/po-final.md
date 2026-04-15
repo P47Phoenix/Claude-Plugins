@@ -1,40 +1,28 @@
-# PO Final Gate — US-9 Adversarial Challenger Agents
+# PO Final DoD — Documentation Pipeline
 
-**Gate Keeper**: Gandalf (PO)
-**Pipeline**: run-2026-04-11-e6f3
-**Date**: 2026-04-11
+**PO**: Gandalf | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Run**: run-2026-04-11-f7g4
 
-## Functional Requirements Validation
+## Story-by-Story Pass Table
 
-| FR | Description | Status | Evidence |
-|----|-------------|--------|----------|
-| FR-01 | Challenger agents at each pipeline step | DONE | 6 challenger references in SKILL.md |
-| FR-02 | Configurable loop iterations | DONE | max_card_price (4 refs), config section present |
-| FR-03 | Independent challenger context | DONE | Adversarial Loop Protocol section defines isolation |
-| FR-04 | Pipeline works without config | DONE | Invariant: "identically when .mtg-commander.yml is absent" |
-| FR-05 | Soft price goal with escalation | DONE | 9 escalation refs, budget_source (3 refs) |
-| FR-06 | Sub-agent dispatch mandate | DONE | Sub-Agent Dispatch Guardrail section (2 occurrences) |
-| FR-07 | Deterministic deck validation (DEFECT-001) | DONE | rules-judge-guide mandates validate-deck |
-| FR-08 | CK divergence detection (DEFECT-002) | DONE | 16 CK/divergence refs in price-evaluator-guide |
-| FR-09 | Reference guides updated for challengers | DONE | 4 + 3 Challenger refs in guides |
+| Story | Title | Evidence | Status |
+|-------|-------|----------|--------|
+| US-1 | mtg-commander discoverability (README + registry) | TC-01, TC-07..09, TC-14, TC-21 | PASS |
+| US-2 | mtg-commander .mtg-commander.yml example | TC-02, TC-18..20, TC-22 | PASS |
+| US-3 | mtg-commander config walkthrough | TC-03, TC-25..26 | PASS |
+| US-4 | constraints user-facing quickstart | TC-04, TC-16, TC-27 | PASS |
+| US-5 | troubleshooting reference | TC-05, TC-17, TC-28..29 | PASS |
+| US-6 | CLAUDE.md harmonization (paradigms, transformation-planning, constraints.yml, mtg) | TC-10..13, TC-30 | PASS |
+| US-7 | Root README surfacing + What's new | TC-06, TC-14..15 | PASS |
+| US-8 | Redirect stub repair (architect refs) | TC-23..24 | PASS |
 
-## AC-11 Critical Gate
+## Convergent Gaps Closed
 
-**Grep result**: 2 lines matching (contains all 4 guardrail terms: MUST sub-agent, NEVER inline, GUARDRAIL VIOLATION, NON-NEGOTIABLE). Semantic intent: FULLY SATISFIED.
+- **mtg-commander discoverability** — landing README, registry entry verified, CLAUDE.md + root README reference it.
+- **constraints user-facing guidance** — quickstart bridges the internal model guide and user authoring workflows.
+- **.mtg-commander.yml usability** — committed example + walkthrough eliminate guesswork.
+- **Troubleshooting surface** — SYMPTOM/DIAGNOSIS/FIX reference consolidates prior tribal knowledge.
+- **Broken redirect stubs** — two architect references now correctly resolve to `../paradigms/`.
 
-## Defect Status
+## Verdict
 
-| Defect | Status | Resolution |
-|--------|--------|------------|
-| DEFECT-001 | **CLOSED** | Rules Challenger + deterministic validate-deck mandate |
-| DEFECT-002 | **CLOSED** | Price Challenger + CK divergence escalation (>30%) |
-
-## QA Results
-
-- 15 TCs executed, 93% clean pass rate (14/15 effective)
-- 1 non-blocking fail: constraints.yml schema formatting (Stage 2 artifact)
-
-## Final Verdict: **GO**
-
-All 9 FRs satisfied. Both defects closed. Sub-agent guardrail structurally enforced.
-Ship it.
+**GO** — 8/8 stories PASS. 30/30 TCs PASS. Ship.

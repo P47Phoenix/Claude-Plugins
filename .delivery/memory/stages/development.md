@@ -1,6 +1,6 @@
 # Development Stage Lessons
 
-**Entries**: 9 | **Last updated**: 2026-04-11
+**Entries**: 10 | **Last updated**: 2026-04-11
 
 - Derived artifacts (config-schema.json from config-schema.md, generated docs from source) MUST be regenerated after modifying their source. Architect validator caught stale schema.json. Add "regenerate derived artifacts" to dev checklist. (validated: 1, last: run-2026-03-27-c8f2)
 - When modifying config schema, always run `python delivery-team/scripts/generate-schema.py` after editing config-schema.md. (validated: 1, last: run-2026-03-27-c8f2)
@@ -11,3 +11,4 @@
 - Fused consolidated dispatches (multi-artifact, multi-role in one Agent call) are viable for compressed pipeline runs when scope is content-heavy and agents can tag each output with its role. Used in b2c7 and c4d1 successfully. (validated: 2, last: run-2026-04-09-c4d1)
 - Paradigm-as-skill extraction is a file-move + content-organize task, not a rewrite. Dogfood immediately after extraction catches content gaps (missing sidebars, missing paradigm-specific discovery docs). 82% context reduction was real. (validated: 1, last: run-2026-04-10-d5e2)
 - Guardrail language in SKILL.md is most effective when it's STRUCTURAL — use task blocks that only make sense for spawned agents ('your output', 'write to disk', 'signal format') so inlining produces nonsensical instructions. (validated: 1, last: run-2026-04-11-e6f3)
+- DOCS_ONLY pipeline benefits from parallel discovery (Tech Writer + UX) at Stage 1 — convergent priorities reduce ambiguity in Plan stage. Cross-link audit at Dev caught real broken redirect stubs from prior runs. (validated: 1, last: run-2026-04-11-f7g4)

@@ -1,60 +1,53 @@
-# UAT Test Results — US-9 Adversarial Challenger Agents
+# UAT Test Results — Documentation Pipeline
 
-**Tester**: Legolas (QA)
-**Pipeline**: run-2026-04-11-e6f3
-**Date**: 2026-04-11
-**Target**: mtg-commander plugin (SKILL.md + references)
+**QA**: Legolas | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Run**: run-2026-04-11-f7g4
 
-## Test Case Results
+## Test Execution Summary
 
-| TC | Check | Expected | Actual | Verdict |
-|----|-------|----------|--------|---------|
-| TC-01 | AC-11 guardrail keywords (MUST sub-agent, NEVER inline, GUARDRAIL VIOLATION, NON-NEGOTIABLE) | >= 3 lines | 2 lines (all 4 terms present across 2 lines) | **CONDITIONAL PASS** |
-| TC-02 | Sub-Agent Dispatch Guardrail section | >= 1 | 2 | PASS |
-| TC-03 | Challenger Agents section | >= 1 | 1 | PASS |
-| TC-04 | Adversarial Loop Protocol section | >= 1 | 1 | PASS |
-| TC-05 | Configuration reference | >= 1 | 1 | PASS |
-| TC-06 | All 4 challenger types named | >= 4 | 6 | PASS |
-| TC-07 | max_card_price config key | >= 1 | 4 | PASS |
-| TC-08 | Escalation flow references | >= 3 | 9 | PASS |
-| TC-09 | budget_source config key | >= 1 | 3 | PASS |
-| TC-10 | DEFECT-001 fix (deterministic validation) | >= 1 | 1 | PASS |
-| TC-11 | DEFECT-002 fix (CK divergence) | >= 1 | 16 | PASS |
-| TC-12 | Challenger in rules-judge-guide | >= 1 | 4 | PASS |
-| TC-13 | Challenger in price-evaluator-guide | >= 1 | 3 | PASS |
-| TC-14 | Constraints validation | exit 0 | exit 1 (invariants format) | **FAIL** |
-| TC-15 | SKILL.md line count (> 980 original) | > 980 | 1179 | PASS |
+| TC | Category | Target | Expected | Actual | Result |
+|----|----------|--------|----------|--------|--------|
+| TC-01 | File | mtg-commander/README.md | exists | exists | PASS |
+| TC-02 | File | mtg-commander/.mtg-commander.yml.example | exists | exists | PASS |
+| TC-03 | File | mtg-commander/references/config-walkthrough.md | exists | exists | PASS |
+| TC-04 | File | constraints-quickstart.md | exists | exists | PASS |
+| TC-05 | File | troubleshooting.md | exists | exists | PASS |
+| TC-06 | File | README.md (root) | exists | exists | PASS |
+| TC-07 | Content | mtg README "Challenger" | >=1 | 7 | PASS |
+| TC-08 | Content | mtg README ".mtg-commander.yml" | >=1 | 3 | PASS |
+| TC-09 | Content | mtg README defect/deterministic closure | >=1 | 6 | PASS |
+| TC-10 | Content | CLAUDE.md "mtg-commander" | >=1 | 1 | PASS |
+| TC-11 | Content | CLAUDE.md "paradigms/" | >=1 | 1 | PASS |
+| TC-12 | Content | CLAUDE.md "transformation-planning" | >=1 | 2 | PASS |
+| TC-13 | Content | CLAUDE.md "constraints.yml" | >=1 | 2 | PASS |
+| TC-14 | Content | README root "mtg-commander" | >=1 | 4 | PASS |
+| TC-15 | Content | README root "What's new\|Recent" | >=1 | 1 | PASS |
+| TC-16 | Content | constraints-quickstart "validate_constraints.py" | >=1 | 1 | PASS |
+| TC-17 | Content | troubleshooting "SYMPTOM\|Symptom" | >=1 | 10 | PASS |
+| TC-18 | Content | .mtg example "loops:" | >=1 | 1 | PASS |
+| TC-19 | Content | .mtg example "price_rules:" | >=1 | 1 | PASS |
+| TC-20 | Content | .mtg example "escalation:" | >=1 | 3 | PASS |
+| TC-21 | Schema | marketplace.json plugin count | 6 | 6 | PASS |
+| TC-22 | YAML | .mtg-commander.yml.example syntax | valid | YAML OK | PASS |
+| TC-23 | Stub-fix | volatility-decomposition `../paradigms/` | >=1 | 2 | PASS |
+| TC-24 | Stub-fix | strategic-ddd `../paradigms/` | >=1 | 2 | PASS |
+| TC-25 | Cross-link | mtg README -> archetype-patterns.md | exists | exists | PASS |
+| TC-26 | Cross-link | mtg README -> price-evaluator-guide.md | exists | exists | PASS |
+| TC-27 | Cross-link | constraints-quickstart -> constraints-model-guide.md | exists | exists | PASS |
+| TC-28 | Cross-link | troubleshooting -> config-schema.md | exists | exists | PASS |
+| TC-29 | Cross-link | troubleshooting -> defect-tracking.md | exists | exists | PASS |
+| TC-30 | Stale | CLAUDE.md "project_type:" (removed v2.7) | 0 | 0 | PASS |
 
-## TC-01 Detail (AC-11 Conditional Pass)
+## Coverage
 
-The grep pattern `MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE` matches 2 lines:
-- Line 18: contains BOTH "MUST...sub-agent" AND "NON-NEGOTIABLE"
-- Line 20: contains BOTH "NEVER...inline" AND "GUARDRAIL VIOLATION"
+- File existence: 6/6
+- Content presence: 14/14
+- Schema/YAML: 2/2
+- Redirect stub fixes: 2/2
+- Cross-link integrity (sampled): 5/5
+- Stale content: 1/1
 
-All 4 guardrail terms are present. The `-c` flag counts lines (2), not occurrences (4).
-Semantic coverage: **FULL**. Grep metric is a measurement artifact.
+## Verdict
 
-## TC-14 Detail (Constraints Validation Fail)
+**GO** — 30/30 test cases PASS. Documentation pipeline artifacts are consistent, discoverable, and cross-linked. The just-applied redirect stub fix (`../paradigms/`) verified on both architect references. No stale v2.7-removed config keys leak into CLAUDE.md. YAML example parses cleanly. Marketplace registry lists all 6 plugins.
 
-`constraints.yml` line 30 uses a YAML mapping (`sub_agents_mandatory: true`) inside a list
-that the schema expects to contain only strings. This is a pre-existing artifact formatting
-issue from Stage 2, not a Development regression. Content is correct; schema is strict.
-
-**Impact**: Non-blocking. The constraint is semantically captured in the invariant list
-(line 30's intent is duplicated in line 18's "MUST...sub-agent" language in SKILL.md).
-
-## Summary
-
-| Metric | Value |
-|--------|-------|
-| Total TCs | 15 |
-| PASS | 13 |
-| CONDITIONAL PASS | 1 |
-| FAIL (non-blocking) | 1 |
-| Pass Rate | 93% (13/15 clean, 14/15 effective) |
-
-## Final Verdict: **GO**
-
-All functional requirements validated. The 1 FAIL is a constraints.yml schema
-formatting issue (Stage 2 artifact), not a code regression. AC-11 semantic intent
-is fully satisfied despite the line-count metric being 2 vs 3.
+No defects logged. Ship it.

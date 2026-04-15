@@ -1,5 +1,7 @@
 # constraints.yml — Authoring Canon
 
+> Quick-start version: see [`constraints-quickstart.md`](constraints-quickstart.md).
+
 ## 1. What this file is (read first)
 
 `constraints.yml` is the **Paired Constraints Primitive**: a small, stage-committed YAML file that carries rule-checkable constraints from Refine and Architect into Plan, Dev, and the DoD gates. It is the concrete vessel of the **Model-First paradigm** — the discipline of binding a stage's earned knowledge to an explicit, mechanically verifiable model *before* prose proliferates downstream (see *LLM Agents as Model-First Engineers*, arXiv:2512.14474). Without this file, constraints are known but not structured, and therefore not consumed. With it, the Business Rules Engine can enforce them deterministically at every stage gate.

@@ -1,18 +1,10 @@
-# Claude Plugins
+# Claude-Plugins
 
-A collection of plugins for [Claude Code](https://code.claude.com) that extend Claude's capabilities with specialized skills, delivery workflows, and development tools.
-
-## What is this?
-
-Claude Plugins is an open-source marketplace of installable plugins for Claude Code. Each plugin adds specialized capabilities — from a full delivery team that orchestrates software projects end-to-end, to research agents, prompt engineering tools, and multi-agent workflow builders. Install one plugin or the whole set. Everything runs locally in your Claude Code session with no external services required.
+Claude-Plugins is a marketplace of plugins and skills that extend [Claude Code](https://code.claude.com) with specialized workflows — from a full software delivery team to an MTG Commander deck builder, research agents, prompt engineering tools, and multi-agent workflow builders. Pick one; take them all. The road goes as far as you care to walk it.
 
 ## Installation
 
-```
-claude mcp add-skill https://github.com/P47Phoenix/Claude-Plugins
-```
-
-Or add to your project's `.claude/settings.json`:
+Add the marketplace to your Claude Code configuration (via the `/plugin` browser or your `.claude/settings.json`):
 
 ```json
 {
@@ -22,144 +14,62 @@ Or add to your project's `.claude/settings.json`:
 }
 ```
 
-Then install individual plugins:
+Then install the plugins you want:
 
 ```
 /plugin install delivery-team
+/plugin install mtg-commander
 /plugin install agentic-flow-builder
 /plugin install prompt-engineer
+/plugin install prd-quality-gate-flow
 /plugin install research-agent
 ```
 
-Or browse interactively:
-```
-/plugin
-```
+Or browse interactively with `/plugin` inside a Claude Code session.
 
 ## Plugins
 
-### Delivery Team
+| Plugin | What it does |
+|--------|--------------|
+| [delivery-team](delivery-team/README.md) | 11 skills spanning the full software delivery lifecycle: pipeline orchestrator, product delivery, developer (14 languages), architect (11 roles), quality, operations, UI/UX, user feedback, alias themes, and presentations |
+| [mtg-commander](mtg-commander/README.md) | MTG Commander deck builder with a multi-agent pipeline: synergy-first card selection, Scryfall integration, format legality, budget enforcement, and price-goal escalation |
+| [agentic-flow-builder](agentic-flow-builder/README.md) | Build dynamic multi-agent workflows using ReAcTree hierarchical decomposition, deterministic business-rules gates, and SQLite audit trails |
+| [prompt-engineer](prompt-engineer/README.md) | Expert LLM prompt optimization with model-specific techniques and full prompt transparency |
+| [prd-quality-gate-flow](prd-quality-gate-flow/README.md) | Production-grade PRD workflow with 7 quality gates, episodic memory, and evidence-based Stage-Gate process |
+| [research-agent](research-agent/README.md) | Research agent with 5 research types (Exploratory, Descriptive, Explanatory, Evaluative, Comparative) and academic frameworks (PICO, SPICE, PECO, GRADE, ReAct) |
 
-A full software delivery team with 11 specialized skills covering the complete delivery lifecycle — from idea to release. Designed for both standalone use and multi-agent orchestration.
+## What's New
 
-**11 Skills:**
+Recent shipments across the marketplace:
 
-| Skill | Roles | What It Does |
-|-------|-------|-------------|
-| **Delivery Flow** | Pipeline orchestrator | 7-stage pipeline (Idea → Refine → Design → Architect → Plan → Dev → UAT) with auto-detect project type (GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV, SPIKE, DOCS_ONLY — DESIGN supports design-only engagements that terminate after Architect), team DoD, self-correction, adversarial review, debate, consensus, and self-learning memory |
-| **Product Delivery** | Product Owner, Scrum Bag, Data Analyst | User stories, PRDs, backlogs, sprint plans, retrospectives, metrics, A/B testing |
-| **Developer** | 14 languages + OOP + FP + Frontend + Nx | Code implementation with language context isolation (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) |
-| **Godot** | GDScript, C#, Scenes, Signals | Godot 4.x game dev with headless validation and defect prevention |
-| **Architect** | 11 roles | Solution, Enterprise, Data, Security, Compliance, Privacy, Incident Response + Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering |
-| **Quality** | QA Engineer | Test strategy, test cases, automation, quality metrics, empirical validation registry |
-| **Operations** | DevOps, Release Manager, Technical Writer | CI/CD, deployment, infrastructure, release planning, versioning, API docs, runbooks |
-| **UI** | UX Designer, UI Designer, Game UI Designer | User flows, wireframes, design systems, accessibility, HUD, game menus, inventory UI |
-| **User Feedback** | 20+ simulated personas | Persona-based testing across gamers, web users, enterprise, and demographics with consensus detection |
-| **Alias Creator** | 13 built-in themes | Create and manage agent personality themes (LOTR, Marvel, Star Wars, etc.) |
-| **Presentation** | Presentation Composer | Team-collaborative presentations with 6-step gated flow. 4 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive. 3 output formats (structured markdown, Marp, paste-ready) |
+- **Paired Constraints Primitive** — a shared `constraints.yml` that travels with the pipeline so every stage reads the same non-negotiables (budget, compliance, quality bars). See `delivery-team/skills/delivery-flow/references/constraints-model-guide.md`.
+- **Configurable Architecture Board** — a multi-persona review pattern with debators convened for material architecture decisions. See `delivery-team/skills/delivery-flow/references/architecture-board-personas.md`.
+- **Transformation Planning** — an optional Architect sub-flow that walks brownfield migrations through AS-IS behavioural and structural analysis, a TO-BE design, and a sequenced roadmap. See `delivery-team/skills/architect/references/transformation-planning.md`.
+- **Paradigm-as-skill restructure** — the Architect now routes to paradigm sub-skills (volatility decomposition, strategic DDD) based on the problem, so only the relevant context loads.
+- **MTG Commander upgrades** — adversarial challenger agents, a user-authored `.mtg-commander.yml` config for price goals and escalation, and fixes for early-adopter defects.
 
-**Key Features:**
-- **Setup wizard**: 9-question config wizard with auto-detection from codebase (project type is detected per-run, not pinned in config; use `routing.force_type` for opt-in pins)
-- **Team DoD**: Every artifact validated by multiple roles before advancing
-- **6 collaboration patterns**: Evaluator-optimizer, adversarial review, review board, decision ownership routing, debate, consensus
-- **Self-learning memory**: Tiered chunked retrieval in `.delivery/memory/`
-- **Defect tracking**: Self-improvement feedback loop that opens PRs to the plugin repo
-- **Pipeline enforcement**: 3-layer system prevents bypassing quality gates
-- **Empirical validation**: Detects runtime-only acceptance criteria (CODE_COMPLETE status)
-- **Feature Knowledge System**: Impact analysis across features with dependency tracking
-- **Session keepalive**: Cross-platform companion for long-running tasks
-- **Pipeline state persistence**: Save and resume pipeline state across sessions
-- **13 alias themes**: Personality injection with built-in themes (LOTR, Marvel, Star Wars, and more)
-- **Config-driven architecture**: 4 decomposition strategies with YAML-based configuration
-- **Git/GitHub integration**: Branching, commits, issues, and PR workflows built in
+## Getting Started
 
-### Agentic Flow Builder
+Three common starting paths:
 
-Build dynamic multi-agent workflows using ReAcTree hierarchical decomposition.
+- **I want to use the delivery pipeline.** Install `delivery-team`, then open [delivery-team/skills/delivery-flow/](delivery-team/skills/delivery-flow/) or ask Claude Code to "start the delivery pipeline." The setup wizard handles the rest.
+- **I want to build an MTG Commander deck.** Install `mtg-commander`, then read [mtg-commander/README.md](mtg-commander/README.md) and ask Claude Code to "build a commander deck." Drop a `.mtg-commander.yml` at your repo root if you want price controls.
+- **I want to contribute a plugin.** Start with [CLAUDE.md](CLAUDE.md) for repo conventions and plugin architecture, then load one of the `plugin-dev` skills (`plugin-structure`, `skill-development`, `hook-development`, `command-development`, `agent-development`, `mcp-integration`) for guided scaffolding.
 
-- Business Rules Engine (BRE) for deterministic gate decisions
-- Dynamic agent assignment with hot-reload
-- Dual memory system (episodic + working)
-- 5 workflow patterns with SQLite audit trails
+## Marketplace Version
 
-### Prompt Engineer
-
-Expert prompt optimization for LLMs and AI systems.
-
-- Comprehensive prompt engineering techniques
-- Model-specific optimization
-- Always shows complete prompt text
-
-### PRD Quality Gate Flow
-
-Production-grade PRD workflow with 7 quality gates.
-
-- Business rules engine for deterministic decisions
-- Episodic memory and complete audit trails
-- Evidence-based Stage-Gate process
-
-### Research Agent
-
-Production-grade research agent with 5 research types.
-
-- Academic frameworks (PICO, SPICE, PECO, GRADE, ReAct)
-- Systematic review protocol
-- Root cause analysis (5 Whys + Fishbone)
-
-## Repository Structure
-
-```
-.
-├── .claude-plugin/
-│   └── marketplace.json              # Plugin registry
-├── .github/
-│   ├── ISSUE_TEMPLATE/               # Bug, feature, defect pattern templates
-│   ├── PULL_REQUEST_TEMPLATE/        # Enhancement, bug fix templates
-│   └── pull_request_template.md      # Default PR template
-├── delivery-team/                    # Full delivery team plugin
-│   ├── hooks/                        # Pipeline enforcement + validation hooks
-│   │   ├── hooks.json
-│   │   ├── check_config.py
-│   │   ├── validate_gdscript.py
-│   │   ├── verify_skill_load.py
-│   │   ├── audit_agent_prompt.py
-│   │   ├── flag_empirical_validation.py
-│   │   ├── enforce_pipeline_scope.py
-│   │   └── lib/
-│   │       └── hook_utils.py
-│   ├── scripts/                      # Utility scripts
-│   │   ├── validate-config.py
-│   │   ├── generate-schema.py
-│   │   └── session_keepalive.py
-│   ├── skills/
-│   │   ├── delivery-flow/            # Pipeline orchestrator (18+ references)
-│   │   ├── product-delivery/         # PO + SM + Data Analyst (15 references)
-│   │   ├── developer/                # 14 languages + OOP + FP + Frontend + Nx (21 references)
-│   │   ├── godot/                    # Godot 4.x (6 references)
-│   │   ├── architect/                # 11 roles (22 references)
-│   │   ├── quality/                  # QA (8 references)
-│   │   ├── operations/               # DevOps + Release + TechWriter (12 references)
-│   │   ├── ui/                       # UX + UI + Game UI (12 references)
-│   │   ├── user-feedback/            # Persona testing (4 references)
-│   │   ├── alias-creator/            # 13 personality themes
-│   │   └── presentation/              # Team presentations (4 references)
-│   └── LICENSE.txt
-├── agentic-flow-builder/             # Multi-agent workflow plugin
-├── prompt-engineer/                  # Prompt optimization plugin
-├── prd-quality-gate-flow/            # PRD quality gate plugin
-├── research-agent/                   # Research agent plugin
-├── CLAUDE.md                         # Claude Code project instructions
-└── README.md                         # This file
-```
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines on plugin structure, development workflow, code standards, and the PR process.
-
-**Issue templates** are available for bug reports, feature requests, and defect patterns.
-
-**PR templates** include enhancement and bug fix formats, with a defect data section for `[DEFECT-FIX]` PRs from the delivery team's self-improvement loop.
+Current marketplace version: **v2.22.0** (see [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json)).
 
 ## License
 
-See individual plugin directories for license information.
+Each plugin ships its own `LICENSE.txt` — see the individual plugin directories. Please review the license before using a plugin in production.
+
+## See Also
+
+- [CLAUDE.md](CLAUDE.md) — deeper architecture context, plugin inventory, hooks, conventions, and contributor guidance for working inside this repo.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution workflow, plugin structure, PR process.
+- [delivery-team/skills/delivery-flow/references/getting-started.md](delivery-team/skills/delivery-flow/references/getting-started.md) — zero-to-pipeline walkthrough with quick-start wizard and skill map.
+
+---
+
+*"Not all those who wander are lost" — but a well-marked path does no harm.*

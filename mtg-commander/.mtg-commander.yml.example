@@ -1,0 +1,34 @@
+# .mtg-commander.yml — MTG Commander deck builder configuration
+# Place this file in your project root (the directory you invoke the skill from).
+# All keys are optional; defaults shown. Copy, edit, save as `.mtg-commander.yml`.
+
+version: 1                  # schema version — required for future migrations
+
+loops:
+  deck_builder: 2           # max challenger iterations for the Deck Builder step
+  rules_judge: 2            # max challenger iterations for the Rules Judge step
+  optimizer: 2              # max challenger iterations for the Optimization step
+  price_evaluator: 2        # max challenger iterations for the Price Evaluator step
+  # Tuning hints:
+  #   1       → faster runs, less scrutiny (quality risk)
+  #   2       → balanced default
+  #   3 or 4  → maximum scrutiny for high-stakes builds (longer runtime)
+
+price_rules:
+  max_card_price: null      # soft per-card goal in USD; null = no goal (hard 15%-of-budget cap still applies)
+  escalation: true          # true = prompt when an over-goal card cannot be substituted; false = silent auto-swap
+  budget_source: higher     # higher | tcgplayer | cardkingdom — which vendor total anchors the budget check
+  # Tuning hints:
+  #   Strict:  set max_card_price: 1.00 for $1-per-card budget brewing
+  #   Vendor:  set budget_source: tcgplayer if you buy from TCG (cardkingdom if you buy from CK)
+  #   Silent:  set escalation: false for non-interactive scripted runs
+
+escalation:
+  on_loop_exhaustion: warn  # warn | block | best-effort — what happens when a loop runs out of attempts
+  # Tuning hints:
+  #   warn         → ship best-effort deck with warnings (default; non-blocking)
+  #   block        → halt pipeline, prompt user to decide (most adversarial)
+  #   best-effort  → output best attempt silently, log unresolved findings
+
+# Missing keys use defaults. Unknown keys warn once and are ignored.
+# Invalid YAML falls back to all defaults with a warning — never blocks the pipeline.

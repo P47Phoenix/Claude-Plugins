@@ -1,112 +1,79 @@
-# Test Strategy: MTG Commander Adversarial Review Loops
+# Test Strategy — DOCS_ONLY Documentation Refresh
 
-**Stage:** 05-Plan | **Role:** QA (Legolas) | **Plugin:** mtg-commander
-**Pipeline:** run-2026-04-11-e6f3
+**Author:** Legolas (QA, `lotr-full`) · Stage 05-Plan · Tier: markdown
+**Input:** `tech-writer/doc-stories.md` (8 stories) · `sm/sprint-plan.md` (2 sprints)
 
----
-
-## Approach
-
-All changes are SKILL.md and reference markdown edits -- no executable code changes. Testing is structural validation + behavioral verification via pipeline execution.
+> "They are taking the Hobbits to... documentation." I shall count every arrow.
 
 ---
 
-## Test Cases (1:1 to FRs)
+## Philosophy
 
-### TC-1: Challenger Agent Presence (FR-1, AC-1)
+Deterministic mechanical checks (grep / JSON-load / file-existence) + 3 journey walks. Subjective quality owned by Content Gate & User Review.
 
-- **Method:** Structural inspection of SKILL.md
-- **Pass:** 4 distinct Challenger sections exist with adversarial prompts and PASS/CHALLENGE signal format
-- **Verify:** Each Challenger receives only primary output artifact (not chain-of-thought)
+Test types: **T-EXIST** (`test -f`), **T-CONTENT** (`grep -q` sections/phrases), **T-LINK** (every `](path)` resolves), **T-JSON/YAML** (parseable), **T-STALE** (regressed tokens absent), **T-JOURNEY** (walk the 3 Galadriel journeys post-update).
 
-### TC-2: Loop Protocol (FR-2, AC-10)
+## Traceability
 
-- **Method:** Trace SKILL.md flow for primary->challenger->correct->re-challenge path
-- **Pass:** Loop cap sourced from config; exhaustion behavior documented for all 3 modes
-- **Verify:** Per-step loops explicitly stated as independent of pipeline-level correction counter
+| Story | EXIST | CONTENT | LINK | JSON/YAML | STALE | JOURNEY |
+|-------|-------|---------|------|-----------|-------|---------|
+| US-1 mtg-commander/README.md | TC-01 | TC-02, TC-03 | TC-20 | — | — | TC-J2 |
+| US-2 .yml.example + walkthrough | TC-04 | TC-05 | — | TC-14 | — | TC-J2 |
+| US-3 CLAUDE.md | — | TC-06, TC-07 | TC-20 | — | TC-16 | — |
+| US-4 README.md | — | TC-08, TC-09 | TC-20 | — | TC-17 | TC-J1, TC-J2 |
+| US-5 delivery-team Advanced | — | TC-10, TC-11 | TC-20 | — | — | TC-J1, TC-J3 |
+| US-6 marketplace.json | — | TC-12 | — | TC-13 | — | — |
+| US-7 cross-link audit | — | — | TC-20 | — | TC-19 | TC-J1/J2/J3 |
+| US-8 troubleshooting blocks | — | TC-15, TC-18 | TC-20 | — | — | — |
 
-### TC-3: Config Loading -- Present (FR-3/FR-7, AC-2/AC-4)
+Every story has ≥1 test case.
 
-- **Method:** Pipeline run with `.mtg-commander.yml` present (partial overrides)
-- **Pass:** Config values applied; missing keys use defaults; status line shown
-- **Verify:** `loops.deck_builder: 1` results in max 1 challenger loop for deck step
+## Test Cases
 
-### TC-4: Config Loading -- Absent (FR-7, AC-3)
+- **TC-01** `test -f mtg-commander/README.md`.
+- **TC-02** `grep -qE "^## .*[Qq]uick" mtg-commander/README.md` + Configuration + Troubleshooting headings present.
+- **TC-03** `grep -q "max_card_price"` AND `grep -q "escalation"` in mtg-commander/README.md.
+- **TC-04** `test -f mtg-commander/.mtg-commander.yml.example`.
+- **TC-05** `grep -q "max_card_price"` AND `grep -q "escalation"` in the example file.
+- **TC-06** `grep -q "mtg-commander" CLAUDE.md` within Available Plugins section.
+- **TC-07** `grep -qE "constraints|Architecture Board|Transformation" CLAUDE.md` in delivery-flow architecture section.
+- **TC-08** `grep -q "mtg-commander" README.md` (root).
+- **TC-09** `grep -qE "9 types|narrative intelligence|light mode" README.md`.
+- **TC-10** `grep -qE "[Aa]dvanced [Cc]apabilities|[Rr]ecent [Aa]dditions" delivery-team/README.md`.
+- **TC-11** `grep -qE "constraints|[Aa]rchitecture [Bb]oard|[Tt]ransformation|[Pp]aradigm" delivery-team/README.md`.
+- **TC-12** Every top-level plugin dir matches a `marketplace.json` `id`; no orphans either direction.
+- **TC-13** `python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"` exits 0.
+- **TC-14** `python3 -c "import yaml; yaml.safe_load(open('mtg-commander/.mtg-commander.yml.example'))"` exits 0.
+- **TC-15** `grep -qE "[Tt]roubleshoot"` in BOTH `README.md` and `delivery-team/README.md`.
+- **TC-16** STALE: `project_type:` as active config absent from CLAUDE.md (any match must adjoin the "removed in v2.7" note).
+- **TC-17** STALE: `grep -q "4 types.*3.*output formats" README.md` returns non-zero (phrase gone).
+- **TC-18** Troubleshooting blocks reference `.delivery/`, `.claude/settings.local.json`, or `CONTRIBUTING.md`.
+- **TC-19** Paradigm redirect stubs still point at `paradigms/volatility/SKILL.md` and `paradigms/ddd/SKILL.md`; targets exist.
+- **TC-20** For each touched file, extract `](*.md)` references, assert target resolves:
+  ```bash
+  for f in mtg-commander/README.md README.md CLAUDE.md delivery-team/README.md; do
+    grep -oE '\]\(([^)]+\.md)\)' "$f" | sed -E 's/\]\(([^)]+)\)/\1/' | while read p; do
+      base=$(dirname "$f"); [ -f "$base/$p" ] || [ -f "$p" ] || echo "BROKEN: $f -> $p"
+    done
+  done
+  ```
+  Empty output = pass.
 
-- **Method:** Pipeline run without `.mtg-commander.yml`
-- **Pass:** Pipeline works identically to pre-config behavior; "No config, using defaults" logged
-- **Verify:** All challenger loops default to 2
+## Journey Tests
 
-### TC-5: Config Loading -- Invalid (FR-7, AC-9)
+- **TC-J1 (Pipeline user):** root README → delivery-team/README.md → Advanced section → `constraints-model-guide.md` link resolves. ≤3 hops, no dead links.
+- **TC-J2 (MTG builder — the previously-dark path):** root README → mtg-commander row → mtg-commander/README.md → Configuration → `.mtg-commander.yml.example` → SKILL.md schema pointer. User learns price-control authoring without reading SKILL.md end-to-end. **This cycle exists to light this journey.**
+- **TC-J3 (Contributor):** root README → CONTRIBUTING.md → delivery-team Advanced names paradigm selection → link to `architect/skills/paradigms/` resolves.
 
-- **Method:** Pipeline run with malformed `.mtg-commander.yml` (bad YAML / unknown keys)
-- **Pass:** Warning emitted; pipeline does NOT fail; defaults used for invalid fields
-- **Verify:** Valid fields in same file still applied
+## Execution Order
 
-### TC-6: Price Goal -- Substitution Path (FR-4, AC-6)
+1. Per-story local: TC-01…TC-19 during story completion.
+2. Integration: TC-20 after Sprint 2 finishes (gates US-7).
+3. Journey: TC-J1/J2/J3 before ship.
+4. Final gate: all 23 TCs green.
 
-- **Method:** Set `max_card_price: 5` with `escalation: false`; include cards > $5
-- **Pass:** Over-goal cards auto-substituted via budget-wins; no user prompt
-- **Verify:** Unsubstitutable cards included silently with note
+## Out of Scope
 
-### TC-7: Price Goal -- Escalation Path (FR-4, AC-5)
+Subjective readability (Content Gate), MkDocs build (deferred cycle), SKILL.md content (not touched — CLAUDE.md is project instructions, not a SKILL).
 
-- **Method:** Set `max_card_price: 5` with `escalation: true`; include unsubstitutable cards > $5
-- **Pass:** BLOCKING prompt shown with card list, prices, options a/b/c
-- **Verify:** Pipeline halts until user responds; no timeout
-
-### TC-8: DEFECT-001 Regression (FR-5, AC-7)
-
-- **Method:** Include card with off-color identity in decklist (e.g., Sejiri Refuge in mono-W)
-- **Pass:** Rules Challenger runs `validate-deck`, parses violations, issues CHALLENGE
-- **Verify:** Zero tolerance for LLM-based legality -- only programmatic validation accepted
-
-### TC-9: DEFECT-002 Regression (FR-6, AC-8)
-
-- **Method:** Pipeline run where CK price diverges > 30% from TCG for specific cards
-- **Pass:** Price Challenger flags divergence with both prices shown
-- **Verify:** Total divergence > 20% triggers user escalation with vendor totals
-
-### TC-10: Sub-Agent Guardrail Language (FR-9, AC-11)
-
-- **Method:** `grep -cE "MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE" mtg-commander/SKILL.md`
-- **Pass:** Result >= 3
-- **Verify:** Session 0876a59e anti-pattern callout present verbatim
-
-### TC-11: Pipeline Flow Diagram (FR-8)
-
-- **Method:** Structural inspection of SKILL.md pipeline diagram
-- **Pass:** Diagram shows Challenger agents at each step; reference guides list updated sections
-- **Verify:** price-evaluator-guide.md has sections 2.5 and 2.6; rules-judge-guide.md mandates validate-deck
-
----
-
-## Regression Safety Net
-
-| Invariant | Verification |
-|-----------|-------------|
-| Pipeline works without config | TC-4 (every sprint boundary) |
-| 15% hard cap unchanged | Inspect SKILL.md -- soft goal is additive, not replacement |
-| No new external APIs | Grep for new API endpoints in changed files |
-| Correction cycle unchanged | Pipeline-level counter independent of per-step loops (TC-2) |
-| Budget-wins tiebreaker preserved | price-evaluator-guide still lists budget > synergy priority |
-
----
-
-## AC-11 Grep Test (Critical Gate)
-
-```bash
-grep -cE "MUST.*sub-agent|NEVER.*inline|GUARDRAIL VIOLATION|NON-NEGOTIABLE" mtg-commander/SKILL.md
-# Expected: >= 3
-```
-
-If result < 3: US-7 fails DoD. Guardrail language must be strengthened until grep passes.
-
----
-
-## Test Execution Plan
-
-- **Sprint 1 exit:** TC-1, TC-4 (foundation + backwards compat)
-- **Sprint 2 exit:** TC-2, TC-3, TC-5, TC-6, TC-7, TC-8 (loops + defects + price)
-- **Sprint 3 exit:** TC-9, TC-10, TC-11 (guardrails + full regression)
-- **Final gate:** All TC-1 through TC-11 pass; grep test >= 3; no regressions
+> "Every story has its arrow."

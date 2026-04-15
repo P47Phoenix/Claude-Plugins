@@ -2,6 +2,8 @@
 
 This guide gets you from zero to a running delivery pipeline in under 5 minutes. It covers the quick-start wizard, a skill map, your first pipeline walkthrough, and a command cheat sheet.
 
+> **Stuck?** Jump to [`troubleshooting.md`](troubleshooting.md) for the SYMPTOM → CAUSE → FIX quick reference.
+
 ---
 
 ## Quick Start (3 Questions)

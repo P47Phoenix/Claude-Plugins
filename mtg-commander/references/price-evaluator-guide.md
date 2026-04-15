@@ -2,6 +2,8 @@
 
 Reference document for the Price Evaluator sub-agent. Defines the complete budget compliance evaluation process using live Scryfall pricing data via `card_lookup.py`.
 
+> To author the `.mtg-commander.yml` knobs this guide references (soft goal, escalation, budget_source), see [`config-walkthrough.md`](config-walkthrough.md).
+
 ---
 
 ## 1. Price Retrieval

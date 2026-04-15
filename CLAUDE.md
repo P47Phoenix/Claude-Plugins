@@ -33,16 +33,17 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 | `prompt-engineer/` | Expert LLM prompt optimization |
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
 | `research-agent/` | Research agent with 5 research types and academic frameworks |
+| `mtg-commander/` | MTG Commander deck builder: synergy-first multi-agent pipeline, Scryfall integration, configurable price goals + adversarial Challenger agents via `.mtg-commander.yml` |
 
 ### delivery-team Plugin (11 skills)
 
 | Skill | Roles / Purpose |
 |-------|----------------|
-| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard (18 reference docs + 13 alias themes) |
+| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard. Primitives include shared `constraints.yml` (Refine + Architect), configurable Architecture Board, and Transformation Planning sub-workflow orchestration |
 | `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
 | `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading from config) + foundational clean code standards (always-on, configurable guide) |
 | `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) + foundational clean code standards |
-| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis |
+| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis. Paradigm sub-skills under `skills/paradigms/` (e.g., `volatility/`, `ddd/`) with router-based dispatch so only the selected paradigm loads. Supports `transformation-planning` task type (AS-IS behavioral/structural → TO-BE → Roadmap) for brownfield migrations |
 | `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
 | `operations/` | DevOps, Release Manager, Technical Writer |
 | `ui/` | UX Designer, UI Designer, Game UI Designer |
@@ -104,6 +105,10 @@ No build step, linting config, or test runner is configured.
 - 13 alias themes with personality injection (via alias-creator skill) and theme surfacing in orchestrator output (stage announcements, checkpoint summaries, transitions)
 - Config validation toolchain: JSON Schema generation + validation scripts
 - Pipeline analytics dashboard for delivery metrics
+- Constraints primitive: shared `constraints.yml` schema (entities, state_variables, actions, invariants, forbidden_vocabulary, etc.) used across Refine + Architect stages; see `delivery-flow/references/constraints-model-guide.md` and `constraints-schema.json`; validated via `delivery-flow/references/scripts/validate_constraints.py`
+- Architecture Board: configurable multi-persona review pattern (Volatility / DDD / Risk / Chief Architect personas) with MAR iteration-2 cross-persona routing; personas defined in `delivery-flow/references/architecture-board-personas.md`
+- Transformation Planning: AS-IS → TO-BE → Roadmap sub-workflow for brownfield migration planning (PO + Architect paired); reuses the Architecture Board for Phase 1A review. See `architect/references/transformation-planning.md` and the four phase docs (`transformation-phase-1a-behavioral.md`, `transformation-phase-1b-structural.md`, `transformation-phase-2-to-be.md`, `transformation-phase-3-roadmap.md`)
+- Design Sprint sub-workflow: PO + Architect paired flow for decomposition decisions, routes to the appropriate paradigm skill (volatility, DDD, etc.); see `delivery-flow/references/design-sprint.md`
 
 **Agentic flow core components** (shared pattern between `agentic-flow-builder/` and `prd-quality-gate-flow/`):
 - `database.py` — SQLite schema, DAL, execution tracking, audit logs

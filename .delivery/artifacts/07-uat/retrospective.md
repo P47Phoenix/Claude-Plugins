@@ -1,29 +1,24 @@
-# Retrospective — run-2026-04-11-e6f3
+# Retrospective — Documentation Pipeline (run-2026-04-11-f7g4)
 
-**Facilitator**: Aragorn (Retro Lead)
-**Date**: 2026-04-11
-**Project Type**: FEATURE
-**Pipeline Duration**: Full 7-stage
+**Scrum Bag**: Aragorn | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Project Type**: DOCS_ONLY
 
 ## What Went Well
 
-1. **Session evidence drove guardrail design** — Real session log (0876a59e) provided the exact anti-pattern quote that became the SKILL.md guardrail language. Evidence-first design produces stronger constraints than theoretical spec.
-
-2. **Compound value delivery** — DEFECT-001 and DEFECT-002 addressed in the same release as the adversarial enhancement. The challengers ARE the fix mechanism, not a separate patch.
-
-3. **Mid-pipeline PO additions landed cleanly** — Two additions (sub-agent dispatch mandate + session evidence integration) were injected mid-Development without restarting the pipeline. Constraints.yml and SKILL.md absorbed them in-stride.
+- **PO override honored end-to-end.** Gandalf's decision to bring UX (Galadriel) + Tech Writer (Bilbo) into Plan produced convergent priorities that carried cleanly into Development without re-scoping.
+- **Parallel discovery reduced ambiguity.** Bilbo + Galadriel run simultaneously at Stage 1 yielded overlapping top priorities on independent axes (tech-writer clarity + UX discoverability) — convergence accelerated PO synthesis.
+- **Cross-link audit earned its keep.** US-7's audit caught broken `../paradigms/` redirect stubs in `volatility-decomposition.md` and `strategic-ddd.md`. Real prior-run regressions, not phantom issues. Fix validated via TC-23/TC-24.
+- **UAT clean sweep.** 30/30 TCs PASS, 8/8 stories PASS, no defects logged.
 
 ## What Didn't Go Well
 
-1. **API overload on Wave 1** — First attempt hit rate limits; retry succeeded but added latency. Consider batching sub-agent dispatches in future.
-
-2. **SKILL.md size (1179 lines)** — Approaching decomposition threshold. Future BACKLOG item: extract challenger definitions into `references/challenger-guide.md` to keep SKILL.md under 1000 lines.
+- **Phantom `docs/` reference in Bilbo's first inventory.** Bilbo's opening doc inventory referenced a top-level `docs/` directory that may not exist as described. No artifact depended on it, so no defect was logged — but worth a verification sweep in a future run.
 
 ## Key Insight
 
-The strongest guardrail is **STRUCTURAL** — the sub-agent task blocks use language ("your output", "write to disk", "signal format") that ONLY makes sense for a spawned agent. This is the real defense against inlining, not just the "NEVER inline" text. If an orchestrator tries to inline, the instructions produce nonsensical behavior, creating a natural deterrent beyond policy language.
+**Parallel discovery agents at Stage 1 are a multiplier for DOCS_ONLY pipelines.** When two independent perspectives (technical writing vs user experience) converge on the same top priorities, PO synthesis effort drops and downstream planning becomes higher-confidence. This pattern should be the default for docs-heavy runs.
 
 ## Action Items
 
-- [ ] BACKLOG: Decompose SKILL.md challenger sections into reference file (when >1200 lines)
-- [x] Memory write: structural guardrail insight -> stages/development.md
+- [x] Memory write: DOCS_ONLY parallel discovery insight -> `stages/development.md`
+- [x] Memory write: total_runs bump 22 -> 23, date 2026-04-11 -> `index.md`
+- [ ] BACKLOG: Verify Bilbo's inventory references match disk reality before relying on them in future runs.

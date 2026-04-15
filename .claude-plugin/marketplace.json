@@ -45,7 +45,7 @@
     },
     {
       "name": "delivery-team",
-      "description": "Full delivery team with 11 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator with session keepalive), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (14 languages + OOP + FP patterns + frontend + Nx monorepo), Godot (game dev), Architect (11 roles + game architecture + 4 architecture decomposition strategies), Quality (QA with Feature Knowledge System), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), Alias Creator (alias themes), User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics), and Presentation Composer (team-collaborative presentations).",
+      "description": "Full delivery team with 11 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator with session keepalive, shared constraints.yml, configurable Architecture Board, Transformation Planning sub-workflow for brownfield migrations), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (14 languages + OOP + FP patterns + frontend + Nx monorepo), Godot (game dev), Architect (11 roles + game architecture + 4 architecture decomposition strategies + paradigm-as-skill router + AS-IS/TO-BE/Roadmap transformation planning), Quality (QA with Feature Knowledge System), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), Alias Creator (alias themes), User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics), and Presentation Composer (team-collaborative presentations).",
       "source": "./",
       "strict": false,
       "skills": [
@@ -64,7 +64,7 @@
     },
     {
       "name": "mtg-commander",
-      "description": "MTG Commander deck builder with multi-agent pipeline. Synergy-first card selection, Scryfall API integration, format legality validation, structural optimization, and budget enforcement. Produces complete 100-card decklists.",
+      "description": "MTG Commander deck builder with multi-agent pipeline and adversarial challenger agents. Each primary step (Deck Builder, Rules Judge, Optimizer, Price Evaluator) is verified by a dedicated challenger in an independent correction loop. Synergy-first card selection via Scryfall API, format legality validation, structural optimization, budget enforcement with price goal escalation, and configurable loop caps via `.mtg-commander.yml`. Produces complete 100-card decklists.",
       "source": "./",
       "strict": false,
       "skills": [
