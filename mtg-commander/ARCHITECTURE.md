@@ -98,33 +98,35 @@ User-repo config, placed at the working-directory root. Schema version 1. Missin
 ```mermaid
 classDiagram
     class MtgCommanderConfig {
-        +int version = 1
+        +int version
         +Loops loops
         +PriceRules price_rules
         +Escalation escalation
     }
     class Loops {
-        +int deck_builder = 2
-        +int rules_judge = 2
-        +int optimizer = 2
-        +int price_evaluator = 2
+        +int deck_builder
+        +int rules_judge
+        +int optimizer
+        +int price_evaluator
     }
     class PriceRules {
-        +float? max_card_price = null
-        +bool escalation = true
-        +enum budget_source = higher
+        +float max_card_price
+        +bool escalation
+        +string budget_source
     }
     class Escalation {
-        +enum on_loop_exhaustion = warn
+        +string on_loop_exhaustion
     }
     MtgCommanderConfig "1" --> "1" Loops
     MtgCommanderConfig "1" --> "1" PriceRules
     MtgCommanderConfig "1" --> "1" Escalation
 
-    note for Loops "Each field caps adversarial\nloop iterations per step"
-    note for PriceRules "max_card_price → soft goal\nbudget_source ∈ {higher, tcgplayer, cardkingdom}"
-    note for Escalation "on_loop_exhaustion ∈\n{warn, block, best-effort}"
+    note for Loops "Each field caps adversarial loop iterations per step (default 2)"
+    note for PriceRules "max_card_price: soft goal (null=no goal). budget_source in: higher, tcgplayer, cardkingdom"
+    note for Escalation "on_loop_exhaustion in: warn, block, best-effort"
 ```
+
+**Schema defaults** (stripped from the diagram above because Mermaid classDiagram has no syntax for nullable types, enum constraints, or default literals): `version=1`; `loops.deck_builder=2`, `loops.rules_judge=2`, `loops.optimizer=2`, `loops.price_evaluator=2`; `price_rules.max_card_price=null` (no soft goal); `price_rules.escalation=true`; `price_rules.budget_source=higher`; `escalation.on_loop_exhaustion=warn`. The `budget_source` field is effectively an enum constrained to `{higher, tcgplayer, cardkingdom}`; `on_loop_exhaustion` is constrained to `{warn, block, best-effort}` — enforced in config-load validation, not in the diagram.
 
 Config flows into the orchestrator at pipeline start, after intake confirmation and before the pipeline banner. Each loop cap is applied to its corresponding step; `price_rules.max_card_price` becomes a Price Evaluator soft goal (separate from the 15%-of-budget hard cap); `escalation.on_loop_exhaustion` determines fail-mode when a loop exhausts without `PASS`.
 

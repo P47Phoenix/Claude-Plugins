@@ -47,13 +47,13 @@ each AC receives one of three tags:
 
 ```mermaid
 flowchart TD
-    AC[Acceptance Criterion] --> Q1{Can a static check verify it?\n schema / grep / parse / compile}
-    Q1 -- yes --> ANALYTICAL[Analytical AC\nverify at Dev]
-    Q1 -- no --> Q2{Can a deterministic script verify it?\n fixture diff / CLI exit code}
+    AC[Acceptance Criterion] --> Q1{Can a static check verify it?<br/>schema / grep / parse / compile}
+    Q1 -- yes --> ANALYTICAL[Analytical AC<br/>verify at Dev]
+    Q1 -- no --> Q2{Can a deterministic script verify it?<br/>fixture diff / CLI exit code}
     Q2 -- yes --> ANALYTICAL
-    Q2 -- no --> Q3{Requires human or runtime observation?\n render / playtest / telemetry}
-    Q3 -- yes --> EMPIRICAL[Empirical AC\ndefer to UAT]
-    Q3 -- unsure --> MIXED[Mixed AC\nsplit structural vs behavioural]
+    Q2 -- no --> Q3{Requires human or runtime observation?<br/>render / playtest / telemetry}
+    Q3 -- yes --> EMPIRICAL[Empirical AC<br/>defer to UAT]
+    Q3 -- unsure --> MIXED[Mixed AC<br/>split structural vs behavioural]
 ```
 
 ## 5. Stage 6 (Dev) — DoD verdict logic
