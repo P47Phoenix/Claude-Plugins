@@ -98,6 +98,13 @@ Before checking config, check for an existing pipeline state:
      apply defaults for any missing keys from the schema and announce:
      `> Config upgraded from v[old] to v[current]. New settings applied with defaults: [list]`
      Offer the user `setup` to configure new settings interactively.
+   - **v2.6 → v2.7 migration rule**: When loading a v2.6 config (or any config that
+     contains a top-level `project_type` key regardless of version), strip the
+     `project_type` key in-memory and treat `config_version` as `2.7` for this run.
+     Announce: `> Migrated config v2.6 → v2.7: removed project_type key (now detected per run).`
+     The orchestrator applies this in-memory only — it does NOT auto-write over the
+     user's `.delivery/config.yml`. Recommend the user re-run `setup` to persist the
+     normalized v2.7 shape cleanly.
    - Announce: `> Config loaded from .delivery/config.yml (v[version], created [date])`
    - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements, persona config, alias theme.
    - **Load alias theme**: Read `aliases.theme` from config (default: `business`). If the
@@ -137,13 +144,14 @@ Before checking config, check for an existing pipeline state:
 
 ### Quick-Start Mode
 
-If the user says "quick start", "quick setup", or "just get started", run a 3-question wizard instead of the full 9+ question version:
+If the user says "quick start", "quick setup", or "just get started", run a 2-question wizard instead of the full 9+ question version:
 
-1. **What are you building?** -- auto-detect project type from the answer
-2. **What language/framework?** -- auto-detect from codebase, user confirms
-3. **How strict?** -- Prototype (minimal) / Standard (balanced) / Strict (full)
+1. **What language/framework?** -- auto-detect from codebase, user confirms
+2. **How strict?** -- Prototype (minimal) / Standard (balanced) / Strict (full)
 
-All other settings use smart defaults from `references/config-schema.md` based on the project type and strictness level. Generate `.delivery/config.yml` and proceed.
+> **Note**: Project type is detected per run in Phase 1, not configured. Use `routing.force_type` if you want to pin it.
+
+All other settings use smart defaults from `references/config-schema.md` based on the detected project type and strictness level. Generate `.delivery/config.yml` and proceed.
 
 See `references/getting-started.md` for the complete quick-start walkthrough, skill map, and command cheat sheet.
 

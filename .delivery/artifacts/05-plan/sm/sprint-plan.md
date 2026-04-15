@@ -1,77 +1,54 @@
-# Sprint Plan — DOCS_ONLY Documentation Refresh
+# Sprint Plan — Defect Sweep (BUG_FIX, LIGHT)
 
-**Author:** Aragorn, son of Arathorn (Scrum Bag, `lotr-full` alias)
-**Stage:** 05-Plan · Project type: DOCS_ONLY · Tier: markdown
-**Input:** `tech-writer/doc-stories.md` (Bilbo) · 8 stories · 8 pts
+**Artifact**: Sprint Plan (Aragorn / Scrum Bag)
+**Mode**: LIGHT (BUG_FIX — no stories file)
+**Pipeline**: delivery-flow
+**Date**: 2026-04-14
 
-> "A day may come when the courage of men fails... but it is not this day. This day we ship markdown."
+> "A sweep, then. Four fixes, one sprint. No wizardry, no kings — just clean cuts."
 
----
+## Fix List
 
-## Capacity Check
+| ID | Fix | Owner | AC | Estimate |
+|----|-----|-------|-----|----------|
+| FIX-1 | Remove project_type question from Quick-Start Mode | Gimli (developer) | `delivery-team/skills/delivery-flow/SKILL.md:142` no longer asks "What are you building?"; `references/getting-started.md:15` section removed or rewritten; Quick-Start question list drops to 2 questions (or adds an optional `force_type` pin); no `project_type` token remains in the Quick-Start flow | S |
+| FIX-2 | v2.6 → v2.7 migration contract on config load | Gimli (developer) | SKILL.md (or `references/setup-wizard.md`) documents: on load, if `config_version` is `"2.6"` or missing → strip top-level `project_type`, bump `config_version` to `"2.7"`, emit migration announcement; in-repo `.delivery/config.yml` already v2.7, so this is forward-guard documentation (no runtime migration script required this sweep) | S |
+| FIX-3 | `check_dod_constraints.py --skip-declarations` flag | Gimli (developer) | New CLI flag `--skip-declarations`; when set, `check_forbidden_vocab` excludes lines inside the artifact's own `forbidden_vocabulary:` YAML block (header + indented list items) before regex scan; running the script against its own constraints file with the flag returns exit 0; fixture added covering both flag-on and flag-off modes | S |
+| FIX-4 | CI workflow injection regression guard | Gimli (developer) | New job or workflow lints `.github/workflows/*.yml`; multiline-greps each `run:` block for `${{ github.event.*`, `${{ github.head_ref`, `${{ github.pull_request.*`; fails CI if any hit; passes on current tree (DEFECT-004 version.yml already fixed); `docs.yml` audited in passing | S |
 
-- **Sprint ceiling:** 4 pts · **Hard cap:** 5 pts
-- **Total plan:** 8 pts
-- **Sprint count:** 2 (4 + 4) — fits exactly under ceiling, zero headroom burned
-- **Tier:** markdown — small estimates, no code, no schema, no tests beyond grep + JSON-load
+## Dependencies
 
-## Dependency Graph
+None between fixes. All four are independent edits; execute in parallel or any order within a single sprint.
 
-```
-US-3 (CLAUDE.md)  ──────────────── independent
-US-6 (marketplace.json) ───────── independent
-US-1 (mtg-commander README) ──┐
-                              ├──► US-2 (same file section)
-                              └──► US-4 (links into it)
-US-5 (delivery-team README) ──┬──► US-7 (cross-link audit)
-US-4 (root README) ──────────┘
-                              └──► US-8 (troubleshooting block appends)
-```
+## Sprint Shape
 
-Critical path: **US-1 → US-4 → US-7** (new plugin README must exist before root README links to it; cross-link audit runs last).
+- **Sprint count**: 1
+- **Total estimate**: 4 × S
+- **Parallelism**: full (no ordering constraints)
 
-## Sprint 1 — Foundation (4 pts)
+## Light-Mode Definition of Done
 
-Goal: Close the mtg-commander discoverability gap at the plugin level + correct CLAUDE.md drift + verify marketplace registry. Everything self-contained; no cross-file dependencies leave the sprint unfinished.
+Per BUG_FIX light routing, DoD validators reduce to:
 
-| ID | Title | Pts | Rationale |
-|----|-------|-----|-----------|
-| US-1 | Create `mtg-commander/README.md` | 2 | Highest-severity convergent gap (Bilbo #1 + Galadriel #1). Biggest single user-value delivery. |
-| US-2 | `.mtg-commander.yml.example` + walkthrough | 1 | Directly follows US-1 (same file's Configuration section). Bundling reduces re-read cost. |
-| US-3 | CLAUDE.md refresh | 1 | Independent; touches a different file; parallelizable. Agent-facing drift fix. |
-| US-6 | marketplace.json verification | 0.5 | Independent, quick. Bundled with S1 to lock registry truth before S2 README edits consume it. |
+- **Developer (Gimli)**: implements, self-reviews, passes lints, confirms AC per fix.
+- **QA (Legolas)**: smoke-verifies each fix — re-reads wizard text, runs `check_dod_constraints.py --skip-declarations` against the constraints file, triggers the CI lint against a synthetic bad workflow to prove it fails.
 
-**Sprint 1 total:** 4.5 pts — **exceeds 4-pt ceiling by 0.5**.
+Skipped in light mode: adversarial review, consensus debate, architecture board, review board.
 
-**Mitigation:** US-6 is a 0.5-pt verification story; if on-disk matches registry (high likelihood per Bilbo §2 — "matches top-level directories exactly"), actual work collapses to ~15 min and stays inside ceiling. If a real mismatch surfaces, promote US-6 to Sprint 2 and reclaim capacity.
-**Decision:** keep US-6 in S1, monitor at mid-sprint checkpoint.
+## Non-Goals (restating Idea-brief anti-scope)
 
-## Sprint 2 — Surface + Integrate (4 pts)
+- No schema changes past v2.7.
+- No wizard UX redesign.
+- No new features.
+- No edits to architecture-board, constraints primitive, MTG plugin, or other v2.7-current behavior.
+- No re-edit of `.github/workflows/version.yml` (primary DEFECT-004 fix already landed).
 
-Goal: Root-level discoverability (README) + delivery-team advanced-capabilities surfacing + cross-link integrity + lightweight troubleshooting. Consumes S1 outputs (links to mtg-commander/README.md).
+## Architect Check
 
-| ID | Title | Pts | Rationale |
-|----|-------|-----|-----------|
-| US-4 | README.md roster + recent additions | 1 | Links to US-1 artifact; must run after S1. |
-| US-5 | delivery-team/README.md Advanced section | 1 | Independent of S1; surfaces constraints / board / transformation / paradigms. |
-| US-8 | Troubleshooting inline blocks | 1 | Appends to US-5's file + root README; runs after US-4 and US-5 land. |
-| US-7 | Cross-link audit | 0.5 | Runs last — validates all new links across touched files. |
+Architect not convened (BUG_FIX skips Architect stage). Each fix is bounded by an existing defect report with an explicit proposed fix — no architectural ambiguity per `feedback_architect_examine_first`.
 
-**Sprint 2 total:** 3.5 pts — comfortably under ceiling, absorbs any US-6 spillover from S1.
+## Ready to Execute
 
-## Adversarial Self-Check
+Gimli may pick any FIX-N first. Suggested order by lowest friction: FIX-1 → FIX-4 → FIX-3 → FIX-2. No blockers.
 
-- **Q: Is this actually 2 sprints of effort or 1 bloated sprint?** A: 8 pts at markdown tier ≈ 8 hours of focused authoring. Two sprints is honest pacing with review time; one sprint would skip the US-7 cross-link verification pass.
-- **Q: Are we smuggling a feature in?** A: No. Every story is content creation/refresh on existing files. `.mtg-commander.yml.example` is a config example, not a new primitive — schema already shipped in SKILL.md.
-- **Q: Sprint 1 is 4.5 — are we kidding ourselves?** A: US-6 is genuinely a 15-minute verification if the registry matches disk (Bilbo confirmed it does in §2). The 0.5-pt estimate is a buffer, not realistic work. Acceptable.
-- **Q: Does the plan honor "light means reduced depth, not skip"?** A: Yes. Deferred `docs/user-guide/*` pages are not "skipped light stages" — they are explicitly deferred to a named follow-on cycle in the story doc. Current cycle still executes in full at its chosen scope.
-- **Q: Will out-of-scope vocabulary leak?** A: US-3 and US-5 AC explicitly forbid impl-detail language (no "sub-skill refactor," describe as "paradigm selection"). Tech Writer owns wording; QA grep strategy catches regressions.
-
-## Exit Criteria
-
-- All 8 stories meet their AC
-- QA test strategy (Legolas) passes end-to-end
-- No new broken links introduced (US-7 gate)
-- Total work delivered: 8 files touched (2 new, 6 edits), 0 code changes, 0 schema changes.
-
-> "By all the signs, we are come to the end of this stretch of road. Two sprints and we sup in Rivendell."
+> "One sprint. Fly, you fools — but fly in a straight line."

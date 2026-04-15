@@ -1,0 +1,31 @@
+# Self-check fixture (FIX-3 / b2c7 UAT TC-12).
+# Mirrors the b2c7 shape: forbidden_vocabulary populated with implementation
+# tokens that would otherwise self-match when this file is passed as BOTH the
+# constraints file AND the artifact-to-check. Used to verify the
+# `--skip-declarations` flag suppresses the false positive.
+entities:
+  - Order
+  - Payment
+invariants:
+  - "An Order has exactly one Payment state at a time"
+state_variables:
+  - order_status
+actions:
+  - place
+  - refund
+numeric_ceilings:
+  max_open_orders: 10000
+mandatory_artifacts:
+  - docs/order-lore.md
+forbidden_vocabulary:
+  - lambda
+  - ecr
+  - sqs
+  - dynamodb
+  - kinesis
+  - s3
+  - ec2
+citations:
+  - work: Righting Software
+    chapter: "4"
+    page: "88"

@@ -2,7 +2,8 @@
 """DoD deterministic constraint checker (US-8).
 
 Usage:
-    python check_dod_constraints.py <constraints.yml> <artifact_to_check>
+    python check_dod_constraints.py [--skip-declarations] \
+        <constraints.yml> <artifact_to_check>
 
 Runs four deterministic checks against a decomposition-stage artifact using a
 `constraints.yml` file validated by US-1:
@@ -18,6 +19,14 @@ Runs four deterministic checks against a decomposition-stage artifact using a
   4. Löwy / "Righting Software" citation shape (WARN only) — if a matching
      entry appears in `citations`, confirm it has non-empty chapter and page.
 
+Flags:
+  --skip-declarations
+      When set, strip the `forbidden_vocabulary:` YAML block (the key and its
+      indented child lines) from the artifact BEFORE grepping. This avoids
+      false-positive self-check hits when the artifact being scanned is the
+      constraints.yml file itself (FIX-3, b2c7 UAT TC-12). No-op on artifacts
+      that don't contain a `forbidden_vocabulary:` declaration at column 0.
+
 Exit code: 0 iff Check 1 and Check 2 both pass. 1 otherwise.
 
 stdlib-only. Mirrors US-1's PyYAML-with-fallback loader so CI without extras
@@ -26,6 +35,7 @@ still runs the gate deterministically.
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -138,7 +148,38 @@ def _try_number(v: str):
 # Checks
 # ---------------------------------------------------------------------------
 
-def check_forbidden_vocab(artifact: Path, tokens: List[str]) -> List[str]:
+def _strip_forbidden_vocab_block(lines: List[str]) -> List[str]:
+    """Blank out the `forbidden_vocabulary:` declaration block.
+
+    Detects a line where `forbidden_vocabulary:` begins at column 0 and blanks
+    that line plus every following line that is indented (starts with space or
+    tab) OR is empty-within-the-block until a new non-indented line is reached.
+    Blanking (vs. removing) preserves 1-based line numbers in any surviving
+    hit messages so reports still line up with the artifact on disk.
+    """
+    out = list(lines)
+    i = 0
+    n = len(out)
+    while i < n:
+        line = out[i]
+        if line.startswith("forbidden_vocabulary:"):
+            out[i] = ""
+            j = i + 1
+            while j < n:
+                nxt = out[j]
+                if nxt == "" or nxt.startswith((" ", "\t")):
+                    out[j] = ""
+                    j += 1
+                    continue
+                break
+            i = j
+            continue
+        i += 1
+    return out
+
+
+def check_forbidden_vocab(artifact: Path, tokens: List[str],
+                          skip_declarations: bool = False) -> List[str]:
     """Return a list of 'line:col token' match strings. Empty == pass."""
     if not tokens:
         return []
@@ -146,6 +187,9 @@ def check_forbidden_vocab(artifact: Path, tokens: List[str]) -> List[str]:
         lines = artifact.read_text(encoding="utf-8").splitlines()
     except OSError as exc:
         return [f"cannot read artifact {artifact}: {exc}"]
+
+    if skip_declarations:
+        lines = _strip_forbidden_vocab_block(lines)
 
     # Longest tokens first so multi-word tokens win over sub-tokens.
     sorted_tokens = sorted({t for t in tokens if t and t.strip()},
@@ -210,13 +254,23 @@ def check_lowy_citation(citations) -> List[str]:
 # ---------------------------------------------------------------------------
 
 def main(argv: List[str]) -> int:
-    if len(argv) != 3:
-        print("usage: check_dod_constraints.py <constraints.yml> "
-              "<artifact_to_check>", file=sys.stderr)
-        return 1
+    parser = argparse.ArgumentParser(
+        prog="check_dod_constraints.py",
+        description="DoD deterministic constraint checker (US-8).",
+    )
+    parser.add_argument(
+        "--skip-declarations",
+        action="store_true",
+        help=("Strip the `forbidden_vocabulary:` YAML block from the artifact "
+              "before grepping. Use when the artifact IS the constraints.yml "
+              "(self-check) to avoid false-positive hits on the declaration."),
+    )
+    parser.add_argument("constraints", help="path to constraints.yml")
+    parser.add_argument("artifact", help="path to artifact to check")
+    args = parser.parse_args(argv[1:])
 
-    constraints_path = Path(argv[1])
-    artifact_path = Path(argv[2])
+    constraints_path = Path(args.constraints)
+    artifact_path = Path(args.artifact)
 
     if not constraints_path.exists():
         print(f"error: constraints file not found: {constraints_path}",
@@ -241,7 +295,8 @@ def main(argv: List[str]) -> int:
     # --- Check 1: forbidden vocabulary -----------------------------------
     print("[check 1/4] forbidden vocabulary grep", file=sys.stderr)
     tokens = doc.get("forbidden_vocabulary") or []
-    hits = check_forbidden_vocab(artifact_path, tokens)
+    hits = check_forbidden_vocab(artifact_path, tokens,
+                                 skip_declarations=args.skip_declarations)
     if hits:
         failed = True
         print(f"  FAIL: {len(hits)} forbidden-vocabulary match(es):",

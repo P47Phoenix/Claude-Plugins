@@ -1,0 +1,65 @@
+name: Workflow Injection Lint
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan workflows for github.event.* in run blocks
+        run: |
+          set -e
+          echo "Scanning .github/workflows/ for injection antipattern..."
+          FAIL=0
+          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
+            [ -f "$f" ] || continue
+            [ "$(basename $f)" = "workflow-injection-lint.yml" ] && continue
+            python3 - "$f" <<'PY'
+          import sys, re
+          path = sys.argv[1]
+          with open(path) as fh:
+              lines = fh.readlines()
+          in_run = False
+          run_indent = -1
+          issues = []
+          for i, line in enumerate(lines, 1):
+              stripped = line.rstrip('\n')
+              m = re.match(r'(\s*)run:\s*(\|.*)?$', stripped)
+              if m and stripped.endswith('|'):
+                  in_run = True
+                  run_indent = len(m.group(1))
+                  continue
+              if in_run:
+                  line_indent = len(line) - len(line.lstrip())
+                  if stripped and line_indent <= run_indent:
+                      in_run = False
+                      continue
+                  if re.search(r'\$\{\{\s*github\.event\.[^}]+\}\}', stripped):
+                      issues.append((i, stripped.strip()))
+          if issues:
+              print(f"INJECTION ANTIPATTERN in {path}:")
+              for i, line in issues:
+                  print(f"  line {i}: {line}")
+              sys.exit(1)
+          PY
+            if [ $? -ne 0 ]; then FAIL=1; fi
+          done
+          if [ $FAIL -ne 0 ]; then
+            echo ""
+            echo "FAIL: \${{ github.event.* }} inside a run: block is a command-injection vector."
+            echo "Fix: pass the value via an env: block instead."
+            echo "See .delivery/defects/DEFECT-004.md for the original incident."
+            exit 1
+          fi
+          echo "OK: no injection antipattern found."

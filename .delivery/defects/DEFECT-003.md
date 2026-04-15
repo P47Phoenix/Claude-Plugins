@@ -53,3 +53,5 @@ Two linked gaps in the v2.7 rollout:
 
 ## Status
 **Open** — logged by PO on 2026-04-08. Assigned to delivery-flow plugin maintainers for self-improvement PR. Underlying wizard code intentionally not modified in this ticket (logging only).
+
+Status: CLOSED — fixed in run-2026-04-11-g8h5
