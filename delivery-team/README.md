@@ -2,7 +2,7 @@
 
 A full software delivery team with 11 specialized skills covering the complete delivery lifecycle from idea to release.
 
-> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors. Detailed flow docs in [architecture/](./architecture/).
 
 ## Overview
 

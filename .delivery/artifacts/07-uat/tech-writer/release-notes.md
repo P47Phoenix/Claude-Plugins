@@ -1,32 +1,30 @@
-# Release Notes — Architecture Documentation Pipeline
+# Release Notes — Architecture Flow Docs
 
-**Writer:** Bilbo (Tech Writer)
-**Release:** Architecture docs rollout, run-2026-04-11-h9i6
-**Date:** 2026-04-14
+**Audience:** Claude-Plugins contributors
+**Run:** run-2026-04-11-i0j7
+**Date:** 2026-04-11
 
 ## What shipped
 
-Every plugin in the marketplace now has an `ARCHITECTURE.md` describing its internal design with Mermaid diagrams — intended for contributors, not end users.
+Six new detailed architecture flow documents under `delivery-team/architecture/`, supplementing the high-level `delivery-team/ARCHITECTURE.md`:
 
-| Plugin | Diagrams |
-|--------|---------:|
-| delivery-team | 4 |
-| mtg-commander | 3 |
-| agentic-flow-builder | 2 |
-| prd-quality-gate-flow | 2 |
-| research-agent | 2 |
-| prompt-engineer | 1 |
+- `adversarial-review-triggers.md` — when and why adversarial review fires (FLOW-1)
+- `deterministic-gating.md` — rule-based gate evaluation with BRE honesty note (FLOW-2)
+- `hook-firing-timeline.md` — hook event sequence across a pipeline run (FLOW-3, MERGE)
+- `dod-self-correction.md` — DoD validation and self-correction loops (FLOW-4, MERGE)
+- `empirical-lifecycle.md` — CODE_COMPLETE and empirical validation lifecycle (FLOW-5)
+- `sub-agent-dispatch.md` — role-scoped sub-agent dispatch mechanics (FLOW-6)
 
-**Total: 14 Mermaid diagrams across 6 plugins.**
+Each document includes 2 Mermaid diagrams (12 total). Mermaid renders natively in GitHub — no additional tooling required to view.
 
-## Where to find them
+## Cross-links added
 
-- Each plugin directory contains an `ARCHITECTURE.md` at its root (e.g., `delivery-team/ARCHITECTURE.md`).
-- Each plugin `README.md` now links to its `ARCHITECTURE.md` near the top.
-- Root `README.md` and `CLAUDE.md` reference the convention.
+- `delivery-team/ARCHITECTURE.md` — new "Detailed flow documents" section
+- `delivery-team/README.md` — one-line pointer to `architecture/`
+- `CLAUDE.md` — mention under Architecture Patterns
 
-## How to render Mermaid
+## Notes
 
-Most modern markdown viewers render Mermaid fenced blocks natively — including GitHub (viewed in-browser), VS Code with any Mermaid extension, Obsidian, and Typora. No special tooling required; open the file on GitHub and diagrams appear inline.
-
-For offline rendering: `npm i -g @mermaid-js/mermaid-cli` then `mmdc -i ARCHITECTURE.md -o diagram.svg`.
+- FLOW-2 preserves BRE honesty: delivery-team has no deterministic BRE module; gating is convention-enforced via SKILL.md rules and hook validation.
+- FLOW-3 and FLOW-4 are MERGE docs honoring multi-author brainstorm input.
+- No behavior change; documentation-only release.

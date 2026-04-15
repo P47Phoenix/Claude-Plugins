@@ -1,23 +1,25 @@
-# Retrospective — Architecture Documentation Pipeline
+# Retrospective — Architecture Flow Docs (FLOW-1..FLOW-6)
 
-**Facilitator:** Aragorn
-**Run:** run-2026-04-11-h9i6
-**Date:** 2026-04-14
+**Facilitator:** Aragorn · **Run:** run-2026-04-11-i0j7 · **Date:** 2026-04-11
 
 ## What went well
 
-- **Architect-led discovery.** Putting the Architect in the driver's seat for technical-structural content kept diagrams faithful to actual design rather than aspirational. Tech Writer stayed in-lane for cross-links and diagram conventions — clean division of labor.
-- **Paired-plugin batches.** Dispatching agentic-flow-builder + prd-quality-gate-flow together (shared BRE and flow_orchestrator internals) let one pass cover both efficiently.
-- **Cross-link sweep last.** Holding README/CLAUDE.md updates until all ARCHITECTURE.md files existed avoided churn from partial links.
-- **Mermaid everywhere.** 14 diagrams across 6 plugins — GitHub-native rendering means zero tooling friction for contributors.
+- Team brainstorm yielded 18 proposals; PO synthesized to 6 (33% selection rate — healthy signal-to-noise).
+- Two MERGE docs (FLOW-3 hook-firing-timeline, FLOW-4 dod-self-correction) honored multi-author input rather than arbitrarily picking one contributor.
+- BRE honesty preserved: FLOW-2 explicitly states delivery-team has no BRE module; gating is convention-enforced, not engine-enforced.
+- All 6 docs landed within their individual line caps; 12 Mermaid diagrams total (2 per doc, consistent rhythm).
 
 ## What didn't
 
-- **prompt-engineer came in sparse.** 119 lines / 1 diagram — technically passes, but thinner than peers. The plugin genuinely has less internal structure (single-skill, no hooks, no sub-components), so this may be honest rather than a gap. Still worth flagging: a contributor looking for depth will find less here than elsewhere.
-- **delivery-team at the ceiling.** 250 lines exactly at the 250 target. One more section pushes it over. Next iteration should either raise the cap or factor out sub-diagrams into per-skill docs.
-- **No diagram syntax validation.** We grep-counted fences but didn't lint Mermaid syntax. A Write/Edit hook on ARCHITECTURE.md could catch malformed diagrams before commit.
+- `delivery-team/ARCHITECTURE.md` was already at its 250-line cap before this run — the new "Detailed flow documents" section pushed it to 261 (within authorized tolerance, but the hard cap will pinch again next time).
+- `delivery-team/architecture/` is a new subdirectory; contributors won't discover it without following cross-links. README pointer mitigates but doesn't eliminate.
 
-## Action items
+## Insights
 
-- [ ] BACKLOG: lightweight Mermaid syntax lint hook for ARCHITECTURE.md edits.
-- [ ] BACKLOG: revisit delivery-team/ARCHITECTURE.md budget before next major addition.
+- **Paired-plugin brainstorm pattern from run h9i6 worked again**: Architect leads + 2 supporting roles in parallel produces higher-quality proposals than Architect solo. Promote this pattern.
+- Supplement-via-subdirectory is a viable pressure-relief valve for capped top-level architecture docs.
+
+## Actions
+
+- [ ] Consider raising `ARCHITECTURE.md` cap to 275 to absorb future flow-doc index growth, OR exclude the "Detailed flow documents" index section from the cap.
+- [ ] Add `architecture/` directory discovery hint to new-contributor onboarding next time `CLAUDE.md` is touched.

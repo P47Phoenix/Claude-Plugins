@@ -123,6 +123,8 @@ No build step, linting config, or test runner is configured.
 
 **Business Rules Engine** is intentionally deterministic — gate decisions must be rule-based, not AI-inferred, to ensure consistent and auditable workflow outcomes.
 
+Detailed flow documents in `delivery-team/architecture/` cover adversarial triggers, deterministic gating, hook timeline, DoD self-correction, empirical lifecycle, sub-agent dispatch.
+
 ## Key Conventions
 
 **When modifying this repo, always use the relevant plugin-dev skills:**

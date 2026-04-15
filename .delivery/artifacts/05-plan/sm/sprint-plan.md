@@ -1,80 +1,91 @@
-# Sprint Plan — Plugin ARCHITECTURE.md Authoring (DOCS_ONLY)
+# Sprint Plan — Flow Doc Delivery (Stage 5 Light · DOCS_ONLY)
 
-> *"A day may come when the context of this codebase fails. But it is not this day.
-> This day we document."* — Aragorn, son of Arathorn, to the assembled team.
+> *Aragorn son of Arathorn: "A ranger plans the march before the march plans him. Six docs, two sprints, one road. Every story names its end; every end names its witness."*
 
-Six stories. Three sprints. One ARCHITECTURE.md per plugin. Audience: **human
-contributors and advanced users** — NOT Claude. Render on GitHub with live Mermaid.
+**Planner:** Aragorn (Scrum Bag) · **Routing:** DOCS_ONLY (light) · **Capacity declaration:** 6 stories across 2 sprints (3+3). No mid-sprint scope creep. Light DoD only: Architect + Tech Writer review — no full team DoD ceremony per DOCS_ONLY routing.
 
-## Sprint 1 — The Great Works
+**Target dir (all stories):** `delivery-team/architecture/<flow-name>.md`
+**Universal AC (all stories):** (i) file exists at path · (ii) ≥1 valid Mermaid block renders · (iii) addresses the why-it-matters from source brainstorm · (iv) cross-links to `delivery-team/ARCHITECTURE.md` · (v) under stated length cap.
 
-**ARCH-1 — `delivery-team/ARCHITECTURE.md`**
-- Diagrams: **4** (flowchart 7-stage pipeline + DoD gates, component boundary,
-  state diagram for resume, sequence for adversarial loop).
-- Length cap: **~250 lines**. Cross-link to each of the 11 sub-skill SKILL.md paths.
-- DoD: file exists; ≥1 valid ```` ```mermaid ```` block; components + key flows
-  explained; linked from `delivery-team/README.md`.
+---
 
-**ARCH-2 — `mtg-commander/ARCHITECTURE.md`**
-- Diagrams: **3** (flowchart 4-stage adversarial pipeline, sequence for one
-  primary-vs-challenger loop, class/entity for `.mtg-commander.yml` schema v1).
-- Length cap: **~150 lines**. Link to `references/` guides and `scripts/card_lookup.py`.
-- DoD: as ARCH-1 template; linked from `mtg-commander/README.md`.
+## Sprint 1 — Mandatory + Strongest Convergence (3 stories)
 
-## Sprint 2 — The Agentic Kin (paired — shared patterns)
+### FLOW-1 · Adversarial Review Trigger Flow [PO MANDATORY]
+- **File:** `delivery-team/architecture/adversarial-review-triggers.md`
+- **Source:** Celebrimbor #1
+- **Audience:** both (user + contributor)
+- **Diagrams:** 3 Mermaid — (a) flowchart: stage-entry decision tree w/ confidence 1-5 branch · (b) sequence: orchestrator→primary→evaluator→challenger→human-on-≤2 · (c) flowchart: light-mode suppression gate
+- **Length cap:** 180 lines
+- **Extra AC:** cites SKILL.md L626/L662/L680 + team-patterns.md L131
+- **Owner:** Architect (primary) · Tech Writer (cross-link pass)
 
-**ARCH-3 — `agentic-flow-builder/ARCHITECTURE.md`**
-- Diagrams: **3** (component: registry/orchestrator/BRE/DB; class: SQLite schema;
-  sequence: one flow execution).
-- Length cap: **~150 lines**. Link to each of the 4 scripts and `complete_example.py`.
-- DoD: as template; linked from `agentic-flow-builder/README.md`.
+### FLOW-2 · Deterministic Gating & BRE Relationship [PO MANDATORY]
+- **File:** `delivery-team/architecture/deterministic-gating.md`
+- **Source:** Celebrimbor #2
+- **Audience:** contributor
+- **Diagrams:** 2 Mermaid — (a) flowchart: 4-layer delivery-team determinism stack · (b) side-by-side flowchart: delivery-team validator-unanimity vs. prd-quality-gate-flow BRE rule tree
+- **Length cap:** 180 lines
+- **Extra AC:** explicit honesty paragraph stating delivery-team has NO BRE module; cites `prd-quality-gate-flow/business_rules_engine.py` as the real thing; cites `quality-gates.md` L16 + `team-patterns.md` L131
+- **Owner:** Architect (primary) · Tech Writer (honesty-framing review)
 
-**ARCH-4 — `prd-quality-gate-flow/ARCHITECTURE.md`**
-- Diagrams: **3** (flowchart: 7 gates + 8 agents; class: SQLite schema; state:
-  PRD lifecycle).
-- Length cap: **~150 lines**. Link to each `.py` module + `QUICKSTART.md`.
-- Note: the current README ASCII diagram is the reference — render it in Mermaid.
-- DoD: as template; linked from `prd-quality-gate-flow/README.md`.
+### FLOW-3 · Hook Firing Timeline [CONVERGENCE 2/3]
+- **File:** `delivery-team/architecture/hook-timeline.md`
+- **Source:** MERGE of Celebrimbor #7 + Sam #1
+- **Audience:** contributor (plugin maintainers, hook authors, debuggers)
+- **Diagrams:** 2 Mermaid — (a) sequence/swimlane (Sam): User·Session·Orchestrator·Sub-Agents·Hooks·State lanes, full FEATURE run · (b) flowchart (Celebrimbor): per-hook block/warn/pass outcomes and orchestrator reaction
+- **Length cap:** 180 lines
+- **Extra AC:** names all 7 hooks × 5 event types; cites both source brainstorms
+- **Owner:** Architect (diagrams) · Tech Writer (merge harmonization — two voices, one doc)
 
-## Sprint 3 — The Lean Blades (paired — smaller plugins)
+**Sprint 1 review gate:** Architect reviews diagrams render + technical accuracy; Tech Writer reviews cross-links + prose clarity. Both DONE = sprint 1 closes.
 
-**ARCH-5 — `prompt-engineer/ARCHITECTURE.md`**
-- Diagrams: **1-2** (flowchart: 5-step router Analyze → Design → Display → Explain →
-  Iterate; optional taxonomy of techniques).
-- Length cap: **~150 lines**. Single-skill plugin — keep it tight.
-- DoD: as template; linked from `prompt-engineer/README.md`.
+---
 
-**ARCH-6 — `research-agent/ARCHITECTURE.md`**
-- Diagrams: **2** (flowchart: research-type decision tree with framework overlay;
-  sequence: one ReAct Reason → Act → Observe cycle).
-- Length cap: **~150 lines**. Link to each of the 4 reference files.
-- DoD: as template; linked from `research-agent/README.md`.
+## Sprint 2 — Remainder (3 stories)
 
-## Diagram Conventions (all stories)
+### FLOW-4 · DoD Validation & Self-Correction State Machine
+- **File:** `delivery-team/architecture/dod-self-correction.md`
+- **Source:** MERGE of Celebrimbor #3 + Legolas #2
+- **Audience:** both
+- **Diagrams:** 2 Mermaid — (a) state diagram: validator_pending→aggregating→{all_done|mixed|all_not_done}→correcting→terminals · (b) sequence: parallel fan-out, finding aggregation, delegation meta-gate
+- **Length cap:** 180 lines
+- **Extra AC:** includes finding-schema contract table (Legolas); names CODE_COMPLETE terminal (Celebrimbor); cites SKILL.md L516-534, L699 + quality-gates.md L56-72
+- **Owner:** Architect (state machine) · Tech Writer (contract table formatting)
 
-- Every diagram in a ```` ```mermaid ```` fenced code block — no exceptions.
-- `flowchart TD` for component/pipeline diagrams; `sequenceDiagram` for agent
-  interactions and ReAct/adversarial loops; `stateDiagram-v2` for state machines
-  (pipeline resume, PRD lifecycle); `classDiagram` for schemas.
-- Keep node labels short (≤ 3 words typical). Explanatory prose lives OUTSIDE
-  the diagram — the diagram is a map, not a manual.
-- **One diagram per concept.** Do not attempt to show architecture + flow +
-  schema in one chart. If it needs a paragraph of legend, it needs two diagrams.
-- In prose, link to the authoritative source by path (e.g., `delivery-flow/SKILL.md`,
-  `scripts/business_rules_engine.py`) so a reader can verify diagram against truth.
-- No architecture invented. If the source doesn't state it, don't draw it.
+### FLOW-5 · Empirical vs Analytical Validation Lifecycle
+- **File:** `delivery-team/architecture/empirical-validation-lifecycle.md`
+- **Source:** Legolas #1
+- **Audience:** QA + Developer + Godot contributors + UAT owners
+- **Diagrams:** 2 Mermaid — (a) state machine: AC lifecycle proposed→classified→code-complete-pending→empirically-validated→accepted · (b) swimlane: Developer / QA validator / UAT owner / User
+- **Length cap:** 150 lines
+- **Extra AC:** cites quality/SKILL.md L270-311; cross-links to `empirical-validation.md`
+- **Owner:** Architect (lifecycle) · Tech Writer (cross-link to dev + godot skills)
 
-## Team DoD (all 6 stories)
+### FLOW-6 · Sub-Agent Dispatch & Two-Channel Communication
+- **File:** `delivery-team/architecture/agent-dispatch.md`
+- **Source:** Celebrimbor #6
+- **Audience:** contributor
+- **Diagrams:** 2 Mermaid — (a) sequence: correct dispatch (scoped prompt + disk I/O + ≤200-char signal) · (b) flowchart: anti-pattern detection (direct Write block, compound-role warn)
+- **Length cap:** 160 lines
+- **Extra AC:** cites `audit_agent_prompt.py` + `enforce_pipeline_scope.py` hooks + `artifact-contracts.md`; names Prime Directive explicitly
+- **Owner:** Architect (primary) · Tech Writer (anti-pattern framing)
 
-1. Target file exists at `<plugin>/ARCHITECTURE.md`.
-2. Contains ≥ 1 Mermaid fenced block (count per story above is the target).
-3. Documents internal components (skills, scripts, references, hooks as applicable).
-4. Documents at least one key flow (pipeline, loop, decision tree, or lifecycle).
-5. Linked from that plugin's `README.md` (one-line reference under "Architecture").
-6. Length within stated cap. Over-cap drafts return to Development for pruning.
+**Sprint 2 review gate:** same light DoD — Architect + Tech Writer only.
+
+---
+
+## Closeout Criteria (both sprints)
+
+- 6 files exist under `delivery-team/architecture/`
+- All Mermaid blocks validated (syntactic render check)
+- Cross-links from `delivery-team/ARCHITECTURE.md` updated (Tech Writer final pass)
+- Defer list in `prioritized-flow-list.md` preserved as backlog seed
+
+*Set out at first light; make camp when the work is done, not when the sun says so.* — Aragorn
 
 ---
 
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/05-plan/sm/sprint-plan.md
-SUMMARY: Celebrimbor — 6 plugins inventoried, ~16 diagrams est across 3 sprints. ARCH-1 delivery-team (4), ARCH-2 mtg-commander (3), ARCH-3/4 paired agentic (3+3), ARCH-5/6 lean (1-2+2).
+SUMMARY: Aragorn — 6 stories / 2 sprints. S1: FLOW-1 adversarial-triggers (PO mandatory), FLOW-2 deterministic-gating (PO mandatory), FLOW-3 hook-timeline (2/3 convergence). S2: FLOW-4/5/6. Light DoD.

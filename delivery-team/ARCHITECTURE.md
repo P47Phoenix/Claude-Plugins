@@ -241,6 +241,17 @@ not produce domain artifacts.
 
 ---
 
+## Detailed flow documents
+
+Deep-dive flow diagrams live in `delivery-team/architecture/`:
+
+- `architecture/adversarial-review-triggers.md` — when and why adversarial review fires
+- `architecture/deterministic-gating.md` — rule-based gate evaluation
+- `architecture/hook-firing-timeline.md` — hook event sequence across a run
+- `architecture/dod-self-correction.md` — DoD validation and self-correction loops
+- `architecture/empirical-lifecycle.md` — CODE_COMPLETE and empirical validation lifecycle
+- `architecture/sub-agent-dispatch.md` — role-scoped sub-agent dispatch mechanics
+
 ## See Also
 
 - `delivery-team/README.md` — per-plugin overview and quickstart
