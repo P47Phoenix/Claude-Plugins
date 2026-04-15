@@ -1,33 +1,32 @@
-# Release Notes — Documentation Harmonization
+# Release Notes — Architecture Documentation Pipeline
 
-**Tech Writer**: Bilbo | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Run**: run-2026-04-11-f7g4
+**Writer:** Bilbo (Tech Writer)
+**Release:** Architecture docs rollout, run-2026-04-11-h9i6
+**Date:** 2026-04-14
 
-## What Changed
+## What shipped
 
-A focused docs-only release that harmonizes discoverability and usability across the Claude-Plugins marketplace. No code, no behavior changes — only clearer paths for users to find and configure what's already shipped.
+Every plugin in the marketplace now has an `ARCHITECTURE.md` describing its internal design with Mermaid diagrams — intended for contributors, not end users.
 
-## New
+| Plugin | Diagrams |
+|--------|---------:|
+| delivery-team | 4 |
+| mtg-commander | 3 |
+| agentic-flow-builder | 2 |
+| prd-quality-gate-flow | 2 |
+| research-agent | 2 |
+| prompt-engineer | 1 |
 
-- **`mtg-commander/README.md`** — plugin landing page: feature summary, Challenger agent mechanics, config surface (`.mtg-commander.yml`), and closure notes for DEFECT-001 (deterministic validation) and DEFECT-002 (price divergence).
-- **`mtg-commander/.mtg-commander.yml.example`** — fully-commented example config covering `loops:`, `price_rules:`, and `escalation:` sections.
-- **`mtg-commander/references/config-walkthrough.md`** — step-by-step walkthrough of the example config with rationale for each knob.
-- **`delivery-team/skills/delivery-flow/references/constraints-quickstart.md`** — user-facing quickstart for constraint authoring, linking `constraints-model-guide.md` and `validate_constraints.py`.
-- **`delivery-team/skills/delivery-flow/references/troubleshooting.md`** — SYMPTOM/DIAGNOSIS/FIX triage reference covering common pipeline failure modes.
+**Total: 14 Mermaid diagrams across 6 plugins.**
 
-## Updated
+## Where to find them
 
-- **`CLAUDE.md`** — surfaces mtg-commander, paradigms/ structure, transformation-planning sub-workflow, constraints.yml.
-- **`README.md` (root)** — What's new section + mtg-commander inclusion.
-- **`.claude-plugin/marketplace.json`** — 6 plugins registered (verified).
-- **Architect redirect stubs** — `volatility-decomposition.md` and `strategic-ddd.md` repaired to `../paradigms/` (caught in US-7 cross-link audit).
+- Each plugin directory contains an `ARCHITECTURE.md` at its root (e.g., `delivery-team/ARCHITECTURE.md`).
+- Each plugin `README.md` now links to its `ARCHITECTURE.md` near the top.
+- Root `README.md` and `CLAUDE.md` reference the convention.
 
-## Credits
+## How to render Mermaid
 
-- **Galadriel + Bilbo** — parallel Stage 1 discovery produced convergent priorities.
-- **Gandalf (PO)** — overrode default routing to include UX + Tech Writer in Plan.
-- **Aragorn** — Stage 6 cross-link audit caught the redirect stub regression.
-- **Legolas** — 30/30 TC UAT sweep.
+Most modern markdown viewers render Mermaid fenced blocks natively — including GitHub (viewed in-browser), VS Code with any Mermaid extension, Obsidian, and Typora. No special tooling required; open the file on GitHub and diagrams appear inline.
 
-## Compatibility
-
-No breaking changes. All additions are additive; all edits preserve existing anchors and cross-links.
+For offline rendering: `npm i -g @mermaid-js/mermaid-cli` then `mmdc -i ARCHITECTURE.md -o diagram.svg`.

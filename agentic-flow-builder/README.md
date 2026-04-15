@@ -2,6 +2,8 @@
 
 A production-grade plugin for building dynamic agentic workflows using ReAcTree hierarchical decomposition and Anthropic's proven workflow patterns.
 
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+
 ## Overview
 
 This plugin enables you to create sophisticated multi-agent workflows with:

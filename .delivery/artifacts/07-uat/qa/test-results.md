@@ -1,53 +1,41 @@
-# UAT Test Results — Documentation Pipeline
+# UAT Test Results — Architecture Documentation Pipeline
 
-**QA**: Legolas | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Run**: run-2026-04-11-f7g4
+**Tester:** Legolas (QA)
+**Run:** run-2026-04-11-h9i6
+**Date:** 2026-04-14
 
-## Test Execution Summary
+## Existence Check (6/6 PASS)
 
-| TC | Category | Target | Expected | Actual | Result |
-|----|----------|--------|----------|--------|--------|
-| TC-01 | File | mtg-commander/README.md | exists | exists | PASS |
-| TC-02 | File | mtg-commander/.mtg-commander.yml.example | exists | exists | PASS |
-| TC-03 | File | mtg-commander/references/config-walkthrough.md | exists | exists | PASS |
-| TC-04 | File | constraints-quickstart.md | exists | exists | PASS |
-| TC-05 | File | troubleshooting.md | exists | exists | PASS |
-| TC-06 | File | README.md (root) | exists | exists | PASS |
-| TC-07 | Content | mtg README "Challenger" | >=1 | 7 | PASS |
-| TC-08 | Content | mtg README ".mtg-commander.yml" | >=1 | 3 | PASS |
-| TC-09 | Content | mtg README defect/deterministic closure | >=1 | 6 | PASS |
-| TC-10 | Content | CLAUDE.md "mtg-commander" | >=1 | 1 | PASS |
-| TC-11 | Content | CLAUDE.md "paradigms/" | >=1 | 1 | PASS |
-| TC-12 | Content | CLAUDE.md "transformation-planning" | >=1 | 2 | PASS |
-| TC-13 | Content | CLAUDE.md "constraints.yml" | >=1 | 2 | PASS |
-| TC-14 | Content | README root "mtg-commander" | >=1 | 4 | PASS |
-| TC-15 | Content | README root "What's new\|Recent" | >=1 | 1 | PASS |
-| TC-16 | Content | constraints-quickstart "validate_constraints.py" | >=1 | 1 | PASS |
-| TC-17 | Content | troubleshooting "SYMPTOM\|Symptom" | >=1 | 10 | PASS |
-| TC-18 | Content | .mtg example "loops:" | >=1 | 1 | PASS |
-| TC-19 | Content | .mtg example "price_rules:" | >=1 | 1 | PASS |
-| TC-20 | Content | .mtg example "escalation:" | >=1 | 3 | PASS |
-| TC-21 | Schema | marketplace.json plugin count | 6 | 6 | PASS |
-| TC-22 | YAML | .mtg-commander.yml.example syntax | valid | YAML OK | PASS |
-| TC-23 | Stub-fix | volatility-decomposition `../paradigms/` | >=1 | 2 | PASS |
-| TC-24 | Stub-fix | strategic-ddd `../paradigms/` | >=1 | 2 | PASS |
-| TC-25 | Cross-link | mtg README -> archetype-patterns.md | exists | exists | PASS |
-| TC-26 | Cross-link | mtg README -> price-evaluator-guide.md | exists | exists | PASS |
-| TC-27 | Cross-link | constraints-quickstart -> constraints-model-guide.md | exists | exists | PASS |
-| TC-28 | Cross-link | troubleshooting -> config-schema.md | exists | exists | PASS |
-| TC-29 | Cross-link | troubleshooting -> defect-tracking.md | exists | exists | PASS |
-| TC-30 | Stale | CLAUDE.md "project_type:" (removed v2.7) | 0 | 0 | PASS |
+| Plugin | File | Lines | Target | Mermaid blocks |
+|--------|------|------:|-------:|---------------:|
+| delivery-team | ARCHITECTURE.md | 250 | 250 | 4 |
+| mtg-commander | ARCHITECTURE.md | 182 | 250 | 3 |
+| agentic-flow-builder | ARCHITECTURE.md | 179 | 200 | 2 |
+| prd-quality-gate-flow | ARCHITECTURE.md | 199 | 200 | 2 |
+| research-agent | ARCHITECTURE.md | 131 | 150 | 2 |
+| prompt-engineer | ARCHITECTURE.md | 119 | 120 | 1 |
 
-## Coverage
+## Mermaid Block Check (6/6 PASS, each >=1)
 
-- File existence: 6/6
-- Content presence: 14/14
-- Schema/YAML: 2/2
-- Redirect stub fixes: 2/2
-- Cross-link integrity (sampled): 5/5
-- Stale content: 1/1
+Total Mermaid diagrams across all 6 plugins: **14** (within expected 14-16 range).
+
+## Line Count Check (6/6 PASS)
+
+All files at or under target (mapping by inferred complexity). delivery-team sits exactly at the 250 cap — watch-item but within spec.
+
+## Cross-link Check (6/6 PASS)
+
+| README | "ARCHITECTURE" refs |
+|--------|--------------------:|
+| mtg-commander/README.md | 1 |
+| delivery-team/README.md | 1 |
+| agentic-flow-builder/README.md | 1 |
+| prd-quality-gate-flow/README.md | 1 |
+| prompt-engineer/README.md | 1 |
+| research-agent/README.md | 1 |
+
+Root `README.md` mentions ARCHITECTURE.md (1 ref). `CLAUDE.md` mentions ARCHITECTURE.md (1 ref). Both PASS.
 
 ## Verdict
 
-**GO** — 30/30 test cases PASS. Documentation pipeline artifacts are consistent, discoverable, and cross-linked. The just-applied redirect stub fix (`../paradigms/`) verified on both architect references. No stale v2.7-removed config keys leak into CLAUDE.md. YAML example parses cleanly. Marketplace registry lists all 6 plugins.
-
-No defects logged. Ship it.
+**PASS — 6/6 plugins documented, 14 diagrams total, all cross-links in place.**

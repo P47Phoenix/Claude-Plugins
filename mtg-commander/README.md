@@ -2,6 +2,8 @@
 
 Build synergy-dense, format-legal, budget-compliant 100-card Commander decks via a multi-agent pipeline.
 
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+
 > *"It's a dangerous business, going out your door — especially with a stack of 99 cards and a commander. Let me pack your bags properly."* — Bilbo
 
 ---

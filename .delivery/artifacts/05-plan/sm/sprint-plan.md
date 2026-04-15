@@ -1,54 +1,80 @@
-# Sprint Plan — Defect Sweep (BUG_FIX, LIGHT)
+# Sprint Plan — Plugin ARCHITECTURE.md Authoring (DOCS_ONLY)
 
-**Artifact**: Sprint Plan (Aragorn / Scrum Bag)
-**Mode**: LIGHT (BUG_FIX — no stories file)
-**Pipeline**: delivery-flow
-**Date**: 2026-04-14
+> *"A day may come when the context of this codebase fails. But it is not this day.
+> This day we document."* — Aragorn, son of Arathorn, to the assembled team.
 
-> "A sweep, then. Four fixes, one sprint. No wizardry, no kings — just clean cuts."
+Six stories. Three sprints. One ARCHITECTURE.md per plugin. Audience: **human
+contributors and advanced users** — NOT Claude. Render on GitHub with live Mermaid.
 
-## Fix List
+## Sprint 1 — The Great Works
 
-| ID | Fix | Owner | AC | Estimate |
-|----|-----|-------|-----|----------|
-| FIX-1 | Remove project_type question from Quick-Start Mode | Gimli (developer) | `delivery-team/skills/delivery-flow/SKILL.md:142` no longer asks "What are you building?"; `references/getting-started.md:15` section removed or rewritten; Quick-Start question list drops to 2 questions (or adds an optional `force_type` pin); no `project_type` token remains in the Quick-Start flow | S |
-| FIX-2 | v2.6 → v2.7 migration contract on config load | Gimli (developer) | SKILL.md (or `references/setup-wizard.md`) documents: on load, if `config_version` is `"2.6"` or missing → strip top-level `project_type`, bump `config_version` to `"2.7"`, emit migration announcement; in-repo `.delivery/config.yml` already v2.7, so this is forward-guard documentation (no runtime migration script required this sweep) | S |
-| FIX-3 | `check_dod_constraints.py --skip-declarations` flag | Gimli (developer) | New CLI flag `--skip-declarations`; when set, `check_forbidden_vocab` excludes lines inside the artifact's own `forbidden_vocabulary:` YAML block (header + indented list items) before regex scan; running the script against its own constraints file with the flag returns exit 0; fixture added covering both flag-on and flag-off modes | S |
-| FIX-4 | CI workflow injection regression guard | Gimli (developer) | New job or workflow lints `.github/workflows/*.yml`; multiline-greps each `run:` block for `${{ github.event.*`, `${{ github.head_ref`, `${{ github.pull_request.*`; fails CI if any hit; passes on current tree (DEFECT-004 version.yml already fixed); `docs.yml` audited in passing | S |
+**ARCH-1 — `delivery-team/ARCHITECTURE.md`**
+- Diagrams: **4** (flowchart 7-stage pipeline + DoD gates, component boundary,
+  state diagram for resume, sequence for adversarial loop).
+- Length cap: **~250 lines**. Cross-link to each of the 11 sub-skill SKILL.md paths.
+- DoD: file exists; ≥1 valid ```` ```mermaid ```` block; components + key flows
+  explained; linked from `delivery-team/README.md`.
 
-## Dependencies
+**ARCH-2 — `mtg-commander/ARCHITECTURE.md`**
+- Diagrams: **3** (flowchart 4-stage adversarial pipeline, sequence for one
+  primary-vs-challenger loop, class/entity for `.mtg-commander.yml` schema v1).
+- Length cap: **~150 lines**. Link to `references/` guides and `scripts/card_lookup.py`.
+- DoD: as ARCH-1 template; linked from `mtg-commander/README.md`.
 
-None between fixes. All four are independent edits; execute in parallel or any order within a single sprint.
+## Sprint 2 — The Agentic Kin (paired — shared patterns)
 
-## Sprint Shape
+**ARCH-3 — `agentic-flow-builder/ARCHITECTURE.md`**
+- Diagrams: **3** (component: registry/orchestrator/BRE/DB; class: SQLite schema;
+  sequence: one flow execution).
+- Length cap: **~150 lines**. Link to each of the 4 scripts and `complete_example.py`.
+- DoD: as template; linked from `agentic-flow-builder/README.md`.
 
-- **Sprint count**: 1
-- **Total estimate**: 4 × S
-- **Parallelism**: full (no ordering constraints)
+**ARCH-4 — `prd-quality-gate-flow/ARCHITECTURE.md`**
+- Diagrams: **3** (flowchart: 7 gates + 8 agents; class: SQLite schema; state:
+  PRD lifecycle).
+- Length cap: **~150 lines**. Link to each `.py` module + `QUICKSTART.md`.
+- Note: the current README ASCII diagram is the reference — render it in Mermaid.
+- DoD: as template; linked from `prd-quality-gate-flow/README.md`.
 
-## Light-Mode Definition of Done
+## Sprint 3 — The Lean Blades (paired — smaller plugins)
 
-Per BUG_FIX light routing, DoD validators reduce to:
+**ARCH-5 — `prompt-engineer/ARCHITECTURE.md`**
+- Diagrams: **1-2** (flowchart: 5-step router Analyze → Design → Display → Explain →
+  Iterate; optional taxonomy of techniques).
+- Length cap: **~150 lines**. Single-skill plugin — keep it tight.
+- DoD: as template; linked from `prompt-engineer/README.md`.
 
-- **Developer (Gimli)**: implements, self-reviews, passes lints, confirms AC per fix.
-- **QA (Legolas)**: smoke-verifies each fix — re-reads wizard text, runs `check_dod_constraints.py --skip-declarations` against the constraints file, triggers the CI lint against a synthetic bad workflow to prove it fails.
+**ARCH-6 — `research-agent/ARCHITECTURE.md`**
+- Diagrams: **2** (flowchart: research-type decision tree with framework overlay;
+  sequence: one ReAct Reason → Act → Observe cycle).
+- Length cap: **~150 lines**. Link to each of the 4 reference files.
+- DoD: as template; linked from `research-agent/README.md`.
 
-Skipped in light mode: adversarial review, consensus debate, architecture board, review board.
+## Diagram Conventions (all stories)
 
-## Non-Goals (restating Idea-brief anti-scope)
+- Every diagram in a ```` ```mermaid ```` fenced code block — no exceptions.
+- `flowchart TD` for component/pipeline diagrams; `sequenceDiagram` for agent
+  interactions and ReAct/adversarial loops; `stateDiagram-v2` for state machines
+  (pipeline resume, PRD lifecycle); `classDiagram` for schemas.
+- Keep node labels short (≤ 3 words typical). Explanatory prose lives OUTSIDE
+  the diagram — the diagram is a map, not a manual.
+- **One diagram per concept.** Do not attempt to show architecture + flow +
+  schema in one chart. If it needs a paragraph of legend, it needs two diagrams.
+- In prose, link to the authoritative source by path (e.g., `delivery-flow/SKILL.md`,
+  `scripts/business_rules_engine.py`) so a reader can verify diagram against truth.
+- No architecture invented. If the source doesn't state it, don't draw it.
 
-- No schema changes past v2.7.
-- No wizard UX redesign.
-- No new features.
-- No edits to architecture-board, constraints primitive, MTG plugin, or other v2.7-current behavior.
-- No re-edit of `.github/workflows/version.yml` (primary DEFECT-004 fix already landed).
+## Team DoD (all 6 stories)
 
-## Architect Check
+1. Target file exists at `<plugin>/ARCHITECTURE.md`.
+2. Contains ≥ 1 Mermaid fenced block (count per story above is the target).
+3. Documents internal components (skills, scripts, references, hooks as applicable).
+4. Documents at least one key flow (pipeline, loop, decision tree, or lifecycle).
+5. Linked from that plugin's `README.md` (one-line reference under "Architecture").
+6. Length within stated cap. Over-cap drafts return to Development for pruning.
 
-Architect not convened (BUG_FIX skips Architect stage). Each fix is bounded by an existing defect report with an explicit proposed fix — no architectural ambiguity per `feedback_architect_examine_first`.
+---
 
-## Ready to Execute
-
-Gimli may pick any FIX-N first. Suggested order by lowest friction: FIX-1 → FIX-4 → FIX-3 → FIX-2. No blockers.
-
-> "One sprint. Fly, you fools — but fly in a straight line."
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/05-plan/sm/sprint-plan.md
+SUMMARY: Celebrimbor — 6 plugins inventoried, ~16 diagrams est across 3 sprints. ARCH-1 delivery-team (4), ARCH-2 mtg-commander (3), ARCH-3/4 paired agentic (3+3), ARCH-5/6 lean (1-2+2).

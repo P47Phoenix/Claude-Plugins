@@ -27,6 +27,8 @@ Then install the plugins you want:
 
 Or browse interactively with `/plugin` inside a Claude Code session.
 
+Each plugin includes an `ARCHITECTURE.md` with Mermaid diagrams for contributors.
+
 ## Plugins
 
 | Plugin | What it does |

@@ -2,6 +2,8 @@
 
 Expert prompt optimization for LLMs and AI systems. Proactively improves prompts using proven techniques, patterns, and model-specific optimization.
 
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+
 ## Overview
 
 This skill helps craft, optimize, and evaluate prompts for any LLM. It applies comprehensive prompt engineering techniques and always shows the complete prompt text rather than just describing what a prompt should be.

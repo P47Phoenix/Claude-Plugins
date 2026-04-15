@@ -1,24 +1,23 @@
-# Retrospective — Documentation Pipeline (run-2026-04-11-f7g4)
+# Retrospective — Architecture Documentation Pipeline
 
-**Scrum Bag**: Aragorn | **Stage**: 7 UAT | **Date**: 2026-04-14 | **Project Type**: DOCS_ONLY
+**Facilitator:** Aragorn
+**Run:** run-2026-04-11-h9i6
+**Date:** 2026-04-14
 
-## What Went Well
+## What went well
 
-- **PO override honored end-to-end.** Gandalf's decision to bring UX (Galadriel) + Tech Writer (Bilbo) into Plan produced convergent priorities that carried cleanly into Development without re-scoping.
-- **Parallel discovery reduced ambiguity.** Bilbo + Galadriel run simultaneously at Stage 1 yielded overlapping top priorities on independent axes (tech-writer clarity + UX discoverability) — convergence accelerated PO synthesis.
-- **Cross-link audit earned its keep.** US-7's audit caught broken `../paradigms/` redirect stubs in `volatility-decomposition.md` and `strategic-ddd.md`. Real prior-run regressions, not phantom issues. Fix validated via TC-23/TC-24.
-- **UAT clean sweep.** 30/30 TCs PASS, 8/8 stories PASS, no defects logged.
+- **Architect-led discovery.** Putting the Architect in the driver's seat for technical-structural content kept diagrams faithful to actual design rather than aspirational. Tech Writer stayed in-lane for cross-links and diagram conventions — clean division of labor.
+- **Paired-plugin batches.** Dispatching agentic-flow-builder + prd-quality-gate-flow together (shared BRE and flow_orchestrator internals) let one pass cover both efficiently.
+- **Cross-link sweep last.** Holding README/CLAUDE.md updates until all ARCHITECTURE.md files existed avoided churn from partial links.
+- **Mermaid everywhere.** 14 diagrams across 6 plugins — GitHub-native rendering means zero tooling friction for contributors.
 
-## What Didn't Go Well
+## What didn't
 
-- **Phantom `docs/` reference in Bilbo's first inventory.** Bilbo's opening doc inventory referenced a top-level `docs/` directory that may not exist as described. No artifact depended on it, so no defect was logged — but worth a verification sweep in a future run.
+- **prompt-engineer came in sparse.** 119 lines / 1 diagram — technically passes, but thinner than peers. The plugin genuinely has less internal structure (single-skill, no hooks, no sub-components), so this may be honest rather than a gap. Still worth flagging: a contributor looking for depth will find less here than elsewhere.
+- **delivery-team at the ceiling.** 250 lines exactly at the 250 target. One more section pushes it over. Next iteration should either raise the cap or factor out sub-diagrams into per-skill docs.
+- **No diagram syntax validation.** We grep-counted fences but didn't lint Mermaid syntax. A Write/Edit hook on ARCHITECTURE.md could catch malformed diagrams before commit.
 
-## Key Insight
+## Action items
 
-**Parallel discovery agents at Stage 1 are a multiplier for DOCS_ONLY pipelines.** When two independent perspectives (technical writing vs user experience) converge on the same top priorities, PO synthesis effort drops and downstream planning becomes higher-confidence. This pattern should be the default for docs-heavy runs.
-
-## Action Items
-
-- [x] Memory write: DOCS_ONLY parallel discovery insight -> `stages/development.md`
-- [x] Memory write: total_runs bump 22 -> 23, date 2026-04-11 -> `index.md`
-- [ ] BACKLOG: Verify Bilbo's inventory references match disk reality before relying on them in future runs.
+- [ ] BACKLOG: lightweight Mermaid syntax lint hook for ARCHITECTURE.md edits.
+- [ ] BACKLOG: revisit delivery-team/ARCHITECTURE.md budget before next major addition.

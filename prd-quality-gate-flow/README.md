@@ -2,6 +2,8 @@
 
 A production-grade agentic workflow system for managing Product Requirements Documents (PRDs) through a comprehensive 7-gate quality process.
 
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+
 ## Overview
 
 This system implements an evidence-based PRD workflow that:

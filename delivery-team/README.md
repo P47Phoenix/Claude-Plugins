@@ -2,6 +2,8 @@
 
 A full software delivery team with 11 specialized skills covering the complete delivery lifecycle from idea to release.
 
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+
 ## Overview
 
 The delivery team orchestrates Product Owners, Developers, Architects, QA Engineers, DevOps, UX/UI Designers, and simulated end users through a structured pipeline with self-correction, adversarial review, and self-learning memory. 11 specialized skills cover the complete delivery lifecycle.

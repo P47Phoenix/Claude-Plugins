@@ -2,6 +2,8 @@
 
 Production-grade research agent with auto-detection of research types, academic frameworks, and systematic investigation patterns.
 
+> See also: [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design and Mermaid diagrams for contributors.
+
 ## Overview
 
 This skill conducts structured, source-backed research across 5 research types. It applies academic frameworks for rigor and includes root cause analysis patterns for technical investigations.

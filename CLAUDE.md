@@ -24,6 +24,8 @@ Each plugin lives in its own top-level directory and follows this pattern:
 
 The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must be registered there with a unique ID, display name, and description.
 
+Each plugin should include an `ARCHITECTURE.md` with Mermaid diagrams documenting internal design for contributors.
+
 ## Available Plugins
 
 | Directory | Purpose |
