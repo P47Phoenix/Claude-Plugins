@@ -6,30 +6,17 @@ This guide gets you from zero to a running delivery pipeline in under 5 minutes.
 
 ---
 
-## Quick Start (3 Questions)
+## Quick Start (2 Questions)
 
-The full setup wizard asks 9+ questions about your project type, tech stack, team size, deployment, risk tolerance, compliance, checkpoints, collaboration patterns, personas, and enforcement. That is thorough but slow for someone who just wants to get going.
+The full setup wizard asks 9 questions about tech stack, team size, deployment, risk tolerance, compliance, checkpoints, collaboration patterns, personas, and enforcement. That is thorough but slow for someone who just wants to get going.
 
-**Quick-start mode** collapses all of that into 3 questions. Say "quick start", "quick setup", or "just get started" when the wizard launches.
+**Quick-start mode** collapses all of that into 2 questions. Say "quick start", "quick setup", or "just get started" when the wizard launches. (Project type is no longer a wizard question as of v2.7 — it is detected per run by Phase 1.)
 
-### Question 1: What are you building?
-
-Describe your project in one sentence. The wizard auto-detects the project type from your answer:
-
-| You Say | Detected Type |
-|---------|--------------|
-| "New web app from scratch" | GREENFIELD |
-| "Adding search to our API" | FEATURE |
-| "Fix the login crash" | BUG_FIX |
-| "New roguelike in Godot" | GAME_DEV+GREENFIELD |
-| "Investigate whether Redis fits" | SPIKE |
-| "Write API docs" | DOCS_ONLY |
-
-### Question 2: What language/framework?
+### Question 1: What language/framework?
 
 The wizard scans your codebase for languages and frameworks. It presents what it found and asks you to confirm or correct. If this is a greenfield project with no codebase yet, just tell it what you plan to use.
 
-### Question 3: How strict?
+### Question 2: How strict?
 
 Pick a strictness level. This sets checkpoints, collaboration patterns, enforcement, and ceremony in one shot.
 
@@ -39,7 +26,7 @@ Pick a strictness level. This sets checkpoints, collaboration patterns, enforcem
 | **Standard** | Balanced. Evaluator-optimizer + adversarial review + decision routing. Checkpoints at Refine and UAT. Source code hook on. |
 | **Strict** | Full ceremony. All 6 collaboration patterns. All 4 checkpoints. All enforcement on. |
 
-Everything else -- team size, deployment, compliance, personas, git strategy -- uses smart defaults derived from your project type and strictness level. You can always re-run `setup` later to fine-tune individual settings.
+Everything else -- team size, deployment, compliance, personas, git strategy -- uses smart defaults derived from your tech stack and strictness level. You can always re-run `setup` later to fine-tune individual settings.
 
 ---
 
@@ -86,7 +73,7 @@ delivery-team:alias-creator    Create custom character themes
 
 ## Your First Pipeline Run
 
-Here is a step-by-step walkthrough of a minimal pipeline run using quick-start mode.
+Here is a step-by-step walkthrough of a minimal pipeline run using quick-start mode (2 questions).
 
 ### Step 1: Start the Pipeline
 
@@ -96,11 +83,12 @@ This triggers `delivery-team:delivery-flow`. The orchestrator activates and chec
 
 ### Step 2: Quick-Start Wizard
 
-If no `.delivery/config.yml` exists, the wizard launches. Say "quick start" to use the 3-question mode:
+If no `.delivery/config.yml` exists, the wizard launches. Say "quick start" to use the 2-question mode:
 
-1. Describe what you are building.
-2. Confirm the detected tech stack (or specify it).
-3. Pick prototype / standard / strict.
+1. Confirm the detected tech stack (or specify it).
+2. Pick prototype / standard / strict.
+
+(Project type is detected per run by Phase 1 — it is no longer a wizard question as of v2.7.)
 
 The wizard generates `.delivery/config.yml` and initializes the `.delivery/` directory.
 
@@ -155,7 +143,7 @@ User Acceptance Testing runs. Simulated personas test the deliverables. You revi
 
 ## Smart Defaults Reference
 
-When quick-start mode runs, it derives all other settings from your project type and strictness level. Here is what you get by default.
+When quick-start mode runs, it derives all other settings from your tech stack and strictness level (project type is detected per run). Here is what you get by default.
 
 ### By Project Type
 

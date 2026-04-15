@@ -80,6 +80,11 @@ error: .delivery/artifacts/02-refine/po/constraints.yml is INVALID against const
 
 No prose inference, no AI variance — the validator is deterministic.
 
+> **Self-checking?** When validating `constraints.yml` against itself (e.g.,
+> `check_dod_constraints.py constraints.yml constraints.yml`), pass
+> `--skip-declarations` to suppress false positives from the
+> `forbidden_vocabulary` list matching its own contents.
+
 ## 7. Forbidden vocabulary (Architect stage only)
 
 At **decomposition**, your `constraints.yml` must not smuggle implementation detail into the decomposition — no cloud service names (Lambda, Kubernetes, Dynamo), no language names (Python, TypeScript, Go), no framework names (React, Django). Declare the banned tokens in `forbidden_vocabulary`; the Architect template pre-populates a sensible baseline. The DoD checker (`check_dod_constraints.py`) runs a case-insensitive whole-word grep over stage artifacts and fails on any hit.

@@ -87,7 +87,28 @@ For the config-key catalog, see `config-schema.md`.
 - **Fix:** Walk through `constraints-quickstart.md` and compare against working
   examples in `references/fixtures/`.
 
-## 10. "Where do I find…?"
+## 10. Loading an old config (v2.6 or earlier)
+
+- **Symptom:** At pipeline start you see `Migrated config v2.6 → v2.7: removed
+  project_type key (now detected per run)`.
+- **Cause:** Your `.delivery/config.yml` still has the deprecated `project_type`
+  key (and/or a `config_version` older than v2.7).
+- **Fix:** Re-run the `setup` command to persist the cleaned config, or simply
+  accept the in-memory migration — it has no functional impact. Phase 1 always
+  detects the project type per run; use `routing.force_type` if you want to pin
+  it intentionally.
+
+## 11. DoD check false-positives on constraints.yml self-comparison
+
+- **Symptom:** `check_dod_constraints.py constraints.yml constraints.yml` exits
+  1 with `forbidden_vocabulary` tokens "matching" themselves.
+- **Cause:** The script greps the artifact for forbidden tokens; when the
+  artifact *is* the constraints file, the declaration list itself triggers
+  matches against its own contents.
+- **Fix:** Pass the `--skip-declarations` flag — it pre-strips the
+  `forbidden_vocabulary` block before grepping, so only genuine leaks surface.
+
+## 12. "Where do I find…?"
 
 | Looking for | Location |
 |---|---|

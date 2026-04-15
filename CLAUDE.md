@@ -63,6 +63,9 @@ The marketplace registry is at `.claude-plugin/marketplace.json`. Plugins must b
 | Skill load verification | PostToolUse (Agent) | Verifies SKILL_LOADED signal in agent responses |
 | Empirical validation | SubagentStop (developer/godot) | Detects runtime-only acceptance criteria |
 
+**CI regression guards** (under `.github/workflows/`):
+- `workflow-injection-lint.yml` — fails PRs that interpolate `${{ github.event.* }}` directly inside workflow `run:` blocks (DEFECT-004 regression guard).
+
 ## Running Scripts
 
 All scripts are Python with no external dependency management. Run directly:

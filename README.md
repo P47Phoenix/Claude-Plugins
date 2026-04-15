@@ -47,6 +47,7 @@ Recent shipments across the marketplace:
 - **Transformation Planning** — an optional Architect sub-flow that walks brownfield migrations through AS-IS behavioural and structural analysis, a TO-BE design, and a sequenced roadmap. See `delivery-team/skills/architect/references/transformation-planning.md`.
 - **Paradigm-as-skill restructure** — the Architect now routes to paradigm sub-skills (volatility decomposition, strategic DDD) based on the problem, so only the relevant context loads.
 - **MTG Commander upgrades** — adversarial challenger agents, a user-authored `.mtg-commander.yml` config for price goals and escalation, and fixes for early-adopter defects.
+- **Defect sweep** — all 4 known defects closed (wizard drift, CK pricing, color identity, CI injection) plus regression guards: `.github/workflows/workflow-injection-lint.yml` and a `--skip-declarations` flag on `check_dod_constraints.py` for safe self-comparison.
 
 ## Getting Started
 
