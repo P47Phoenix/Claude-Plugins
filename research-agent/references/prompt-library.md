@@ -7,7 +7,7 @@ Documentation for the prompts embedded in `SKILL.md`. Each entry follows the pro
 ## Prompt 1: Research Type Classifier
 
 **Version:** 1.0 — 2026-03-21
-**Pattern Used:** Step-by-Step Analyzer with internal `<thinking>` reasoning
+**Pattern Used:** Step-by-Step Analyzer with Manual CoT Fallback scaffolding (see `prompt-engineer/SKILL.md#pattern-4-3`)
 **Recommended Model:** Claude Sonnet or Opus; Opus preferred for ambiguous multi-type questions
 
 ### Full Prompt (embedded in Phase 1 of SKILL.md)
