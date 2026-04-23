@@ -1,0 +1,44 @@
+{
+  "$schema_comment": "WI-02 4.7 baseline-capture artifact. Authoritative JSON; see 4-7-baseline.md for narrative derivation.",
+  "work_item": "WI-02",
+  "pipeline_id": "run-2026-04-22-4x7e",
+  "captured_at": "2026-04-22",
+  "skill_loaded_first_attempt_rate": 1.0,
+  "skill_loaded_first_attempt_rate_denominator": 13,
+  "skill_loaded_first_attempt_rate_numerator": 13,
+  "dispatch_counts_per_stage": {
+    "idea": 2,
+    "refine": 3,
+    "design": 0,
+    "architect": 2,
+    "plan": 6,
+    "development": 0,
+    "uat": 0
+  },
+  "dispatch_counts_total": 13,
+  "challenger_sample_path": ".delivery/artifacts/08-execute/06-dev/user-feedback/adversarial-4-7-sample.md",
+  "challenger_sample_status": "forward-reference — populated by WI-09",
+  "adversarial_review_sample_path": ".delivery/artifacts/08-execute/06-dev/user-feedback/delivery-flow-adversarial-sample.md",
+  "adversarial_review_sample_status": "forward-reference — Wave 1 did not run delivery-flow adversarial review; populated by a later WI",
+  "alias_announcement_samples": [
+    {
+      "theme": "lotr",
+      "rendered_text": "Entering Stage 5: Plan. Aragorn takes the sprint-plan: \"Hold your ground. Sons of the standup, of the retro, my brothers and sisters — I see in your eyes the same fatigue that would take the heart of me. But this sprint is not yet lost.\" Legolas draws test-strategy: \"My eyes see far. That edge case you thought was unreachable — I have already tested it.\" Samwise shoulders deploy-plan: \"I can't deploy the feature for you, Mr. Frodo, but I can carry the pipeline.\""
+    },
+    {
+      "theme": "business",
+      "rendered_text": "Entering Stage 5: Plan. Primary agents: Scrum Master (sprint-plan), QA Engineer (test-strategy), DevOps Engineer (deploy-plan). Depth: full. No alias personality injection active (business theme is the baseline professional theme)."
+    },
+    {
+      "theme": "star-wars",
+      "rendered_text": "Entering Stage 5: Plan. Obi-Wan Kenobi takes the sprint-plan: \"I sense a disturbance in the sprint. Someone is blocked but hasn't spoken up. Trust the process, trust your team.\" Yoda draws test-strategy: \"Tested this feature, I have. Pass it does not. Fix the null check, you must.\" Chewbacca shoulders deploy-plan: \"RRRAAAGGGHHH! [Translation: The deployment succeeded. The monitoring is green.]\""
+    }
+  ],
+  "audit_hook_warning_count": 0,
+  "audit_hook_source": "delivery-team/hooks/audit_agent_prompt.py",
+  "audit_hook_warning_triggers": [
+    "code_fence_count > 2 (possible artifact-content leak)",
+    "prompt_length > 5000 chars (possible content leak)",
+    "compound multi-role detection (multiple ROLE: declarations, 'also act as', 'you are X ... you are Y')"
+  ]
+}
