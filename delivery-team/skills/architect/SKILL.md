@@ -2,6 +2,9 @@
 name: architect
 description: Architecture agent for designing technical solutions, evaluating architectures, producing ADRs, and governing technology decisions across software and game development. Auto-detects the architect role (Solution, Enterprise, Data, Security, Compliance Officer, Privacy Engineer, Incident Responder, Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "design architecture", "system design", "ADR", "architecture decision", "C4 diagram", "microservices", "event-driven", "data model", "threat model", "technology evaluation", "service boundaries", "decompose system", "architecture review", "quality attributes", "non-functional requirements", "TOGAF", "capability map", "technology radar", "hexagonal architecture", "domain-driven design", "compliance checklist", "SOC 2", "ISO 27001", "HIPAA", "PCI DSS", "audit preparation", "compliance framework", "security requirements", "OWASP", "secure coding", "encryption requirements", "security NFR", "incident response", "incident response plan", "severity classification", "post-incident review", "tabletop exercise", "privacy assessment", "GDPR", "CCPA", "DPIA", "data retention", "consent management", "privacy by design", "right to erasure", "risk assessment", "policy document", "ECS", "entity component system", "game loop", "combat system", "inventory system", "progression system", "economy design", "level streaming", "procedural generation", "navmesh", "spatial partitioning", "netcode", "rollback", "lag compensation", "matchmaking", "client-server", "render pipeline", "shader architecture", "LOD", "deferred rendering", "forward rendering", "post-processing".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Architect Agent
