@@ -1,0 +1,43 @@
+name: Stale model-ID guard
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+      - '**/*.md'
+      - '!.delivery/**'
+
+permissions:
+  contents: read
+
+jobs:
+  stale-id-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for stale 4.x model IDs
+        run: |
+          set -uo pipefail
+          # Detect stale dated 4.x model IDs (opus 4.5/4.6, sonnet 4.5-dated, haiku 4-dated, opus-4-<date>)
+          # while allowlisting current canonical IDs:
+          #   - claude-opus-4-7 (current)
+          #   - claude-sonnet-4-6 (current)
+          #   - claude-haiku-4-5-20251001 (current)
+          # and skipping provenance comments (lines starting with # after the file:lineno: prefix)
+          # and markdown blockquotes (lines starting with >).
+          HITS=$(git ls-files '*.py' '*.md' ':!:.delivery/*' ':!:prd-quality-gate-flow/prd_flows.db' \
+            | xargs grep -En 'claude-(opus|sonnet|haiku)-4[-.][^7][^[:space:]"'"'"'#]*' 2>/dev/null \
+            | grep -vE 'claude-sonnet-4-6(\b|[^0-9-])' \
+            | grep -vE 'claude-haiku-4-5-20251001' \
+            | grep -vE '^[^:]+:[^:]+:[[:space:]]*#' \
+            | grep -vE '^[^:]+:[^:]+:[[:space:]]*>' \
+            || true)
+          if [ -n "$HITS" ]; then
+            echo "::error::Stale 4.x model IDs detected (Opus 4.5/4.6, Sonnet 4.5-dated, Haiku 4-dated, or retired dated Opus 4)."
+            echo "$HITS"
+            echo ""
+            echo "Fix: replace with canonical family IDs (claude-opus-4-7, claude-sonnet-4-6, claude-haiku-4-5-20251001)."
+            echo "If the reference is historical provenance, put it in a '#' comment or '>' blockquote."
+            exit 1
+          fi
+          echo "No stale 4.x model IDs found."

@@ -2,6 +2,9 @@
 name: presentation
 description: Presentation Composer — assembles team contributions into cohesive presentations through a 6-step collaboration flow (Assemble, Content Gate, Draft, Compose, Review Gate, User Review). Supports 9 types: Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary. Auto-detects type from user input or pipeline context. Produces structured markdown, Marp, paste-ready, or PPTX output. Triggers on phrases like "create presentation", "sprint review", "sprint demo", "what we delivered", "pitch", "propose", "sell this feature", "why we should build", "status update", "executive update", "progress report", "technical presentation", "architecture overview", "deep dive", "how it works", "present", "slide deck", "stakeholder update", "investor pitch", "fundraising deck", "pitch to investors", "roadmap", "quarterly plan", "what's coming next", "product demo", "feature demo", "show what we built", "demo for publisher", "onboarding", "project handoff", "team orientation", "getting started", "retro summary", "retrospective presentation", "what we learned".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Presentation Composer

@@ -2,6 +2,9 @@
 name: alias-creator
 description: This skill should be used when the user wants to create a custom agent alias theme, edit an existing theme, preview theme mappings, or manage alias configurations. Triggers on phrases like "create a theme", "new alias theme", "custom theme", "edit theme", "preview theme", "show themes", "list themes", "alias", "character theme", "personality theme", "add a theme".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Alias Theme Creator

@@ -2,6 +2,9 @@
 name: quality
 description: QA Engineer agent for test planning, test case design, automation strategy, and quality metrics. This skill should be used when users need test strategies, test cases, test plans, regression plans, test data design, exploratory testing guidance, quality metrics, or automation strategies. Auto-detects the testing task type and spawns a scoped sub-agent so only the relevant test reference is loaded into context. Triggers on phrases like "test cases", "test plan", "test strategy", "regression", "test data", "exploratory testing", "quality metrics", "automation strategy", "QA", "test coverage", "smoke test", "sanity test", "boundary testing", "edge cases".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # QA Engineer Agent
