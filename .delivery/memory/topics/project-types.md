@@ -1,6 +1,6 @@
 # Project Type Patterns
 
-**Entries**: 8 | **Last updated**: 2026-04-23
+**Entries**: 12 | **Last updated**: 2026-04-23
 
 ## GREENFIELD
 
@@ -17,6 +17,16 @@
 - Model-migration engagements (e.g., Opus 4.6→4.7) are a natural fit for this project type. PRD researches external model differences + repo-surface inventory; Architect produces AS-IS/TO-BE/Roadmap; implementation is a separate FEATURE engagement that inherits the plan. (validated: 1, last: run-2026-04-20-o4v7)
 
 - For modest-scope transformation planning (≤ 10 plugins, ≤ 10k LOC), single transformation-plan.md + 4-6 ADRs beats the 4-phase document split. The 4-doc split earns its cost on multi-team brownfield. (validated: 1, last: run-2026-04-20-o4v7)
+
+## FEATURE (execution of approved transformation plan)
+
+- **When a DESIGN pipeline's terminus is a transformation plan, the execution engagement runs as a FEATURE** — not a new GREENFIELD or a new DESIGN. Inputs are the plan + ADRs + upstream PRD; the FEATURE pipeline's Refine (light) decomposes the plan's WIs into Sprint stories rather than re-authoring requirements. Used namespace `08-execute/` to preserve upstream `01-idea/` through `04-architect/` artifacts verbatim. (validated: 1, last: run-2026-04-22-4x7e)
+
+- **Stage 3 Design skipped is a valid routing deviation for DX-only migrations.** No UX surface means no user flows, wireframes, component specs. Record the skip at state-entry with reason ("DX-only routing deviation"); do not conflate with silent fusion (R-09). (validated: 1, last: run-2026-04-22-4x7e)
+
+- **Per-wave commit cadence is defensible for mechanically-independent WI batches.** 14 WIs in 4 waves with deterministic wave-exit gates: per-wave commits (4 total) trade per-WI revert-granularity for audit-trail readability on the winning side. Pair with a Tier-1b partial-wave surgical-revert procedure to close the granularity gap. Rule of thumb: per-WI commits for behaviourally-coupled WIs; per-wave commits for mechanically-independent batches. (validated: 1, last: run-2026-04-22-4x7e)
+
+- **Honest readiness markers beat uniform readiness markers.** When migration scope splits across prose-reviewed keystones and mechanical backfills, use a two-tier stamp (`opus-4-7` vs `opus-4-7-frontmatter-only`) so a future reader can tell them apart. Pair with a backlog item tracking the upgrade path; do NOT mechanically restamp in a sweep. (validated: 1, last: run-2026-04-22-4x7e)
 
 ## BUG_FIX
 

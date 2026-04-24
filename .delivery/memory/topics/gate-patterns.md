@@ -1,6 +1,6 @@
 # Gate Failure Patterns
 
-**Entries**: 19 | **Last updated**: 2026-04-23
+**Entries**: 24 | **Last updated**: 2026-04-23
 
 ## Common Failure Patterns
 
@@ -32,3 +32,15 @@
 ## Signal Robustness (run-2026-04-20-o4v7)
 
 - **Signal blocks must be emitted early in sub-agent responses, not last.** Rate-limit interruptions can truncate the final response block; the artifact on disk may be complete while the STATUS line is lost. Orchestrator falls back to file-inspection. Consider front-loading the signal in agent prompts. (validated: 1, last: run-2026-04-20-o4v7)
+
+## Success-Gate Authoring (run-2026-04-22-4x7e)
+
+- **Allowlist-over-deny for mixed-version CI guards.** When a family migration is uniform (everything → N), a single deny regex suffices. When it is mixed (Opus → 4.7, Sonnet → 4.6, Haiku → 4.5-dated), only allowlist-over-deny survives the next bump. The 2026-04-22 canonical set pinned in `.github/workflows/stale-model-id-guard.yml`: `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001`. Everything else dated = stale. (validated: 1, last: run-2026-04-22-4x7e)
+
+- **Provenance comments + CI-guard allowlist travel as a named pair.** ADR-002's `# prior: <retired-id>` breadcrumb pattern is the feature; the CI guard's `^\s*#` exemption keeps the guard from fighting the feature. Edit one → review the other. (validated: 1, last: run-2026-04-22-4x7e)
+
+- **Success gates and the WIs that close them must be explicitly bound at plan time.** When §7 gate scope is wider than the nearest WI's edit surface, the gate or the WI is misscoped. Bind every §7 gate to the WI that closes it at Refine DoD time; Developer DoD dry-runs each gate to catch paper-trace gaps. Caught G-5 (WI-05 scope < §7.4 scope) in run-2026-04-22-4x7e; would have shipped a false-failing success gate. (validated: 1, last: run-2026-04-22-4x7e)
+
+- **PRD §7 stale-ID regexes must exempt provenance comments.** Canonical form: `! grep ... | grep -vE '^[^:]+:[[:space:]]*#'`, or use `git grep` with pathspec allowlists. F-UAT-01 in run-2026-04-22-4x7e: the literal one-liner returned exit 1 after the WI-10 sweep because of three intentional `# prior:` comments. Intent satisfied; literal gate broken. (validated: 1, last: run-2026-04-22-4x7e)
+
+- **Mid-run flags from impl WIs to later WIs are a cheaper safety net than upstream paper-review alone.** When an implementer notices an upstream contradiction that will bite a later WI, a `## Flag to WI-N — <title>` section in the dev-log lets the orchestrator route the correction before the flagged WI lands. Gimli's WI-10 → WI-14 mixed-version regex flag closed the ship-bug pre-merge. Codify as a first-class dev-log section in future engagements. (validated: 1, last: run-2026-04-22-4x7e)
