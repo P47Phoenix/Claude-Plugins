@@ -3,6 +3,9 @@ name: compliance-engineer
 description: Compliance Engineer role -- EMC pre-compliance, safety analysis, environmental compliance (RoHS, REACH, WEEE), regulatory documentation, and certification readiness for hardware projects.
 license: MIT License
 minimum_model_tier: Sonnet
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-23
+pattern_library_version: 4-7-1
 ---
 
 # Compliance Engineer

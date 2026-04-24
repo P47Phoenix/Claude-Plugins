@@ -2,6 +2,9 @@
 name: hardware-team
 description: Hardware delivery team with 8-stage pipeline orchestrator for structured hardware product development. Coordinates 6 hardware roles (HW Product Owner, Electrical Engineer, PCB Layout Engineer, Manufacturing Engineer, Compliance Engineer, Test Engineer) through concept-to-production pipeline. Consumes kicad-happy skills for component sourcing, fabrication, analysis, and documentation.
 license: MIT License - See LICENSE.txt
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-23
+pattern_library_version: 4-7-1
 ---
 
 # Hardware Team Plugin

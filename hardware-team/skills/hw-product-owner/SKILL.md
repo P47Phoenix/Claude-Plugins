@@ -3,6 +3,9 @@ name: hw-product-owner
 description: Hardware Product Owner role -- manages hardware requirements, BOM budgets, trade-offs between performance/cost/schedule, stakeholder communication, feasibility analysis, and make-vs-buy decisions for hardware projects.
 license: MIT License
 minimum_model_tier: Haiku
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-23
+pattern_library_version: 4-7-1
 ---
 
 # Hardware Product Owner
