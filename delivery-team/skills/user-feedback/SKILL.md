@@ -2,6 +2,9 @@
 name: user-feedback
 description: Simulated end-user feedback agent that spawns persona-based sub-agents to review product artifacts from real user perspectives. Built-in persona library covers gamers (casual, hardcore, speedrunner, completionist, social, accessible, mobile), web/app users (power user, average, first-time, non-technical, accessible), enterprise/B2B (admin, end user, manager, IT/security), and demographic overlays (Gen Z, Millennial, Gen X, Boomer). Supports custom persona definition. Triggers on phrases like "user feedback", "persona feedback", "simulated user", "playtest", "user testing", "audience feedback", "focus group", "persona review", "target audience", "user perspective", "gamer feedback", "what would users think", "would users like this", "accessibility review from user", "run a focus group".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # User Feedback Agent

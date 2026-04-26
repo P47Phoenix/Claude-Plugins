@@ -1,0 +1,30 @@
+QUERY: What are the current best practices for retrieval-augmented generation (RAG) citation formats as of 2025-2026? Specifically, what structured citation shape do API-grounded systems emit, and what evaluation dimensions do academic benchmarks use to score citation quality?
+SIMULATED_VIA: self-dogfood (orchestrator-dispatched developer sub-agent uses WebFetch/WebSearch directly; we cannot spawn research-agent and capture a true sub-agent transcript from inside a sub-agent, so the developer probes the same tool surface the research-agent would call)
+DATE: 2026-04-22
+
+---
+
+WebSearch(query="retrieval-augmented generation RAG citation formats best practices 2025 2026")
+Result summary: Multiple 2025 sources identified, incl. ACL Anthology Coling-2025 "Enhancing Retrieval-Augmented Generation: A Study of Best Practices" (https://aclanthology.org/2025.coling-main.449/), arXiv:2501.07391, an MDPI Systematic Literature Review (https://www.mdpi.com/2504-2289/9/12/320), and a July-2025 systematic review on arXiv 2507.18910. Cross-source consensus: (a) pass sources as structured list w/ metadata (category, publish date) rather than concatenated prose; (b) evaluate citation quality on two axes — faithfulness/groundedness and citation precision; (c) Self-RAG / SELF-RAG trains the model to decide when to retrieve and to self-critique, improving attribution rates vs prompt-only approaches; (d) prefer snippet-with-anchor granularity over whole-document citations so the user can verify.
+
+WebFetch(url=https://docs.anthropic.com/en/docs/build-with-claude/citations)
+Result summary: Redirected 301 -> https://platform.claude.com/docs/en/docs/build-with-claude/citations (noted as distinct host for the probe).
+
+WebFetch(url=https://platform.claude.com/docs/en/docs/build-with-claude/citations)
+Result summary: Anthropic's production RAG citation shape. Enable via `citations: { enabled: true }` on each document block; must be uniform (all docs or none). Three document types: (1) plain-text -> sentence-chunked, emits `char_location` with 0-indexed `start_char_index` / exclusive `end_char_index`; (2) PDF -> sentence-chunked on extracted text, emits `page_location` with 1-indexed `start_page_number` / exclusive `end_page_number` (scanned/image-only PDFs are not citable); (3) custom content -> no further chunking, emits `content_block_location` with 0-indexed block indices. Every citation object carries: `type`, `cited_text` (verbatim, does NOT count toward output tokens), `document_index` (0-indexed across ALL docs in the request), `document_title`, and the type-specific range. Response model interleaves text blocks: plain text segments have no `citations`, claim-bearing segments carry one or more citation objects. Cost/feature notes: citations compose with prompt caching (cache the document blocks via `cache_control: { type: "ephemeral" }`); cited_text also does NOT count against input tokens when passed back in later turns; citations are INCOMPATIBLE with Structured Outputs (API 400 if both set) because citation interleaving conflicts with strict JSON-schema output.
+
+WebFetch(url=https://arxiv.org/abs/2305.14627)
+Result summary: ALCE benchmark (Gao et al.) — "Enabling Large Language Models to Generate Text with Citations." Evaluates cited generation on three axes: fluency, correctness, and CITATION QUALITY. Headline finding: on ELI5, even best models lack complete citation support ~50% of the time, i.e. the cited passages fail to entail the claim. The abstract does not enumerate citation granularity explicitly but the three-axis scoring frame (fluency / correctness / citation quality) is now the de-facto ALCE rubric that later 2025 surveys reuse.
+
+---
+
+OUTPUT:
+
+1. As of 2026-Q2, production RAG systems (exemplar: Anthropic Messages API) emit citations as structured objects with: type-tagged location (char_location | page_location | content_block_location), verbatim cited_text, document_index, document_title, and exclusive end indices. (https://platform.claude.com/docs/en/docs/build-with-claude/citations)
+2. Citations are interleaved with text blocks inside the same response content array — claim-bearing text blocks carry a `citations` list; filler text does not. This is strictly finer-grained than "footnote at the end" prompt-based approaches. (https://platform.claude.com/docs/en/docs/build-with-claude/citations)
+3. cited_text is free in both directions: not counted toward output tokens on emission, not counted toward input tokens when replayed in later turns — so there is no token-cost disincentive for quoting precisely. (https://platform.claude.com/docs/en/docs/build-with-claude/citations)
+4. Citations are INCOMPATIBLE with Structured Outputs in the same request (API returns 400) — cited generation and strict-JSON output are mutually exclusive in the current API contract. (https://platform.claude.com/docs/en/docs/build-with-claude/citations)
+5. Academic evaluation uses the ALCE three-axis rubric: fluency, correctness, and citation quality (precision + recall of support). ALCE's 2023 finding — best models miss ~50% of complete citation support on long-form QA — remains the baseline 2025 systematic reviews cite. (https://arxiv.org/abs/2305.14627)
+6. 2025 consensus best practices: pass sources as a structured list with metadata (category, publish date); prefer snippet-anchored citations the user can click-verify; use Self-RAG-style self-critique to lift attribution. (https://aclanthology.org/2025.coling-main.449/, https://arxiv.org/abs/2501.07391)
+
+URL-PER-CLAIM CHECK: Each numbered claim above carries at least one inline URL. PASS.

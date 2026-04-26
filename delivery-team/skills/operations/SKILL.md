@@ -2,6 +2,9 @@
 name: operations
 description: Operations agent for DevOps, release management, and technical writing. Auto-detects the operations role (DevOps, Release Manager, Technical Writer) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "CI/CD", "pipeline", "deployment", "infrastructure", "monitoring", "Docker", "Kubernetes", "terraform", "release plan", "versioning", "rollback", "feature flag", "go/no-go", "API docs", "documentation", "user guide", "runbook", "release notes", "tutorial", "changelog", "deployment strategy", "blue-green", "canary", "rolling deployment", "observability", "SLO", "SLI", "incident", "postmortem", "on-call", "release train", "SemVer", "CalVer", "hotfix", "feature toggle", "kill switch", "OpenAPI", "Swagger", "Diataxis", "style guide", "documentation-as-code", "escalation", "alerting", "capacity planning".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Operations Agent

@@ -3,6 +3,9 @@ name: pcb-layout-engineer
 description: PCB Layout Engineer role -- physical board layout, component placement, routing, stackup definition, impedance control, and DRC validation for hardware projects.
 license: MIT License
 minimum_model_tier: Sonnet+
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-23
+pattern_library_version: 4-7-1
 ---
 
 # PCB Layout Engineer

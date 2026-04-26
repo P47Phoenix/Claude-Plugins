@@ -3,6 +3,9 @@ name: electrical-engineer
 description: Electrical Engineer role -- schematic capture, component selection, SPICE simulation, power architecture, signal integrity analysis, and firmware interface documentation for hardware projects.
 license: MIT License
 minimum_model_tier: Sonnet
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-23
+pattern_library_version: 4-7-1
 ---
 
 # Electrical Engineer

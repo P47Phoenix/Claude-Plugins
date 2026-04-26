@@ -1,0 +1,35 @@
+name: SKILL.md header warn
+
+on:
+  pull_request:
+    paths:
+      - '**/SKILL.md'
+
+permissions:
+  contents: read
+
+jobs:
+  header-warn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check SKILL.md header coverage
+        id: header-check
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          MISSING=$(git ls-files '*SKILL.md' ':!:.delivery/*' | xargs grep -L 'model_awareness:' || true)
+          if [ -n "$MISSING" ]; then
+            {
+              echo "### SKILL.md files missing model_awareness header"
+              echo ""
+              echo "$MISSING" | while read -r f; do echo "- $f"; done
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "missing=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "All SKILL.md files have the model_awareness header."
+          fi
+      - name: Warn if any missing
+        if: steps.header-check.outputs.missing == '1'
+        run: |
+          echo "::warning::One or more SKILL.md files are missing the model_awareness header. See job summary."

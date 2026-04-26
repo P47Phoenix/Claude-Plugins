@@ -2,6 +2,9 @@
 name: ui
 description: UI/UX design agent for crafting user experiences, visual designs, and game interfaces. Auto-detects the designer role (UX Designer, UI Designer, Game UI Designer) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "user flow", "journey map", "user research", "persona", "usability", "wireframe", "information architecture", "design system", "design tokens", "component spec", "visual design", "style guide", "interaction design", "accessibility", "WCAG", "UI pattern", "game UI", "HUD", "game menu", "inventory UI", "health bar", "minimap", "dialog system", "game overlay", "game HUD", "quest log", "crafting UI".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # UI/UX Design Agent

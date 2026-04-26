@@ -2,6 +2,9 @@
 name: agentic-flow-builder
 description: Guide for building dynamic agentic flows using ReAcTree hierarchical decomposition and Anthropic's workflow patterns. This skill should be used when users want to create complex multi-step agent workflows with deterministic gates, business rules, and comprehensive audit trails.
 license: MIT License - See repository LICENSE file
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Agentic Flow Builder

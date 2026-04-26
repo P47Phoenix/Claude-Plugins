@@ -2,6 +2,9 @@
 name: delivery-flow
 description: Delivery pipeline orchestrator that coordinates the full delivery team through 7 stages (Idea, Refine, Design, Architect, Plan, Development, UAT) with auto-detection of project type, self-correction loops, adversarial review, multi-perspective review boards, team Definition of Done validation, dynamic escalation, debate for contested decisions, consensus for cross-team alignment, and self-learning memory. Triggers on phrases like "delivery pipeline", "full delivery", "end-to-end delivery", "start project", "new project", "greenfield", "new feature", "bug fix", "spike", "POC", "proof of concept", "game project", "delivery flow", "run pipeline", "start pipeline", "deliver this", "build and ship", "start delivery", "kick off project".
 license: Apache License 2.0 - See repository LICENSE file
+model_awareness: opus-4-7
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Delivery Flow Orchestrator
@@ -61,6 +64,13 @@ as sub-agents with isolated context.
 7. **Context isolation.** Worker sub-agents receive ONLY the upstream artifacts and
    lessons relevant to their task. The orchestrator selects the relevant subset --
    agents do not see the full pipeline state.
+
+> **Model awareness (Opus 4.7):** Under F-08, the 4.7 runtime dispatches fewer
+> sub-agents by default unless explicitly steered. This elevates "One Role = One
+> Sub-Agent" (see Phase 4) from a stylistic convention to a **behaviourally
+> load-bearing** gate. Role-count under-dispatch is the highest-confidence
+> regression mode for this pipeline on 4.7 — treat the principle as a hard
+> invariant, not a style preference.
 
 ---
 
@@ -342,6 +352,13 @@ Violations (to avoid):
 - Pasting prior-loop findings into a new reviewer's prompt to "save a call".
 
 The agent prompt audit hook (`audit_agent_prompt.py`) warns on compound-role patterns.
+
+> **Model awareness (Opus 4.7):** On 4.7, silent sub-agent fusion is the
+> highest-confidence regression mode (F-08 — reduced default dispatch breadth).
+> The stylistic convention above is now a behavioural gate: the count of
+> dispatched roles at each DoD checkpoint MUST equal the length of
+> `dod_validators.<stage>` in `.delivery/config.yml`. A short-count dispatch is
+> not a style miss; it is a Prime Directive violation under 4.7 semantics.
 
 ### Two-Channel Communication
 

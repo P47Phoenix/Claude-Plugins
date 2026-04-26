@@ -14,6 +14,10 @@ REQUIRED_STAGE_FIELDS = {"name", "description", "node_type", "config"}
 REQUIRED_CONFIG_FIELDS = {"agent_type", "goal", "model"}
 
 
+# NOTE (2026-04-22): the `model` values below (`claude-sonnet`, `claude-haiku`) are internal
+# routing labels — they never reach the Anthropic SDK. Canonical API model IDs live in
+# agent_registry.py per ADR-002. flow_orchestrator.py simulates agent execution and does not
+# dispatch to Anthropic; see _simulate_agent_output. Do not substitute dated IDs here.
 STAGE_DEFINITIONS = [
     # Stage 1: PRD Creation
     {

@@ -3,6 +3,9 @@ name: manufacturing-engineer
 description: Manufacturing Engineer role -- DFM/DFA review, panelization, yield optimization, production transfer, and BOM management for hardware projects.
 license: MIT License
 minimum_model_tier: Sonnet
+model_awareness: opus-4-7-frontmatter-only
+last_audited: 2026-04-23
+pattern_library_version: 4-7-1
 ---
 
 # Manufacturing Engineer

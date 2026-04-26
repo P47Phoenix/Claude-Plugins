@@ -3,6 +3,9 @@ name: prompt-engineer
 description: Expert prompt optimization for LLMs and AI systems. Use PROACTIVELY when building AI features, improving agent performance, or crafting system prompts. Masters prompt patterns and techniques.
 tools: Read, Write, Edit
 model: opus
+model_awareness: opus-4-7
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
 ---
 
 # Prompt Engineer
@@ -82,7 +85,7 @@ When users need help with prompts:
 - Emphasis on helpful, harmless, honest principles
 - Strong XML tag support for structure
 - Excellent at following detailed instructions
-- Use thinking tags `<thinking>` for reasoning visibility
+- `<thinking>` tags in few-shot examples or agent-authored prompts are PROMPT SCAFFOLDS that nudge chain-of-thought generation inside the response body. They are NOT the same as Anthropic's extended thinking / `thinking: { type: "enabled" }` API surface (F-13, F-29), which is a separate first-class API mechanism for server-side reasoning. On Opus 4.7 with adaptive thinking, manual `<thinking>` scaffolds may duplicate the model's own reasoning — evaluate case-by-case (F-26, F-29) and prefer the API lever on 4.7.
 - Constitutional AI techniques work well
 
 **GPT (OpenAI)**
@@ -340,6 +343,83 @@ Synthesis:
 ```
 
 **When to use:** Complex decisions, bias reduction, comprehensive analysis
+
+## Model-specific optimisation — Claude Opus 4.7
+
+This sub-section isolates 4.7-only guidance so future model migrations can replace it surgically without touching the rest of the pattern library.
+
+**Adaptive thinking is the only thinking-on mode (F-11).** The legacy `thinking: { "type": "enabled", "budget_tokens": N }` surface is gone on 4.7. Callers now pass `extended_thinking: { "effort": "<level>" }` instead. Do not emit `budget_tokens` in new 4.7 code paths; do not port it forward from 4.5/4.6 snippets.
+
+**Effort levers (F-15).** Valid values: `low`, `medium`, `high`, `xhigh`, `max`. Guidance:
+- `low` / `medium` — short conversational turns, cheap classification, routing decisions.
+- `high` — default for most agentic skill work.
+- `xhigh` — **recommended default for coding and agentic workloads on Opus 4.7.** Delivers the deepest single-turn reasoning the model is tuned to exploit without crossing into `max` latency.
+- `max` — escalation-only: multi-hour root-cause work, hard architectural trade-offs, contested debates. Expect latency cost.
+
+**Sampling levers (temp / top_p / top_k).** 4.7 exhibits behavioural changes at elevated temperature — treat defaults (temp ~1.0, top_p unset, top_k unset) as the calibrated baseline. Raise temperature only for creative ideation; do NOT raise it for agentic tool-use or code generation, where it degrades tool-call fidelity on 4.7. If a 4.5/4.6 prompt relied on `temperature: 0` for determinism, re-test on 4.7 before porting — adaptive thinking already suppresses most of the non-determinism that setting used to guard against.
+
+**When in doubt on 4.7:** leave sampling alone, pick an `effort` level, and let the model handle its own reasoning budget.
+
+### Pattern 4.1 — Versioned Model Reference
+
+Python and YAML/JSON config callers must name model IDs with a provenance comment so drift is auditable (F-01, F-03, F-04). Example:
+
+```python
+MODEL_ID = "claude-opus-4-7"  # canonical 2026-04-22
+```
+
+Comment format: `# canonical <YYYY-MM-DD>` where the date matches the skill's `last_audited` frontmatter. Never hardcode a bare model ID without the comment — reviewers need one grep to find every pinned reference.
+
+### Pattern 4.2 — 4.7-Aware Role Prompt Skeleton
+
+Every agent dispatch (sub-agent invocation, delegated task, role-scoped prompt) uses the same shape so 4.7 extended-thinking + adaptive routing stays consistent across the codebase:
+
+```
+SKILL: <skill-name>
+TASK_TYPE: <type>
+ROLE: <role>
+ALIAS: <alias, if any>
+INPUT ARTIFACTS: <paths or inline blocks>
+YOUR TASK: <imperative, scoped>
+OUTPUT: <artifact path + structure>
+SIGNAL BLOCK: <STATUS/ARTIFACT/SUMMARY triple>
+```
+
+The signal block at the end is load-bearing — it lets orchestrators parse completion without re-reading the full response body.
+
+### Pattern 4.3 — Manual CoT Fallback
+
+`<thinking>` tags in few-shot examples function as PROMPT SCAFFOLDS that nudge chain-of-thought generation in the response body. They are NOT a reasoning-visibility mechanism and NOT equivalent to Anthropic's extended-thinking API (cross-reference F-29, F-13). Use this pattern when:
+- The caller is on a model/runtime without extended-thinking support.
+- The caller wants CoT rendered inline in the visible response body (e.g., for human audit).
+- Few-shot examples need to demonstrate intermediate reasoning steps.
+
+On Opus 4.7 with adaptive thinking enabled, prefer the API lever (see Model-specific optimisation above) and omit the scaffold to avoid duplicated reasoning.
+
+### Pattern 4.4 — Calibrated Instruction Voicing
+
+Default voicing is plain imperative: "Use …", "Do …", "Return …". Reserve high-intensity markers (`CRITICAL:`, `You MUST`, `NEVER`, `ALWAYS`) for irreversible or safety-critical constraints only (F-28, F-25). Overusing them on 4.7 flattens the signal — when everything is CRITICAL, nothing is. Guideline:
+- Routine instruction → imperative verb first.
+- Recoverable mistake → "Prefer …" / "Avoid …".
+- Irreversible consequence (data loss, secret leak, prod impact) → `CRITICAL:` / `NEVER`.
+
+### Pattern 4.5 — Model-Specific Optimisation Sub-section
+
+Isolate 4.7-only guidance in a single named sub-section per model (see "Model-specific optimisation — Claude Opus 4.7" above for the live example). Rationale: when the next model lands, a reviewer replaces exactly one sub-section without re-reading the rest of the pattern library. Naming convention: `## Model-specific optimisation — <Vendor> <Model> <Version>`.
+
+### Pattern 4.6 — SKILL.md Forward-Compatibility Header
+
+Per ADR-006, every SKILL.md carries three frontmatter fields alongside the legacy `name` / `description`:
+
+```yaml
+model_awareness: opus-4-7
+last_audited: 2026-04-22
+pattern_library_version: 4-7-1
+```
+
+- `model_awareness` — the model generation the skill was authored or last re-audited against.
+- `last_audited` — ISO-8601 date of the most recent review against that model.
+- `pattern_library_version` — version tag of `prompt-engineer/SKILL.md` the skill is aligned to (enables reverse-lookup when the library bumps).
 
 ## Prompt Evaluation Criteria
 
