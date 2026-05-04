@@ -28,6 +28,8 @@
 
 - **Honest readiness markers beat uniform readiness markers.** When migration scope splits across prose-reviewed keystones and mechanical backfills, use a two-tier stamp (`opus-4-7` vs `opus-4-7-frontmatter-only`) so a future reader can tell them apart. Pair with a backlog item tracking the upgrade path; do NOT mechanically restamp in a sweep. (validated: 1, last: run-2026-04-22-4x7e)
 
+- **FEATURE-execution-of-pre-planned-waves with binding-decisions-in-memory pattern**: when a multi-wave initiative pre-loads its conflict rulings + per-skill model map + tier values into a memory topic file (e.g., `topics/skill-token-economy.md`), the FEATURE pipeline runs WITHOUT re-debating decisions during stage execution. At run-2026-05-03-tk0e Wave 0, 4 of 7 stages passed first-try DoD; the 3 that didn't were caught by runs-the-command Dev DoD or cross-doc consistency Tech Writer DoD, not by re-litigating decisions. Action: for any multi-wave initiative, author a `topics/<initiative>.md` memory file BEFORE invoking delivery-flow; treat it as binding context. (validated: 1, last: run-2026-05-03-tk0e)
+
 ## BUG_FIX
 
 - Consolidating 2-4 small open defects + follow-ups into one BUG_FIX sweep is more efficient than per-defect pipelines when they share a domain. Light DoD sufficient. (validated: 1, last: run-2026-04-11-g8h5)

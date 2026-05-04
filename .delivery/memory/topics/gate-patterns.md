@@ -44,3 +44,7 @@
 - **PRD §7 stale-ID regexes must exempt provenance comments.** Canonical form: `! grep ... | grep -vE '^[^:]+:[[:space:]]*#'`, or use `git grep` with pathspec allowlists. F-UAT-01 in run-2026-04-22-4x7e: the literal one-liner returned exit 1 after the WI-10 sweep because of three intentional `# prior:` comments. Intent satisfied; literal gate broken. (validated: 1, last: run-2026-04-22-4x7e)
 
 - **Mid-run flags from impl WIs to later WIs are a cheaper safety net than upstream paper-review alone.** When an implementer notices an upstream contradiction that will bite a later WI, a `## Flag to WI-N — <title>` section in the dev-log lets the orchestrator route the correction before the flagged WI lands. Gimli's WI-10 → WI-14 mixed-version regex flag closed the ship-bug pre-merge. Codify as a first-class dev-log section in future engagements. (validated: 1, last: run-2026-04-22-4x7e)
+
+## Mandatory-Rollout Side-Effects (run-2026-05-03-tk0e)
+
+- **Any "add 1 line to N files" rollout MUST simulate the per-file line delta before commit; near-budget edges become budget violations.** Wave 0 added `tier:` frontmatter to all 13 delivery-team SKILL.md files (+1 line each) — alias-creator was at exactly 200 lines (Tier-C limit) and crossed to 201, becoming over-budget by the very gate the rollout was introducing. Action: any mass rollout MUST run `wc -l` against the target set BEFORE the rollout to identify files at-or-near-limit; either pre-trim those files in the same WI or pre-register them as known-debt. (validated: 1, last: run-2026-05-03-tk0e)

@@ -180,3 +180,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .claude/settings.local.json
+
+# Skill telemetry (runtime accumulation; W0-1 hook auto-creates this dir)
+.delivery/telemetry/
