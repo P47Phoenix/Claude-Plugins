@@ -54,3 +54,7 @@
 - Keep ALL documentation (CLAUDE.md, README.md, delivery-team/README.md, marketplace.json) up to date when planning future work. (validated: 1)
 - After any pipeline run that changes features, hooks, skills, or config: update affected doc files as part of the Dev or UAT stage — not as a separate follow-up.
 - "Stale docs are worse than no docs — they teach the wrong thing with authority."
+
+## Lotr Theme Performance
+
+- **Lotr theme `personality_strength: full` performs cleanly when prompts explicitly separate "narrative framing" (in-character) from "artifact body" (neutral).** At run-2026-05-03-tk0e, Gandalf/Celebrimbor/Aragorn/Legolas/Gimli/Sam/Bilbo all stayed in voice in signal-block summaries while keeping artifact bodies (PRDs, ADRs, sprint plans, code) in standard professional format. No content bleed observed across 30+ Agent dispatches. The pattern: Agent prompts MUST include "Stay in-character for narrative framing, NOT inside artifact body." Without that disambiguation, character voice can leak into artifacts. (validated: 1, last: run-2026-05-03-tk0e)

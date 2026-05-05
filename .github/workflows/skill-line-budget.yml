@@ -1,0 +1,30 @@
+name: SKILL.md line-budget gate
+
+on:
+  pull_request:
+    paths:
+      - 'delivery-team/**/SKILL.md'
+      - 'governance/skill-budgets.json'
+
+permissions:
+  contents: read
+
+jobs:
+  budget-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SKILL.md line budgets
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -uo pipefail
+          python3 scripts/check_skill_budgets.py
+
+      - name: Permissive-language scan (warn-only)
+        if: always()
+        run: |
+          set -uo pipefail
+          python3 scripts/check_skill_budgets.py --warn-permissive >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          echo "Permissive-language scan complete (warn-only, never blocks merge)."
