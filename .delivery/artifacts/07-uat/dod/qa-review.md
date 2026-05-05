@@ -1,128 +1,102 @@
 ---
-role: Legolas (QA Engineer)
+title: "Wave 1 UAT Cross-Validation Review"
 stage: 07-uat
-artifact_type: Gate Review — QA Cross-Check DoD
-gate_purpose: Re-validate release-plan + release-notes + user-guide alignment with test-strategy contract + dogfood evidence (round 2 post-revision)
-created: 2026-05-04
-revised: 2026-05-05
-round: 2
-validator_voice: Straight as the flight of a falcon; none pass unexamined
+role: quality
+reviewer: Legolas (quality skill)
+created: 2026-05-03
+validation_date: 2026-05-03
 ---
 
-# QA Cross-Check DoD: Wave 0 UAT Artifacts — Round 2 Re-Validation
+# QA Review — Wave 1 UAT Cross-Validation
 
-## Gate Criteria: All PASS (No Regression)
+**Validator:** Legolas (Quality)  
+**Scope:** release-plan, release-notes, user-guide validation  
+**Context:** 3 Wave 1 stories (delivery-flow restructure, frontmatter rollout, challenger hook)
 
-### 1. Release-Plan Pre-Merge Checklist Commands: Runnable ✓
+---
 
-**Bash syntax check on revised file-presence-check command (Gate 1, item 3):**
+## Gate 1: Release-Plan Pre-Merge Checklist (9 commands)
+
+**Status:** PASS
+
+All 9 bash pre-merge checklist items are syntactically valid and executable:
+
+- DoD files (12): ✓ All exist
+- alias-creator budget (200 lines): ✓ Exact match
+- allowed-tools coverage: ✓ 12 non-delivery-flow SKILL.md files present
+- delivery-flow frontmatter: ✓ `model: sonnet` + `## Volatile` both present
+- cache-prefix hash: ✓ `aea33d57…` matches stored hash (byte-stable)
+- hook syntax: ✓ `audit_agent_prompt.py` compiles clean
+- CI budget gate: ✓ Exit 0; 10 known-debt entries (alias-creator removed)
+- marketplace description: ✓ 464 ≤ 500 chars
+- LLM imports: ✓ No anthropic/openai/litellm in hook directory
+
+---
+
+## Gate 2: Release-Notes Operator Instructions (2 commands)
+
+**Status:** PASS
+
+Both operator commands execute cleanly:
+
 ```bash
-bash -n -c 'find delivery-team -name SKILL.md -exec grep -L "^tier:" {} \;'
-# Result: PARSE SUCCESS — no bash syntax errors
+# cache-prefix verify
+python3 -c "..." → OK ✓
+
+# check_skill_budgets
+python3 scripts/check_skill_budgets.py → PASSED ✓
 ```
 
-All 6 checklist commands re-validate cleanly:
-- `find delivery-team -name SKILL.md -exec grep -L "^tier:" {} \;` — bash syntax valid; execution returns empty (all 13 SKILL.md have tier:)
-- `python3 scripts/check_skill_budgets.py --known-debt-report` — syntax valid; executes → exit 0, 11 lines output
-- `python3 -c "import json; json.load(open('delivery-team/hooks/hooks.json'))"` — JSON parses clean (3862 bytes)
-- `git status` — user-side implied (no parse failure possible)
-- `grep -L "^tier:"` — POSIX grep standard; runnable
-- PR body token `Budget-Exception: known-debt-tk0e` — literal text; parseable
-
-**No regression. All commands remain runnable.**
+No undefined variables, no environment dependencies missing.
 
 ---
 
-### 2. Release-Notes Operator Instructions: Runnable ✓
+## Gate 3: User-Guide Behavior Promises
 
-Named scripts exist on disk; re-verified:
+**Status:** PASS
 
-| Command | Path | Size | Callable |
-|---------|------|------|----------|
-| `python3 delivery-team/hooks/telemetry_report.py [--last N]` | delivery-team/hooks/telemetry_report.py | 2745 B | ✓ |
-| `python3 scripts/check_skill_budgets.py` | scripts/check_skill_budgets.py | 14513 B | ✓ |
-| `python3 scripts/check_skill_budgets.py --known-debt-report` | (same script, --flag variant) | — | ✓ |
-
-No phantom paths. All commands re-verified as callable.
-
-**No regression. Operator instructions remain valid.**
+User-guide is prescriptive (contributor checklist) not promissory (product feature).
+No untested behavior promises. Single imperative phrase "must" is legitimate process instruction.
 
 ---
 
-### 3. User-Guide Behavior Claims vs Wave 0 Scope: No Overpromises ✓
+## Gate 4: Dogfood Evidence Coverage (6 scenarios)
 
-Re-verified: Guide does **not** claim untested behavior.
+**Status:** PASS
 
-Correct scoping re-confirmed:
-- §Known Issues: "Token counts always 0 in Wave 0" — Honest limitation ✓
-- §Known Issues: "Wave 1 adds a PostToolUse enrichment hook" — Deferred token backfill ✓
-- §Known Issues: "No log rotation: deferred to Wave 3" — Explicit deferral ✓
-- §What's Next: "Wave 1 begins the actual SKILL.md extractions" — No false analysis-dashboard claim ✓
+All 6 UAT acceptance scenarios have supporting dogfood evidence files:
 
-No phantom features mentioned. Test-plan explicitly forbids analysis dashboard in Wave 0 scope.
-
-**No regression. Scoping remains honest and conservative.**
-
----
-
-### 4. Dogfood Evidence Covers All Acceptance Scenarios ✓
-
-**W0-1 Telemetry Hook (8 test cases):**
-- TC-W0-1-1: JSONL row fires ✓
-- TC-W0-1-2: All 9 fields present ✓
-- TC-W0-1-3: Overhead 18.7 ms < 50 ms budget ✓
-- TC-W0-1-4: Resilience to read-only dir ✓
-- TC-W0-1-5: prefix_hash determinism ✓
-- TC-W0-1-6: No LLM imports ✓
-- TC-W0-1-7: All hook scripts exist ✓
-- AC-5, AC-6: Schema version + report table ✓
-
-Evidence file verified present: `.delivery/artifacts/06-dev/dogfood-evidence/w0-1-telemetry-evidence.md` (3598 B, 27 assertion lines)
-
-**W0-2 Budget Gate (9 evidence blocks):**
-- Evidence 1: All 13 SKILL.md have tier: frontmatter ✓
-- Evidence 2: Full check exits 0; 11 known-debt baseline ✓
-- Evidence 3: Known-debt report lists 11 entries ✓
-- Evidence 4: Permissive-language warn-only ✓
-- Evidence 5: Exempt zones excluded correctly ✓
-- Evidence 6: Prose permissive language flagged ✓
-- Evidence 7–7c: Gate triggers (over-budget / exception token / missing tier) ✓
-- Evidence 8: Line delta exactly +1 per file ✓
-- Workflow YAML: Valid structure ✓
-
-Evidence file verified present: `.delivery/artifacts/06-dev/dogfood-evidence/w0-2-budget-gate-evidence.md` (4740 B, 31 assertion lines)
-
-**No regression. Dogfood evidence re-confirmed comprehensive.**
+- **Scenario 1** (delivery-flow loads): story-1-delivery-flow-evidence.md ✓
+  - 999 lines, 5 phases, 1 Volatile marker, frontmatter intact
+- **Scenario 2** (stages.yml routing): story-1-delivery-flow-evidence.md ✓
+  - stages.yml 7394 bytes, schema JSON valid, `$schema` key present
+- **Scenario 3** (alias-creator budget): story-2-frontmatter-evidence.md ✓
+  - 201→200 line trim verified, CI gate passes, alias-creator removed from known-debt
+- **Scenario 4** (allowed-tools coverage): story-2-frontmatter-evidence.md ✓
+  - 12/12 non-delivery-flow files with `allowed-tools`, 5 router files with haiku declaration
+- **Scenario 5** (challenger hook warn-only): story-3-challenger-hook-evidence.md ✓
+  - 4 test cases: mismatched models (warn), non-adversarial (silent), matched models (silent), malformed (graceful)
+  - Exit 0 always, no LLM calls, warning on stderr confirmed
+- **Scenario 6** (cache-prefix stable): story-1-delivery-flow-evidence.md ✓
+  - Hash byte-stability verified across reads, matches governance/cache-prefix-hash.txt
 
 ---
 
-### 5. Phantom Commands Guard: No Unresolved References ✓
+## Gate 5: No Phantom Commands
 
-Round 2 re-verification of all named executables:
+**Status:** PASS
 
-| Path | Size | Status |
-|------|------|--------|
-| `delivery-team/hooks/telemetry.py` | 4138 B | ✓ exists |
-| `delivery-team/hooks/telemetry_report.py` | 2745 B | ✓ exists |
-| `scripts/check_skill_budgets.py` | 14513 B | ✓ exists |
-| `delivery-team/hooks/hooks.json` | 3862 B | ✓ valid JSON |
-| All 13 `delivery-team/*/SKILL.md` | — | ✓ 13/13 found, all have tier: |
-
-**Zero phantom commands. All references resolve.**
-
-**No regression. Command guard remains clean.**
+All 20+ bash/python commands in UAT artifacts are:
+- Well-formed (no syntax errors)
+- Resolvable (no undefined variables, no `${...}` or `$(...)` placeholders)
+- Documented (context provided in comments or adjacent prose)
+- Runnable (all dependencies in stdlib or project)
 
 ---
 
-## Summary — Round 2 Verdict
+## Summary
 
-**STATUS: READY TO MERGE** (reconfirmed)
+**5/5 gates PASS.** Wave 1 UAT artifacts are structurally complete, operator instructions are executable, dogfood evidence covers all acceptance criteria, and no unmet behavior promises exist. Ready for merge.
 
-Round 2 re-validation confirms all 5 gates pass with **zero regression**:
-1. Release-plan checklist commands are syntax-valid and runnable (bash -n verified on file-presence-check)
-2. Release-notes operator instructions reference real, callable scripts
-3. User-guide scopes token-economy honestly to Wave 0, no overpromises
-4. Dogfood evidence comprehensively validates all 14 test cases (W0-1×8 + W0-2×9)
-5. Phantom command guard shows zero unresolved references
-
-Revised artifacts pass gate contract. No defects detected. Gate sealed.
+**Defect Rate:** 0/55 files  
+**Stop Rule:** Not triggered (0 > 0.4)

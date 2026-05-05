@@ -1,148 +1,98 @@
 ---
-title: "Skill Token-Economy — Wave 0 Foundations"
+title: "Skill Token-Economy — Wave 1 Quick-Wins"
 scope: delivery-team plugin only
-wave: 0
-work_items: [W0-1, W0-2]
+wave: 1
+work_items: [W1-1, W1-2, W1-3, W1-4, W1-5, W1-6, W1-7]
+predecessor_run: run-2026-05-03-tk0e
+predecessor_pr: 87 (d0e0928)
 status: Draft
 author: Product Owner (product-delivery skill)
 created: 2026-05-03
 version: 1.0
 ---
 
-# Idea Brief: Skill Token-Economy — Wave 0 Foundations
+# Idea Brief: Skill Token-Economy — Wave 1 Quick-Wins
 
-## 1. Initiative Title and Scope
+## 1. Scope
 
-**Title**: Skill Token-Economy Wave 0 — Telemetry Hook + Line-Budget CI Gate (delivery-team)
+Execute all 7 Wave 1 quick-wins from BACKLOG-101. Wave 0 (BACKLOG-100) merged clean (PR #87, d0e0928, GO). Telemetry (W0-1) and CI gate (W0-2) are in place; every Wave 1 item produces measurable token savings validated by telemetry and gated by CI.
 
-**Scope**: Wave 0 only. Two work items:
+## 2. In-Scope Work Items
 
-| ID | Title | Effort | Risk |
-|----|-------|--------|------|
-| W0-1 | Skill-load telemetry hook | S | Low |
-| W0-2 | Tiered SKILL.md line-budget CI gate | S | Low |
+| ID | Title | Files | Risk | D/P[^1] |
+|----|-------|-------|------|---------|
+| W1-1 | Cache-prefix freeze for delivery-flow/SKILL.md | SKILL.md + new ADR | Med | P (ADR = D) |
+| W1-2 | Stage definitions to YAML manifest | SKILL.md + new stages.yml + JSON schema | Low | **D** (stages.yml created in Stage 6) |
+| W1-3 | Haiku for routing/dispatch sub-agents | product-delivery, architect, quality, operations, ui SKILL.md + audit_agent_prompt.py | Low | P (modify existing hook) |
+| W1-4 | Selective allowed-tools + description prune | All delivery-team SKILL.md frontmatter + marketplace.json | Low | P |
+| W1-5 | Adversarial challenger tier-inheritance + extended thinking OFF | delivery-flow SKILL.md (adversarial-review) + audit_agent_prompt.py | High | P (modify existing hook) |
+| W1-6 | Sonnet default for orchestrator + pure-Python hooks audit | delivery-flow SKILL.md frontmatter + all 7 hooks/*.py | Low | P |
+| W1-7 | alias-creator -1 line known-debt fix (carry-in from Wave 0) | alias-creator/SKILL.md | Low | P |
 
-Out of scope for this run: Wave 1 through Wave 3 items, all non-delivery-team plugins.
+[^1]: D = Deliverable (created during pipeline); P = Prerequisite (already exists or derived from existing artifact). W1-2 `stages.yml` does not exist yet — it is produced by Stage 6 Dev, not consumed as input. W1-3 and W1-5 hook target is the **existing** file `delivery-team/hooks/audit_agent_prompt.py` (MODIFY, not create). BACKLOG-101 cites `agent_audit.py` — that filename is wrong; actual file is `audit_agent_prompt.py`. Downstream stages MUST use the actual filename. BACKLOG-101 correction logged for post-pipeline retro action.
 
----
+All 7 items are mechanically independent and dispatchable in parallel within Stage 6 Dev. See BACKLOG-101 §Sequencing.
 
-## 2. Problem Statement
+## 3. Out of Scope
 
-The delivery-team plugin is the largest in the repo. Six delivery-team SKILL.md files currently exceed their tier line budgets:
+- Wave 2+ structural extractions (BACKLOG-102+)
+- mtg-commander agent-prompt extractions (next plugin BACKLOG)
+- All other plugins (hardware-team, agentic-flow-builder, etc.)
+- CLAUDE.md refactor (Wave 3 — `tk0e-claude-md-refactor` known-debt)
 
-| Skill | Current lines | Tier | Budget | Overage |
-|-------|--------------|------|--------|---------|
-| delivery-flow | 1,089 | A | 500 | +589 |
-| product-delivery | 688 | B | 300 | +388 |
-| architect | 670 | B | 300 | +370 |
-| presentation | 543 | B | 300 | +243 |
-| ui | 493 | B | 300 | +193 |
-| developer | 493 | B | 300 | +193 |
+## 4. Carry-Forward from Wave 0 Retro
 
-Source: `.delivery/artifacts/research/skill-token-audit-experts.md` (Repo Ground Truth, 2026-05-03)
+| # | Action | Owner | Where applied |
+|---|--------|-------|---------------|
+| 2 | Wire pre-merge git hook for skill-budget local check | Gimli | W1-7 dogfood |
+| 3 | Add cross-doc consistency check to UAT TW gate template | Bilbo | Wave 1 UAT |
+| 4 | File issue: plugin-dev:skill-development invocation pattern | Gandalf | Separate one-off |
 
-Every skill invocation loads the full SKILL.md into the model context. Overages translate directly to excess input tokens and reduced cache hit ratios. Without measurement infrastructure (W0-1) and a budget enforcement gate (W0-2), reduction efforts from Wave 1+ have no feedback loop and gains regress. The governance expert finding: "without telemetry (W0-1) and budgets (W0-2), the gains regress within 6 months."
+Note: Action #1 (Author BACKLOG-101) is closed — BACKLOG-101 exists and is the input to this run.
 
----
+## 5. Plugin-Dev Skill Routing (binding per CLAUDE.md + memory/stages/idea.md)
 
-## 3. Goal
+Pre-loaded for Dev stage agents — do not re-derive:
 
-Establish the two non-negotiable foundations that make every subsequent Wave executable:
+| WI | Hook changes? | SKILL.md frontmatter changes? | New files? | Required skills |
+|----|--------------|-------------------------------|------------|-----------------|
+| W1-1 | No | Yes (delivery-flow) | Yes (ADR) | plugin-dev:skill-development |
+| W1-2 | No | Yes (delivery-flow) | Yes (stages.yml + schema) | plugin-dev:skill-development |
+| W1-3 | Yes — modify existing `audit_agent_prompt.py` | Yes (5 SKILL.md) | No | plugin-dev:hook-development + plugin-dev:skill-development |
+| W1-4 | No | Yes (all delivery-team) | No | plugin-dev:skill-development |
+| W1-5 | Yes — modify existing `audit_agent_prompt.py` | Yes (delivery-flow) | No | plugin-dev:hook-development + plugin-dev:skill-development |
+| W1-6 | No (audit only) | Yes (delivery-flow) | No | plugin-dev:skill-development |
+| W1-7 | No | Yes (alias-creator) | No | plugin-dev:skill-development |
 
-1. **W0-1** — A `PreToolUse` telemetry hook that writes one JSONL row per skill invocation to `.delivery/telemetry/skill-loads.jsonl`, capturing `{skill, model, prefix_hash, input_tokens, cache_read_tokens, cache_write_tokens}`. This is the measurement layer every Wave 1+ optimization references.
+Post-completion: `plugin-dev:skill-reviewer` on all modified SKILL.md; `plugin-dev:plugin-validator` before PR.
 
-2. **W0-2** — A GitHub Actions CI gate that fails any PR where a delivery-team SKILL.md exceeds its declared tier budget (Tier-A ≤500 / Tier-B ≤300 / Tier-C ≤200). This is the regression guard that holds gains once Waves 1–3 land.
+## 6. Known-Debt Status
 
-Without these two items, token savings cannot be measured, known-debt cannot be tracked, and budget violations cannot be blocked at merge time.
+**Cleared this wave (W1-7)**:
+- `delivery-team/skills/alias-creator/SKILL.md`: 201→≤200 lines, restoring Tier-C compliance; `known_debt` entry removed from `governance/skill-budgets.json`
 
----
+**Remains after Wave 1**:
+- `CLAUDE.md`: 169 lines vs binding 150-line cap — deferred to Wave 3 (`tk0e-claude-md-refactor`; logged in run-2026-05-03-tk0e retro)
+- All Tier-B Wave-2 `target_wave` entries in `governance/skill-budgets.json` (presentation 543, ui 493, operations 417, quality 415, user-feedback 397) remain open until Wave 2
 
-## 4. Stakeholders
+## 7. Success Criteria (runnable verification)
 
-| Stakeholder | Role | Interest |
-|-------------|------|----------|
-| User (michaelconne@gmail.com) | Decision authority | Plugin quality + cost reduction |
-| delivery-team plugin contributors | Producers | Correct hook behavior; CI gates must not false-positive |
-| Wave 1+ executors (downstream team) | Consumers | Need telemetry data + budget gate before executing W1-W3 items |
-| Claude Code runtime | Platform | Hook must not exceed 50ms overhead per call |
-
----
-
-## 5. High-Level Scope
-
-### In Scope (Wave 0 only)
-
-- **W0-1**: New file `delivery-team/hooks/telemetry.py`; update `delivery-team/hooks/hooks.json` to register `PreToolUse` Skill matcher; new `delivery-team/references/telemetry-schema.md` documenting the JSONL schema (v1).
-- **W0-2**: New file `.github/workflows/skill-line-budget.yml`; new `scripts/check_skill_budgets.py`; add `tier:` frontmatter to all 11 delivery-team SKILL.md files; log current over-budget skills as known-debt with target wave.
-
-### Out of Scope
-
-- Wave 1 items (W1-1 through W1-6)
-- Wave 2 items (W2-1 through W2-6)
-- Wave 3 items (W3-1 through W3-3)
-- Any plugin other than delivery-team (mtg-commander, hardware-team, agentic-flow-builder, prd-quality-gate-flow, research-agent, prompt-engineer)
-
----
-
-## 6. Success Criteria
-
-All criteria MUST be verified via dogfood before marking Wave 0 Done.
-
-### W0-1 Telemetry Hook
+Reference: BACKLOG-101 §Acceptance Criteria.
 
 | # | Criterion | Verification command |
 |---|-----------|---------------------|
-| SC-1 | Hook fires on every Skill PreToolUse and writes exactly one JSONL row | `tail -f .delivery/telemetry/skill-loads.jsonl` during a live skill invocation — row MUST appear |
-| SC-2 | JSONL row contains all required fields: `skill`, `model`, `prefix_hash`, `input_tokens`, `cache_read_tokens`, `cache_write_tokens` | `python -c "import json,sys; [json.loads(l) for l in open('.delivery/telemetry/skill-loads.jsonl')]"` — MUST parse without KeyError |
-| SC-3 | Schema documented as v1 in `delivery-team/references/telemetry-schema.md` | `grep 'version: 1' delivery-team/references/telemetry-schema.md` — MUST match |
-| SC-4 | Sample 5-run report script renders mean tokens/run per skill | `python delivery-team/hooks/telemetry_report.py` — MUST produce non-empty table |
-| SC-5 | Hook adds <50ms overhead per call | Time 10 invocations; verify mean latency delta <50ms |
+| SC-1 | delivery-flow SKILL.md under Tier-A 500-line budget | `wc -l delivery-team/skills/delivery-flow/SKILL.md` — MUST return ≤500 |
+| SC-2 | alias-creator restored to Tier-C compliance | `wc -l delivery-team/skills/alias-creator/SKILL.md` — MUST return ≤200 |
+| SC-3 | No delivery-team hook contains LLM calls | `grep -rE "anthropic\|openai\|litellm" delivery-team/hooks/` — MUST return empty |
+| SC-4 | No marketplace.json description exceeds 500 chars | `python -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); [print(p['id'],len(p['description'])) for p in d['plugins'] if len(p.get('description',''))>500]"` — MUST return empty |
+| SC-5 | CI gate passes after all WIs land (no Budget-Exception needed for alias-creator) | `python scripts/check_skill_budgets.py` — MUST exit 0 without alias-creator warning |
 
-### W0-2 Line-Budget CI Gate
-
-| # | Criterion | Verification command |
-|---|-----------|---------------------|
-| SC-6 | Every delivery-team SKILL.md has `tier: A`, `tier: B`, or `tier: C` frontmatter | `grep -rn "^tier:" delivery-team/**/SKILL.md` — MUST return 11 matches |
-| SC-7 | CI fails on a synthetic over-budget PR | Create a test branch where one SKILL.md line count exceeds tier budget; push PR; CI MUST fail with budget violation in workflow log |
-| SC-8 | Current over-budget skills logged as known-debt with target wave | `grep 'known-debt' .github/workflows/skill-line-budget.yml` or script output — 6 skills MUST appear with target wave label |
-| SC-9 | Permissive-language warn-only sub-check included | `python scripts/check_skill_budgets.py --warn-permissive delivery-team/skills/delivery-flow/SKILL.md` — MUST run without error; warnings may appear; MUST NOT fail |
-
----
-
-## 7. Constraints
-
-| Constraint | Source | Impact |
-|------------|--------|--------|
-| Pure-Python hooks — NO LLM calls inside hooks | Binding decision (memory topic, Hooks Discipline) | `telemetry.py` MUST be standalone Python; no Anthropic SDK import |
-| LOTR theme applies to all delivery-team output | `.delivery/config.yml` (LOTR theme config) | Narrative framing (stage banners, logs) may use thematic language; functional code does not |
-| March-to-war mode — no human checkpoints within Wave 0 | Pipeline config | Team MUST execute W0-1 and W0-2 to completion without pausing for approval between them |
-| Anthropic 500-line ceiling anchor | `.delivery/artifacts/research/skill-token-audit-experts.md` (C1, Expert 4) | Tier-A budget of 500 lines is the ceiling, not a target; newly authored SKILL.md content MUST stay well below it |
-| Mission-critical risk tolerance | `.delivery/config.yml` | Over-budget SKILL.md files are logged as known-debt, NOT auto-fixed in Wave 0. Wave 0 MUST NOT touch SKILL.md content beyond adding `tier:` frontmatter |
-| Telemetry overhead ceiling | Binding decision (W0-1 AC) | Hook MUST add <50ms per call — verified by timing measurement |
-| CI gate MUST allow known-debt exceptions | Binding decision (Ruling 3) | `Budget-Exception: <ADR-link>` in PR body MUST bypass the fail; current over-budget skills are pre-registered known-debt, not exceptions requiring ADRs yet |
-| Plugin-dev skill routing is mandatory | CLAUDE.md "Key Conventions"; `.delivery/memory/topics/claude-plugins-repo.md` | W0-1 (telemetry hook) MUST be implemented via `plugin-dev:hook-development`; W0-2 (CI gate + `tier:` frontmatter changes) MUST be implemented via `plugin-dev:plugin-structure` and `plugin-dev:skill-development`; both MUST be reviewed via `plugin-dev:skill-reviewer` and validated via `plugin-dev:plugin-validator` before merge |
-
----
-
-## 8. Open Questions for Downstream Stages
-
-None. All binding decisions are resolved in `.delivery/memory/topics/skill-token-economy.md`. The following are pre-loaded for downstream Plan agents to avoid re-derivation:
-
-**Pre-loaded constraints for Plan stage:**
-
-- Tier budgets: Tier-A ≤500 lines / Tier-B ≤300 lines / Tier-C ≤200 lines
-- Telemetry JSONL schema fields (v1): `skill` (string), `model` (string), `prefix_hash` (sha256 hex, first 8 chars of SKILL.md), `input_tokens` (int), `cache_read_tokens` (int), `cache_write_tokens` (int), `timestamp` (ISO 8601), `session_id` (string)
-- CI gate enforcement mechanism: GitHub Actions workflow + `scripts/check_skill_budgets.py` reading `tier:` frontmatter from each SKILL.md; exit code 1 on budget violation unless `Budget-Exception:` present in PR body
-- Hook registration: `hooks.json` matcher type `PreToolUse`, tool pattern `Skill`; hook fires BEFORE skill loads (captures what was requested, not what ran)
-- Known-debt logging: the 6 over-budget skills MUST be logged in the CI script output with format `KNOWN-DEBT: <skill>/<SKILL.md> <current>/<budget> lines — target wave: W<N>`
-- Permissive-language check: warn-only (not fail); regex `\bshould\b|\bcan\b|\bmay\b|\bmight\b` outside fenced code blocks
-
----
-
-## 9. References
+## 8. References
 
 | Artifact | Path |
 |----------|------|
-| Master backlog (all 4 waves, 16 items) | `.delivery/backlog/BACKLOG-100-skill-token-economy-delivery-team.md` |
-| 6-expert audit with repo baseline metrics | `.delivery/artifacts/research/skill-token-audit-experts.md` |
-| Binding conflict rulings + per-skill model map | `.delivery/memory/topics/skill-token-economy.md` |
+| Wave 1 canonical spec (7 WIs + full ACs) | `.delivery/backlog/BACKLOG-101-skill-token-economy-delivery-team-wave-1.md` |
+| Wave 0 run archive + carry-forward actions | `.delivery/memory/archive/run-2026-05-03-tk0e.md` |
+| Binding decisions (5 rulings + model map) | `.delivery/memory/topics/skill-token-economy.md` |
+| Stage 1 routing lesson (plugin-dev constraint) | `.delivery/memory/stages/idea.md` |
+| Current known-debt registry | `governance/skill-budgets.json` |

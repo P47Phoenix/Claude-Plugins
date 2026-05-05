@@ -6,6 +6,7 @@ model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: C
+allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
 
 # Alias Theme Creator
@@ -79,8 +80,6 @@ Every theme maps these roles:
 | `ui-designer` | UI Designer | Design systems, components, accessibility, interactions |
 | `game-ui-designer` | Game UI Designer | HUD, menus, inventory UI, game accessibility |
 | `user-feedback` | User Feedback | Feedback facilitator (personas keep their own identities) |
-
-**Note**: The `user-feedback` role alias applies only to the feedback facilitator, not the 20+ individual test personas.
 
 ---
 

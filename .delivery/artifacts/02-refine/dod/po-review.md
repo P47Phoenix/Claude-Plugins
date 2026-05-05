@@ -1,32 +1,35 @@
-# Stage 2 Refine DoD — PO Review (Gandalf)
+---
+stage: 02-refine
+artifact: prd.md
+validator: po
+status: DONE
+date: 2026-05-04
+---
 
-## Verdict
-STATUS: DONE
+# PO DoD Gate Review — Wave 1 PRD
 
-## Gate Results — Round 2
+## Gate Validation
 
-| # | Criterion | Pass | Note |
-|----|-----------|------|------|
-| 1 | Scope unchanged from idea-brief | ✓ | W0-1 + W0-2 only; Waves 1–3 explicitly out-of-scope (§6). Aligns with BACKLOG-100 Wave 0 sequencing. |
-| 2 | All FRs trace to BACKLOG-100 ACs | ✓ | 12 FRs tied to W0-1 AC-1–5 or W0-2 AC-2–4; FR-10 cites Ruling 3; FR-11–12 cite Hooks Discipline + Memory 4. No orphaned requirements. |
-| 3 | NFRs are SMART | ✓ | Hook overhead < 50 ms (timed test), schema v1 versioned (grep), CI fails synthetic (proven in test PR), tier budgets exact (A≤500/B≤300/C≤200). All verifiable. |
-| 4 | §9 Open Questions empty | ✓ | Clean: "All binding decisions resolved in `.delivery/memory/topics/skill-token-economy.md`." |
-| 5 | Honest readiness markers | ✓ | Wave 1+ NOT implied; dogfood evidence (§10) blocks Done flag: 5 mandatory artifacts. Feedback loop enforced. |
-| 6 | No governance creep | ✓ | Out-of-scope: retroactive content migration, dashboards, retro KPI (W3-2), ADR template, quarterly fitness. Clean boundary. |
+| Gate | Check | Result |
+|------|-------|--------|
+| 1. Scope locked (7 WIs, no creep) | Brief: [W1-1…W1-7]; PRD: [W1-1…W1-7] | **PASS** |
+| 2. All FRs trace to BACKLOG-101 WIs | 16 FRs map to BACKLOG-101 §Acceptance + binding memory decisions | **PASS** |
+| 3. NFRs are SMART | All 6 NFRs include runnable verification commands (bash + Python) | **PASS** |
+| 4. §9 Open Questions empty | Zero open items; W1-6 shadow A/B documented in Dependencies (row 99) as binding decision | **PASS** |
+| 5. Honest readiness markers | "7-WI ceiling", "single-iteration", Wave 2+ explicitly out-of-scope | **PASS** |
+| 6. No governance creep | Wave 3 (CLAUDE.md, retro KPI, fitness review) deferred explicitly | **PASS** |
 
-## Findings — Round 2
+## Binding Decision Coverage
 
-No regression from round 1. All 6 gates hold.
+§7 Dependencies row 99 flags W1-6 (Sonnet flip) as open team decision: "5-run shadow A/B vs immediate flip". Memory binding (`skill-token-economy.md` §Adversarial rule) supports warn-only Sprint 1 → telemetry watch. Documented—not new uncertainty.
 
-**Strengths:**
-- Tier-C + paradigm sub-skills (11+2 = 13 total) now explicitly counted in AC-8. Clear enumeration.
-- Pre-registered known-debt (6 skills: delivery-flow 1089, product-delivery 688, architect 670, presentation 543, ui 493, developer 493) documented in AC-10; avoids ADR blast for Wave 0.
-- Runnable ACs (AC-1 through AC-12) all bash/Python verifiable — no hand-wavy acceptance.
-- AC-5 (overhead < 50 ms) includes `--dry-run` support to unblock measurement.
+## Artifact Readiness
 
-**Path to dev:**
-Sprint ceiling (2-WI, no mid-sprint replan) is load-bearing. Dogfood evidence requirement (§10) forces team to validate hook integration before Done flag. Ready to pass to Architect.
+- PRD refs BACKLOG-101, idea-brief v1.0, memory/topics/skill-token-economy.md
+- 8 acceptance criteria runnable (16 FRs + 6 NFRs = 22 verifiable conditions)
+- Dogfood evidence plan (§10) specifies per-WI outputs
+- Pre-rollout gate (FR-15) explicitly required for W1-3/4/5/6 mass-edits
 
 ---
 
-*Gandalf — Round 2 (2026-05-03)*
+**Signal**: Ready for handoff to Stage 3 (Design). No scope rework required.

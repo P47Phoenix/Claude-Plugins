@@ -1,74 +1,72 @@
----
-title: "Developer DoD Review — PRD Round 2"
-stage: 02-refine
-reviewer: Gimli (developer-skill)
-review_type: Stage 2 PRD Validation (Round 2)
-round: 2
-reviewed_artifact: ".delivery/artifacts/02-refine/po/prd.md"
-timestamp: "2026-05-03"
----
+# Developer Review — Wave 1 PRD DoD Validation (Round 2)
 
-# Developer DoD Review — Wave 0 PRD Round 2
-
-**Status:** DONE (all 6 gates pass)
-
----
-
-## Commands Run
-
-Validated the revised count fix (11 top-level + 2 paradigm sub-skills = 13 total):
-
-```bash
-find delivery-team -name 'SKILL.md' | wc -l
-# Output: 13 ✓
-
-find delivery-team -name 'SKILL.md'
-# Output (13 total):
-#   delivery-team/skills/delivery-flow/SKILL.md (top-level: orchestrator)
-#   delivery-team/skills/product-delivery/SKILL.md (top-level: role)
-#   delivery-team/skills/developer/SKILL.md (top-level: role)
-#   delivery-team/skills/godot/SKILL.md (top-level: role)
-#   delivery-team/skills/architect/SKILL.md (top-level: role)
-#   delivery-team/skills/quality/SKILL.md (top-level: role)
-#   delivery-team/skills/operations/SKILL.md (top-level: role)
-#   delivery-team/skills/ui/SKILL.md (top-level: role)
-#   delivery-team/skills/user-feedback/SKILL.md (top-level: role)
-#   delivery-team/skills/alias-creator/SKILL.md (top-level: role)
-#   delivery-team/skills/presentation/SKILL.md (top-level: role)
-#   delivery-team/skills/architect/paradigms/ddd/SKILL.md (paradigm sub-skill: Tier-C)
-#   delivery-team/skills/architect/paradigms/volatility/SKILL.md (paradigm sub-skill: Tier-C)
-```
-
-**Count verified:** 11 top-level + 2 paradigm = 13 ✓ (revision corrected from round 1 count)
-
----
-
-## Gate Criteria Validation (Round 2)
-
-| Gate | Criterion | Status | Evidence |
-|------|-----------|--------|----------|
-| 1 | Every command-named AC parses or runs | PASS | AC-1 (hook fires): JSON serialization syntax valid. AC-2 (8 fields): Python dict validation passes for all required fields. AC-3 (schema v1): regex pattern `^version: 1` valid. AC-9 (budget: 201>200): integer comparison logic valid. All runnable AC syntax is syntactically correct. |
-| 2 | Hook event matcher is valid | PASS | `hooks.json` line 30: `"matcher": "Skill"` for `PreToolUse` event is valid matcher syntax. Hook definition structure is well-formed JSON. |
-| 3 | Tier values 500/300/200 stated as integers | PASS | PRD line 72: "Tier-A ≤ 500 / Tier-B ≤ 300 / Tier-C ≤ 200". All three values are literal integers, not strings or floats. |
-| 4 | JSONL schema fields enumerated | PASS | PRD line 51 specifies 8 fields exactly: `skill`, `model`, `prefix_hash`, `input_tokens`, `cache_read_tokens`, `cache_write_tokens`, `timestamp`, `session_id`. No ambiguity. Enumeration is complete. |
-| 5 | No phantom file paths | PASS | All 5 hook script paths in `hooks.json` exist: `check_config.py`, `flag_empirical_validation.py`, `verify_skill_load.py`, `validate_gdscript.py`, `audit_agent_prompt.py`. No phantom references. |
-| 6 | Plugin-dev skill routing acknowledged | PASS | PRD line 97 explicitly binds W0-1 to `plugin-dev:hook-development`, W0-2 to `plugin-dev:plugin-structure` + `plugin-dev:skill-development`, and requires both to pass skill-reviewer + plugin-validator before merge. Constraint is stated and binding. |
-
----
-
-## Regression Check (Round 1 → Round 2)
-
-- **Count revision:** Lines 16–17 corrected from "11 SKILL.md files" to "13 SKILL.md files (11 top-level + 2 paradigm sub-skills)" — accurate reflection of actual filesystem state. No count regression.
-- **No syntax errors introduced:** All AC commands remain executable or syntactically valid.
-- **Hook matcher unchanged:** Still `PreToolUse` with `Skill` matcher (unchanged from round 1, still valid).
-- **Tier budgets unchanged:** 500/300/200 (unchanged from round 1).
-- **JSONL schema fields unchanged:** 8 fields, fully enumerated (unchanged from round 1).
-- **Phantom path check:** All 5 script files still exist (unchanged from round 1).
-
-**Regression assessment:** NONE. PRD round 2 preserves all round 1 validations and corrects only the documentation count (lines 16–17 and artifact section line 117).
+**Validator:** Gimli (developer skill)  
+**Date:** 2026-05-03  
+**Status:** DONE
 
 ---
 
 ## Summary
 
-All 6 Developer DoD gate criteria pass. No regressions from round 1. Count fix (11→13) is correct and verified against actual filesystem state. PRD is ready for Stage 3 (Architect review). And my code!
+PRD passes all 6 Developer gates. All AC commands are well-formed, parseable, and runnable as verification commands post-Wave-1-Stage-6. No current-state blockers (reframed: PRD describes TARGET, not baseline).
+
+---
+
+## Gate Results
+
+| Gate | Criterion | Check | Result |
+|------|-----------|-------|--------|
+| **1. AC Syntax** | All ACs parse correctly (bash `-n`, `ast.parse()`) | 8 bash + 3 Python ACs validated | PASS |
+| **2. Prerequisite** | `audit_agent_prompt.py` exists today | `test -f delivery-team/hooks/audit_agent_prompt.py` | EXISTS |
+| **3. Deliverable** | `stages.yml` does NOT exist (W1-2 deliverable, not prereq) | `ls delivery-team/.../stages.yml` | NOT FOUND (correct) |
+| **4. Tier Integers** | Tier values 500/300/200 stated as integers in PRD body | grep PRD for tier values | PASS (9 matches) |
+| **5. Tool Whitelist** | FR-07 declares base 6: Read, Edit, Write, Bash, Skill, ToolSearch | grep FR-07 (line 58) | PASS |
+| **6. plugin-dev Routing** | FR-16 mandates plugin-dev skill loading for SKILL.md + hooks edits | grep FR-16 (line 67) | PASS |
+
+---
+
+## Commands Run
+
+```bash
+# Gate 1: AC command validation (bash + Python)
+python3 << 'EOF'
+import re, ast, subprocess
+prd = '.delivery/artifacts/02-refine/po/prd.md'
+with open(prd) as f:
+    content = f.read()
+bash_cmds = re.findall(r'```bash\n(.*?)\n```', content, re.DOTALL)
+py_cmds = re.findall(r'python3 -c "([^"]+)"', content)
+for cmd in bash_cmds:
+    subprocess.run(['bash', '-n'], input=cmd.encode(), check=True)
+for cmd in py_cmds:
+    ast.parse(cmd)
+print(f"✓ {len(bash_cmds)} bash ACs + {len(py_cmds)} Python ACs parse OK")
+EOF
+
+# Gate 2: Prerequisite file check
+test -f delivery-team/hooks/audit_agent_prompt.py && echo "EXISTS"
+
+# Gate 3: Deliverable non-existence (correct for Stage 2)
+ls delivery-team/skills/delivery-flow/references/stages.yml 2>&1 | head -1
+
+# Gate 4: Tier values in PRD
+grep -E "\b(500|300|200)\b" .delivery/artifacts/02-refine/po/prd.md | wc -l
+
+# Gate 5: Tool whitelist in FR-07
+grep "allowed-tools: \[Read, Edit, Write, Bash, Skill, ToolSearch\]" .delivery/artifacts/02-refine/po/prd.md
+
+# Gate 6: plugin-dev routing in FR-16
+grep "plugin-dev:skill-development\|plugin-dev:hook-development" .delivery/artifacts/02-refine/po/prd.md | head -1
+```
+
+---
+
+## Key Reframes (Stage 2 Context)
+
+- **Gate 1:** AC *parseable* (syntax check) ≠ AC *passes today* (execution check). All 11 ACs syntax-valid. Their pass/fail at Stage 6 is by definition the AFTER state.
+- **Gate 3:** stages.yml is a W1-2 Stage 6 deliverable. At Stage 2 it MUST be absent. Correctly marked DELIVERABLE in PRD, not prerequisite.
+- **Gates 4–6:** Tier constants, tool whitelist, and plugin-dev mandates verified in PRD body and FR text. No implementation state checked.
+
+---
+
+**Gimli's word:** Frame holds. The anvil's ready for Wave 1's forge work.

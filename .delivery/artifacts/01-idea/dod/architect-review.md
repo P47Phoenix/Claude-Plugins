@@ -1,26 +1,29 @@
-# Stage 1 Idea DoD — Architect Review (Celebrimbor) — Round 2
+# Stage 1 Idea DoD — Architect Review (Celebrimbor) — Wave 1 Round 2
 
 ## Verdict
 STATUS: DONE
 
 ## Gate Results
+
 | # | Criterion | Pass | Note |
 |---|-----------|------|------|
-| 1 | Feasibility plausible | Y | W0-1 PreToolUse hook architecture sound; W0-2 CI gate feasible with Python script + frontmatter tier field. Both follow established patterns from existing hooks. |
-| 2 | No phantom file references | Y | All files either exist (hooks.json, .github/workflows/, SKILL.md files) or explicitly marked "to be created" (telemetry.py, skill-line-budget.yml, check_skill_budgets.py). Research artifact path verified. |
-| 3 | No architectural blockers | Y | .github/workflows/ exists and contains precedent workflows (skill-md-header-warn.yml, stale-model-id-guard.yml). Hook registration pattern matches existing PreToolUse hooks. No missing infrastructure. |
-| 4 | Constraints mapped | Y | Tier budgets (500/300/200), telemetry overhead (<50ms), CI enforcement mechanism, known-debt logging pre-decided and linked to `.delivery/memory/topics/skill-token-economy.md` (verified 2026-05-03). |
-| 5 | Schema discipline | Y | JSONL schema fields fully enumerated in Section 8 "Pre-loaded constraints" (skill, model, prefix_hash, input_tokens, cache_read_tokens, cache_write_tokens, timestamp, session_id). v1 versioning declared. |
-| 6 | Plugin-dev skill routing | Y | Section 7 (Constraints, line 123) now explicitly states: W0-1 MUST implement via `plugin-dev:hook-development`; W0-2 MUST implement via `plugin-dev:plugin-structure` and `plugin-dev:skill-development`; both MUST review via `plugin-dev:skill-reviewer` and validate via `plugin-dev:plugin-validator` before merge. Governance binding fully acknowledged. |
+| 1 | Feasibility plausible | Y | All 7 WIs cite platform features present (5 role SKILL.md files, delivery-flow SKILL.md at 1090 lines). Config-schema.json + constraints-schema.json existing. Hooks pattern established (8 hook files detected). |
+| 2 | No phantom file paths | Y | **R2 FIX**: W1-3/W1-5 now reference `delivery-team/hooks/audit_agent_prompt.py` (verified existing). BACKLOG-101 naming error corrected in footnote. No phantom prerequisites. |
+| 3 | Cache-prefix freeze (W1-1) | Y | Target `delivery-team/skills/delivery-flow/SKILL.md` exists (1090 lines, 64KB, stable). ADR to be created. Governance binding acknowledged. |
+| 4 | Stage YAML target (W1-2) | Y | **R2 FIX**: W1-2 now explicitly marked "**D** (stages.yml created in Stage 6)" in §2 line 25. Footnote clarifies: "produced by Stage 6 Dev, not consumed as input." Deliverable boundary clear. |
+| 5 | Allowed-tools whitelist (W1-4) | Y | Binding decision in topics/skill-token-economy.md Ruling 5 specifies safe base: Read, Edit, Write, Bash, Skill, ToolSearch. WI-4 targets all delivery-team SKILL.md frontmatter + marketplace.json. Marketplace.json exists. Role SKILL.md files exist. |
 
-## Findings
+## R1 Closure
 
-**Round 1 Blocking Gap — CLOSED:**
-The brief revision adds Section 7 Constraint 8 (Plugin-dev skill routing is mandatory) with complete binding scope. This closes the round 1 NOT_DONE verdict.
+**Gate 2 (phantom-path)**: R1 flagged W1-3/W1-5 citing non-existent `agent_audit.py`. **FIXED**: Brief now cites actual filename `audit_agent_prompt.py` (§2 line 26, §5 lines 61/63). File verified present. Footnote (line 32) documents BACKLOG-101 correction for retro.
 
-**No regressions detected** on gates 1–5. All gates pass.
+**Gate 4 (stage-yaml clarity)**: R1 flagged ambiguous deliverable status for stages.yml. **FIXED**: Brief now explicitly marks stages.yml as **D**eliverable with stage annotation "created in Stage 6" (§2 line 25). Footnote removes ambiguity.
+
+## Outcome
+
+All 5 gates PASS. Idea-brief is architecturally sound. Ready for Refine stage.
 
 ---
 
-**Assessment:** Idea-brief is architecturally sound and governance-complete. Ready for PO hand-off to Plan stage.
-
+**Celebrimbor**
+Wave 1 Stage 1 · 2026-05-03 · R2

@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "delivery-flow/references/stages-schema.json",
+  "title": "DeliveryFlowStages",
+  "description": "JSON Schema for delivery-flow/references/stages.yml — validates all 7 stage definitions.",
+  "type": "object",
+  "required": ["stages"],
+  "additionalProperties": false,
+  "properties": {
+    "stages": {
+      "type": "array",
+      "description": "Ordered list of pipeline stage definitions (id 1..7).",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "$ref": "#/definitions/Stage"
+      }
+    }
+  },
+  "definitions": {
+    "Stage": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "runs_for",
+        "primary_agent",
+        "dod_validators",
+        "output_path",
+        "max_self_correction",
+        "human_checkpoint",
+        "collaboration_patterns"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7,
+          "description": "Stage number (1-indexed, sequential)."
+        },
+        "name": {
+          "type": "string",
+          "enum": ["Idea", "Refine", "Design", "Architect", "Plan", "Development", "UAT"],
+          "description": "Human-readable stage name."
+        },
+        "runs_for": {
+          "type": "array",
+          "description": "Project types for which this stage executes at full depth.",
+          "items": {
+            "$ref": "#/definitions/ProjectType"
+          },
+          "minItems": 1
+        },
+        "skipped_for": {
+          "type": "array",
+          "description": "Project types for which this stage is skipped entirely.",
+          "items": {
+            "$ref": "#/definitions/ProjectType"
+          }
+        },
+        "light_for": {
+          "type": "array",
+          "description": "Project types for which this stage runs at light depth.",
+          "items": {
+            "$ref": "#/definitions/ProjectType"
+          }
+        },
+        "primary_agent": {
+          "type": "string",
+          "description": "Primary agent role(s) invoked for this stage."
+        },
+        "dod_validators": {
+          "type": "array",
+          "description": "Roles that must each return DONE for the stage to complete.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "output_path": {
+          "type": "string",
+          "description": "Primary artifact output path or directory for this stage."
+        },
+        "output_files": {
+          "type": "array",
+          "description": "Specific artifact file paths produced by this stage.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "max_self_correction": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Maximum number of self-correction iterations before escalation."
+        },
+        "human_checkpoint": {
+          "type": ["string", "null"],
+          "description": "Human checkpoint label, or null if no checkpoint for this stage."
+        },
+        "collaboration_patterns": {
+          "type": "array",
+          "description": "Collaboration patterns that execute in this stage.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "light_mode_rules": {
+          "type": ["string", "null"],
+          "description": "Conditions determining when light depth applies, or null."
+        },
+        "game_dev_additions": {
+          "type": "string",
+          "description": "Additional agents/checks injected when project type is GAME_DEV+."
+        },
+        "dod_status_options": {
+          "type": "array",
+          "description": "Valid DoD status values for this stage (default: [DONE, NOT_DONE]).",
+          "items": {
+            "type": "string",
+            "enum": ["DONE", "NOT_DONE", "CODE_COMPLETE"]
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-form notes for orchestrator behaviour at this stage."
+        }
+      }
+    },
+    "ProjectType": {
+      "type": "string",
+      "enum": [
+        "GREENFIELD",
+        "FEATURE",
+        "BUG_FIX",
+        "DESIGN",
+        "GAME_DEV_GREENFIELD",
+        "GAME_DEV_FEATURE",
+        "GAME_DEV_BUG_FIX",
+        "SPIKE",
+        "DOCS_ONLY"
+      ]
+    }
+  }
+}

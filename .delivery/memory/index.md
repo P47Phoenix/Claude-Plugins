@@ -1,17 +1,17 @@
 # Delivery Pipeline Memory Index
 
-- total_runs: 29
-- last_updated: 2026-05-03
-- last_run_id: run-2026-05-03-tk0e
+- total_runs: 30
+- last_updated: 2026-05-04
+- last_run_id: run-2026-05-04-tk1
 
 ## Stage Health (last 5 runs)
-- Idea: 80% first-try pass (run-2026-05-03-tk0e: 1 revision — Architect flagged plugin-dev skill routing acknowledgment missing)
-- Refine: 60% first-try pass (run-2026-05-03-tk0e: 1 revision — Dev DoD caught SKILL.md count off; runs-the-command lesson revalidated)
+- Idea: 60% first-try pass (run-2026-05-04-tk1: 1 revision — Architect caught BACKLOG-101 phantom filename `agent_audit.py` vs actual `audit_agent_prompt.py`; same lesson family as Wave 0)
+- Refine: 50% first-try pass (run-2026-05-04-tk1: 1 revision — Dev R1 misread gate criteria TARGET vs CURRENT)
 - Design: 100% first-try pass (when light, DX surface) — also valid SKIP for DX-only deviation
-- Architect: 75% first-try pass (run-2026-05-03-tk0e light Architect first-try; multi-ADR work)
-- Plan: 100% first-try pass on FEATURE-execution engagements
-- Development: 100% first-try pass on BUG_FIX consolidations + FEATURE execution (run-2026-05-03-tk0e Wave 0: 2/2 WIs first-try with dogfood)
-- UAT: 80% first-try PASS_WITH_NOTES (run-2026-05-03-tk0e: 1 revision — Bilbo cross-doc consistency caught Tier B value mismatch + 3 other findings)
+- Architect: 80% first-try pass (Wave 1 first-try; Wave 0 first-try)
+- Plan: 80% first-try pass — Wave 1 caught real budget-math defect (W1-7 -1 + W1-4 +1 = 201 not 200) requiring revision
+- Development: ~85% first-try pass per-story (Wave 1: 5/9 stage-stories first-try; one Story 1 QA false-positive on path lookup)
+- UAT: 90% first-try (Wave 1 first-try; Wave 0 needed R2 for cross-doc consistency that's now standard)
 
 ## Hot Lessons (inject into ALL agent prompts — top 5 by validation count + impact)
 
@@ -42,6 +42,7 @@
 - [topics/skill-token-economy.md](topics/skill-token-economy.md) — 5 binding rulings + per-skill model map + tiered line budgets (audit 2026-05-03)
 
 ## Archive
+- [archive/run-2026-05-04-tk1.md](archive/run-2026-05-04-tk1.md) — FEATURE Wave 1: cache freeze + stages.yml + frontmatter rollout + challenger hook; GO; 7 WIs shipped via 3 file-scope stories, 0 defects, alias-creator graduated from known-debt
 - [archive/run-2026-05-03-tk0e.md](archive/run-2026-05-03-tk0e.md) — FEATURE Wave 0: telemetry hook + line-budget CI gate; GO; 2 stories shipped, 0 defects, 4/7 stages first-try DoD
 - [archive/run-2026-04-22-4x7e.md](archive/run-2026-04-22-4x7e.md) — FEATURE: 14-WI Opus 4.7 execution engagement; GO; PR #86
 - [archive/run-2026-04-20-o4v7.md](archive/run-2026-04-20-o4v7.md) — DESIGN/transformation-planning for 4.6→4.7 skill migration

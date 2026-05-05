@@ -1,0 +1,153 @@
+# stages.yml — Authoritative routing and orchestration metadata for all 7 delivery stages.
+# Validated by references/stages-schema.json
+# Full sub-flow definitions (agent invocations, artifact templates, DoD dispatch) live in
+# references/pipeline-stages.md — this file is machine-readable routing data only.
+
+stages:
+  - id: 1
+    name: Idea
+    runs_for: [GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE, GAME_DEV_BUG_FIX, SPIKE, DOCS_ONLY]
+    primary_agent: "Product Owner (product-delivery skill)"
+    dod_validators:
+      - Product Owner
+      - Architect
+    output_path: ".delivery/artifacts/01-idea/po/idea-brief.md"
+    max_self_correction: 2
+    human_checkpoint: null
+    collaboration_patterns: []
+    notes: "Prefer asking the user for clarification over self-correction. Orchestrator must not invent idea details."
+
+  - id: 2
+    name: Refine
+    runs_for: [GREENFIELD, FEATURE, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE]
+    skipped_for: [BUG_FIX, SPIKE, DOCS_ONLY]
+    primary_agent: "Product Owner (product-delivery skill). Supporting: Data Analyst."
+    dod_validators:
+      - Product Owner
+      - Architect
+      - QA Engineer
+    output_path: ".delivery/artifacts/02-refine/po/prd.md"
+    max_self_correction: 3
+    human_checkpoint: "CHECKPOINT 1 — present PRD summary for approval"
+    collaboration_patterns:
+      - "Evaluator-Optimizer (QA evaluates PRD)"
+      - "Adversarial Review (confidence 1-5, escalate if <= 2)"
+    light_mode_rules: null
+    game_dev_additions: "UX Designer reviews for game UX patterns; game-specific NFRs added."
+
+  - id: 3
+    name: Design
+    runs_for: [GREENFIELD, FEATURE, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE]
+    skipped_for: [BUG_FIX, SPIKE, DOCS_ONLY]
+    primary_agent: "UX Designer, UI Designer (ui skill)"
+    dod_validators:
+      - UX Designer
+      - Product Owner
+      - QA Engineer
+      - Architect
+    output_path: ".delivery/artifacts/03-design"
+    output_files:
+      - ".delivery/artifacts/03-design/ux/user-flows.md"
+      - ".delivery/artifacts/03-design/ux/wireframes.md"
+      - ".delivery/artifacts/03-design/ui/component-specs.md"
+      - ".delivery/artifacts/03-design/ui/accessibility.md"
+    max_self_correction: 3
+    human_checkpoint: null
+    collaboration_patterns:
+      - "Multi-Perspective Review Board (Architect, PO, QA review; BLOCKs routed via Decision Ownership)"
+    light_mode_rules: null
+    game_dev_additions: "Game UI Designer invoked for HUD, menu, inventory UI. Game-specific accessibility review."
+
+  - id: 4
+    name: Architect
+    runs_for: [GREENFIELD, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE, SPIKE]
+    light_for: [FEATURE]
+    skipped_for: [BUG_FIX, DOCS_ONLY]
+    primary_agent: "Architect (architect skill, role: solution). Supporting: Security Architect, Data Architect."
+    dod_validators:
+      - Architect
+      - QA Engineer
+      - DevOps
+      - Security
+    output_path: ".delivery/artifacts/04-architect"
+    output_files:
+      - ".delivery/artifacts/04-architect/solution/architecture.md"
+      - ".delivery/artifacts/04-architect/adrs/ADR-001.md"
+    max_self_correction: 2
+    human_checkpoint: "CHECKPOINT 2 — present architecture summary for approval"
+    collaboration_patterns:
+      - "Debate (contested technical decisions → ADRs)"
+      - "Evaluator-Optimizer (QA + DevOps review)"
+      - "Adversarial Review (confidence 1-5)"
+    light_mode_rules: "Apply Light if feature involves new APIs, new data models, external integrations, security-sensitive changes, or touches >3 modules. Apply Skip if UI-only, contained in single module, no new data models, no security implications, no new external deps."
+    game_dev_additions: "Game Systems Architect, Level/World Designer, Network Architect (if multiplayer), Graphics Specialist (if graphically intensive). Performance budgets required."
+
+  - id: 5
+    name: Plan
+    runs_for: [GREENFIELD, FEATURE, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE]
+    light_for: [BUG_FIX, DOCS_ONLY]
+    skipped_for: [SPIKE]
+    primary_agent: "Product Owner, Scrum Bag, QA Engineer, DevOps"
+    dod_validators:
+      - Scrum Bag
+      - Product Owner
+      - QA Engineer
+      - DevOps
+    output_path: ".delivery/artifacts/05-plan"
+    output_files:
+      - ".delivery/artifacts/05-plan/po/stories.md"
+      - ".delivery/artifacts/05-plan/sm/sprint-plan.md"
+      - ".delivery/artifacts/05-plan/qa/test-strategy.md"
+      - ".delivery/artifacts/05-plan/devops/deploy-plan.md"
+    max_self_correction: 2
+    human_checkpoint: "CHECKPOINT 3 — present sprint plan for approval"
+    collaboration_patterns:
+      - "Consensus (SM, PO, QA, DevOps converge on estimates/risks)"
+      - "Adversarial Review (confidence 1-5)"
+    light_mode_rules: "PO writes single story, SM produces minimal plan, skip consensus/adversarial, QA validates testability, reduced DoD (SM + QA only)."
+
+  - id: 6
+    name: Development
+    runs_for: [GREENFIELD, FEATURE, BUG_FIX, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE, GAME_DEV_BUG_FIX, SPIKE, DOCS_ONLY]
+    primary_agent: "Developer (developer skill). Supporting: QA Engineer, Technical Writer."
+    dod_validators:
+      - Developer
+      - QA Engineer
+      - Architect
+      - Technical Writer
+    output_path: ".delivery/artifacts/06-dev"
+    output_files:
+      - ".delivery/artifacts/06-dev/developer/{story-id}.md"
+      - ".delivery/artifacts/06-dev/tech-writer/docs.md"
+    max_self_correction: 3
+    human_checkpoint: null
+    collaboration_patterns:
+      - "Evaluator-Optimizer per story (code → QA review → fix)"
+      - "Decision Ownership Routing as needed"
+    dod_status_options: [DONE, CODE_COMPLETE, NOT_DONE]
+    notes: "CODE_COMPLETE means empirical validation pending — carried to Stage 7. Milestone testing runs after all sprint stories pass DoD."
+    game_dev_additions: "Godot skill invoked for engine-specific work. Headless validation, empirical AC classification, performance profiling, playtest scenarios, milestone playtest checkpoint. GAME_DEV+ adds Defect Prevention Gate (godot skill) to DoD validators."
+
+  - id: 7
+    name: UAT
+    runs_for: [GREENFIELD, FEATURE, BUG_FIX, GAME_DEV_GREENFIELD, GAME_DEV_FEATURE, GAME_DEV_BUG_FIX, DOCS_ONLY]
+    skipped_for: [SPIKE]
+    primary_agent: "QA Engineer (test plan + test cases), DevOps (release plan + rollback), Technical Writer (release notes + user guide)"
+    dod_validators:
+      - QA Engineer
+      - DevOps
+      - Product Owner
+      - Technical Writer
+    output_path: ".delivery/artifacts/07-uat"
+    output_files:
+      - ".delivery/artifacts/07-uat/qa/test-plan.md"
+      - ".delivery/artifacts/07-uat/qa/test-cases.md"
+      - ".delivery/artifacts/07-uat/devops/release-plan.md"
+      - ".delivery/artifacts/07-uat/tech-writer/release-notes.md"
+      - ".delivery/artifacts/07-uat/tech-writer/user-guide.md"
+    max_self_correction: 2
+    human_checkpoint: "CHECKPOINT 4 — present UAT results, release plan, documentation. CODE_COMPLETE stories shown with pending empirical validations and recommended validation approaches."
+    collaboration_patterns:
+      - "Multi-Perspective Review Board (go/no-go: QA, DevOps, Technical Writer; BLOCKs resolved before checkpoint)"
+    game_dev_additions: "Playtest scenarios, performance budget validation, input scheme validation, platform-specific checks."
+    notes: "Post-acceptance: proceed to memory update (Phase 5)."

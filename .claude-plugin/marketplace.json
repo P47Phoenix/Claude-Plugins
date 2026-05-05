@@ -45,7 +45,7 @@
     },
     {
       "name": "delivery-team",
-      "description": "Full delivery team with 11 specialized skills covering the complete software delivery lifecycle. Delivery Flow (pipeline orchestrator with session keepalive, shared constraints.yml, configurable Architecture Board, Transformation Planning sub-workflow for brownfield migrations), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (14 languages + OOP + FP patterns + frontend + Nx monorepo), Godot (game dev), Architect (11 roles + game architecture + 4 architecture decomposition strategies + paradigm-as-skill router + AS-IS/TO-BE/Roadmap transformation planning), Quality (QA with Feature Knowledge System), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), Alias Creator (alias themes), User Feedback (simulated persona-based testing with 20+ built-in personas across gamers, web users, enterprise, and demographics), and Presentation Composer (team-collaborative presentations).",
+      "description": "Full delivery team with 11 skills covering the complete software delivery lifecycle: Delivery Flow (pipeline orchestrator), Product Delivery (PO, Scrum Bag, Data Analyst), Developer (14 languages + OOP/FP + Nx monorepo), Godot (game dev), Architect (11 roles + paradigm-as-skill router), Quality (QA), Operations (DevOps, Release Manager, Tech Writer), UI (UX, UI, Game UI), Alias Creator (13 themes), User Feedback (20+ simulated personas), Presentation Composer.",
       "source": "./",
       "strict": false,
       "skills": [

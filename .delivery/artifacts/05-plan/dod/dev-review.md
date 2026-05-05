@@ -1,72 +1,101 @@
-# Stage 5 Plan DoD — Developer Review (Gimli)
+---
+reviewer: Gimli (developer validation)
+stage: 05-plan
+artifact: sprint-plan.md v1.0
+review_round: Round 2
+review_date: 2026-05-04
+status: DONE
+---
 
-## Verdict
+# Developer DoD Review — Sprint Plan Wave-1 (Round 2)
 
-STATUS: NOT_DONE
+## Status: DONE
 
-## Gate Results
+All gates pass. Sprint plan is gate-ready for Stage 6 Dev.
 
-| # | Criterion | Pass | Note |
-|----|-----------|------|------|
-| 1 | Stories' ACs match PRD verbatim | PASS | W0-1 Scenario 1 and W0-2 Scenario 1 trace correctly to PRD FR-01 and FR-07 |
-| 2 | Test cases parse as runnable commands | PASS | TC-W0-1-1 through TC-W0-2-10 all parse syntactically; bash -n validation OK |
-| 3 | Sprint plan mandatory artifacts match PRD FRs | PARTIAL | Mandatory list documented correctly (8 artifacts); **all 8 are missing from disk** |
-| 4 | Phantom-path guard documented | PASS | Sprint plan §7 R4 + §3 Mitigations + DoD line 127 all mention FR-12 path-check one-liner |
-| 5 | Known-debt count discipline (11) | PASS | Sprint plan line 61, 88, 100, 118 all reference 11; test-strategy line 20, 99 both reference 11 |
-| 6 | Dogfood plan operationally executable | PASS | Sprint plan §8 lists 5 concrete commands/artifacts; test-strategy §Dogfood specifies evidence dir + file names |
+---
 
-## Commands Run
+## 1. Commands Run
 
 ```bash
-find delivery-team -name 'SKILL.md' | wc -l
-# Exit 0: 13 (PASS)
+# Gate 1: alias-creator baseline line count
+$ wc -l delivery-team/skills/alias-creator/SKILL.md
+201
 
-find delivery-team -name 'SKILL.md' -exec grep -L "^tier:" {} \; -print
-# Exit 0: all 13 files missing tier: frontmatter (FAIL)
+# Gate 2a: W1-4 dogfood command (syntax validation)
+$ bash -n << 'EOF'
+find delivery-team -name SKILL.md -exec grep -L allowed-tools {} \;
+EOF
+# Exit: 0 ✓
 
-ls delivery-team/hooks/telemetry.py
-# Exit 2: No such file or directory (FAIL)
-
-ls delivery-team/hooks/telemetry_report.py
-# Exit 2: No such file or directory (FAIL)
-
-ls delivery-team/references/telemetry-schema.md
-# Exit 2: No such file or directory (FAIL)
-
-ls scripts/check_skill_budgets.py
-# Exit 2: No such file or directory (FAIL)
-
-ls .github/workflows/skill-line-budget.yml
-# Exit 2: No such file or directory (FAIL)
-
-ls governance/skill-budgets.json
-# Exit 2: No such file or directory (FAIL)
-
-grep -n "phantom" sprint-plan.md
-# Exit 0: 3 matches (lines 87, 99, 127) — phantom-path guard documented (PASS)
-
-grep "^.*11" sprint-plan.md
-# Exit 0: 4 matches — known-debt count 11 acknowledged (PASS)
+# Gate 2b: W1-7 dogfood command (syntax validation)
+$ bash -n << 'EOF'
+wc -l alias-creator/SKILL.md
+EOF
+# Exit: 0 ✓
 ```
 
-## Findings (NOT_DONE)
+---
 
-**Critical blockers:**
+## 2. Group C Math Verification (CRITICAL R1 GATE)
 
-1. **W0-1 artifacts missing (4 of 4)**: telemetry.py, telemetry_report.py, telemetry-schema.md, hooks.json edit — none exist on disk. Plan references these but they have not been created.
+**Baseline**: alias-creator = 201 lines (Tier-C ceiling 200).
 
-2. **W0-2 artifacts missing (4 of 4)**: check_skill_budgets.py, skill-line-budget.yml, governance/skill-budgets.json, tier: frontmatter on all 13 SKILL.md files — none exist. Sprint plan is complete but implementation has not started.
+**Explicit math in §8b (line 111)**:
+```
+alias-creator: 201 → -2 (W1-7) → 199 → +1 (W1-4 allowed-tools) → 200 ✓
+```
 
-3. **Artifact inventory mismatch**: Sprint plan §4 (Committed Stories) is sound. Mandatory artifact list §4.1 matches PRD §8 exactly. However, Stage 5 is a planning stage — the artifacts will be created in Stage 6 (Dev). This Plan DoD gate validates the *plan* structure, not the existence of code. Rephrasing: **artifacts should not exist yet**; the gate is whether the *plan to create them* is sound.
+**Verification**:
+- §8b states W1-7 **MUST trim 2 lines** (corrected from -1 in ADR-tk1-002)
+- §10 line 154 restates: "W1-7 MUST remove **2 lines** (corrected from -1; see §8b)"
+- ADR-tk1-002 original was -1; real math requires -2 (correction deferred to retro)
+- +1 from W1-4 allowed-tools frontmatter brings total to exactly 200 ✓
 
-**Reassessment — Plan validation (Stage 5 is planning, not implementation):**
+**Status**: PASS
 
-1. **Gate 1 (Story AC traceability)**: PASS — Verified. W0-1 §AC-1 references FR-01; W0-2 §AC-1 references FR-06.
-2. **Gate 2 (Test case syntax)**: PASS — All TC commands are syntactically valid bash/python.
-3. **Gate 3 (Mandatory artifact list)**: PASS — Sprint plan §4.1 enumerates all 8 artifacts matching PRD §8 exactly (telemetry.py, telemetry_report.py, telemetry-schema.md, hooks.json edit, check_skill_budgets.py, skill-line-budget.yml, governance/skill-budgets.json, tier: frontmatter on 13 files).
-4. **Gate 4 (Phantom-path guard)**: PASS — Sprint plan §7 R4 + Mitigations + DoD mention FR-12 path-check explicitly.
-5. **Gate 5 (Known-debt count)**: PASS — Sprint plan and test-strategy both reference 11 (not just PRD floor of 6).
-6. **Gate 6 (Dogfood plan executability)**: PASS — Concrete commands with file paths; evidence directory named; no narrative filler.
+---
 
-**All gates pass. Artifacts are not meant to exist in Stage 5 (planning). This is a plan validation, not implementation validation.**
+## 3. Retro/Backport Item Flagged
 
+§11 Retro Actions confirms R-1:
+```
+Backport W1-7 line-count correction: ADR-tk1-002 + BACKLOG-101 both say `-1 line`; 
+real-math is `-2 lines`. Update both artifacts to reflect corrected target.
+```
+
+**Status**: PASS (flagged, deferred to sprint retro as designed)
+
+---
+
+## 4. DoD Checklist Reflection
+
+§10 checklist line 154 now reads:
+```
+- [ ] `alias-creator/SKILL.md` confirmed ≤200 lines (`wc -l` output in PR body) 
+      — W1-7 MUST remove **2 lines** (corrected from -1; see §8b)
+```
+
+This explicitly names the -2 correction and cross-references §8b.
+
+**Status**: PASS
+
+---
+
+## 5. R1 Gates Re-Run (All Resolved)
+
+| Gate | Finding | R1 Status | R2 Status |
+|------|---------|-----------|-----------|
+| Alias-creator math | 201 → -2 → 199 → +1 → 200 ✓ | NOT_DONE | **DONE** |
+| Dogfood commands parseable | find, wc -l syntax ✓ | PASS | PASS |
+| Plugin-dev routing acknowledged | All 5 groups route through plugin-dev skills | PASS | PASS |
+| Retro mandatory | §10 DoD confirms retro required | PASS | PASS |
+| Retro backport item | §11 R-1 flags ADR-tk1-002 + BACKLOG-101 -1→-2 | NOT_DONE | **DONE** |
+
+---
+
+## 6. Conclusion
+
+All R1 critical findings resolved. Sprint plan is mechanically sound and gate-ready.
+
+**Recommendation**: Proceed to Stage 6 Dev.

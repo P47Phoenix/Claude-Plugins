@@ -1,64 +1,70 @@
 ---
-title: "Skill Token-Economy — Wave 0 PRD"
-work_items: [W0-1, W0-2]
-sprint: single-iteration, 2-WI ceiling
+title: "Skill Token-Economy — Wave 1 PRD"
+work_items: [W1-1, W1-2, W1-3, W1-4, W1-5, W1-6, W1-7]
+sprint: single-iteration, 7-WI ceiling
 stage: 02-refine
 author: Product Owner (product-delivery skill)
-source: idea-brief v1.0 + BACKLOG-100
-created: 2026-05-03
+source: idea-brief v1.0 (run-2026-05-04-tk1) + BACKLOG-101
+created: 2026-05-04
 version: 1.0
 ---
 
-# PRD: Skill Token-Economy — Wave 0 Foundations
+# PRD: Skill Token-Economy — Wave 1 Quick-Wins
 
 ## 1. Problem Statement
 
-The delivery-team plugin's 13 SKILL.md files (11 top-level + 2 paradigm sub-skills under
-`architect/paradigms/{ddd,volatility}/`) have no token-usage telemetry and no line-budget
-enforcement. Six files already exceed their tier budgets by 193–589 lines, translating directly
-to excess input tokens and reduced cache hit ratios on every skill invocation. Without a
-measurement layer (W0-1) and a regression guard (W0-2), all Wave 1–3 reduction efforts lack a
-feedback loop and gains will regress within 6 months (per governance expert finding, audit 2026-05-03).
+Wave 0 (PR #87, d0e0928) delivered telemetry and CI budget enforcement. Wave 1 executes 7
+targeted quick-wins — cache stabilization, stage-definition externalization, model-tier
+assignments, tool allow-lists, and known-debt clearance — projected to reduce delivery-flow
+cold-load tokens ≥2,000 and cut per-run cost ≥3× vs the Opus baseline. All 7 items are
+mechanically independent and dispatchable in parallel within Stage 6 Dev.
 
 ---
 
 ## 2. Goals & Success Metrics
 
-| Metric | Target | Baseline (2026-05-03 audit) |
-|--------|--------|-----------------------------|
-| Telemetry JSONL written per skill invocation | 1 row, all 7 fields present | 0 rows (no hook exists) |
-| Hook overhead per call (mean, 10-run sample) | < 50 ms | Unmeasured |
-| CI gate fails synthetic over-budget PR | Yes (exit 1 with budget violation) | No gate exists |
-| delivery-team SKILL.md files with `tier:` frontmatter | 13 / 13 | 0 / 13 |
-| Known-debt skills logged in CI output | 6 (matching audit) | 0 |
+| Metric | Target | Baseline |
+|--------|--------|----------|
+| delivery-flow SKILL.md line count | ≤ 500 | 1090 (confirmed `wc -l`) |
+| alias-creator SKILL.md line count | ≤ 200 | 201 (confirmed `wc -l`) |
+| Cold-load token delta for delivery-flow | ≥ 2,000 token drop | N/A — Wave 0 baseline |
+| Per-run cost vs Opus baseline | ≥ 3× reduction | N/A — Wave 0 baseline |
+| Cache read/input ratio (2nd run) | ≥ 0.85 | Prefix not frozen |
+| Routing agents declaring `model: haiku` | 10/10 correct decisions | 0 declared |
+| Delivery-team skills with `allowed-tools` | All Tier-A + Tier-B | 0 set |
+| marketplace.json descriptions ≤ 500 chars | All plugins | delivery-team: 913 chars (FAILS) |
 
 ---
 
 ## 3. User Personas
 
-| Persona | Description | Primary need |
-|---------|-------------|--------------|
-| **Primary** — delivery-team plugin contributor | Engineers adding/modifying delivery-team SKILL.md files | CI gate blocks accidental budget overruns; clear known-debt log |
-| **Secondary** — Wave 1+ executor | Downstream team running W1-1 through W3-3 optimizations | Telemetry data available before Wave 1 starts; gate enforces gains post-reduction |
+| Persona | Description |
+|---------|-------------|
+| **Primary** — delivery-team plugin contributor | Engineers modifying delivery-team SKILL.md; CI gate enforces gains |
+| **Secondary** — Wave 2+ executor | Inherits frozen cache prefix, YAML stage manifest, and model map before Wave 2 begins |
 
 ---
 
 ## 4. Functional Requirements
 
-| ID | Requirement | Priority | AC Reference (BACKLOG-100 §) |
-|----|-------------|----------|-------------------------------|
-| FR-01 | A new `delivery-team/hooks/telemetry.py` MUST fire on every `PreToolUse` Skill event and write exactly one JSONL row to `.delivery/telemetry/skill-loads.jsonl` | Must Have | W0-1 AC-1 |
-| FR-02 | Each JSONL row MUST contain fields: `skill`, `model`, `prefix_hash` (sha256 first 8 chars), `input_tokens`, `cache_read_tokens`, `cache_write_tokens`, `timestamp` (ISO 8601), `session_id` | Must Have | W0-1 AC-2; idea-brief §8 pre-loaded schema |
-| FR-03 | `delivery-team/hooks/hooks.json` MUST register the telemetry hook with matcher type `PreToolUse`, tool pattern `Skill` | Must Have | W0-1 (hooks discipline binding) |
-| FR-04 | A new `delivery-team/references/telemetry-schema.md` MUST document the JSONL schema as version 1 | Must Have | W0-1 AC-2 |
-| FR-05 | A new `delivery-team/hooks/telemetry_report.py` MUST produce a non-empty mean-tokens-per-run table when run against ≥5 rows | Must Have | W0-1 AC-3 |
-| FR-06 | All 13 delivery-team SKILL.md files MUST have `tier: A`, `tier: B`, or `tier: C` frontmatter added; tier defaults: Tier-A for orchestrators (`delivery-flow`), Tier-B for role multiplexers (9 top-level role skills), Tier-C for leaf skills + paradigm sub-skills (`architect/paradigms/ddd`, `architect/paradigms/volatility`); no other SKILL.md content MUST be modified | Must Have | W0-2 AC-1 |
-| FR-07 | A new `.github/workflows/skill-line-budget.yml` MUST fail (exit 1) any PR where a delivery-team SKILL.md exceeds its declared tier budget (A ≤ 500 / B ≤ 300 / C ≤ 200) | Must Have | W0-2 AC-2 |
-| FR-08 | A new `scripts/check_skill_budgets.py` MUST implement the budget check; MUST log the 6 known-debt skills in format `KNOWN-DEBT: <skill>/<SKILL.md> <current>/<budget> lines — target wave: W<N>` | Must Have | W0-2 AC-3 |
-| FR-09 | `check_skill_budgets.py` MUST include a warn-only permissive-language sub-check; the allowlist of permitted patterns is `\bshould\b`, `\bcan\b`, `\bmay\b`, `\bmight\b` matched outside fenced code blocks, blockquotes, and tables; matches MUST emit a warning and MUST NOT cause a non-zero exit | Must Have | W0-2 AC-4 |
-| FR-10 | CI gate MUST allow known-debt bypass when PR body contains `Budget-Exception: <ADR-link>`; current 6 over-budget skills are pre-registered known-debt and MUST NOT require ADRs | Must Have | BACKLOG-100 W0-2; Ruling 3 |
-| FR-11 | `telemetry.py` MUST be standalone pure Python — NO Anthropic SDK import, NO LLM call | Must Have | Hooks Discipline binding |
-| FR-12 | Every script path referenced in `hooks.json` MUST exist on disk before merge | Must Have | Memory lesson 4 (phantom hooks regression guard) |
+| ID | Requirement | Priority | WI |
+|----|-------------|----------|----|
+| FR-01 | First ~2,000 tokens of `delivery-flow/SKILL.md` MUST be byte-stable across runs; volatile content MUST appear after `## Volatile` marker near EOF | Must Have | W1-1 |
+| FR-02 | A new ADR MUST be committed requiring future delivery-flow prefix changes to cite cache-cost impact | Must Have | W1-1 |
+| FR-03 | 7 stage definitions (SKILL.md lines ~612–743) MUST move to `delivery-flow/references/stages.yml`; SKILL.md MUST retain a routing pointer only | Must Have | W1-2 |
+| FR-04 | `stages.yml` MUST validate against a committed companion JSON schema | Must Have | W1-2 |
+| FR-05 | Routing/dispatch/paradigm sub-agents in product-delivery, architect, quality, operations, ui SKILL.md MUST declare `model: haiku` | Must Have | W1-3 |
+| FR-06 | `delivery-team/hooks/audit_agent_prompt.py` MUST be extended to warn when a routing agent runs under a non-Haiku model (filename binding — NOT `agent_audit.py`) | Must Have | W1-3 |
+| FR-07 | All `delivery-team/**/SKILL.md` frontmatter MUST declare `allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]`; extensions MUST include inline justification | Must Have | W1-4 |
+| FR-08 | Every `.claude-plugin/marketplace.json` description > 500 chars MUST be pruned to ≤ 500 (delivery-team: 913 → ≤ 500) | Must Have | W1-4 |
+| FR-09 | Adversarial challenger sub-agents in delivery-flow MUST inherit primary agent's `model:` at dispatch; adversarial-review section MUST be updated | Must Have | W1-5 |
+| FR-10 | Extended thinking MUST default OFF in all delivery-team agent frontmatter; opt-in per-stage only | Must Have | W1-5 |
+| FR-11 | `audit_agent_prompt.py` MUST enforce challenger.model == primary.model (warn-only Sprint 1) | Must Have | W1-5 |
+| FR-12 | `delivery-flow/SKILL.md` frontmatter MUST declare `model: sonnet`; Opus MUST be opt-in per-stage | Must Have | W1-6 |
+| FR-13 | All 7 `delivery-team/hooks/*.py` MUST be audited and confirmed to contain NO LLM calls | Must Have | W1-6 |
+| FR-14 | `alias-creator/SKILL.md` MUST be reduced by exactly 1 line to ≤ 200; `governance/skill-budgets.json` known-debt entry MUST be removed | Must Have | W1-7 |
+| FR-15 | Pre-rollout `wc -l` simulation MUST be recorded before any mass-edit touching ≥3 SKILL.md files (W1-3/4/5/6); output MUST be attached to PR | Must Have | W1-3/4/5/6 |
+| FR-16 | Dev MUST load `plugin-dev:skill-development` before modifying any SKILL.md; `plugin-dev:hook-development` before modifying hooks/*.py | Must Have | All WIs |
 
 ---
 
@@ -66,23 +72,20 @@ feedback loop and gains will regress within 6 months (per governance expert find
 
 | ID | Requirement | Verification |
 |----|-------------|--------------|
-| NFR-01 | Hook overhead MUST be < 50 ms per call (mean across 10 invocations) | Time 10 skill invocations with/without hook; delta MUST be < 50 ms mean |
-| NFR-02 | Telemetry JSONL schema MUST be versioned v1; version field MUST appear in `telemetry-schema.md` | `grep 'version: 1' delivery-team/references/telemetry-schema.md` MUST match |
-| NFR-03 | CI gate MUST fail (exit non-zero) on a synthetic PR that introduces one line exceeding tier budget | Proven via test PR in CI before merge |
-| NFR-04 | Tier budgets are exactly Tier-A ≤ 500 / Tier-B ≤ 300 / Tier-C ≤ 200 — no other values permitted | `grep -n 'TIER_LIMITS\|500\|300\|200' scripts/check_skill_budgets.py` MUST show exactly these three values |
+| NFR-01 | Hook overhead MUST remain < 50 ms (unchanged from Wave 0) | `python3 delivery-team/hooks/telemetry.py --dry-run` ×10; mean < 50 ms |
+| NFR-02 | Telemetry schema MUST remain v1; no new fields without schema bump | `grep 'version: 1' delivery-team/references/telemetry-schema.md` matches |
+| NFR-03 | CI gate MUST pass after all 7 WIs; no `Budget-Exception:` needed for alias-creator | `python scripts/check_skill_budgets.py` exits 0 without alias-creator warning |
+| NFR-04 | Tier budget values MUST remain exactly 500/300/200 | `grep -n 'TIER_LIMITS\|500\|300\|200' scripts/check_skill_budgets.py` shows only these three |
+| NFR-05 | No SKILL.md MUST be content-reduced beyond W1-7's -1-line target; reduction is Wave 2 | `git diff --stat HEAD -- 'delivery-team/**/SKILL.md'` delta ≤ 0 except alias-creator (-1) and delivery-flow (W1-2) |
+| NFR-06 | W1-3/W1-5 changes to `audit_agent_prompt.py` MUST NOT introduce LLM calls | `grep -E "anthropic|openai|litellm" delivery-team/hooks/audit_agent_prompt.py` returns empty |
 
 ---
 
 ## 6. Out of Scope
 
-- Wave 1 items (W1-1 through W1-6) — blocked until W0-1 + W0-2 land
-- Wave 2 items (W2-1 through W2-6)
-- Wave 3 items (W3-1 through W3-3)
-- Any plugin other than delivery-team
-- Retroactive SKILL.md content migration (Wave 0 MUST NOT reduce line counts — only add `tier:` frontmatter)
-- Telemetry analysis dashboards or visualization tooling
-- Anthropic SDK usage inside hooks
-- CI gates for non-delivery-team plugins
+- Wave 2+ structural extractions (BACKLOG-102+); mtg-commander agent-prompt extractions
+- All non-delivery-team plugins (hardware-team, agentic-flow-builder, research-agent, etc.)
+- CLAUDE.md refactor (Wave 3 — `tk0e-claude-md-refactor` known-debt); telemetry dashboards
 
 ---
 
@@ -90,129 +93,107 @@ feedback loop and gains will regress within 6 months (per governance expert find
 
 | Item | Type | Detail | Mitigation |
 |------|------|--------|------------|
-| `hooks.json` phantom reference | Risk (recurring defect) | Pre-merge check MUST verify every path in hooks.json exists on disk | FR-12 is a hard AC; verify via `python -c "import json,os; [os.path.exists(p) or (_ for _ in ()).throw(Exception(p)) for p in [e['script'] for e in json.load(open('delivery-team/hooks/hooks.json'))['hooks']]]"` |
-| Permissive-language regex scope | Risk | Regex `\bshould\b|\bcan\b|\bmay\b|\bmight\b` MUST skip fenced code blocks, blockquotes, and tables to avoid false positives on SKILL.md content in those structures | FR-09 specifies allowlist + exempt zones; warn-only so false positives are non-blocking |
-| PreToolUse fires before skill loads | Architectural note | Hook captures requested skill name, NOT the loaded content; `prefix_hash` MUST be computed from the SKILL.md path on disk, not from context | Documented in telemetry-schema.md v1; Dev MUST read hook event payload spec |
-| CI budget-exception bypass mechanism | Dependency | `Budget-Exception:` PR-body parser MUST be implemented in `check_skill_budgets.py` before W0-2 is considered Done | Pre-registered known-debt (6 skills) handled as a hard-coded initial exception list in the script, not via PR-body bypass |
-| plugin-dev skill routing | Process constraint | W0-1 MUST be built via `plugin-dev:hook-development`; W0-2 MUST use `plugin-dev:plugin-structure` + `plugin-dev:skill-development`; both MUST pass `plugin-dev:skill-reviewer` + `plugin-dev:plugin-validator` before merge | Developer DoD checklist includes skill-routing verification step |
+| W1-1 cache-prefix self-modification | Risk | Modifying delivery-flow/SKILL.md affects FUTURE invocations only; current pipeline run loads pre-modification prefix | ADR required; verify on second run via telemetry cache_read/input ≥ 0.85 |
+| W1-3/4/5/6 mandatory-rollout side-effect | Risk (HIGH) | 4 WIs touch multiple SKILL.md files simultaneously; mass-edit errors trigger CI failures | FR-15 pre-rollout `wc -l` simulation MUST be recorded before edits begin |
+| W1-5 adversarial quality loss | Risk (HIGH) | Capability asymmetry kills adversarial property; anti-pattern session 0876a59e (14 undetected violations) | Warn-only Sprint 1; re-run failing validators at Sonnet before reopening loop |
+| W1-6 Sonnet flip approach | Open team decision | 5-run shadow A/B vs immediate flip with telemetry watch | Default: shadow A/B per mission-critical risk tolerance (BACKLOG-101 §W1-6) |
+| W1-2 stages.yml not on disk | Dependency | `stages.yml` is a Stage 6 Dev deliverable (D), not a prerequisite | Dev creates it; no upstream artifact to read |
+| audit_agent_prompt.py filename | Binding correction | BACKLOG-101 cites `agent_audit.py` — WRONG; confirmed `audit_agent_prompt.py` via `ls delivery-team/hooks/` | All Dev agents MUST use `audit_agent_prompt.py` |
+| delivery-team marketplace description | Known violation | 913 chars; exceeds 500-char cap (discovery confirmed) | FR-08 addresses it; verified by AC-10 |
 
 ---
 
 ## 8. Acceptance Criteria
 
-### Sprint ceiling
-
-This is a **2-WI, single-iteration sprint**. W0-1 and W0-2 are the only items. No new items may enter. No mid-sprint replan.
-
-### Mandatory artifact list per WI
+Sprint ceiling: 7-WI, single-iteration. No new items. No mid-sprint replan.
+### Mandatory artifact list
 
 | WI | Artifact | Must exist at Done |
 |----|----------|--------------------|
-| W0-1 | `delivery-team/hooks/telemetry.py` | Yes |
-| W0-1 | `delivery-team/hooks/telemetry_report.py` | Yes |
-| W0-1 | `delivery-team/references/telemetry-schema.md` (v1) | Yes |
-| W0-1 | `delivery-team/hooks/hooks.json` (updated, PreToolUse Skill entry) | Yes |
-| W0-2 | `.github/workflows/skill-line-budget.yml` | Yes |
-| W0-2 | `scripts/check_skill_budgets.py` | Yes |
-| W0-2 | All 13 `delivery-team/**/SKILL.md` files with `tier:` frontmatter (11 top-level + 2 paradigm sub-skills, all Tier-C) | Yes |
+| W1-1 | `delivery-flow/SKILL.md` with `## Volatile` marker; volatile content after marker | Yes |
+| W1-1 | ADR file in `delivery-flow/references/` (e.g. `adr-cache-prefix-freeze.md`) | Yes |
+| W1-2 | `delivery-flow/references/stages.yml` (7 entries) + companion JSON schema | Yes |
+| W1-3 | 5 SKILL.md files updated with `model: haiku` routing agents | Yes |
+| W1-3 | `audit_agent_prompt.py` extended with routing-tier mismatch warn | Yes |
+| W1-4 | All 13 `delivery-team/**/SKILL.md` with `allowed-tools:` frontmatter | Yes |
+| W1-4 | `.claude-plugin/marketplace.json` delivery-team description ≤ 500 chars | Yes |
+| W1-5 | `delivery-flow/SKILL.md` adversarial-review section enforcing challenger.model == primary.model | Yes |
+| W1-5 | `audit_agent_prompt.py` extended with challenger.model == primary.model warn | Yes |
+| W1-6 | `delivery-flow/SKILL.md` frontmatter with `model: sonnet` | Yes |
+| W1-6 | Audit log confirming 0 LLM calls in all 7 hooks/*.py | Yes |
+| W1-7 | `alias-creator/SKILL.md` ≤ 200 lines | Yes |
+| W1-7 | `governance/skill-budgets.json` — alias-creator known-debt entry removed | Yes |
 
-### W0-1 runnable ACs
+### Runnable ACs by WI
 
-**AC-1** (hook fires + writes row):
+**W1-1**
 ```bash
-tail -1 .delivery/telemetry/skill-loads.jsonl
-# MUST: non-empty JSON line after a skill invocation
+grep -n '## Volatile' delivery-team/skills/delivery-flow/SKILL.md          # MUST: ≥1 match
+find delivery-team/skills/delivery-flow/references -name 'adr-cache*' | wc -l  # MUST: ≥1
 ```
 
-**AC-2** (all fields present):
+**W1-2**
 ```bash
-python3 -c "import json; rows=[json.loads(l) for l in open('.delivery/telemetry/skill-loads.jsonl')]; req={'skill','model','prefix_hash','input_tokens','cache_read_tokens','cache_write_tokens','timestamp','session_id'}; [req-r.keys() and (_ for _ in ()).throw(KeyError(req-r.keys())) for r in rows]; print('PASS', len(rows), 'rows')"
-# MUST: print PASS; MUST NOT raise
-```
-
-**AC-3** (schema v1 documented):
-```bash
-grep 'version: 1' delivery-team/references/telemetry-schema.md
-# MUST: at least one match
-```
-
-**AC-4** (report script non-empty):
-```bash
-python3 delivery-team/hooks/telemetry_report.py
-# MUST: non-empty mean-tokens table; MUST NOT raise or print nothing
-```
-
-**AC-5** (overhead < 50 ms — telemetry.py MUST support `--dry-run`):
-```bash
-python3 -c "import time,subprocess,statistics; s=[time.perf_counter() for _ in range(10) if not subprocess.run(['python3','delivery-team/hooks/telemetry.py','--dry-run'],check=True)]; print(f'irrelevant')"
-# Practical form: time 10 --dry-run calls; compute mean delta; MUST be < 50 ms
-```
-
-**AC-6** (no LLM import):
-```bash
-grep -n 'anthropic\|openai\|litellm' delivery-team/hooks/telemetry.py
-# MUST: no matches (grep exits 1 = PASS)
-```
-
-**AC-7** (no phantom hook paths):
-```bash
-python3 -c "import json,os; h=json.load(open('delivery-team/hooks/hooks.json')); bad=[e['script'] for e in h.get('hooks',[]) if not os.path.exists(e['script'])]; assert not bad, bad; print('PASS')"
+python3 -c "import json,yaml,jsonschema; schema=json.load(open('delivery-team/skills/delivery-flow/references/stages-schema.json')); data=yaml.safe_load(open('delivery-team/skills/delivery-flow/references/stages.yml')); jsonschema.validate(data,schema); assert len(data.get('stages',[]))==7; print('PASS')"
+# MUST: print PASS
+python3 -c "import json; rows=[json.loads(l) for l in open('.delivery/telemetry/skill-loads.jsonl')]; b=[r for r in rows if r.get('tag')=='pre-w1-2']; a=[r for r in rows if r.get('tag')=='post-w1-2']; drop=b[-1]['input_tokens']-a[-1]['input_tokens']; assert drop>=2000,drop; print(f'PASS drop={drop}')"
 # MUST: print PASS
 ```
 
-### W0-2 runnable ACs
-
-**AC-8** (all 13 SKILL.md files have `tier:` frontmatter; paradigm sub-skills MUST be `tier: C`):
+**W1-3**
 ```bash
-find delivery-team -name 'SKILL.md' | wc -l   # MUST: 13
-find delivery-team -name 'SKILL.md' -exec grep -qL "^tier:" {} \; -print  # MUST: no output
-grep "^tier:" delivery-team/architect/paradigms/ddd/SKILL.md       # MUST: tier: C
-grep "^tier:" delivery-team/architect/paradigms/volatility/SKILL.md # MUST: tier: C
+for f in delivery-team/skills/product-delivery/SKILL.md delivery-team/skills/architect/SKILL.md delivery-team/skills/quality/SKILL.md delivery-team/skills/operations/SKILL.md delivery-team/skills/ui/SKILL.md; do grep -n 'model: haiku' "$f" || echo "MISSING $f"; done
+# MUST: every file shows ≥1 match; MUST: no MISSING lines
+grep -n 'routing\|haiku\|tier.mismatch' delivery-team/hooks/audit_agent_prompt.py  # MUST: ≥1 match
 ```
 
-**AC-9** (CI fails synthetic over-budget file):
+**W1-4**
 ```bash
-python3 -c "open('/tmp/ob.md','w').write('---\ntier: C\n---\n'+'# x\n'*201)"
-python3 scripts/check_skill_budgets.py --check /tmp/ob.md --tier C; echo "Exit: $?"
-# MUST: exit 1; MUST print budget violation naming file and overage
+find delivery-team -name 'SKILL.md' -exec grep -qL 'allowed-tools' {} \; -print  # MUST: no output
+python3 -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); bad=[(p.get('name'),len(p.get('description',''))) for p in d['plugins'] if len(p.get('description',''))>500]; assert not bad,bad; print('PASS')"
+# MUST: print PASS
 ```
 
-**AC-10** (6 known-debt skills in output):
+**W1-5**
 ```bash
-python3 scripts/check_skill_budgets.py --known-debt-report
-# MUST: 6 lines matching: KNOWN-DEBT: <skill>/SKILL.md <current>/<budget> lines — target wave: W<N>
-# Expected: delivery-flow(1089/500), product-delivery(688/300), architect(670/300),
-#           presentation(543/300), ui(493/300), developer(493/300)
+grep -n 'challenger.*model\|inherit.*model' delivery-team/skills/delivery-flow/SKILL.md  # MUST: ≥1 match
+grep -n 'challenger.*model\|primary.*model' delivery-team/hooks/audit_agent_prompt.py    # MUST: ≥1 match
+grep -rn 'extended.thinking' delivery-team/skills/delivery-flow/SKILL.md                 # MUST: default OFF shown
 ```
 
-**AC-11** (permissive-language warn-only, no exit-1):
+**W1-6**
 ```bash
-python3 scripts/check_skill_budgets.py --warn-permissive delivery-team/skills/delivery-flow/SKILL.md; echo "Exit: $?"
-# MUST: exit 0; warnings to stderr are acceptable; MUST NOT exit 1
+grep -n '^model:' delivery-team/skills/delivery-flow/SKILL.md | head -1  # MUST: "model: sonnet"
+grep -rE 'anthropic|openai|litellm' delivery-team/hooks/                 # MUST: no matches
 ```
 
-**AC-12** (budget-exception bypass implemented):
+**W1-7**
 ```bash
-grep -n 'Budget-Exception' scripts/check_skill_budgets.py
-# MUST: at least one match
+wc -l delivery-team/skills/alias-creator/SKILL.md                  # MUST: ≤ 200
+python3 scripts/check_skill_budgets.py                              # MUST: exit 0; no alias-creator warning
+grep -n 'alias-creator' governance/skill-budgets.json               # MUST: no known_debt entry
 ```
 
 ---
 
 ## 9. Open Questions
 
-**None.** All binding decisions are resolved in `.delivery/memory/topics/skill-token-economy.md`.
+**None.** Binding decisions resolved in `.delivery/memory/topics/skill-token-economy.md`.
 
----
+## 10. Verification Plan (dogfood — Stage 6 Dev MUST produce per WI)
 
-## 10. Verification Plan (dogfood — Stage 6 Dev MUST produce)
+| WI | Required dogfood evidence (MUST appear in PR body or linked gist) |
+|----|-------------------------------------------------------------------|
+| W1-1 | Telemetry row showing cache_read/input ≥ 0.85 on second delivery-flow invocation post-merge |
+| W1-2 | Pipeline dogfood: all 7 stages route correctly; telemetry diff showing ≥2,000 token drop |
+| W1-3 | 10-sample dispatch log showing routing decisions under `model: haiku`; 10/10 correct role selections |
+| W1-4 | `find delivery-team -name SKILL.md -exec grep -L allowed-tools {} \;` empty; all descriptions ≤ 500 (paste output) |
+| W1-5 | Adversarial round output excerpt: ≥1 substantive critique produced; `grep challenger audit_agent_prompt.py` shows enforcement |
+| W1-6 | End-to-end pipeline run on Sonnet default; telemetry diff ≥3× cost reduction vs Opus baseline; grep hooks/ clean |
+| W1-7 | `wc -l alias-creator/SKILL.md` ≤ 200 (paste); `check_skill_budgets.py` exit 0 without alias-creator warning |
 
-Stage 6 Developer DoD MUST produce the following dogfood evidence before marking Wave 0 Done:
-
-1. **End-to-end pipeline run** — invoke at least one delivery-team skill through the normal pipeline with the telemetry hook active; attach the resulting `.delivery/telemetry/skill-loads.jsonl` output (≥1 row) to the PR.
-2. **AC-5 timing report** — attach the stdout of the overhead measurement script showing mean < 50 ms.
-3. **AC-9 CI failure screenshot or log** — a GitHub Actions run log showing the budget-violation CI step failing on the synthetic over-budget test file.
-4. **AC-8 tier count** — paste the output of `find delivery-team -name 'SKILL.md' | wc -l` showing `13`; also paste the two `grep "^tier:"` checks for the paradigm sub-skills confirming `tier: C`.
-5. **AC-10 known-debt report** — paste the full output of `python3 scripts/check_skill_budgets.py --known-debt-report` showing all 6 skills.
-
-All 5 evidence items MUST appear in the PR body or linked gist. Reviewer MUST verify all 5 before approving merge.
+**Pre-rollout gate** (FR-15 — MUST run before W1-3/W1-4/W1-5/W1-6 mass edits):
+```bash
+find delivery-team -name 'SKILL.md' | xargs wc -l | sort -rn
+# Record as pre-rollout baseline; attach to PR; re-run post-edit and diff
+```

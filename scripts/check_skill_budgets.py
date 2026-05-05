@@ -96,15 +96,6 @@ KNOWN_DEBT = [
         "current": 234,
         "target_wave": 1,
     },
-    # alias-creator was exactly at limit (200/200) at ADR-tk0e-003 audit baseline.
-    # Wave 0 tier-frontmatter rollout added +1 line (tier: C), pushing it to 201.
-    # Declared known-debt here; Wave 1 reduction restores compliance.
-    {
-        "path": "delivery-team/skills/alias-creator/SKILL.md",
-        "tier": "C",
-        "current": 201,
-        "target_wave": 1,
-    },
     # paradigm sub-skills remain well under limit — NOT in known-debt
 ]
 

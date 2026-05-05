@@ -48,3 +48,11 @@
 ## Mandatory-Rollout Side-Effects (run-2026-05-03-tk0e)
 
 - **Any "add 1 line to N files" rollout MUST simulate the per-file line delta before commit; near-budget edges become budget violations.** Wave 0 added `tier:` frontmatter to all 13 delivery-team SKILL.md files (+1 line each) — alias-creator was at exactly 200 lines (Tier-C limit) and crossed to 201, becoming over-budget by the very gate the rollout was introducing. Action: any mass rollout MUST run `wc -l` against the target set BEFORE the rollout to identify files at-or-near-limit; either pre-trim those files in the same WI or pre-register them as known-debt. (validated: 1, last: run-2026-05-03-tk0e)
+
+## Discovery Discipline Extends Beyond PRDs (run-2026-05-04-tk1)
+
+- **BACKLOGS derived from upstream audit/research MUST run discovery commands BEFORE referencing files.** The Wave 0 lesson "PRDs from upstream prose MUST run discovery commands" generalizes — applies to BACKLOG documents too. BACKLOG-101 cited `delivery-team/hooks/agent_audit.py` (phantom; actual is `audit_agent_prompt.py`); Stage 1 Architect caught it. Action: any multi-stage authored artifact (BACKLOG, PRD, ADR, sprint plan) that names files MUST run `find`/`ls`/`grep` to verify path correctness BEFORE the artifact is finalized. (validated: 1, last: run-2026-05-04-tk1)
+
+## Pipeline Artifact Path Convention (run-2026-05-04-tk1)
+
+- **Pipeline artifacts live at `.delivery/artifacts/<NN>-<stage>/`** — NOT under `<plugin>/references/` or other plugin-internal paths. ADRs go in `.delivery/artifacts/04-architect/adrs/`. Implementation reports in `.delivery/artifacts/06-dev/developer/`. Dogfood evidence in `.delivery/artifacts/06-dev/dogfood-evidence/`. DoD reviews in `.delivery/artifacts/<NN>-<stage>/dod/`. Validator prompts MUST cite canonical paths or risk false-positive "phantom path" findings (Story 1 QA round 1 wasted a re-dispatch by looking in the wrong location). (validated: 1, last: run-2026-05-04-tk1)

@@ -1,81 +1,99 @@
 ---
-title: "Wave 0 UAT Test Plan"
+title: "Wave 1 UAT Test Plan"
 stage: 07-uat
 author: Legolas (quality skill)
 created: 2026-05-03
 version: 1.0
+stories: [story-1-delivery-flow-restructure, story-2-frontmatter-rollout, story-3-challenger-hook]
 ---
 
-# Wave 0 UAT Test Plan
+# Wave 1 UAT Test Plan
 
 ## Scope
 
-Acceptance of W0-1 (telemetry hook) and W0-2 (SKILL.md line-budget CI gate) from the
-perspective of a delivery-team contributor. UAT verifies that a contributor is unblocked
-to start Wave 1+ work and that both features behave correctly end-to-end.
+Contributor-perspective acceptance of 3 Wave 1 stories:
+- Story 1 — delivery-flow/SKILL.md restructure (cache-prefix freeze, stages.yml, frontmatter)
+- Story 2 — frontmatter rollout (allowed-tools, phase_1_detector_model, alias-creator trim)
+- Story 3 — challenger-tier model inheritance hook (warn-only)
 
-Stage 6 dogfood evidence already covers all unit and integration cases. UAT adds four
-maintainer-perspective acceptance scenarios that answer: **"would a contributor be
-unblocked from Wave 1+?"**
+Stage 6 dogfood covers unit/integration. UAT answers: **"would the next BACKLOG item ship cleanly?"**
 
 ## Pre-conditions
 
-- Clean git tree (`git status` reports nothing modified or staged).
-- Both W0-1 and W0-2 branches are merged to main.
-- `delivery-team/hooks/telemetry.py` and `scripts/check_skill_budgets.py` exist.
-- Python 3.8+ available; no external packages required (stdlib only).
-- GitHub Actions CI available on the repository (for Scenario 2 and 3 — CI scenarios).
+- Clean git tree (`git status` is empty).
+- All 3 story branches merged to main.
+- Files exist: `governance/cache-prefix-hash.txt`, `references/stages.yml`,
+  `references/stages-schema.json`, `delivery-team/hooks/audit_agent_prompt.py`.
+- Python 3.8+ stdlib-only environment available.
+- `scripts/check_skill_budgets.py` and `governance/skill-budgets.json` present.
 
 ## Acceptance Scenarios
 
-### Scenario 1 — Telemetry runs invisibly
-**Question**: Does the telemetry hook fire silently without blocking the contributor's
-Skill invocation or emitting noise to the terminal?
+### Scenario 1 — delivery-flow loads as a skill
+**Question**: Does delivery-flow/SKILL.md remain structurally intact after Story 1 edits?
 
-- Trigger any Skill invocation via the hook directly.
-- Verify: `.delivery/telemetry/skill-loads.jsonl` grows by exactly 1 row.
-- Verify: exit code 0 (Skill not blocked).
-- Verify: no output to stdout (invisible to the user).
-- **Pass**: row appended; exit 0; stdout empty.
+- Verify file is 999 lines (post-restructure).
+- Verify frontmatter contains `model: sonnet` and `extended_thinking: false`.
+- Verify 5 Phase sections present (`grep -c "^## Phase" → 5`).
+- Verify `## Volatile` marker appears exactly once.
+- **Pass**: all 4 checks exit 0 / return expected values.
 
-### Scenario 2 — CI gate fires correctly on over-budget PR
-**Question**: Does a contributor adding lines to a Tier-A SKILL.md get a clear CI
-failure before merge?
+### Scenario 2 — stages.yml drives stage routing
+**Question**: Can a Wave 2 executor rely on stages.yml as structured routing data?
 
-- Open a draft PR adding ≥50 prose lines to `delivery-team/skills/delivery-flow/SKILL.md`
-  (Tier A, currently 1090/500 lines — no Budget-Exception in body).
-- Verify: `skill-line-budget` CI check shows **failure** status.
-- Verify: job summary names the file, the tier, and the overage delta.
-- **Pass**: check failed; annotation present with file + delta.
+- Verify `references/stages.yml` size > 100 bytes.
+- Verify `references/stages-schema.json` parses as valid JSON (stdlib `json.load`).
+- Verify stages-schema.json contains `"$schema"` key (JSON Schema identity present).
+- **Pass**: size check passes; JSON parses; schema key present. (PyYAML structural
+  validation deferred to Wave 2 per known limitation — file presence + schema pass
+  is the Wave 1 gate.)
 
-### Scenario 3 — Budget-Exception token bypasses gate with warning
-**Question**: Can a contributor intentionally carry known-debt through CI without blocking
-the merge?
+### Scenario 3 — CI budget gate passes after alias-creator trim
+**Question**: Does `check_skill_budgets.py` exit 0 without alias-creator in known-debt?
 
-- Open a draft PR with the same over-budget SKILL.md from Scenario 2.
-- Add `Budget-Exception: known-debt-tk0e` to the PR description body.
-- Verify: `skill-line-budget` CI check shows **passing** status.
-- Verify: job summary contains `EXCEPTION ACKNOWLEDGED` warning.
-- **Pass**: check passed; warning present; no silent pass (warning required).
+- Run `python3 scripts/check_skill_budgets.py`.
+- Verify: exit code 0.
+- Verify: `alias-creator` does NOT appear in output.
+- Verify: `governance/skill-budgets.json` has no `alias-creator` entry.
+- **Pass**: exit 0; alias-creator absent from both output and JSON registry.
 
-### Scenario 4 — Permissive-language scan warns but does not block
-**Question**: Does adding `should` to a SKILL.md prose section produce a warning without
-blocking the contributor's PR?
+### Scenario 4 — allowed-tools whitelist declared in Tier-A + role multiplexers
+**Question**: Do all 12 non-delivery-flow SKILL.md files carry `allowed-tools:` frontmatter?
 
-- Open a draft PR adding a prose sentence containing `should` to any Tier-C SKILL.md.
-- Verify: CI job summary contains a `PERMISSIVE-LANGUAGE` warning line.
-- Verify: CI check exits **passing** (warn-only, no failure).
-- **Pass**: check passed; warning present in summary.
+- `grep -rl "^allowed-tools:" delivery-team/skills/ | wc -l` (excluding delivery-flow).
+- Verify count ≥ 12.
+- Verify at least one Phase-1-router file (e.g. quality/SKILL.md) also contains
+  `phase_1_detector_model: haiku`.
+- **Pass**: ≥ 12 files with allowed-tools; ≥ 1 router file with haiku declaration.
+
+### Scenario 5 — Challenger hook fires warn-only on adversarial mismatch
+**Question**: Does the hook emit a `[CHALLENGER-TIER-WARN]` to stderr and exit 0?
+
+- Pipe a synthetic adversarial prompt with mismatched primary/challenger models into
+  `audit_agent_prompt.py`.
+- Verify: exit code 0 (no block).
+- Verify: stderr contains `[CHALLENGER-TIER-WARN]`.
+- Verify: hook contains no LLM calls
+  (`grep -E "anthropic|openai|litellm" audit_agent_prompt.py` returns empty).
+- **Pass**: exit 0; warning on stderr; no LLM imports.
+
+### Scenario 6 — Cache-prefix hash is byte-stable across 2 reads
+**Question**: Is sha256(bytes 0..2048) of SKILL.md reproducible and matches the frozen hash?
+
+- Read `governance/cache-prefix-hash.txt` → capture stored hash.
+- Recompute: `python3 -c "import hashlib,pathlib; print(hashlib.sha256(
+  pathlib.Path('delivery-team/skills/delivery-flow/SKILL.md').read_bytes()[:2048]).hexdigest())"`.
+- Verify: live hash == stored hash (exact string match).
+- **Pass**: hashes match on both reads; no drift.
 
 ## Pass Criteria
 
-All 4 scenarios must be green. A scenario is green when every bullet under "Verify"
-is satisfied with no manual workarounds.
+All 6 scenarios green. A scenario is green when every Verify bullet is satisfied
+without manual workarounds.
 
-## Out-of-Scope
+## Out of Scope
 
-- Wave 1+ refactors (token backfill, log rotation, paradigm sub-skill resolution).
-- Performance benchmarking beyond the 50 ms hook overhead (already confirmed at 18.7 ms
-  in Stage 6 dogfood).
-- End-to-end pipeline run timing or throughput testing.
-- Non-delivery-team plugins.
+- BACKLOG-102 (caveman refactor), Wave 2+, paradigm sub-skill resolution.
+- Non-delivery-team plugins (hardware-team, mtg-commander, etc.).
+- End-to-end pipeline timing or throughput benchmarks.
+- PyYAML structural validation of stages.yml (Wave 2 CI addition).

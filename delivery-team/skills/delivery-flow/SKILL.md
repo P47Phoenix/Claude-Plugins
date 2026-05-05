@@ -3,6 +3,8 @@ name: delivery-flow
 description: Delivery pipeline orchestrator that coordinates the full delivery team through 7 stages (Idea, Refine, Design, Architect, Plan, Development, UAT) with auto-detection of project type, self-correction loops, adversarial review, multi-perspective review boards, team Definition of Done validation, dynamic escalation, debate for contested decisions, consensus for cross-team alignment, and self-learning memory. Triggers on phrases like "delivery pipeline", "full delivery", "end-to-end delivery", "start project", "new project", "greenfield", "new feature", "bug fix", "spike", "POC", "proof of concept", "game project", "delivery flow", "run pipeline", "start pipeline", "deliver this", "build and ship", "start delivery", "kick off project".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
+model: sonnet
+extended_thinking: false
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: A
@@ -517,7 +519,9 @@ Execute the collaboration patterns designated for this stage. Patterns run in th
 order when multiple apply:
 
 1. Evaluator-Optimizer Loop -- baseline quality pass
-2. Adversarial Review -- stress-test assumptions
+2. Adversarial Review -- stress-test assumptions. Adversarial challenger sub-agents MUST
+   inherit the primary agent's `model:` value at dispatch time. Extended thinking MUST
+   default OFF unless the orchestrator explicitly opts in per-stage.
 3. Debate -- resolve contested decisions
 4. Multi-Perspective Review Board -- multi-domain assessment
 5. Consensus -- cross-team alignment
@@ -612,135 +616,12 @@ Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 
 ## Stage Definitions
 
-> **Authoritative source**: `references/pipeline-stages.md` is the single source of truth for
-> stage sub-flows, agent invocation details, artifact output paths (namespaced), and DoD
-> Validator Dispatch Templates. The summaries below provide routing and orchestration context
-> only. When executing a stage, ALWAYS load the full definition from `references/pipeline-stages.md`.
-
-### Stage 1: Idea
-
-**Runs for**: all project types (full depth)
-**Purpose**: Capture and structure the raw idea into a brief.
-**Primary agent**: Product Owner (product-delivery skill)
-**Upstream artifacts**: none (first stage)
-**Collaboration patterns**: none
-**DoD validators**: Product Owner, Architect
-**Human checkpoint**: none
-**Max self-correction**: 2 iterations
-**Output**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Self-correction note**: Prefer asking the user for clarification over self-correction — the orchestrator should not invent details for the user's idea.
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
-
----
-
-### Stage 2: Refine
-
-**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full)
-**Skipped for**: BUG_FIX, SPIKE, DOCS_ONLY
-**Purpose**: Transform the idea brief into a complete PRD with acceptance criteria and success metrics.
-**Primary agent**: Product Owner (product-delivery skill). Supporting: Data Analyst.
-**Upstream artifacts**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Collaboration patterns**: Evaluator-Optimizer (QA evaluates PRD), Adversarial Review (confidence 1-5, escalate if <= 2)
-**DoD validators**: Product Owner, Architect, QA Engineer
-**Human checkpoint**: CHECKPOINT 1 — present PRD summary for approval
-**Max self-correction**: 3 iterations
-**Output**: `.delivery/artifacts/02-refine/po/prd.md`
-**Game dev additions**: UX Designer reviews for game UX patterns; game-specific NFRs added.
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
-
----
-
-### Stage 3: Design
-
-**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full+game)
-**Skipped for**: BUG_FIX, SPIKE, DOCS_ONLY
-**Purpose**: Create user experience design — user flows, wireframes, component specs, accessibility.
-**Primary agents**: UX Designer, UI Designer (ui skill)
-**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`
-**Collaboration patterns**: Multi-Perspective Review Board (Architect, PO, QA review; BLOCKs routed via Decision Ownership)
-**DoD validators**: UX Designer, Product Owner, QA Engineer, Architect
-**Human checkpoint**: none (combined with Architect checkpoint if both stages run)
-**Max self-correction**: 3 iterations
-**Output**: `.delivery/artifacts/03-design/ux/user-flows.md`, `.delivery/artifacts/03-design/ux/wireframes.md`, `.delivery/artifacts/03-design/ui/component-specs.md`, `.delivery/artifacts/03-design/ui/accessibility.md`
-**Game dev additions**: Game UI Designer invoked for HUD, menu, inventory UI. Game-specific accessibility review.
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
-
----
-
-### Stage 4: Architect
-
-**Runs for**: GREENFIELD (full), significant FEATURE (light), GAME_DEV+ (full+game), SPIKE (full)
-**Skipped for**: BUG_FIX, DOCS_ONLY, simple FEATURE
-**Purpose**: Create technical architecture — system design, C4 model, ADRs, technology decisions.
-**Primary agent**: Architect (architect skill, role: solution). Supporting: Security Architect, Data Architect.
-**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/03-design/ux/user-flows.md` (if Design ran)
-**Collaboration patterns**: Debate (contested technical decisions → ADRs), Evaluator-Optimizer (QA + DevOps review), Adversarial Review (confidence 1-5)
-**DoD validators**: Architect, QA Engineer, DevOps, Security
-**Human checkpoint**: CHECKPOINT 2 — present architecture summary for approval
-**Max self-correction**: 2 iterations
-**Output**: `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/04-architect/adrs/ADR-001.md` (one per major decision)
-**Game dev additions**: Game Systems Architect, Level/World Designer, Network Architect (if multiplayer), Graphics Specialist (if graphically intensive). Performance budgets required.
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
-
----
-
-### Stage 5: Plan
-
-**Runs for**: GREENFIELD (full), FEATURE (full), GAME_DEV+ (full), BUG_FIX (light), DOCS_ONLY (light)
-**Skipped for**: SPIKE
-**Purpose**: Create sprint plan with user stories, estimates, test strategy, and deployment approach.
-**Primary agents**: Product Owner, Scrum Bag, QA Engineer, DevOps
-**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/04-architect/solution/architecture.md` + ADRs (if Architect ran)
-**Collaboration patterns**: Consensus (SM, PO, QA, DevOps converge on estimates/risks), Adversarial Review (confidence 1-5)
-**DoD validators**: Scrum Bag, Product Owner, QA Engineer, DevOps
-**Human checkpoint**: CHECKPOINT 3 — present sprint plan for approval
-**Max self-correction**: 2 iterations
-**Output**: `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/05-plan/sm/sprint-plan.md`, `.delivery/artifacts/05-plan/qa/test-strategy.md`, `.delivery/artifacts/05-plan/devops/deploy-plan.md`
-**Light mode** (BUG_FIX, DOCS_ONLY): PO writes single story, SM produces minimal plan, skip consensus/adversarial, QA validates testability, reduced DoD (SM + QA only).
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
-
----
-
-### Stage 6: Development
-
-**Runs for**: all project types (full depth; full+game for GAME_DEV+)
-**Purpose**: Implement code, write tests, produce development documentation. Executes per story.
-**Primary agent**: Developer (developer skill). Supporting: QA Engineer, Technical Writer.
-**Upstream artifacts**: `.delivery/artifacts/02-refine/po/prd.md`, `.delivery/artifacts/04-architect/solution/architecture.md`, `.delivery/artifacts/05-plan/po/stories.md`, `.delivery/artifacts/03-design/ux/user-flows.md` (all available)
-**Collaboration patterns**: Evaluator-Optimizer per story (code → QA review → fix), Decision Ownership Routing as needed
-**DoD validators** (per story): Developer, QA Engineer, Architect, Technical Writer. GAME_DEV+ adds Defect Prevention Gate (godot skill).
-**DoD status options**: DONE, CODE_COMPLETE (empirical validation pending → carried to Stage 7), NOT_DONE
-**Human checkpoint**: none
-**Max self-correction**: 3 iterations per story
-**Output**: code files + `.delivery/artifacts/06-dev/developer/{story-id}.md`, `.delivery/artifacts/06-dev/tech-writer/docs.md` (if applicable)
-**Milestone testing**: After sprint stories pass DoD, run milestone validation per `references/milestone-testing.md` (quality skill).
-**Game dev additions**: Godot skill invoked for engine-specific work. Headless validation, empirical AC classification, performance profiling, playtest scenarios, milestone playtest checkpoint.
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
-
----
-
-### Stage 7: UAT
-
-**Runs for**: GREENFIELD (full), FEATURE (full), BUG_FIX (full), GAME_DEV+ (full), DOCS_ONLY (full)
-**Skipped for**: SPIKE
-**Purpose**: Execute user acceptance testing, prepare release artifacts, get final approval.
-**Primary agents**: QA Engineer (test plan + test cases), DevOps (release plan + rollback), Technical Writer (release notes + user guide)
-**Upstream artifacts**: all prior artifacts
-**Collaboration patterns**: Multi-Perspective Review Board (go/no-go: QA, DevOps, Technical Writer; BLOCKs resolved before checkpoint)
-**DoD validators**: QA Engineer, DevOps, Product Owner, Technical Writer
-**Human checkpoint**: CHECKPOINT 4 — present UAT results, release plan, documentation. CODE_COMPLETE stories shown with pending empirical validations and recommended validation approaches.
-**Max self-correction**: 2 iterations
-**Output**: `.delivery/artifacts/07-uat/qa/test-plan.md`, `.delivery/artifacts/07-uat/qa/test-cases.md`, `.delivery/artifacts/07-uat/devops/release-plan.md`, `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `.delivery/artifacts/07-uat/tech-writer/user-guide.md`
-**Game dev additions**: Playtest scenarios, performance budget validation, input scheme validation, platform-specific checks.
-**Post-acceptance**: Proceed to memory update (Phase 5).
-
-See `references/pipeline-stages.md` for the complete sub-flow, agent invocation details, and artifact templates.
+> **Stage routing and orchestration metadata** is stored in machine-readable form in
+> `references/stages.yml` (validated by `references/stages-schema.json`). Load that file
+> when you need fields: `runs_for`, `skipped_for`, `light_for`, `dod_validators`,
+> `output_path`, `max_self_correction`, `human_checkpoint`, `collaboration_patterns`.
+> Full sub-flows, agent invocation templates, and artifact contracts live in
+> `references/pipeline-stages.md` — always load the full definition when executing a stage.
 
 ---
 
@@ -1088,3 +969,31 @@ They are loaded on demand during pipeline execution -- not pre-loaded into conte
 | `references/project-templates.md` | Project templates: pre-built starting artifacts for common stacks (nextjs-api, python-cli, godot-game, dotnet-microservice, react-spa, express-api, fullstack-nx) |
 | `references/feature-knowledge.md` | Feature Knowledge System: FKCs, Impact Analysis Gate, interaction map, decision trail, staleness detection |
 | `references/pipeline-scope.md` | Pipeline scope: code-only, all, custom modes with content-type-aware stage depth |
+| `references/stages.yml` | Machine-readable stage routing metadata: runs_for, skipped_for, light_for, dod_validators, output_path, max_self_correction, human_checkpoint, collaboration_patterns (validated by stages-schema.json) |
+| `references/stages-schema.json` | JSON Schema for stages.yml — validates structure of all 7 stage definitions |
+
+---
+
+## Volatile
+
+<!-- This section documents content that changes frequently and therefore MUST NOT
+     appear in the cache-prefix region (bytes 0..2048). The prefix boundary sits at
+     the end of Phase 3 (Stage Routing). Content below or flagged here is excluded
+     from the byte-stable prefix lock tracked in governance/cache-prefix-hash.txt. -->
+
+### Volatile Content Inventory
+
+The following items are intentionally placed outside the cache-prefix region or
+documented here so future editors know not to migrate them upward:
+
+- **`last_audited` frontmatter key** — updated on each audit cycle; kept in frontmatter
+  as metadata but noted as a date-stamp that will shift between versions.
+- **`model_awareness` / `model` frontmatter keys** — may change on model migration;
+  kept in frontmatter but subject to change on capability upgrades.
+- **Theme-rendering examples** (Phase 4 Step 1 and Step 10, lotr examples) — illustrative
+  examples that may be updated as themes evolve. Located well past the prefix boundary.
+- **Alias-loaded announcement examples** (Phase 0 config-load announcement) — dynamic
+  strings referencing theme display names, updated per theme library changes.
+- **Pipeline state fields** (`pipeline_id: run-YYYY-MM-DD-<4char-random>`) — run-specific
+  identifiers referenced in Phase 4 Step 8.5 and Memory sections. These are runtime
+  values, not static documentation.

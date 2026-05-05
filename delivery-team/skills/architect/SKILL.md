@@ -6,6 +6,8 @@ model_awareness: opus-4-7
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: B
+phase_1_detector_model: haiku
+allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
 
 # Architect Agent

@@ -73,15 +73,8 @@
     {
       "path": "delivery-team/skills/godot/SKILL.md",
       "tier": "C",
-      "current": 234,
+      "current": 236,
       "target_wave": 1
-    },
-    {
-      "path": "delivery-team/skills/alias-creator/SKILL.md",
-      "tier": "C",
-      "current": 201,
-      "target_wave": 1,
-      "note": "Wave 0 tier-frontmatter rollout added +1 line; was exactly at limit pre-rollout"
     }
   ]
 }

@@ -1,11 +1,94 @@
 #!/usr/bin/env python3
-"""PreToolUse hook: Audit Agent tool prompts for content leakage and compound roles."""
+"""PreToolUse hook: Audit Agent tool prompts for content leakage, compound roles,
+and adversarial-challenger model inheritance (ADR-tk1-003, Wave 1 warn-only)."""
+import os
 import re
 from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from lib.hook_utils import read_hook_input, emit_response, exit_success, get_tool_name, get_tool_input
+
+
+# ---------------------------------------------------------------------------
+# ADR-tk1-003 §W1-5: Adversarial-challenger tier model-inheritance check
+# Wave 1, Sprint 1: warn-only via stderr + GITHUB_STEP_SUMMARY. No blocking.
+# ---------------------------------------------------------------------------
+_CHALLENGER_RE = re.compile(r"\b(adversarial|challenger)\b", re.IGNORECASE)
+# Heuristic: look for   model: <name>   or   model=<name>   in the prompt body.
+_MODEL_FIELD_RE = re.compile(
+    r"\bmodel\s*[:=]\s*(['\"]?)([a-zA-Z0-9._\-]+)\1",
+    re.IGNORECASE,
+)
+# Heuristic: look for   primary model: <name>   or   primary_model: <name>
+_PRIMARY_MODEL_RE = re.compile(
+    r"\bprimary[_ ]model\s*[:=]\s*(['\"]?)([a-zA-Z0-9._\-]+)\1",
+    re.IGNORECASE,
+)
+
+
+def check_challenger_tier_inheritance(prompt_text: str) -> tuple[bool, str]:
+    """Detect adversarial-challenger dispatch with mismatched model vs primary model.
+
+    Returns (violation_detected, warning_message).
+    Wave 1 policy: warn-only; caller MUST NOT block on this result.
+    """
+    try:
+        if not _CHALLENGER_RE.search(prompt_text):
+            return False, ""
+
+        # Extract all model: <name> occurrences.
+        model_matches = _MODEL_FIELD_RE.findall(prompt_text)
+        # findall returns (quote, name) tuples — grab names.
+        model_names = [m[1] for m in model_matches if m[1]]
+
+        if not model_names:
+            # No model field found at all — cannot compare; no warning.
+            return False, ""
+
+        # Look for an explicit primary_model hint.
+        primary_match = _PRIMARY_MODEL_RE.search(prompt_text)
+        if primary_match:
+            primary_model = primary_match.group(2)
+        else:
+            # Heuristic fallback: first model mention is the primary.
+            primary_model = model_names[0]
+
+        # Challenger model is the last distinct model name found (or the only one).
+        challenger_model = model_names[-1]
+
+        if primary_model.lower() == challenger_model.lower():
+            return False, ""
+
+        msg = (
+            f"[CHALLENGER-TIER-WARN] ADR-tk1-003 W1-5: adversarial/challenger dispatch "
+            f"detected with model mismatch — primary={primary_model!r}, "
+            f"challenger={challenger_model!r}. "
+            f"Sprint 1 policy: warn-only. Promote to hard-block after zero-violation "
+            f"telemetry period (Wave 2+)."
+        )
+        return True, msg
+
+    except Exception as exc:  # noqa: BLE001
+        # Failure must never block — log to stderr and return clean.
+        print(
+            f"[CHALLENGER-TIER-WARN] check_challenger_tier_inheritance error "
+            f"(non-blocking): {exc}",
+            file=sys.stderr,
+        )
+        return False, ""
+
+
+def _emit_challenger_warning(warning_msg: str) -> None:
+    """Emit challenger-tier warning to stderr and GITHUB_STEP_SUMMARY if available."""
+    print(warning_msg, file=sys.stderr)
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        try:
+            with open(summary_path, "a", encoding="utf-8") as fh:
+                fh.write(f"\n> **{warning_msg}**\n")
+        except OSError:
+            pass  # Non-blocking: summary write failure is acceptable.
 
 
 # Compound multi-role detection patterns (OD-10).
@@ -75,6 +158,18 @@ def main():
 
     if not prompt:
         exit_success()
+
+    # --- ADR-tk1-003 W1-5: challenger-tier model inheritance (EARLY, warn-only) ---
+    try:
+        violation, challenger_warn = check_challenger_tier_inheritance(prompt)
+        if violation:
+            _emit_challenger_warning(challenger_warn)
+    except Exception as exc:  # noqa: BLE001
+        print(
+            f"[CHALLENGER-TIER-WARN] main-level guard caught: {exc} (non-blocking)",
+            file=sys.stderr,
+        )
+    # --- end challenger-tier check ---
 
     warnings = []
 

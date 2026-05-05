@@ -1,15 +1,14 @@
 ---
-title: "delivery-team Contributor Guide — Skill Token-Economy"
+title: "delivery-team Contributor Guide — Skill Token-Economy (Wave 1 additions)"
 stage: 07-uat
 author: Bilbo (operations skill, tech-writer role)
 created: 2026-05-03
+supersedes: Wave 0 user-guide (2026-05-03)
 ---
 
-# Contributor Guide: Skill Token-Economy (Wave 0 Baseline)
+# Contributor Guide: Skill Token-Economy (Wave 0 + Wave 1)
 
-## 1. What Does `tier: A|B|C` Mean?
-
-The `tier:` field in every delivery-team SKILL.md frontmatter sets the **line budget**:
+## 1. Tier Budgets (unchanged)
 
 | Tier | Budget | Used for |
 |------|--------|----------|
@@ -17,38 +16,49 @@ The `tier:` field in every delivery-team SKILL.md frontmatter sets the **line bu
 | B    | 300    | Multi-role / multi-domain skills |
 | C    | 200    | Single-role or single-domain skills |
 
-Full rationale: **ADR-tk0e-003** — `.delivery/artifacts/04-architect/adrs/ADR-tk0e-003-tier-default-mapping.md`
+## 2. Wave 1 Frontmatter Keys
 
-## 2. Declaring a Budget Exception
-
-Add this line anywhere in the PR body to bypass the CI gate for legitimate over-budget work:
-
+```yaml
+model: sonnet                  # or haiku for router agents
+allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
+extended_thinking: false       # delivery-flow default; opt-in per annotated site
+phase_1_detector_model: haiku  # router/dispatch skills only
 ```
-Budget-Exception: known-debt-tk0e
-```
 
-Pair each exception with a BACKLOG item tracking the planned extraction pass.
+Extensions to `allowed-tools` require an inline `# justification:` comment.
 
-## 3. Reading the Telemetry JSONL
+## 3. stages.yml — Authoritative Stage Manifest
 
-File: `.delivery/telemetry/skill-loads.jsonl` (one JSON object per line).
-Full schema: `delivery-team/references/telemetry-schema.md` (ADR-tk0e-001: `.delivery/artifacts/04-architect/adrs/ADR-tk0e-001-telemetry-jsonl-schema.md`).
+`delivery-team/skills/delivery-flow/references/stages.yml` is the single source of truth.
+SKILL.md carries only a pointer block. Edit `stages.yml`, not SKILL.md, for stage changes.
+JSON Schema: `references/stages-schema.json` (CI-validated on every PR).
 
-Key fields: `version` (`"1"`), `ts` (ISO-8601 UTC), `skill`, `session_id`,
-`prefix_hash` (8-char sha256 hex of SKILL.md first 2 KB), `model` (null Wave 0),
-`input_tokens` / `cache_read_tokens` / `cache_write_tokens` (0 in Wave 0; Wave 1 backfills).
+## 4. Cache-Prefix Freeze Contract
+
+First ~2 KB of `delivery-flow/SKILL.md` (through end of Phase 3) is frozen.
+Any PR touching that region must:
+1. Regenerate `governance/cache-prefix-hash.txt` (SHA-256 of bytes 0–2048).
+2. Reference an ADR in the commit message.
+3. Add `Cache-Prefix-Change: <ADR-link>` to the PR body.
 
 ```bash
-python3 delivery-team/hooks/telemetry_report.py [--last N]   # tabular view
+python3 -c "
+import hashlib
+h = hashlib.sha256(open('delivery-team/skills/delivery-flow/SKILL.md','rb').read()[:2048]).hexdigest()
+open('governance/cache-prefix-hash.txt','w').write(h + '\n'); print(h)"
 ```
 
-## 4. Adding a New SKILL.md — Checklist
+## 5. Adversarial Challenger Discipline
 
-1. Pick a tier (§1). Single-role → C; multi-role → B; orchestrator → A.
-2. Add `tier: <A|B|C>` to the YAML frontmatter block.
-3. Add an entry to `governance/skill-budgets.json` (`skill`, `tier`, `path`).
-   If already over-budget at creation, add to `KNOWN_DEBT` with `wave` + `reason`.
-4. Verify locally: `python3 scripts/check_skill_budgets.py`
-5. If over-budget at PR time, use Budget-Exception token (§2) + open a BACKLOG item.
+Challengers inherit the primary's model at dispatch. Never downgrade for cost savings.
+Wave 1: `audit_agent_prompt.py` emits `[CHALLENGER-TIER-WARN]` on mismatch (warn-only, exit 0).
+Wave 2: promotes to hard-block after 5-run zero-violation telemetry.
 
-See `plugin-dev:skill-development` for full SKILL.md authoring conventions.
+## 6. Budget Exception + New SKILL.md Checklist
+
+Add `Budget-Exception: known-debt-tk0e` to the PR body to bypass the CI gate.
+New SKILL.md checklist: pick tier → add `tier:` + `model:` + `allowed-tools:` +
+`extended_thinking:` → add to `governance/skill-budgets.json` → run
+`python3 scripts/check_skill_budgets.py` → exception token + BACKLOG item if over-budget.
+
+See `plugin-dev:skill-development` for full authoring conventions.

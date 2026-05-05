@@ -1,98 +1,120 @@
 ---
-title: "UAT DoD — PO Go/No-Go Review (Gandalf) — Round 2"
+title: "Wave 1 PO Go/No-Go Verdict"
 stage: 07-uat
-author: Gandalf (PO, product-delivery skill)
-created: 2026-05-04
-round: 2
-revised: 2026-05-05
+role: Product Owner (Gandalf)
+created: 2026-05-03
+verdict: GO
 ---
 
-# UAT DoD — PO Go/No-Go (Round 2) — Gandalf
+# Wave 1 UAT — Gandalf's Gate Check
 
-## Verdict (Round 2 Re-validation)
+## Gate 1: PRD §8 ACs Verified (Dogfood + Test Cases)
 
-**STATUS: GO — NO REGRESSION**
+**Runnable ACs from PRD §8:**
+- W1-1: `## Volatile` marker present (line 977) ✓
+- W1-2: stages.yml (7394 bytes) + schema valid JSON ✓
+- W1-3: 5 router SKILL.md with `model: haiku` + hook function ✓
+- W1-4: 12 SKILL.md with `allowed-tools`, marketplace ≤500 chars ✓
+- W1-5: adversarial-review updated + hook warn-on-mismatch ✓
+- W1-6: `model: sonnet` frontmatter + zero LLM calls in hooks ✓
+- W1-7: alias-creator 200 lines, known-debt removed ✓
 
-The foundation stands firm. Revisions honored; no drift detected. All seven gates re-confirmed. Wave 0 proceeds to merge.
+**Dogfood evidence:** All 7 WI have Stage 6 dev-review + pre/post-flight dogfood files. Telemetry, CI gate, and hook dispatch tested against synthetic adversarial prompts.
 
----
-
-## Seven-Gate Rubric
-
-| # | Gate | Pass | Evidence |
-|----|------|------|----------|
-| 1 | **All PRD ACs verified** | ✓ YES | PRD §8 requires 12 runnable ACs; dogfood evidence covers all 12 (AC-1 through AC-12) |
-| 2 | **No Wave 1+ scope creep** | ✓ YES | Release notes §4 breaks changes: none. §7 promises: telemetry + CI gate only; Wave 1 deferred clearly |
-| 3 | **Honest readiness markers** | ✓ YES | 11 known-debt logged; alias-creator +1 (201/200) acknowledged; CLAUDE.md >150-line cap deferred to Wave 3 |
-| 4 | **Operator runbook clear** | ✓ YES | User guide §1–4 covers tier meaning, exception token, telemetry read, new SKILL.md checklist |
-| 5 | **Rollback plan present & explicit** | ✓ YES | Release plan §4 names exact `git revert` commands per WI (W0-1 telemetry files; W0-2 gate + tiers) |
-| 6 | **Stop-rule carries forward** | ✓ YES | Release plan §6: defect/story rate >0.4 per 3-PR window pauses Wave 2 (BACKLOG-100) |
-| 7 | **Brief not buried** | ✓ YES | Release notes §1 leads: "Wave 0 establishes *measurement and regression-prevention* baseline" — foundation only |
+**Status:** ALL 7 ACs VERIFIED
 
 ---
 
-## PRD AC Traceability
+## Gate 2: Wave 2+ Scope Creep
 
-| AC | Requirement | Dogfood Evidence File | Status |
-|----|-------------|----------------------|--------|
-| AC-1 | Hook fires + writes JSONL row | w0-1-telemetry-evidence.md §TC-W0-1-1 | ✓ PASS |
-| AC-2 | All 9 fields present | w0-1-telemetry-evidence.md §TC-W0-1-2 | ✓ PASS |
-| AC-3 | Schema v1 documented | w0-1-telemetry-evidence.md §AC-5 | ✓ PASS |
-| AC-4 | Report script non-empty table | w0-1-telemetry-evidence.md §AC-6 | ✓ PASS |
-| AC-5 | Overhead < 50 ms (18.7 ms mean) | w0-1-telemetry-evidence.md §TC-W0-1-3 | ✓ PASS |
-| AC-6 | No LLM import | w0-1-telemetry-evidence.md §TC-W0-1-6 | ✓ PASS |
-| AC-7 | No phantom paths | w0-1-telemetry-evidence.md §TC-W0-1-7 | ✓ PASS |
-| AC-8 | 13 SKILL.md + tier frontmatter (paradigm subs = C) | w0-2-budget-gate-evidence.md §Evidence 1 | ✓ PASS |
-| AC-9 | CI fails over-budget (exit 1) | w0-2-budget-gate-evidence.md §Evidence 7 | ✓ PASS |
-| AC-10 | 11 known-debt logged (not 6; audit updated) | w0-2-budget-gate-evidence.md §Evidence 2–3 | ✓ PASS |
-| AC-11 | Permissive-language warn-only (exit 0) | w0-2-budget-gate-evidence.md §Evidence 4 | ✓ PASS |
-| AC-12 | Budget-Exception token implemented | w0-2-budget-gate-evidence.md §Evidence 7b | ✓ PASS |
+**Release Plan scope:** 55 files across 3 stories (W1-1 through W1-7). Out of scope: BACKLOG-102, paradigm sub-skill resolution, non-delivery-team plugins, PyYAML validation, hard-block challenger (deferred to Wave 2).
+
+**Known debt:** 11 items acknowledged in release notes. CLAUDE.md + 10 SKILL.md over-budget are binding deferments (noted, not hidden).
+
+**Status:** NO CREEP — in-scope, deferred items called out
 
 ---
 
-## Key Observations
+## Gate 3: Honest Readiness Markers
 
-### Strengths
-- **Telemetry overhead:** 18.7 ms measured mean (well under 50 ms budget). Hook fails safely (exit 0 on any error).
-- **CI gate determinism:** Script exits 1 on over-budget, 0 with exception token. No false positives reported in UAT.
-- **Known-debt baseline:** 11 files logged (6 from audit + alias-creator +1 from tier frontmatter addition + 4 more for W2). Honest accounting.
-- **User guide:** Contributor knows what `tier:` means, how to declare exceptions, how to read telemetry. No tribal knowledge.
-- **Rollback explicit:** Named git revert commands per WI. No guesswork on unwind.
+| Item | Status |
+|------|--------|
+| alias-creator graduated (≤200 lines, Tier-C) | ✓ Yes (200 lines exact, removed from known-debt) |
+| CLAUDE.md still deferred | ✓ Yes (168 lines; cap=150; Wave 3 refactor scheduled) |
+| 10 SKILL.md over-budget noted | ✓ Yes (architect, product-delivery, developer, presentation, ui, operations, quality, user-feedback, godot, delivery-flow; Wave 2 structural extractions planned) |
 
-### Notes (PASS_WITH_NOTES conditions)
-
-1. **alias-creator at 201/200:** Expected and unavoidable — tier classification requires the `tier:` field. Wave 1 trims 1 line. Not a blocker.
-
-2. **CLAUDE.md line-cap breach (169 vs 150):** Deferred to Wave 3 per binding ruling. Wave 0 does not actioned a CLAUDE.md refactor; telemetry hook addition was not applied to CLAUDE.md. Risk is known and explicitly tracked (release notes §9, BACKLOG item `tk0e-claude-md-refactor`).
-
-3. **marketplace.json description pruning (>500 chars):** Binding ruling 2 deferred to BACKLOG-100 (not Wave 0 scope). No impact on this wave's foundation.
+**Status:** TRANSPARENT — no hidden tech debt, binding decisions logged
 
 ---
 
-## Pre-Ship Checklist (Release Plan §2)
+## Gate 4: Operator Runbook Clear
 
-- [x] Stage 6 DoDs PASS — all four evidence files provided (telemetry + budget gate tested, measured, logged)
-- [x] All 13 SKILL.md files have `tier:` frontmatter (11 top-level + 2 paradigm sub-skills)
-- [x] All hook scripts exist on disk; no phantom paths (verified in w0-1 dogfood §TC-W0-1-7)
-- [x] `check_skill_budgets.py` exits 0 on full scan; 11 known-debt entries logged
-- [x] `hooks.json` JSON valid (pre-merge checklist item)
-- [x] Budget-Exception token tested in UAT (W0-2 test-plan §Scenario 3 & dogfood §Evidence 7b)
-- [x] PR body carries `Budget-Exception: known-debt-tk0e` (chicken-and-egg safeguard: new gate would otherwise block its own introducing commit)
+**User Guide (tech-writer):**
+- §2: Wave 1 frontmatter keys (model, allowed-tools, extended_thinking, phase_1_detector_model)
+- §3: stages.yml single source of truth
+- §4: cache-prefix freeze contract (regen hash, cite ADR, PR token)
+- §5: challenger discipline (inherit primary model, Wave 2 hard-block)
+- §6: budget exception + new SKILL.md checklist
+
+**Release notes operator section:** Three bash commands for budgets, cache-prefix integrity, CI gate.
+
+**Status:** CLEAR — contributors know what changed and why
 
 ---
 
-## Round 2 Summary
+## Gate 5: Rollback Plan Present
 
-Seven gates re-examined against revised artifacts (test-plan, test-cases, release-plan, release-notes, user-guide):
+**Release Plan §4 scenarios:**
+1. Cache-prefix freeze breaks runs → git revert (benign cache-hash deletion)
+2. Frontmatter causes dispatch errors → revert selective SKILL.md (additive, safe)
+3. Challenger hook false-positives → temporary disable via comment (warn-only by design)
 
-1. **All PRD ACs verified** ✓ — Dogfood evidence files extant; AC traceability intact.
-2. **No Wave 1+ scope creep** ✓ — Release notes §7 (What's Next) defers clearly; no drift.
-3. **Honest readiness markers** ✓ — Release notes §7 (Known Issues) catalogues all 5 debt items; BACKLOG linkage confirmed.
-4. **Operator runbook clear** ✓ **IMPROVED** — User guide §4 now includes New SKILL.md checklist + `governance/skill-budgets.json` reference.
-5. **Rollback plan present & explicit** ✓ — Release plan §4 unchanged; both WI rollback paths explicit.
-6. **Stop-rule carries forward** ✓ — Release plan §6 unchanged; defect/story >0.4 stop rule tied to BACKLOG-100.
-7. **Brief not buried** ✓ — Release notes §2 (Why) restates foundation mission.
+**Status:** PLAN PRESENT — per-scenario, actionable reversions
 
-No regression. Go ahead.
+---
 
-*— Gandalf*
+## Gate 6: Stop Rule Carried Forward
+
+**Release Plan §6:** Defects/story rate > 0.4 across any rolling 3-PR window → pause Wave 2.
+
+**Post-merge monitoring window:** First 5 invocations (telemetry), first 5 PRs (CI gate), first adversarial dispatch.
+
+**Status:** RULE PRESERVED — carryover from Wave 0
+
+---
+
+## Gate 7: Brief Not Buried
+
+**Release Notes heading:** "Wave 1: Per-Skill Model Discipline + Cache-Prefix Freeze"
+
+**Release Notes §Why:** Realizes three binding decisions (prefix freeze, stage YAML manifest, per-skill model rollout). No breaking changes — all additive.
+
+**Release Notes §What's New:** Four concrete bullets:
+1. delivery-flow restructured (cache frozen, stages.yml extracted, model defaults)
+2. Per-skill frontmatter (allowed-tools, phase_1_detector_model)
+3. Adversarial-challenger warn-only hook
+4. alias-creator graduates from known-debt
+
+**Status:** CLEAR — not vague, binding decisions named
+
+---
+
+## Summary
+
+| Gate | Result |
+|------|--------|
+| 1. ACs verified | ✓ GO |
+| 2. No creep | ✓ GO |
+| 3. Honesty | ✓ GO |
+| 4. Operator clear | ✓ GO |
+| 5. Rollback plan | ✓ GO |
+| 6. Stop rule | ✓ GO |
+| 7. Brief | ✓ GO |
+
+---
+
+## VERDICT
+
+**GO.** Wave 1 executes as scoped. Binding decisions locked, rollback paths clear, operator ready. Defer CLAUDE.md + 10 SKILL.md overages to Wave 2 structural extractions. Advance to merge.
+
+**Post-merge gates:** Telemetry watch (cache_read/input ≥0.85, haiku dispatch correct), CI budget gate clean, challenger warn-only telemetry zero-violation before Wave 2 hard-block.
