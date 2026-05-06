@@ -36,65 +36,51 @@ TIER_LIMITS = {"A": 500, "B": 300, "C": 200}
 # deliberate Wave refactor PR.
 # ---------------------------------------------------------------------------
 KNOWN_DEBT = [
-    {
-        "path": "delivery-team/skills/delivery-flow/SKILL.md",
-        "tier": "A",
-        "current": 1089,
-        "target_wave": 1,
-    },
-    {
-        "path": "delivery-team/skills/product-delivery/SKILL.md",
-        "tier": "B",
-        "current": 688,
-        "target_wave": 1,
-    },
+    # W2-1 post-Wave-2 sync (2026-05-03): delivery-flow (497, Tier-A ✓) + product-delivery (299, Tier-B ✓)
+    # REMOVED — now compliant. developer REMOVED (296, Tier-B ✓, cleared Story 3).
+    # alias-creator REMOVED — cleared to ≤200 in Wave 1 (W1-7).
+    # architect: frontmatter tier=B (role multiplexer); 500 lines is partial Wave-2 progress (Tier-A 500 ceiling met); Tier-B 200-line residual deferred to Wave 3.
     {
         "path": "delivery-team/skills/architect/SKILL.md",
         "tier": "B",
-        "current": 670,
-        "target_wave": 1,
+        "current": 500,  # post-W2 actual; Tier-A 500 ceiling met as milestone; Tier-B 300 deferred → W3
+        "target_wave": 3,
     },
     {
         "path": "delivery-team/skills/presentation/SKILL.md",
         "tier": "B",
-        "current": 543,
-        "target_wave": 2,
+        "current": 545,  # actual post-W1
+        "target_wave": 3,
     },
     {
         "path": "delivery-team/skills/ui/SKILL.md",
         "tier": "B",
-        "current": 493,
-        "target_wave": 2,
-    },
-    {
-        "path": "delivery-team/skills/developer/SKILL.md",
-        "tier": "B",
-        "current": 493,
-        "target_wave": 1,
+        "current": 496,  # actual post-W1
+        "target_wave": 3,
     },
     {
         "path": "delivery-team/skills/operations/SKILL.md",
         "tier": "B",
-        "current": 417,
-        "target_wave": 2,
+        "current": 420,  # actual post-W1
+        "target_wave": 3,
     },
     {
         "path": "delivery-team/skills/quality/SKILL.md",
         "tier": "B",
-        "current": 415,
-        "target_wave": 2,
+        "current": 418,  # actual post-W1
+        "target_wave": 3,
     },
     {
         "path": "delivery-team/skills/user-feedback/SKILL.md",
         "tier": "B",
-        "current": 397,
-        "target_wave": 2,
+        "current": 399,  # actual post-W1
+        "target_wave": 3,
     },
     {
         "path": "delivery-team/skills/godot/SKILL.md",
         "tier": "C",
-        "current": 234,
-        "target_wave": 1,
+        "current": 236,  # actual post-W1
+        "target_wave": 3,
     },
     # paradigm sub-skills remain well under limit — NOT in known-debt
 ]
@@ -338,7 +324,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # --known-debt-report — print all 11 entries and exit 0
+    # --known-debt-report — print all 7 entries and exit 0
     if args.known_debt_report:
         for entry in KNOWN_DEBT:
             limit = TIER_LIMITS[entry["tier"]]

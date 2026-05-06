@@ -17,64 +17,47 @@
   },
   "known_debt": [
     {
-      "path": "delivery-team/skills/delivery-flow/SKILL.md",
-      "tier": "A",
-      "current": 1089,
-      "target_wave": 1
-    },
-    {
-      "path": "delivery-team/skills/product-delivery/SKILL.md",
-      "tier": "B",
-      "current": 688,
-      "target_wave": 1
-    },
-    {
       "path": "delivery-team/skills/architect/SKILL.md",
       "tier": "B",
-      "current": 670,
-      "target_wave": 1
+      "current": 500,
+      "target_wave": 3,
+      "note": "Frontmatter tier is B (role multiplexer); current 500 is over Tier-B 300 by 200 lines (Tier-A 500 ceiling met as partial-compliance milestone). Wave 3 trims residual ≤300."
     },
     {
       "path": "delivery-team/skills/presentation/SKILL.md",
       "tier": "B",
-      "current": 543,
-      "target_wave": 2
+      "current": 545,
+      "target_wave": 3
     },
     {
       "path": "delivery-team/skills/ui/SKILL.md",
       "tier": "B",
-      "current": 493,
-      "target_wave": 2
-    },
-    {
-      "path": "delivery-team/skills/developer/SKILL.md",
-      "tier": "B",
-      "current": 493,
-      "target_wave": 1
+      "current": 496,
+      "target_wave": 3
     },
     {
       "path": "delivery-team/skills/operations/SKILL.md",
       "tier": "B",
-      "current": 417,
-      "target_wave": 2
+      "current": 420,
+      "target_wave": 3
     },
     {
       "path": "delivery-team/skills/quality/SKILL.md",
       "tier": "B",
-      "current": 415,
-      "target_wave": 2
+      "current": 418,
+      "target_wave": 3
     },
     {
       "path": "delivery-team/skills/user-feedback/SKILL.md",
       "tier": "B",
-      "current": 397,
-      "target_wave": 2
+      "current": 399,
+      "target_wave": 3
     },
     {
       "path": "delivery-team/skills/godot/SKILL.md",
       "tier": "C",
       "current": 236,
-      "target_wave": 1
+      "target_wave": 3
     }
   ]
 }

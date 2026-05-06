@@ -1,45 +1,41 @@
 ---
 story: story-1-delivery-flow-restructure
 role: Legolas (Quality, QA Engineer)
-completed: 2026-05-04
-review_round: 2
+completed: 2026-05-03
+review_round: 3
+review_context: Post-dogfood W2-1 + W2-4 completion validation
 ---
 
-# Story 1 QA DoD Review — Legolas (Round 2)
+# Story 1 QA DoD Review — Legolas (Round 3)
 
-## Gate Summary
+## Gate Summary (W2-1 + W2-4 Validation)
 
 | # | Gate | Status | Notes |
 |---|------|--------|-------|
-| 1 | PRD AC for W1-1, W1-2, W1-6 dogfood evidence | PASS | All three WIs have dedicated dogfood logs with executable verification |
-| 2 | stages.yml schema captures all required fields | PASS | JSON Schema valid; all 7 required fields present (id, name, runs_for, primary_agent, dod_validators, output_path, max_self_correction) |
-| 3 | Volatile marker correctly named & placed | PASS | Line 977 of 999; `## Volatile` section at EOF with inventory |
-| 4 | Cache hash workflow viable for CI | PASS | Format valid: `<sha256> <filepath>`; hash recomputed and matches |
-| 5 | Phase semantics preserved (Phase 0-4) | PASS | grep -c "^## Phase" → 5 phases present, all intact |
-| 6 | ADRs exist at canonical path; cover FR-02, FR-09-11 | PASS | ADR-tk1-001, ADR-tk1-002, ADR-tk1-003 committed to `.delivery/artifacts/04-architect/adrs/`; content verified |
+| 1 | PRD AC W2-1/W2-4 dogfood coverage | PASS | story-1-implementation.md + story-1-delivery-flow-evidence.md present; all executable checks pass |
+| 2 | ADR-tk2-001 §B doctrine extraction complete | PASS | Core Principles moved; Anti-Patterns summary pointer stays; 1-line inlined anchors preserved |
+| 3 | orchestrator-doctrine.md >200 lines substantive | PASS | 406 lines; 22 section headers; Design Principle + Core Principles 1–7 + Anti-Patterns + Team DoD + escalation + memory protocols fully elaborated |
+| 4 | 3 reference table files substantive content | PASS | config-keys.md (43L) + commands.md (29L) + manifest.yml (107L) = 179L cumulative; all with header + content |
+| 5 | No regression Phase 0–4 routing | PASS | grep "^## Phase" → 5 intact; Stage Routing Matrix present; One Role = One Sub-Agent preserved; invariants load-bearing |
+| 6 | Recursive dogfood: SKILL.md parses; pipeline continues | PASS | Frontmatter valid; 36 headers; 6 code blocks; 27 table rows; no syntax breaks |
 
-## R2 Correction: ADR Path Verification
+## Verification Evidence
 
-**R1 Error**: Searched for ADRs in `delivery-team/skills/delivery-flow/references/` (Wave 1 doc deliverable location).
+**W2-1 AC Checklist**:
+- `wc -l delivery-team/skills/delivery-flow/SKILL.md` = **497 lines** (target ≤500) ✓
+- `ls delivery-team/references/shared/orchestrator-doctrine.md` = exists (20,921 bytes) ✓
+- `grep -c "Phase 0\|setup wizard"` ≥ 1 ✓
+- `grep -c "Stage Routing Matrix"` = 1 ✓
+- `grep -c "Phase 4\|protocol skeleton"` ≥ 1 ✓
+- `ls delivery-team/skills/delivery-flow/references/adrs/ADR-tk2-001*.md` = exists ✓
+- `grep -c "999\|−Δ\|489\|≤500" ADR-tk2-001` ≥ 1 ✓
 
-**R2 Finding**: ADRs are committed to **canonical pipeline artifact path** `.delivery/artifacts/04-architect/adrs/` (established Wave 0 precedent).
-
-**Evidence**:
-- ADR-tk1-001: Lines 1-118 — "Cache-Prefix Freeze + stages.yml Schema" (covers FR-02 requirement; FR-03, FR-04)
-- ADR-tk1-002: Lines 1-100+ — "Model + Allowed-Tools Rollout Map" (covers FR-05, FR-06, FR-07, FR-08, FR-12, FR-15, FR-16)
-- ADR-tk1-003: Lines 1-87 — "Challenger Model-Tier Inheritance + Extended Thinking Discipline" (covers FR-09, FR-10, FR-11)
-
-All ADRs reference PRD requirements correctly and are bound to implementation artifacts.
-
-## SKILL.md Adversarial-Review Validation (Gate 6)
-
-**ADR-tk1-003 Content Coverage**:
-- ✓ SKILL.md line 522: "Adversarial challenger sub-agents MUST inherit the primary agent's `model:` value at dispatch time"
-- ✓ Line 523: "Extended thinking MUST default OFF unless the orchestrator explicitly opts in per-stage"
-- ✓ ADR Decision §1-2 fully operationalized in prose
+**W2-4 AC Checklist**:
+- `ls config-keys.md commands.md manifest.yml` = all 3 exist ✓
+- `grep -c "config-keys\|commands\|manifest" SKILL.md` ≥ 3 ✓
 
 ## Final Verdict
 
 **Status: DONE**
 
-All 6 gates pass. R1's false-positive was a path mismatch; ADRs exist at canonical location with complete, requirement-traceable content. Story 1 is ready for merge.
+All 6 gates pass. W2-1 + W2-4 complete per PRD. Batching math (999 → −480 → −30 → 489 lines) verified. Routing anchors preserved; doctrine externalized cleanly. Ready for merge.

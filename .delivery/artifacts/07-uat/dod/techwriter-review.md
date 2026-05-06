@@ -1,93 +1,91 @@
 ---
-title: "Tech-Writer Review — Wave 1 UAT DoD (Bilbo)"
+title: "Tech-Writer Review — Wave 2 UAT DoD (Bilbo)"
 stage: 07-uat
 author: Bilbo (operations skill, tech-writer role)
 created: 2026-05-05
-wave: 1
+wave: 2
 task: UAT TW DoD validation
 ---
 
-# Tech-Writer DoD: Wave 1 UAT Cross-Doc Consistency
+# Tech-Writer DoD: Wave 2 UAT Cross-Doc Consistency
 
 ## Status: DONE
 
-Five critical gates (Wave 0 binding + Wave 1 extension):
+Five critical gates (Wave 0 binding + Wave 2 extension):
 
-### 1. Test-Plan Scenarios Self-Contained ✓
-- Scenario 1 (delivery-flow loads): 4 checks, all runnable (line count, frontmatter grep, phase markers, volatile marker)
-- Scenario 2 (stages.yml drives routing): size + JSON parse + schema key
-- Scenario 3 (alias-creator trim): budget script exit code + output validation
-- Scenario 4 (allowed-tools coverage): grep -rl + count ≥ 12 + router haiku check
-- Scenario 5 (challenger hook): synthetic prompt pipe + stderr capture + LLM-free audit
-- Scenario 6 (cache-prefix byte-stable): sha256(bytes 0..2048) reproducible on 2 reads
-All 6 self-contained. Future maintainer can run each independently. ✓
+### 1. Test-Plan Readable ✓
+All 6 acceptance scenarios self-contained + runnable:
+- Scenario 1: delivery-flow 497 lines + doctrine reference + Volatile marker (3 checks)
+- Scenario 2: architect routing table + 5 output-contract files + 500-line ceiling (3 checks)
+- Scenario 3: developer isolation + coding-standards dispatch + 6 other task types intact (4 checks)
+- Scenario 4: product-delivery 12-pattern routing table + 299 lines (3 checks)
+- Scenario 5: governance 7 known-debt entries + Wave-3 targets + CI gate exit 0 (3 checks)
+- Scenario 6: cache-prefix sha256(bytes 0..2048) reproducible + single-line hash file (3 checks)
+
+All 6 self-contained; future maintainer can execute independently. ✓
 
 ### 2. Release-Plan Checklist Items Explicit ✓
-- DoD files: `ls .delivery/artifacts/06-dev/dod/story-{1,2,3}-*` — exact paths
-- alias-creator: `wc -l delivery-team/skills/alias-creator/SKILL.md` — expect 200
-- allowed-tools: `find delivery-team -name SKILL.md ! -path '*delivery-flow*' -exec grep -L "^allowed-tools:" {} \;` — expect empty
-- delivery-flow frontmatter: `grep -E "^model: sonnet|^## Volatile"` — expect 2 matches
-- Cache-prefix hash: `python3 -c ... | diff - <(awk '{print $1}' governance/cache-prefix-hash.txt)` — exact command
-- Hook syntax: `python3 -m py_compile delivery-team/hooks/audit_agent_prompt.py` — exit 0
-- CI budget: `python3 scripts/check_skill_budgets.py 2>&1` — exit 0, 0 violations
-- Marketplace ≤500: `python3 -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); ..."` — expect ≤500
-- No LLM in hook: `grep -rE 'anthropic|openai|litellm' delivery-team/hooks/` — expect empty
-All items named, all commands explicit, all outcomes specified. ✓
+- Scope: 65 files across 5 stories (S1 doctrine extract, S2 architect contracts, S3 developer, S4 product-delivery, S5 admin)
+- Pre-merge checks: 9 bash commands with exact line counts + thresholds (497, 500, 296, 299)
+- Merge sequencing: single PR `feature/skill-token-economy-wave-2-tk2` → `main`
+- Rollback per story: explicit `git revert` paths for each story (S1–S5)
+- Post-merge monitoring: 3 windows (doctrine load, architect contract routing, cache hit ratio ≥0.85)
+- Stop rule: defect rate >0.4 → pause Wave 3
+All items named, all commands explicit, all thresholds specified. ✓
 
-### 3. No Stale Paths in Test-Plan or Release-Plan ✓
-- release-plan line 16: `.delivery/artifacts/06-dev/dod/` references (STAGE 6, exist today per 06-dev/) → existing
-- release-plan line 21: `feature/skill-token-economy-wave-1-tk1` branch (valid git ref format) → exists
-- test-plan line 25: `governance/cache-prefix-hash.txt` → exists (verified)
-- test-plan line 28: `references/stages.yml` → exists (verified)
-- test-plan line 28: `references/stages-schema.json` → exists (verified)
-- test-plan line 31: `delivery-team/hooks/audit_agent_prompt.py` → exists (verified)
-- test-plan line 52: `governance/skill-budgets.json` → exists (verified)
-- test-plan line 54: `scripts/check_skill_budgets.py` → exists (verified)
+### 3. No Stale Paths ✓
+- release-plan: all `.delivery/artifacts/` paths reference existing stage dirs (07-uat confirmed live)
+- release-plan: branch `feature/skill-token-economy-wave-2-tk2` valid git ref format
+- test-plan: all file paths verified (delivery-flow/SKILL.md, architect/references/output-contracts/, developer/references/agent-prompts/, product-delivery/references/patterns/)
+- test-plan: `governance/skill-budgets.json`, `governance/cache-prefix-hash.txt`, `scripts/check_skill_budgets.py` all exist
 No phantom paths. ✓
 
 ### 4. Cross-Doc Consistency: Numeric Bindings ✓
-**Release-notes values:**
-- alias-creator: "201 → 200 lines" (line 38) ✓
-- delivery-flow: "1090 → 999 lines (−91)" (line 16) ✓
-- marketplace: "913 → 464 chars (≤500 binding)" (line 42) ✓
-- cache-prefix: "aea33d57…" (line 19) ✓
-- Hook additive: "+95 lines" (line 31) ✓
+**Release-notes values (lines 15–38):**
+- delivery-flow: "999 → 497 lines (Tier-A ✓)" ✓
+- architect: "673 → 500 lines (Tier-A ✓; partial Tier-B)" ✓
+- developer: "495 → 296 lines (Tier-B ✓)" ✓
+- product-delivery: "691 → 299 lines (Tier-B ✓)" ✓
+- cache-prefix: "9d4011d1…" ✓
+- known-debt: "10 → 7 entries" ✓
 
-**User-guide values:**
+**User-guide values (lines 13–56):**
 - Tier A: 500 (line 15) ✓
-- Tier B: 300 (line 16) ✓
-- Tier C: 200 (line 17) ✓
-- Cache-prefix frozen bytes: "0–2048" (line 38) ✓
-- Challenger model: Phase 1 haiku, Wave 1 warn-only, Wave 2 hard-block (lines 54–55) ✓
+- Tier B: 300 (line 15) ✓
+- Tier C: 200 (line 16) ✓
+- Cache-prefix frozen bytes: "0–2048" (line 39) ✓
+- Architect model split: sonnet (classification), opus (synthesis) (lines 47–50) ✓
 
-**Release-plan values:**
-- Total files: 55 (line 20) ✓
-- Story 1 WIs: W1-1, W1-2, W1-6 (line 16) ✓
-- Story 2 WIs: W1-3, W1-4, W1-7 (line 17) ✓
-- Story 3 WIs: W1-5 (line 18) ✓
+**Release-plan values (lines 12–55):**
+- Total scope: 65 files (line 12) ✓
+- Pre-merge check #3–6: 497, 500, 296, 299 thresholds (lines 35–45) ✓
+- Check #7: cache-prefix sha256 match (line 47) ✓
+- Check #8: skill-budgets debt=7 (line 51) ✓
+- Post-merge cache hit ratio target: ≥0.85 (line 85) ✓
 
-**Test-plan values:**
-- Scenario 1: 999 lines, model: sonnet, extended_thinking: false, 5 Phase sections (lines 33–39) ✓
-- Scenario 3: `alias-creator` removed from known-debt (line 56) ✓
-- Scenario 4: ≥12 files + phase-1-router haiku (lines 61–66) ✓
-
-**Dates:**
-- release-notes: 2026-05-03 (binding: today = 2026-05-04, but round 1 timestamp preserved) ✓
-- release-plan: 2026-05-03 ✓
-- test-plan: 2026-05-03 ✓
-- Consistency: all round-1 creation; round-2 review dates in po-review.md (2026-05-04) separate ✓
+**Test-plan values (lines 14–31):**
+- Story 1: delivery-flow 497 lines (line 15) ✓
+- Story 2: architect output-contracts split + model split (line 16) ✓
+- Story 3: developer coding-standards extraction (line 17) ✓
+- Story 4: product-delivery 12-pattern split (line 18) ✓
+- Story 5: governance re-baseline + known-debt 7 (line 19) ✓
+- Pre-condition check: 7 known_debt entries (line 31) ✓
 
 All numeric bindings consistent across all four documents. ✓
 
-### 5. Dates Consistent or Explicitly Marked ✓
-- Round 1 creation: all artifacts show 2026-05-03 ✓
-- Round 2 re-validation: po-review.md (2026-05-04) explicitly marked as "round 2" ✓
-- No conflicting dates. Binding preserved. ✓
+### 5. Dates Consistent ✓
+- release-notes created: 2026-05-03 ✓
+- release-plan created: 2026-05-03 ✓
+- test-plan created: 2026-05-03 ✓
+- user-guide created: 2026-05-03 ✓
+- techwriter-review (Wave 2): 2026-05-05 (today, UAT phase) ✓
+- pipeline_id: run-2026-05-05-tk2 (matches release date) ✓
+No date conflicts. Binding preserved. ✓
 
 ---
 
 ## Gate Outcome
 
-**DoD SATISFIED** — All 5 critical gates passed. Documentation ready for merge.
+**DoD SATISFIED** — All 5 critical gates passed. Wave 2 documentation ready for merge.
 
-Warm handoff to devops + qa. No regressions from Wave 0 binding.
+Warm handoff to devops + qa. Wave 0/1 retro bindings honored; no regressions.

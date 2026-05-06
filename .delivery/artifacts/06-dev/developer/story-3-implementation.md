@@ -1,47 +1,57 @@
-# Story 3 Implementation — Challenger-Tier Model Inheritance Hook
+---
+story: W2-3
+skill: developer
+wave: 2
+date: 2026-05-03
+author: Gimli (developer agent)
+status: COMPLETE
+---
 
-**Date:** 2026-05-03
-**ADR:** ADR-tk1-003 §W1-5
-**File modified:** `delivery-team/hooks/audit_agent_prompt.py`
+# Story 3 Implementation: Developer Coding-Standards Extraction
 
-## What Was Done
+## ADR Reference
+ADR-tk2-003 — developer coding-standards block extracted to two reference files.
 
-Extended `audit_agent_prompt.py` with `check_challenger_tier_inheritance(prompt_text)`.
-Additive-only — all existing audit logic (compound-role OD-10, code-fence, length)
-preserved unchanged.
+## Changes Made
 
-## New Function
+### New Files
+| File | Lines | Purpose |
+|---|---|---|
+| `developer/references/agent-prompts/coding-standards.md` | 55 | Sub-agent prompt + pre-flight check |
+| `developer/references/coding-standards-template.md` | 119 | 10-section customizable template |
 
-```python
-def check_challenger_tier_inheritance(prompt_text: str) -> tuple[bool, str]:
+### Modified Files
+| File | Before | After | Delta |
+|---|---|---|---|
+| `developer/SKILL.md` | 495 | 296 | -199 |
+| `governance/skill-budgets.json` | developer debt entry present | entry removed | cleared |
+
+## Dispatch Pointer (5 lines in SKILL.md)
+
+```markdown
+### `coding-standards` Task Type — Dispatch
+
+Load `references/agent-prompts/coding-standards.md` for the sub-agent prompt.
+Load `references/coding-standards-template.md` for the template content.
+Skip language detection. Follow pre-flight and output instructions in the agent-prompt file.
 ```
 
-- Detects `adversarial` / `challenger` keyword (case-insensitive regex)
-- Extracts `model: <name>` / `model=<name>` occurrences from prompt body
-- Extracts `primary model: <name>` / `primary_model: <name>` if present;
-  falls back to first model mention as heuristic primary
-- Treats last model mention as challenger model
-- Returns `(True, warning_msg)` only when primary != challenger AND
-  adversarial keyword present AND model field found
-- Inner try/except: any parsing error logs to stderr, returns `(False, "")`
+## Budget Result
 
-## Warning Emission
+| Target | Actual | Status |
+|---|---|---|
+| ≤300 lines (Tier-B) | 296 lines | PASSED — no Wave-3 debt |
+| ADR target (~340) | 296 | Exceeded target by 44 lines |
 
-- `_emit_challenger_warning()` prints to **stderr** with `[CHALLENGER-TIER-WARN]` prefix
-- If `GITHUB_STEP_SUMMARY` env var set, appends markdown warning there
-- Called EARLY in `main()`, before all existing audit checks
+Wave-3 debt registration NOT required. Budget cleared.
 
-## Policy
+## Routing Integrity
 
-- Wave 1, Sprint 1: warn-only, exit 0 always
-- Outer try/except in `main()` wraps the new block — hook cannot crash dispatch
-- Promotion to hard-block deferred to Wave 2+ pending zero-violation telemetry
+All 7 task types remain routable:
+write / fix / refactor / review / test / explain / coding-standards
 
-## Line Count
+coding-standards dispatch: main context loads 2 files → sub-agent executes.
+write/fix/etc: unaffected — standard language-ref + clean-code flow unchanged.
 
-- Pre: 113 lines
-- Post: 208 lines (+95, all additive)
-
-## Dogfood Result
-
-4/4 tests pass. See `.delivery/artifacts/06-dev/dogfood-evidence/story-3-challenger-hook-evidence.md`.
+## Dogfood Evidence
+`.delivery/artifacts/06-dev/dogfood-evidence/story-3-developer-evidence.md`

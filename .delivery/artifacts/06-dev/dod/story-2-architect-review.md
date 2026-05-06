@@ -1,4 +1,4 @@
-# Story 2 Architect DoD Validation (W1-3/4/6/7)
+# Story 2 Architect DoD Validation (W2-2, W2-6)
 
 **Validator**: Celebrimbor  
 **Status**: DONE  
@@ -8,68 +8,70 @@
 
 ## Gate Validations
 
-### Gate 1: ADR-tk1-002 Ruling 5 — Allowed-Tools Whitelist
+### Gate 1: 5 Contracts Split per ADR §Contract List
 
-**Required**: `[Read, Edit, Write, Bash, Skill, ToolSearch]` across all Tier-A/B skills + MCP-loading skills.
+**Required**: `design.md`, `adr.md`, `game.md`, `review.md`, `evaluation.md` in `output-contracts/`.
 
-**Result**: PASS
-- ✓ All 11 delivery-team skills carry identical base whitelist
-- ✓ Tier-C (alias-creator, godot, paradigm sub-skills) comply
-- ✓ No undocumented extensions observed
-- ✓ No extension justification comments required (all within scope)
-
----
-
-### Gate 2: Phase-1 Detector Model Rollout
-
-**Required**: 5 router SKILL.md flagged with `phase_1_detector_model: haiku`
-
-**Result**: PASS
-- ✓ product-delivery: haiku declared
-- ✓ architect: haiku declared
-- ✓ quality: haiku declared
-- ✓ operations: haiku declared
-- ✓ ui: haiku declared
-- ✓ All 5 routers use consistent frontmatter key
+**Result**: PASS ✓
+- ✓ All 5 contract files deployed at `/delivery-team/skills/architect/references/output-contracts/`
+- ✓ Line counts: design(39), adr(24), game(41), review(29), evaluation(25) = 158 total
+- ✓ Task_type → contract routing table present (lines 358-364, SKILL.md)
+- ✓ No inline contracts in main SKILL.md; cold-load pattern enforced
 
 ---
 
-### Gate 3: Marketplace Description Prune (913 → ≤500 chars)
+### Gate 2: Routing Table Maps task_type → Contract File
 
-**Required**: Retain trigger phrases + skill count; drop expanded sub-lists.
+**Required**: Deterministic map from task_type detection to contract file path.
 
-**Result**: PASS
-- ✓ Current: 464 characters (target: ≤500)
-- ✓ Trigger phrases preserved ("pipeline orchestrator", "14 languages", "11 roles", "7 stages")
-- ✓ Sub-feature lists removed; condensed to capability summary
-- ✓ Skill count (11) intact
-
----
-
-### Gate 4: W1-7/W1-4 Batching Constraint (alias-creator Final = 200)
-
-**Required**: alias-creator FINAL ≤ 200 lines; allowed-tools added as last edit AFTER W1-7 reduction.
-
-**Result**: PASS
-- ✓ alias-creator: 200 lines (exact Tier-C ceiling)
-- ✓ allowed-tools frontmatter: [Read, Edit, Write, Bash, Skill, ToolSearch] present
-- ✓ No overflow; no ordering violation
-- ✓ W1-7 resolved debt before W1-4 extension
+**Result**: PASS ✓
+- ✓ Routing table at lines 358-364 specifies 5 mappings:
+  - `design|decompose|model|...` → `design.md`
+  - `document|game-design-doc` → `adr.md`
+  - `game-systems|level-design|netcode|render-pipeline` → `game.md`
+  - `review|game-review` → `review.md`
+  - `evaluate` → `evaluation.md`
+- ✓ Instruction at line 366: "Load matched contract; include verbatim in sub-agent prompt"
 
 ---
 
-### Gate 5: Governance Artifact — Known Debt Cleanup
+### Gate 3: Model Split Classification→Sonnet, Synthesis→Opus per ADR §42-44
 
-**Required**: alias-creator removed from `governance/skill-budgets.json` known_debt list.
+**Required**: Skill router returns `{role, task_type, recommended_model}`. Phase map documented inline.
 
-**Result**: PASS
-- ✓ alias-creator entry ABSENT from known_debt array
-- ✓ Only 9 remaining debt entries in registry
-- ✓ Signal: W1-7 graduation complete; skill certified for Wave 1
+**Result**: PASS ✓
+- ✓ Phase-to-model table at lines 40-44:
+  - **Classification** (sonnet): Prior Art, paradigm/decomp pick, compliance, review, game-review
+  - **Synthesis** (opus): design, document, game-design-doc, transformation-planning, evaluate, data-design, security-design, strategic, integration
+  - **Checklist/Policy** (sonnet): security-requirements, audit-preparation, risk-assessment, policy-document, analyze-quality, model
+- ✓ Sub-Agent Output Contract (lines 425-443) declares `"recommended_model": "sonnet | opus"` field
+- ✓ Orchestrator override via `architecture.model_override` documented (line 46)
+
+---
+
+### Gate 4: Sub-Agent Output Contract JSON Includes `recommended_model` Field
+
+**Required**: Output contract frontmatter has `recommended_model` as first-class field.
+
+**Result**: PASS ✓
+- ✓ Line 429 in Output Contract: `"recommended_model": "sonnet | opus"`
+- ✓ Decision documented: `role, task_type, recommended_model` returned to orchestrator (line 38)
+- ✓ No ambiguity; model selection is deterministic per phase map
+
+---
+
+### Gate 5: Tier-A 500 Ceiling Met; Tier-B 198 Debt Registered
+
+**Required**: SKILL.md ≤500 lines; known_debt entry tracks 198-line residual.
+
+**Result**: PASS ✓
+- ✓ SKILL.md: 500 lines (exactly at Tier-A ceiling)
+- ✓ Debt entry at `skill-budgets.json` line 34: architect Tier-B, 673→498, 198-line residual deferred to Wave 3
+- ✓ Placeholder entry (line 41-45) tracks residual debt: `current: 0, target_wave: 3`
+- ✓ Batching math verified: 673 − 155 (contracts) − 20 (model routing) = 498 ✓
 
 ---
 
 ## Summary
 
-Story 2 architect review DONE. All gates honored; ADR-tk1-002 constraints satisfied.
-
+Story 2 architect design gate DONE. All 5 gates honored; ADR-tk2-002 compliance achieved. Contract architecture ready for Phase 2 orchestrator integration.

@@ -33,7 +33,7 @@ Execute the Wave 1 quick-wins from the audit backlog. With telemetry (W0-1) and 
 
 ### W1-3. Haiku for routing/dispatch sub-agents
 - **MUST**: Sub-agents whose sole job is classification, dispatch, or paradigm routing SHALL declare `model: haiku` in their agent frontmatter.
-- **Files**: Phase 1 detector agents in product-delivery, architect, quality, operations, ui SKILL.md; `delivery-team/hooks/agent_audit.py` extension to warn on tier mismatch
+- **Files**: Phase 1 detector agents in product-delivery, architect, quality, operations, ui SKILL.md; `delivery-team/hooks/audit_agent_prompt.py` extension to warn on tier mismatch
 - **AC**: All routing agents declare `model: haiku`; hook warns if a routing agent runs under non-Haiku model; dogfood: 10/10 routing decisions correct on Haiku
 - **Effort**: S | **Risk**: Low
 
@@ -45,7 +45,7 @@ Execute the Wave 1 quick-wins from the audit backlog. With telemetry (W0-1) and 
 
 ### W1-5. Adversarial challenger model-tier inheritance + extended thinking OFF
 - **MUST**: Adversarial challenger sub-agents SHALL inherit the primary's `model:` value at dispatch; extended thinking SHALL default OFF unless orchestrator opts in per-stage.
-- **Files**: `delivery-team/skills/delivery-flow/SKILL.md` (adversarial-review section); `delivery-team/hooks/agent_audit.py` extension
+- **Files**: `delivery-team/skills/delivery-flow/SKILL.md` (adversarial-review section); `delivery-team/hooks/audit_agent_prompt.py` extension
 - **AC**: Hook enforces challenger.model == primary.model (default warn-only sprint 1; escalate to hard-block sprint 2 if violated); extended-thinking flag defaults OFF in all delivery-team agent frontmatter; dogfood adversarial round still surfaces ≥1 substantive critique
 - **Effort**: S | **Risk**: High (silent quality loss if violated; anti-pattern session 0876a59e)
 
@@ -56,8 +56,8 @@ Execute the Wave 1 quick-wins from the audit backlog. With telemetry (W0-1) and 
 - **Effort**: S | **Risk**: Low (Sonnet validated for orchestration in prior runs)
 - **Open team decision**: 5-run shadow A/B before flip OR immediate flip with telemetry watch (default: shadow A/B per mission-critical risk tolerance)
 
-### W1-7. alias-creator -1 line known-debt fix (carry-in from Wave 0 retro)
-- **MUST**: `delivery-team/skills/alias-creator/SKILL.md` SHALL be reduced by exactly 1 line to restore Tier-C compliance (≤200 lines).
+### W1-7. alias-creator -2 lines known-debt fix (carry-in from Wave 0 retro)
+- **MUST**: `delivery-team/skills/alias-creator/SKILL.md` SHALL be reduced by exactly 2 lines to restore Tier-C compliance (≤200 lines).
 - **Files**: `delivery-team/skills/alias-creator/SKILL.md`
 - **AC**: `wc -l delivery-team/skills/alias-creator/SKILL.md` returns ≤200; CI gate passes without `Budget-Exception:` for this file; `governance/skill-budgets.json` known-debt entry for alias-creator removed
 - **Effort**: S | **Risk**: Low
@@ -119,3 +119,10 @@ If defects/story rate exceeds 0.4 across any 3-PR window, pause Wave 2 (BACKLOG-
 ## Pre-flight gate
 
 Wave 0 (BACKLOG-100) MUST be merged before Wave 1 pipeline starts. Rationale: per memory `topics/project-types.md` "per-wave commit cadence is defensible for mechanically-independent WI batches" — keeping Wave 0 and Wave 1 as separable PRs preserves audit-trail readability and independent revert capability. Wave 1 modifies many of the same SKILL.md files Wave 0 added `tier:` frontmatter to; compounding the diffs would obscure both reviews.
+
+## Edit history
+
+| Date | Author | Change |
+|------|--------|--------|
+| 2026-05-03 | Story-5 admin (W2-7) | W1-7: corrected "-1 line" → "-2 lines" (math closure: 201+1 was wrong; alias-creator was 201 lines over budget by 1; -2 lines trims to 199 satisfying ≤200 with margin; W1-7 AC "≤200" unchanged but description now accurate). |
+| 2026-05-03 | Story-5 admin (W2-7) | W1-3, W1-5: corrected `agent_audit.py` → `audit_agent_prompt.py` (actual filename per ADR-tk1-002 and hooks directory). |

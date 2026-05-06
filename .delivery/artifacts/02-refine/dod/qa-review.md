@@ -1,82 +1,116 @@
 ---
-title: QA DoD Review — Skill Token-Economy Wave 1 PRD
 stage: 02-refine
-qa_reviewer: Legolas (Quality Agent)
-review_date: 2026-05-03
-review_round: 1
-pass: true
+role: Quality Engineer (Legolas)
+artifact: po/prd.md
+sprint: W2 (8 stories, 5-story ceiling)
+created: 2026-05-03
+round: R2 (post-architect partial-compliance edits)
 ---
 
-# QA Gate Validation — Wave 1 PRD
+# QA Review: Skill Token-Economy Wave 2 PRD — R2 Verdict
 
-## Gate Verdict
-**PASS** — All 6 gates met. 16 runnable ACs. Zero phantom-path risk. Zero untestable claims.
+## Signal
 
-### 1. Testable ACs (exit code / file / regex / numeric)
-✓ All 16 ACs across W1-1..W1-7 state verifiable conditions:
-- W1-1: `grep -n '## Volatile' … | wc -l` (≥1 match); file existence check
-- W1-2: JSON schema validation (jsonschema.validate) + token drop assertion (≥2,000)
-- W1-3: 5 SKILL.md files checked for `model: haiku`; audit_agent_prompt.py hook extended
-- W1-4: Find exclusion (no SKILL.md missing `allowed-tools`); JSON description length cap (≤500 chars)
-- W1-5: Grep pattern for challenger/model inheritance; extended-thinking OFF assertion
-- W1-6: Head -1 assertion for `model: sonnet`; grep exclusion on LLM SDK imports
-- W1-7: Line count assertion (≤200); exit code validation on budget script; grep absence on known-debt
-
-### 2. AC Verb Strength
-✓ Zero vague verbs ("should", "could", "might") in ACs. All prescriptive:
-- "MUST: ≥1 match", "MUST: print PASS", "MUST: exit 0", "MUST: no output", "MUST: ≤ 200"
-- Runnable bash for all 16 ACs (exit codes, grep patterns, JSON validation, file assertions)
-
-### 3. Test-Strategy Preload (§10)
-✓ §10 Verification Plan lists 7 concrete dogfood gates (per WI):
-- W1-1: Telemetry cache_read/input ≥0.85 on 2nd delivery-flow run post-merge
-- W1-2: Pipeline E2E; all 7 stages route; ≥2,000 token drop confirmed
-- W1-3: 10-sample dispatch log; 10/10 haiku routing decisions correct
-- W1-4: Find empty check; all descriptions ≤500 chars (paste output)
-- W1-5: Adversarial round excerpt; ≥1 substantive critique produced
-- W1-6: Sonnet end-to-end; ≥3× cost reduction vs Opus baseline
-- W1-7: `wc -l` ≤200; `check_skill_budgets.py` exit 0 without warning
-
-Pre-rollout gate (FR-15): `find delivery-team -name 'SKILL.md' | xargs wc -l` baseline MUST be recorded before W1-3/4/5/6 mass edits.
-
-### 4. Boundary Cases Named
-✓ Explicit risk nomenclature in §7:
-- **W1-1 cache-prefix self-modification**: Frozen prefix affects FUTURE runs only; verify via cache_read/input ≥0.85 on 2nd run
-- **W1-3/4/5/6 mandatory-rollout side-effect**: 4 WIs touch multiple SKILL.md simultaneously; FR-15 pre-rollout baseline required before edits begin
-- **W1-5 adversarial quality loss**: Capability asymmetry kills adversarial property (session 0876a59e: 14 undetected violations); warn-only Sprint 1
-- **W1-2 stages.yml not on disk**: Acknowledged as Stage 6 Dev deliverable, not upstream blocker
-- **audit_agent_prompt.py filename binding**: CORRECTED vs BACKLOG-101 cite (was agent_audit.py — WRONG)
-
-### 5. Phantom-Path Defect Guard
-✓ All cited paths explicitly marked DELIVERABLE in §8 mandatory artifact table:
-- `delivery-flow/SKILL.md` (base PRD file exists; W1-1 modifies in-place)
-- `delivery-flow/references/stages.yml` (W1-2 DELIVERABLE; on disk at PR close)
-- `delivery-flow/references/adr-cache-prefix-freeze.md` (W1-1 DELIVERABLE)
-- `delivery-flow/references/stages-schema.json` (W1-2 DELIVERABLE)
-- `audit_agent_prompt.py` (existing hook; W1-3/W1-5 extend)
-- `.claude-plugin/marketplace.json` (exists; W1-4 edits)
-- `governance/skill-budgets.json` (exists; W1-7 edits)
-
-No script paths referenced before existence verified.
-
-### 6. No Untestable Claims
-✓ Every MUST pairing with verification method:
-- NFR-01 "< 50 ms overhead" → AC command with perf timing
-- NFR-02 "telemetry schema v1" → grep version field assertion
-- NFR-03 "CI gate exit 0" → `check_skill_budgets.py` exit code
-- NFR-04 "tier budgets 500/300/200" → grep TIER_LIMITS static check
-- NFR-05 "line deltas ≤0 except W1-7/W1-2" → `git diff --stat` regex
-- NFR-06 "no LLM calls in hooks" → grep -rE "anthropic|openai|litellm" exclusion
+```
+SKILL_LOADED: quality
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/02-refine/dod/qa-review.md
+SUMMARY: R2 re-validation PASS. All 6 gates confirmed NO REGRESSION after architect edits. Testability, soft-verb ban, verification pre-load, boundary naming, phantom-path guards, untestable-claim filter all hold. Ready for developer dispatch.
+```
 
 ---
 
-## High-Risk Items (Dev emphasis)
+## R1 Gates Re-Validated (Post-Edit Regression Check)
 
-- **FR-15 pre-rollout baseline** (W1-3/4/5/6): MUST record `wc -l` output before mass edits; attach to PR
-- **W1-5 adversarial model parity**: Re-run failing validators at Sonnet before reopening adversarial loop
-- **W1-6 Sonnet cost target** (≥3× reduction): Non-negotiable; telemetry watch required; shadow A/B default approach (BACKLOG-101 §W1-6)
+### Gate 1: AC Testability ✓ (NO REGRESSION)
+
+**Spot Check:** §8 Acceptance Criteria (lines 101–170) enumerate 30+ bash assertions:
+- `wc -l` (line-count thresholds: ≤500, ≤300)
+- `ls` (file existence checks: 5 output-contracts, 12 pattern files, 3 config tables)
+- `grep -c` (string match counts: ≥1 anchors, ≥12 patterns)
+- `cat` (hash verification: `cache-prefix-hash.txt`)
+- `python3 --known-debt-report` (exit code 0)
+- `exit` assertions (CI green claims)
+
+**Verdict:** All ACs remain verifiable bash commands + numeric/file assertions. No soft assertions. HOLD.
 
 ---
 
-## Recommendation
-**APPROVE** for Stage 3 (Design). PRD is gate-ready. 16/16 ACs executable. Zero scope creep. Deploy with confidence.
+### Gate 2: Soft Verb Ban ✓ (NO REGRESSION)
+
+**Spot Check:** §4 (FR 49–62) and §5 (NFR 67–76) scanned for "should", "may", "might":
+- Zero instances in requirement prose.
+- All FR/NFR use mandatory verbs: MUST (59 instances), MOVE, STAY, be committed.
+
+**Verdict:** Hard language preserved. HOLD.
+
+---
+
+### Gate 3: Test-Strategy Pre-Load ✓ (NO REGRESSION)
+
+**Spot Check:** §10 Verification Plan (lines 180–194) pre-loads dogfood evidence per story:
+- S1 (W2-1+4): Synthetic pipeline run log, telemetry ≥30%, CI green
+- S2 (W2-2+6): ADR dispatch log, regression set 10/10
+- S3 (W2-3): Template load/no-load logs, `wc -l` ≤300
+- S4 (W2-5): Routing 12/12, `wc -l` ≤300
+- S5 (W2-0+7): `--known-debt-report`, Edit-history diffs
+
+**Verdict:** All stories claim PR-body evidence; testable before merge. HOLD.
+
+---
+
+### Gate 4: Boundary Cases Named ✓ (NO REGRESSION)
+
+**Spot Check:** §7 Dependencies & Risks cites three critical risks with mitigation:
+
+1. **F-08 dispatch fusion** (FR-03, NFR-05, §7 row 1): Phase 0/1/2/3 routing anchors MUST stay inline; Architect dogfood validates skeleton; correctness prioritized over line count.
+2. **cache-prefix invalidation** (FR-05, §7 row 2): `cache-prefix-hash.txt` update + CI re-baseline post-W2-1.
+3. **surplus-line discovery** (NFR-03/04, §7 row 4): product-delivery ~11 over, developer ~40 over; Stage 6 Dev MUST trim before dispatch.
+
+All three explicitly named, scoped, and mitigated. No phantom risks.
+
+**Verdict:** Risk naming intact post-edit. HOLD.
+
+---
+
+### Gate 5: Phantom-Path Defect Guard ✓ (NO REGRESSION)
+
+**Spot Check:** All cited paths marked **DELIVERABLE** via "MUST MOVE" (5 instances) or "MUST be committed" (1 instance):
+
+- `orchestrator-doctrine.md` (FR-02: "MUST MOVE")
+- `output-contracts/{design,adr,game,review,evaluation}.md` (FR-06: "MUST MOVE")
+- `coding-standards.md` + `coding-standards-template.md` (FR-08: "MUST MOVE")
+- `config-keys.md`, `commands.md`, `manifest.yml` (FR-09: "MUST MOVE")
+- `patterns/<slug>.md` ×12 (FR-10: "MUST MOVE")
+- `ADR-tk2-001*.md` (FR-04: "MUST be committed")
+
+No pre-existing file claimed; all are work-product (W2-0 through W2-7).
+
+**Verdict:** Phantom paths blocked. HOLD.
+
+---
+
+### Gate 6: Untestable Claims Filter ✓ (NO REGRESSION)
+
+**Spot Check:** Every FR/NFR has verification method in §8 ACs:
+
+| Requirement | Verification Method |
+|---|---|
+| FR-01 | `check_skill_budgets.py --known-debt-report` exits 0 |
+| FR-03 | `grep -c "Phase 0\|Stage Routing Matrix"` ≥1 |
+| FR-04 | `grep -c "999\|−Δ\|489"` in ADR-tk2-001 ≥1 |
+| FR-06 | `ls` 5 output-contracts files |
+| FR-07 | Regression set 10/10 + `grep -c "recommended_model\|Sonnet\|Opus"` ≥3 |
+| NFR-01–07 | All testable bash assertions with thresholds |
+
+Zero claims without method. All claims verifiable pre-merge.
+
+**Verdict:** Untestable-claim filter holds. HOLD.
+
+---
+
+## Summary
+
+PRD is **DONE** for Stage 2 R2. All 6 gates PASS. No regressions detected post-architect edits. Ready for developer dispatch (W2-0 start, W2-1–7 sequenced).
+
+**Critical path:** W2-1 (HIGH RISK) requires pre-merge Architect dogfood on synthetic pipeline (Idea + Architect + Dev dispatch) to validate Phase 0/1/2/3 routing correctness post-doctrine extraction.

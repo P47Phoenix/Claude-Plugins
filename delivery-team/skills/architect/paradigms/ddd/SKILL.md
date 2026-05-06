@@ -8,6 +8,7 @@ shared_refs:
 task_types:
   - decompose
   - design
+model: sonnet
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1

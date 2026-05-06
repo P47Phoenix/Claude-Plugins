@@ -1,72 +1,64 @@
-# Developer Review — Wave 1 PRD DoD Validation (Round 2)
+# Developer Review — Wave 2 Stage 2 PRD DoD — Round 2
 
 **Validator:** Gimli (developer skill)  
 **Date:** 2026-05-03  
-**Status:** DONE
+**PRD:** `.delivery/artifacts/02-refine/po/prd.md` (v1.0)
 
 ---
 
-## Summary
+## Gate Validation Results
 
-PRD passes all 6 Developer gates. All AC commands are well-formed, parseable, and runnable as verification commands post-Wave-1-Stage-6. No current-state blockers (reframed: PRD describes TARGET, not baseline).
+### Gate 1: Architect Math Closure (CRITICAL FIX)
+**Status:** PASS
+
+R2 corrects R1 failure. PRD now explicitly states:
+- **Line 29:** `architect/SKILL.md | 673 lines | ≤ 500 this wave (−175 → ~498; Tier-A met; Tier-B ≤300 deferred Wave 3 BACKLOG-104)`
+- **NFR-02:** "Math: 673 → −Δ_W2-2 (~155) → −Δ_W2-6 (~20) → **~498** (Tier-A 500-line ceiling met; Tier-B 300 deferred)"
+- **Out of Scope (line 84):** "Full architect Tier-B compliance (≤300) — deferred to Wave 3 BACKLOG-104"
+
+**Honest math:** 673 − 175 = 498 ≤ 500 (Tier-A). Tier-B deferred. ✓
+
+### Gate 2: delivery-flow Math
+**Status:** PASS  
+999 − 510 = 489 ≤ 500 ✓
+
+### Gate 3: product-delivery Math
+**Status:** PASS  
+691 − 391 = 300 ≤ 300 ✓
+
+### Gate 4: developer Math
+**Status:** PASS  
+495 − 196 = 299 ≤ 300 ✓
+
+### Gate 5: Doctrine Extraction Boundary (MOVE/STAY)
+**Status:** PASS
+
+FR-02 (MOVE): Prime Directive, Core Principles, One Role, Two-Channel, Theme-Gated, Anti-Patterns, Stages 1–7, Memory/Self-Learning → `orchestrator-doctrine.md`
+
+FR-03 (STAY): Phase 0–4 setup blocks, Stage Routing Matrix, One Role invariant (1-line), Two-Channel constraint (1-line) → inline SKILL.md
+
+Boundary unambiguous. ✓
+
+### Gate 6: plugin-dev Routing Acknowledged
+**Status:** PASS
+
+FR-12 mandates: "W2-1/2/3/4/5/6 MUST pre-load `plugin-dev:skill-development`"
+Occurs **2x** in PRD body. ✓
 
 ---
 
-## Gate Results
-
-| Gate | Criterion | Check | Result |
-|------|-----------|-------|--------|
-| **1. AC Syntax** | All ACs parse correctly (bash `-n`, `ast.parse()`) | 8 bash + 3 Python ACs validated | PASS |
-| **2. Prerequisite** | `audit_agent_prompt.py` exists today | `test -f delivery-team/hooks/audit_agent_prompt.py` | EXISTS |
-| **3. Deliverable** | `stages.yml` does NOT exist (W1-2 deliverable, not prereq) | `ls delivery-team/.../stages.yml` | NOT FOUND (correct) |
-| **4. Tier Integers** | Tier values 500/300/200 stated as integers in PRD body | grep PRD for tier values | PASS (9 matches) |
-| **5. Tool Whitelist** | FR-07 declares base 6: Read, Edit, Write, Bash, Skill, ToolSearch | grep FR-07 (line 58) | PASS |
-| **6. plugin-dev Routing** | FR-16 mandates plugin-dev skill loading for SKILL.md + hooks edits | grep FR-16 (line 67) | PASS |
-
----
-
-## Commands Run
+## Discovery Commands Verification
 
 ```bash
-# Gate 1: AC command validation (bash + Python)
-python3 << 'EOF'
-import re, ast, subprocess
-prd = '.delivery/artifacts/02-refine/po/prd.md'
-with open(prd) as f:
-    content = f.read()
-bash_cmds = re.findall(r'```bash\n(.*?)\n```', content, re.DOTALL)
-py_cmds = re.findall(r'python3 -c "([^"]+)"', content)
-for cmd in bash_cmds:
-    subprocess.run(['bash', '-n'], input=cmd.encode(), check=True)
-for cmd in py_cmds:
-    ast.parse(cmd)
-print(f"✓ {len(bash_cmds)} bash ACs + {len(py_cmds)} Python ACs parse OK")
-EOF
-
-# Gate 2: Prerequisite file check
-test -f delivery-team/hooks/audit_agent_prompt.py && echo "EXISTS"
-
-# Gate 3: Deliverable non-existence (correct for Stage 2)
-ls delivery-team/skills/delivery-flow/references/stages.yml 2>&1 | head -1
-
-# Gate 4: Tier values in PRD
-grep -E "\b(500|300|200)\b" .delivery/artifacts/02-refine/po/prd.md | wc -l
-
-# Gate 5: Tool whitelist in FR-07
-grep "allowed-tools: \[Read, Edit, Write, Bash, Skill, ToolSearch\]" .delivery/artifacts/02-refine/po/prd.md
-
-# Gate 6: plugin-dev routing in FR-16
-grep "plugin-dev:skill-development\|plugin-dev:hook-development" .delivery/artifacts/02-refine/po/prd.md | head -1
+wc -l delivery-team/skills/delivery-flow/SKILL.md           # 999 ✓
+grep "≤ 500 this wave\|Tier-A" .delivery/artifacts/02-refine/po/prd.md  # 2+ hits ✓
+grep -c "plugin-dev" .delivery/artifacts/02-refine/po/prd.md  # 2 ✓
 ```
 
 ---
 
-## Key Reframes (Stage 2 Context)
+## Verdict: DONE
 
-- **Gate 1:** AC *parseable* (syntax check) ≠ AC *passes today* (execution check). All 11 ACs syntax-valid. Their pass/fail at Stage 6 is by definition the AFTER state.
-- **Gate 3:** stages.yml is a W1-2 Stage 6 deliverable. At Stage 2 it MUST be absent. Correctly marked DELIVERABLE in PRD, not prerequisite.
-- **Gates 4–6:** Tier constants, tool whitelist, and plugin-dev mandates verified in PRD body and FR text. No implementation state checked.
+**All 6 gates pass.** R2 corrects R1 architect tier ambiguity with honest math: Tier-A (≤500) this wave; Tier-B deferred Wave 3. Doctrine boundary explicit. Plugin-dev routing clear. No blockers.
 
----
-
-**Gimli's word:** Frame holds. The anvil's ready for Wave 1's forge work.
+**Gimli's word:** Ready for architecture gate.

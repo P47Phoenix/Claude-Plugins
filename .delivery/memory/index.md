@@ -1,8 +1,8 @@
 # Delivery Pipeline Memory Index
 
-- total_runs: 30
-- last_updated: 2026-05-04
-- last_run_id: run-2026-05-04-tk1
+- total_runs: 31
+- last_updated: 2026-05-05
+- last_run_id: run-2026-05-05-tk2
 
 ## Stage Health (last 5 runs)
 - Idea: 60% first-try pass (run-2026-05-04-tk1: 1 revision — Architect caught BACKLOG-101 phantom filename `agent_audit.py` vs actual `audit_agent_prompt.py`; same lesson family as Wave 0)
@@ -42,6 +42,7 @@
 - [topics/skill-token-economy.md](topics/skill-token-economy.md) — 5 binding rulings + per-skill model map + tiered line budgets (audit 2026-05-03)
 
 ## Archive
+- [archive/run-2026-05-05-tk2.md](archive/run-2026-05-05-tk2.md) — FEATURE Wave 2: doctrine extract + per-skill contracts/patterns + model split; GO with PASS_WITH_NOTES; 8 WIs in 5 stories; 4 known-debt files cleared (delivery-flow 497, developer 296, product-delivery 299, architect Tier-A 500); architect Tier-B + 6 others remain for Wave 3
 - [archive/run-2026-05-04-tk1.md](archive/run-2026-05-04-tk1.md) — FEATURE Wave 1: cache freeze + stages.yml + frontmatter rollout + challenger hook; GO; 7 WIs shipped via 3 file-scope stories, 0 defects, alias-creator graduated from known-debt
 - [archive/run-2026-05-03-tk0e.md](archive/run-2026-05-03-tk0e.md) — FEATURE Wave 0: telemetry hook + line-budget CI gate; GO; 2 stories shipped, 0 defects, 4/7 stages first-try DoD
 - [archive/run-2026-04-22-4x7e.md](archive/run-2026-04-22-4x7e.md) — FEATURE: 14-WI Opus 4.7 execution engagement; GO; PR #86

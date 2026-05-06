@@ -22,7 +22,8 @@ preceded by `find delivery-team -name 'SKILL.md' | xargs wc -l | sort -rn` recor
 pre-rollout baseline. W1-7 resolves alias-creator's known-debt; at time of this ADR, alias-creator
 is at 201 lines (over Tier-C budget by 1). Developer MUST fix alias-creator in the same commit
 batch that adds `allowed-tools:` to it (W1-7), or add `allowed-tools:` to alias-creator as the
-last edit after W1-7 reduces it to ≤200.
+last edit after W1-7 reduces it to ≤200. Correction (W2-7 retro backport): W1-7 requires a
+-2 line reduction (201→199), not -1 line — verified via `wc -l` post-Wave-1; see edit history.
 
 Pre-rollout baseline (confirmed `wc -l`): delivery-flow 1090 · product-delivery 689 · architect 671
 · developer 494 · quality 416 · operations 418 · ui 494 · user-feedback 398 · alias-creator **201**
@@ -111,3 +112,11 @@ Plugin-dev skill routing (CLAUDE.md-binding): W1-3/4/6 modify SKILL.md → load
 | Shadow A/B for 5 runs before Sonnet flip | Rejected | Defers initiative-level AC (≥3× cost reduction) past sprint; revert path exists if telemetry regresses |
 | Allowlist only Tier-A (not Tier-B) for `allowed-tools` | Rejected | Ruling 5 (skill-token-economy.md) says SHOULD on Tier-B; omitting Tier-B leaves partial coverage and inconsistent frontmatter schema across the plugin |
 | Prune marketplace description to ≤300 chars | Rejected | Drops trigger phrases needed for skill auto-discovery (Ruling 2 explicitly protects them) |
+
+---
+
+## Edit history
+
+| Date | Author | Change |
+|------|--------|--------|
+| 2026-05-03 | Story-5 admin (W2-7) | Context section: corrected W1-7 description — alias-creator requires -2 line reduction (201→199), not -1 line. Added inline correction note in context paragraph. Post-Wave-1 `wc -l` confirmed alias-creator at 200 lines (compliant); pre-Wave-1 baseline was 201. |

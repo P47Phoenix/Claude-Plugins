@@ -1,35 +1,33 @@
 ---
 stage: 02-refine
+role: Product Owner
 artifact: prd.md
-validator: po
+validator: Gandalf (PO-wave-2-stage-2)
+date: 2026-05-03
 status: DONE
-date: 2026-05-04
+revision: Round 2
 ---
 
-# PO DoD Gate Review — Wave 1 PRD
+# PO DoD Validation — Wave 2 PRD (Round 2)
 
-## Gate Validation
+## Gate Results
 
 | Gate | Check | Result |
 |------|-------|--------|
-| 1. Scope locked (7 WIs, no creep) | Brief: [W1-1…W1-7]; PRD: [W1-1…W1-7] | **PASS** |
-| 2. All FRs trace to BACKLOG-101 WIs | 16 FRs map to BACKLOG-101 §Acceptance + binding memory decisions | **PASS** |
-| 3. NFRs are SMART | All 6 NFRs include runnable verification commands (bash + Python) | **PASS** |
-| 4. §9 Open Questions empty | Zero open items; W1-6 shadow A/B documented in Dependencies (row 99) as binding decision | **PASS** |
-| 5. Honest readiness markers | "7-WI ceiling", "single-iteration", Wave 2+ explicitly out-of-scope | **PASS** |
-| 6. No governance creep | Wave 3 (CLAUDE.md, retro KPI, fitness review) deferred explicitly | **PASS** |
+| 1. Scope (8 WIs) | Brief W2-0…W2-7; PRD W2-0…W2-7 sections intact | **PASS** |
+| 2. FRs trace (13 total) | All mapped to exactly one WI; FR-12 plugin-dev binding confirmed | **PASS** |
+| 3. NFRs SMART (7 total) | NFR-02 architect ≤500 Tier-A explicit; Tier-B ≤300 deferred BACKLOG-104 Wave 3 | **PASS** |
+| 4. §9 Open Questions | "None. All decisions bound in memory + BACKLOG-103." | **PASS** |
+| 5. Honest readiness | W2-1 F-08 HIGH + W2-6 synthesis MED mitigations; NFR-03/04 LOW (Stage 6 trim) | **PASS** |
+| 6. Wave 3+ creep | §6 now explicit: Tier-B deferral + batching math (673→~498); §7 known-debt risk logged | **PASS** |
 
-## Binding Decision Coverage
+## R2 Verification Highlights
 
-§7 Dependencies row 99 flags W1-6 (Sonnet flip) as open team decision: "5-run shadow A/B vs immediate flip". Memory binding (`skill-token-economy.md` §Adversarial rule) supports warn-only Sprint 1 → telemetry watch. Documented—not new uncertainty.
-
-## Artifact Readiness
-
-- PRD refs BACKLOG-101, idea-brief v1.0, memory/topics/skill-token-economy.md
-- 8 acceptance criteria runnable (16 FRs + 6 NFRs = 22 verifiable conditions)
-- Dogfood evidence plan (§10) specifies per-WI outputs
-- Pre-rollout gate (FR-15) explicitly required for W1-3/4/5/6 mass-edits
+- **NFR-02 architect revision** (line 29–30): Partial-compliance ruling ≤500 Tier-A ceiling explicit; full ≤300 deferred Wave 3 BACKLOG-104.
+- **§6 Out of Scope** (lines 80–84): Added sentence clarifying Tier-B (≤300) deferral + honest batching math cite.
+- **§7 Risks** (lines 88–98): Known-debt row added; architect Tier-B compliance tracked in skill-budgets.json post-Wave-2; Wave 3 BACKLOG-104 target.
+- **No regression**: All other FRs, NFRs, acceptance criteria unchanged.
 
 ---
 
-**Signal**: Ready for handoff to Stage 3 (Design). No scope rework required.
+**Signal: DONE.** PRD revised, re-validated, scoped, traceable. Ready for Architect Phase 0.

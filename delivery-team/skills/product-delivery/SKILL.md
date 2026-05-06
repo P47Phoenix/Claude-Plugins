@@ -57,29 +57,14 @@ You are an expert [ROLE]. Apply these principles and patterns to everything you 
 ---
 
 ## Task
-
 [TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
 
 ## Context
-
-[Include any of the following that are relevant:]
-- Product or team description
-- Constraints (timeline, team size, budget, regulatory)
-- Existing artifacts (backlog, stories, metrics, dashboards)
-- Sprint or iteration context
-- Business drivers or goals
-- Related artifacts from other roles
+[Product/team, constraints, existing artifacts, sprint context, business drivers, related artifacts]
 
 ## Output Requirements
-
-Produce:
-1. Artifacts appropriate to the task type (see output patterns below)
-2. Explicit rationale for decisions
-3. Assumptions stated clearly
-4. Open questions or items needing human decision
-5. Next steps
-
-If the task requires modifying existing files, use the Read, Edit, Write, Glob, and Grep tools to work directly in the codebase.
+Produce the pattern artifact, explicit rationale, stated assumptions, open questions needing human decision, and next steps.
+If modifying existing files, use Read, Edit, Write, Glob, and Grep tools directly.
 ```
 
 ---
@@ -140,384 +125,26 @@ If the request is ambiguous, state the two most likely task types and ask which 
 
 ## Output Patterns
 
-### Pattern 1: User Story
-
-**Format:** Always produce stories in standard form with INVEST validation.
-
-```
-## User Story: [Short Title]
-
-**As a** [specific user role -- not "user"]
-**I want** [a specific capability or action]
-**So that** [the business value or outcome]
-
-**Story Points:** [Fibonacci: 1, 2, 3, 5, 8, 13 -- or T-shirt if requested]
-**Priority:** [Critical / High / Medium / Low]
-
-### Acceptance Criteria
-
-Given [initial context / state]
-When [action or event occurs]
-Then [expected observable outcome]
-
-Given [alternative context]
-When [...]
-Then [...]
-
-[Add as many Given/When/Then as needed to fully define behavior]
-
-### Definition of Ready Checklist
-- [ ] Story is understood by the team
-- [ ] Acceptance criteria are clear and testable
-- [ ] Dependencies identified
-- [ ] Story is sized and fits within one sprint
-- [ ] No unresolved blockers
-
-### Notes / Constraints
-[Technical constraints, UX notes, out-of-scope clarifications, edge cases not covered by ACs]
-```
-
-**INVEST validation** (apply silently, surface issues):
-- **I**ndependent -- can be developed without depending on another story in the same sprint
-- **N**egotiable -- implementation details are flexible
-- **V**aluable -- delivers value to the user or business
-- **E**stimable -- team can size it
-- **S**mall -- fits in one sprint
-- **T**estable -- acceptance criteria are verifiable
-
-If any INVEST criterion fails, flag it: `[INVEST ISSUE: Not Small -- consider splitting at: ...]`
-
----
-
-### Pattern 2: Epic Decomposition
-
-**Format:** Map one epic to a complete set of stories with ordering rationale.
-
-```
-## Epic: [Epic Name]
-
-**Epic Goal:** [What problem does this solve for users? What business outcome?]
-**Success Metric:** [How will we know this epic succeeded?]
-**Out of Scope:** [Explicit exclusions to prevent scope creep]
-
-### Story Map
-
-| # | Story Title | Value | Effort | Priority | Dependencies |
-|---|-------------|-------|--------|----------|--------------|
-| 1 | [Title]     | High  | M      | P1       | None         |
-| 2 | [Title]     | High  | S      | P1       | Story 1      |
-| 3 | [Title]     | Med   | L      | P2       | Story 1      |
-
-### MVP Slice
-Stories required for a shippable minimum: [#1, #2]
-Rationale: [Why these form a complete, valuable increment]
-
-### Full Story Definitions
-[Expand each story using Pattern 1 format]
-```
-
----
-
-### Pattern 3: Backlog Prioritization
-
-**Format:** Apply the requested framework (or recommend one) and produce an ordered backlog.
-
-**Framework selection:**
-
-| Framework | Use When |
-|-----------|----------|
-| **MoSCoW** | Quick stakeholder alignment; must-have vs nice-to-have decisions |
-| **RICE** | Data-driven scoring with reach, impact, confidence, effort inputs |
-| **WSJF** | SAFe environments; cost of delay divided by job size |
-| **Kano** | Understanding user delight vs. dissatisfaction by feature type |
-
-See `references/prioritization-frameworks.md` for full scoring formulas.
-
-```
-## Backlog Prioritization: [Context]
-
-**Framework Used:** [MoSCoW / RICE / WSJF / Kano]
-**Prioritization Date:** [date]
-**Inputs:** [What data / stakeholder input informed this]
-
-### Ordered Backlog
-
-| Rank | Item | [Score/Category] | Rationale |
-|------|------|-----------------|-----------|
-| 1    | ...  | ...             | ...       |
-
-### Prioritization Rationale
-[Explain the key trade-off decisions -- why high-value items were deprioritized, why quick wins were elevated, etc.]
-
-### Assumptions
-[What assumptions were made that, if wrong, would change the ordering]
-```
-
----
-
-### Pattern 4: PRD (Product Requirements Document)
-
-**Format:** Structured PRD suitable for engineering, design, and stakeholder review.
-
-```
-## Product Requirements Document
-
-**Product / Feature:** [Name]
-**Version:** [1.0]
-**Author:** [Product Owner]
-**Status:** [Draft / In Review / Approved]
-**Last Updated:** [date]
-
----
-
-### 1. Problem Statement
-[What problem are we solving? For whom? Why now?]
-
-### 2. Goals & Success Metrics
-| Goal | Metric | Target | Baseline |
-|------|--------|--------|----------|
-| ... | ... | ... | ... |
-
-### 3. User Personas
-**Primary:** [Name] -- [Role, context, key need]
-**Secondary:** [Name] -- [Role, context, key need]
-
-### 4. User Stories (Summary)
-[List story titles with links/references to full stories]
-
-### 5. Functional Requirements
-| ID | Requirement | Priority | Acceptance Criteria |
-|----|-------------|----------|---------------------|
-| FR-01 | ... | Must Have | ... |
-
-### 6. Non-Functional Requirements
-| ID | Requirement | Type | Target |
-|----|-------------|------|--------|
-| NFR-01 | Response time < 200ms | Performance | p99 |
-
-### 7. Out of Scope
-[Explicit list of what is NOT included in this release]
-
-### 8. Dependencies & Risks
-| Dependency / Risk | Type | Owner | Mitigation |
-|-------------------|------|-------|------------|
-| ... | Dependency | ... | ... |
-
-### 9. Timeline & Milestones
-| Milestone | Target Date | Exit Criteria |
-|-----------|-------------|---------------|
-| ... | ... | ... |
-
-### 10. Open Questions
-| # | Question | Owner | Due |
-|---|----------|-------|-----|
-| 1 | ... | ... | ... |
-```
-
----
-
-### Pattern 5: Sprint Planning
-
-**Format:** Sprint goal + committed stories with capacity reasoning.
-
-```
-## Sprint [N] Plan
-
-**Sprint Goal:** [Single sentence -- the "why" of this sprint, not a list of tasks]
-**Sprint Dates:** [Start] -> [End]
-**Team Capacity:** [story points available after accounting for ceremonies, PTO, etc.]
-
-### Committed Stories
-
-| # | Story | Points | Assignee | Dependencies |
-|---|-------|--------|----------|--------------|
-| 1 | ...   | 5      | ...      | None         |
-
-**Total Committed:** [X] points
-
-### Commitment Rationale
-[Why these stories? How do they serve the sprint goal? What was left out and why?]
-
-### Risks to Sprint Goal
-[What could prevent achieving the sprint goal? Mitigation?]
-
-### Definition of Done (Sprint Level)
-- [ ] All acceptance criteria pass
-- [ ] Code reviewed and merged
-- [ ] Tests written and passing
-- [ ] Deployed to staging
-- [ ] PO sign-off on acceptance criteria
-```
-
----
-
-### Pattern 6: Roadmap Item
-
-**Format:** Outcome-oriented roadmap entry, not a feature list.
-
-```
-## Roadmap Item: [Initiative Name]
-
-**Timeframe:** [Q1 2026 / H1 2026 / Now / Next / Later]
-**Strategic Theme:** [Which OKR or strategy pillar this serves]
-**Outcome:** [What changes for users / business when this is done]
-**Key Features / Epics:** [High-level list -- not detailed stories]
-**Success Metrics:** [How we'll measure success]
-**Dependencies:** [What must be true before this can start]
-**Confidence:** [High / Medium / Low] -- [reason]
-```
-
----
-
-### Pattern 7: Stakeholder Communication
-
-**Format:** Audience-appropriate update. State the audience before drafting.
-
-```
-## [Artifact Type]: [Subject]
-
-**Audience:** [Exec / Engineering / Design / External / All-hands]
-**Purpose:** [Inform / Align / Decide / Celebrate]
-**Date:** [date]
-
-[Content tailored to audience -- executives get outcomes and metrics; engineering gets technical context and decisions; external gets user-facing language only]
-
-**Key Decisions Made:**
-- ...
-
-**What's Next:**
-- ...
-
-**Questions / Actions Needed:**
-- ...
-```
-
----
-
-### Pattern 8: Definition of Done / Definition of Ready
-
-```
-## Definition of Done -- [Team / Feature / Release level]
-
-A story is Done when:
-- [ ] All acceptance criteria verified by PO
-- [ ] Unit tests written and passing (coverage >= X%)
-- [ ] Integration tests passing
-- [ ] Code reviewed by at least 1 peer
-- [ ] No new high/critical bugs introduced
-- [ ] Feature flagged if incomplete
-- [ ] Deployed to staging environment
-- [ ] Documentation updated (API docs, runbook, user guide as applicable)
-- [ ] PO demo completed
-
-## Definition of Ready
-
-A story is Ready for sprint when:
-- [ ] User story written in standard format
-- [ ] Acceptance criteria complete and testable
-- [ ] Dependencies identified and resolved or planned
-- [ ] Sized by the team (story points assigned)
-- [ ] UI/UX designs attached (if applicable)
-- [ ] Technical approach agreed (if high-risk)
-- [ ] No blocking questions remain
-```
-
----
-
-### Pattern 9: Retrospective
-
-```
-## Retrospective: [Sprint N]
-**Format:** [format name]
-**Date:** [date]
-**Facilitator:** [name]
-**Duration:** [time-boxed]
-
-### Activity Results
-[Format-specific content]
-
-### Action Items
-| # | Action | Owner | Due Date | Status |
-|---|--------|-------|----------|--------|
-
-### Follow-Up from Previous Retro
-[Status of prior action items]
-```
-
----
-
-### Pattern 10: Velocity/Metrics Analysis
-
-```
-## Velocity Analysis: [Team/Period]
-
-### Trend Data
-| Sprint | Committed | Completed | Velocity | Notes |
-|--------|-----------|-----------|----------|-------|
-
-### Analysis
-[Trend interpretation, outliers, contributing factors]
-
-### Forecast
-[Based on last N sprints, projected capacity]
-
-### Recommendations
-[Process improvements suggested by the data]
-```
-
----
-
-### Pattern 11: Metrics Definition
-
-```
-## Metrics Definition: [Product/Feature]
-
-### North Star Metric
-**Metric:** [name]
-**Definition:** [precise definition]
-**Formula:** [calculation]
-**Target:** [quantified target]
-
-### Supporting Metrics
-| Metric | Definition | Formula | Source | Owner | Cadence | Target |
-|--------|-----------|---------|--------|-------|---------|--------|
-
-### Dashboard Requirements
-[What should be visualized, for whom, refresh cadence]
-```
-
----
-
-### Pattern 12: A/B Test Plan
-
-```
-## Experiment: [Name]
-
-**Hypothesis:** If [change], then [effect], because [rationale]
-**Primary Metric:** [metric + success threshold]
-**Guardrail Metrics:** [metrics that must not regress]
-**Sample Size:** [calculated minimum]
-**Duration:** [estimated runtime]
-**Segments:** [who is included/excluded]
-
-### Variants
-| Variant | Description |
-|---------|------------|
-| Control | [current behavior] |
-| Treatment | [proposed change] |
-
-### Success Criteria
-[Statistical significance threshold, minimum detectable effect]
-
-### Risks & Mitigations
-[What could go wrong, how to detect, how to mitigate]
-```
+Phase 2 loads ONLY the matched pattern file. Do NOT load all pattern files.
+
+| task_type | Pattern File |
+|-----------|-------------|
+| user_story | `references/patterns/story.md` |
+| epic_decomposition | `references/patterns/epic.md` |
+| backlog_prioritization | `references/patterns/backlog.md` |
+| prd | `references/patterns/prd.md` |
+| sprint_planning | `references/patterns/sprint.md` |
+| roadmap | `references/patterns/roadmap.md` |
+| stakeholder_comms | `references/patterns/stakeholder.md` |
+| dod_dor | `references/patterns/dod-dor.md` |
+| retrospective | `references/patterns/retro.md` |
+| velocity_analysis | `references/patterns/velocity.md` |
+| metrics_definition | `references/patterns/metrics.md` |
+| ab_testing | `references/patterns/ab-test.md` |
 
 ---
 
 ## Cross-Role Tasks
-
-When a task spans multiple roles, load all relevant reference files into a single sub-agent.
 
 | Scenario | Roles Involved | References Loaded |
 |----------|---------------|-------------------|
@@ -588,8 +215,6 @@ Apply these checks to every artifact before output:
 
 ## Sub-Agent Interface (Agentic Flow Integration)
 
-When invoked as a worker agent within an orchestrated flow, accept and produce structured JSON-compatible inputs/outputs in addition to markdown artifacts.
-
 **Input contract:**
 ```json
 {
@@ -626,7 +251,7 @@ When invoked as a worker agent within an orchestrated flow, accept and produce s
 }
 ```
 
-`downstream_ready: false` means the artifact has open questions that must be resolved before a downstream agent can act on it. Always populate `open_questions` when `downstream_ready` is false.
+`downstream_ready: false` signals open questions that block downstream agents. Always populate `open_questions` when false.
 
 ---
 
@@ -666,26 +291,9 @@ When invoked as a worker agent within an orchestrated flow, accept and produce s
 
 ## References
 
-### Product Owner
-
-- `references/user-stories.md` -- Story templates, INVEST guide, AC patterns, splitting strategies
-- `references/prioritization-frameworks.md` -- MoSCoW, RICE, WSJF, Kano formulas and worked examples
-- `references/backlog-management.md` -- Refinement process, grooming cadence, backlog health metrics
-- `references/stakeholder-templates.md` -- Communication templates by audience type
-
-### Scrum Bag
-
-- `references/retrospective-formats.md` -- Retro formats: Start/Stop/Continue, 4Ls, Sailboat, Mad/Sad/Glad, timeline
-- `references/agile-metrics.md` -- Velocity, burndown, cycle time, lead time, cumulative flow, predictability
-- `references/facilitation-patterns.md` -- Ceremony facilitation: timeboxes, engagement techniques, conflict resolution
-- `references/process-improvement.md` -- Continuous improvement: root cause analysis, Kaizen, value stream mapping
-
-### Data Analyst
-
-- `references/analytics-patterns.md` -- Tracking plans, instrumentation, data pipelines, data quality frameworks
-- `references/metrics-frameworks.md` -- HEART, AARRR, OKR metrics, North Star framework, metric trees
-- `references/dashboard-design.md` -- Dashboard design principles, visualization selection, audience targeting
-- `references/experimentation.md` -- A/B testing methodology, sample size calculation, statistical significance, guardrails
-- `references/dependency-tracking.md` -- Story dependency tracking, risk register, cross-story dependency validation
-- `references/estimation.md` -- Story point estimation, velocity tracking, capacity planning, calibration
-- `references/retro-trends.md` -- Retrospective trend analysis: theme extraction, team health score, retro-of-retros summary
+| Role | Reference Files |
+|------|----------------|
+| **Product Owner** | user-stories.md, prioritization-frameworks.md, backlog-management.md, stakeholder-templates.md |
+| **Scrum Bag** | retrospective-formats.md, agile-metrics.md, facilitation-patterns.md, process-improvement.md |
+| **Data Analyst** | analytics-patterns.md, metrics-frameworks.md, dashboard-design.md, experimentation.md, dependency-tracking.md, estimation.md, retro-trends.md |
+| **Patterns** | references/patterns/ -- 12 per-task-type output templates (see Output Patterns routing table) |

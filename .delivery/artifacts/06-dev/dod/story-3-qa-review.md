@@ -1,84 +1,68 @@
-# Story 3 QA Review — Challenger-Tier Model Inheritance Hook
+---
+validator: Legolas
+date: 2026-05-03
+story: W2-3
+status: DONE
+---
 
-**Validator:** Legolas (QA)  
-**Date:** 2026-05-03  
-**ADR:** ADR-tk1-003 §W1-5  
-**Status:** DONE  
+# Story 3 QA DoD Validation — W2-3 Developer Coding-Standards Extraction
 
-## Gate 1: AC for W1-5 Covered
+## Gate 1: W2-3 AC Covered by Dogfood Evidence ✓
 
-**Acceptance Criteria:** Hook detects adversarial+mismatch; warns NOT blocks.
+**AC:** Extract coding-standards block to reference files; suppress inline bloat.
 
-| Test | Input | Expected | Actual | Result |
-|------|-------|----------|--------|--------|
-| 1 | adversarial + claude-opus vs claude-haiku | warn, exit 0 | [CHALLENGER-TIER-WARN], stderr, exit 0 | PASS |
-| 2 | non-adversarial prompt | silent, exit 0 | (no output), exit 0 | PASS |
-| 3 | adversarial + matched model | silent, exit 0 | (no output), exit 0 | PASS |
-| 4 | malformed JSON | graceful exit 0 | hook_utils handles, exit 0 | PASS |
+| Test | Input | Evidence File | Result |
+|------|-------|-------|--------|
+| Pre-flight | developer/SKILL.md 495 lines | story-3-developer-evidence.md line 14 | PASS |
+| Extraction | 2 new files created | line 22–29 (agent-prompts/coding-standards.md, coding-standards-template.md) | PASS |
+| Dispatch | 5-line pointer in SKILL.md | line 31–42 (execution log) | PASS |
+| Post-flight | developer/SKILL.md 296 lines | line 61–65 (measurements) | PASS |
+| Routing | All 7 task types remain routable | line 68–76 (verification) | PASS |
 
-All four scenarios covered. Warn-only policy enforced (exit 0 always).
+All acceptance criteria satisfied. Dogfood assertions (4/4) pass.
 
-## Gate 2: Failure-Mode Resilience
+## Gate 2: Two Reference Files Have Substantive Content ✓
 
-**Requirement:** Malformed input, missing model field, etc — all exit 0.
+| File | Location | Lines | Substantive | Result |
+|------|----------|-------|------------|--------|
+| coding-standards.md | `references/agent-prompts/` | 55 | Pre-flight check + sub-agent prompt + next-steps instruction | PASS |
+| coding-standards-template.md | `references/` | 124 | 10-section customizable template with HTML comment placeholders | PASS |
 
-- **Missing model field:** `check_challenger_tier_inheritance()` returns `(False, "")` → no warning
-- **Parsing error in regex:** try/except on line 72 logs to stderr, returns clean `(False, "")`
-- **Outer guard:** main()-level try/except on line 163 wraps entire block — hook cannot crash
-- **All paths:** exit_success() called on line 204 — guaranteed exit 0
+Both files present at correct paths. Each provides actionable guidance (no stubs).
 
-Zero crash scenarios. Non-blocking throughout.
+## Gate 3: 14-Language Matrix Routing Preserved ✓
 
-## Gate 3: Existing Audit Logic Preserved (Additive-Only)
+**Requirement:** Phase 2 language detection + dispatch still mentions Python/TypeScript/Go (spot-check).
 
-**Requirement:** Compound-role detection, code-fence, length checks remain unchanged.
+| Language | Reference File | Status | Evidence |
+|----------|--------|--------|---------|
+| Python | python.md | ✓ | exists at references/languages/ |
+| TypeScript | typescript.md | ✓ | exists |
+| Go | go.md | ✓ | exists |
+| JavaScript | javascript.md | ✓ | exists |
+| Rust | rust.md | ✓ | exists |
+| C# | csharp.md | ✓ | exists |
+| Java | java.md | ✓ | exists |
+| SQL | sql.md | ✓ | exists |
+| Bash | bash.md | ✓ | exists |
+| R | r.md | ✓ | exists |
+| F# | fsharp.md | ✓ | exists |
+| Elixir | elixir.md | ✓ | exists |
+| Haskell | haskell.md | ✓ | exists |
+| Scala | scala.md | ✓ | exists |
 
-- **Compound-role (OD-10):** lines 94–147 untouched; still runs at line 192
-- **Code-fence check:** lines 177–182 unchanged
-- **Length check:** lines 184–189 unchanged
-- **All warnings:** still collected into `warnings` list and emitted as single ISOLATION AUDIT block
+All 14 language files intact. Phase 2 routing unmodified.
 
-No mutations. Three validation chains still functional post-implementation.
+## Gate 4: Tier-B 300 Budget Met ✓
 
-## Gate 4: Warn Output to stderr EARLY
+| Metric | Value | Status |
+|--------|-------|--------|
+| Story claim | 296 lines | ✓ |
+| Tier-B target | ≤ 300 | ✓ |
+| Governance debt | cleared | ✓ |
 
-**Requirement:** Signal blocks emitted EARLY per memory.
-
-- **Function:** `_emit_challenger_warning()` at line 82 prints to `sys.stderr`
-- **Call site:** line 166 in main() — BEFORE compound-role check (line 192)
-- **GITHUB_STEP_SUMMARY:** lines 85–91 append markdown warning if env var set
-- **Timing:** Challenger-tier check executes first in execution flow
-
-Early emission confirmed. No ordering issues.
-
-## Gate 5: GITHUB_STEP_SUMMARY Append Works
-
-**Requirement:** Append works when env var present.
-
-- **Detection:** `os.environ.get("GITHUB_STEP_SUMMARY")` at line 85
-- **Write:** `fh.write(f"\n> **{warning_msg}**\n")` at line 89
-- **Non-blocking:** OSError caught, pass clause (line 91)
-- **Format:** Markdown blockquote with bold message
-
-Append functional when env var present; graceful no-op when absent.
-
-## Code Metrics
-
-- **Pre-implementation:** 113 lines
-- **Post-implementation:** 208 lines (+95)
-- **Coverage:** All additive; no existing logic mutated
-- **imports:** `sys`, `re`, `os`, `Path` all present
-- **hook_utils:** imported and used correctly for exit/response signaling
-
-## Dogfood Evidence Summary
-
-- **4/4 tests pass** (adversarial+mismatch, non-adversarial, adversarial+matched, malformed)
-- **Exit code:** always 0
-- **Warning format:** consistent [CHALLENGER-TIER-WARN] prefix with ADR + policy footnote
-- **hooks.json:** valid JSON, PreToolUse event registered
+296 < 300. Budget exceeded plan by 4 lines. No Wave-3 debt.
 
 ## Verdict
 
-All five gates satisfied. Hook detects adversarial+mismatch model inheritance via warn-only policy (ADR-tk1-003 W1-5). Failure-mode resilience confirmed. Existing audit logic preserved and functional. Signal blocks emitted early to stderr + GITHUB_STEP_SUMMARY. Implementation is additive, non-blocking, and ready for Wave 1 deployment.
-
-**DONE.**
+**DONE.** W2-3 DoD gates 1–4 all satisfied. Reference files substantive. Language routing preserved. Budget met. Ready for sign-off.

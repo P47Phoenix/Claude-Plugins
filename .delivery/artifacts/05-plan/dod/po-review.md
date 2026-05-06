@@ -1,65 +1,73 @@
 ---
-title: "PO Review — Sprint Plan DoD Validation R2"
-stage: 05-plan
-author: Gandalf (PO)
-date: 2026-05-04
+title: "PO Review — Wave 2 Stage 5 Sprint Plan DoD (Round 2)"
+role: product_owner
+reviewer: Gandalf
+review_date: 2026-05-03
+artifact: .delivery/artifacts/05-plan/sm/sprint-plan.md
 version: 2.0
-round: R2
 ---
 
-# PO Gate Review: Wave 1 Sprint Plan (Round 2)
+# PO Gate Validation: Wave 2 Sprint Plan — Round 2
 
 ## Summary
 
-**STATUS: DONE** — Sprint goal now compliant. All 5 gates PASS.
+**STATUS: DONE** — All 5 gates pass. Sprint plan approved.
 
 ---
 
-## Gate Validations
+## Gate-by-Gate Revalidation
 
-### Gate 1: Sprint Goal (Single-sentence, user-facing value)
-**PASS**
+### Gate 1: Sprint Goal (≤25 words, single declarative)
+**PASS** ✓
 
-Lines 13–15 revised to single declarative sentence: "Ship Wave 1's cache-prefix freeze, stage extraction, model-tier assignments, and token-budget debt clearance — achieving ≥2,000-token cold-load reduction and ≥3× per-run cost savings."
+Current (lines 14–16): 17 words.
+> "Wave 2 brings delivery-flow under Tier-A 500 and ships partial Tier-B compliance for architect, product-delivery, and developer."
 
-Word count: 23 (≤25 target). User value explicit: cost reduction + performance gains.
-
----
-
-### Gate 2: All 7 Wave 1 WIs Committed
-**PASS**
-
-W1-1 through W1-7 present (table lines 40–48), all estimated, no scope drop or creep. Rationale clear.
+**Analysis**: Single declarative sentence. Concise. ≤25 word ceiling met with margin.
 
 ---
 
-### Gate 3: Sequencing (ADR-tk1-002 Batching)
-**PASS**
+### Gate 2: All 5 Stories Commit 8 WIs
+**PASS** ✓
 
-Group C batches W1-3+W1-4+W1-7 (line 62, hard constraint). Commit group DAG fully resolved.
-
----
-
-### Gate 4: Dogfood Plan (Runnable per WI)
-**PASS**
-
-All 7 WIs have concrete acceptance criteria (lines 134–142). Batch dogfood gate (lines 144–147) validates W1-3, W1-4, W1-7 simultaneously via JSONL telemetry.
+Stories S1–S5 cover W2-0 through W2-7 (8 WIs). Consolidation valid per Wave 1 lesson.
 
 ---
 
-### Gate 5: DoD Checklist (All 7 WIs + Retro)
-**PASS**
+### Gate 3: Sequencing Respects ADR-tk2-001
+**PASS** ✓
 
-Sprint-level DoD (lines 151–162) itemizes all 7 WIs, artifact requirements clear. Retrospective mandatory (line 161). 7-WI ceiling enforced (line 162).
+Story 1 serial; owns cache-prefix freeze; blocks Group B. Architect dogfood gate hard pre-merge. F-08 anchors intact.
+
+---
+
+### Gate 4: Dogfood Plan Per-Story is Concrete
+**PASS** ✓
+
+All 5 stories have measurable pass criteria. No subjective acceptance language.
+
+---
+
+### Gate 5: DoD Covers Wave-3 Known-Debt Registration
+**PASS** ✓
+
+Architect 198-line debt, product-delivery +11, developer +40 all registered in DoD.
 
 ---
 
 ## Verdict
 
-**CONDITIONAL DONE → DONE** (R1 defect resolved). Handoff to Development approved.
+**DONE** — Sprint plan approved. Zero blockers. Proceed to Development stage.
 
 ---
 
-## Carry-Forward
+## Carry-Forward Notes
 
-Retro action R-1 (line 170): Backport W1-7 line-count correction (-2, not -1) to ADR-tk1-002 + BACKLOG-101.
+- Architect Tier-B debt (198 lines): Wave 3 backlog per ADR-tk2-002.
+- Cache-prefix freeze: co-ship W2-1 and W2-4; CI re-baseline mandatory.
+- Retrospective: mandatory end-of-sprint.
+
+---
+
+**PO**: Gandalf  
+**Date**: 2026-05-03

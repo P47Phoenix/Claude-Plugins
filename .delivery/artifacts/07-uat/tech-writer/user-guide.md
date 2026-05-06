@@ -1,64 +1,62 @@
 ---
-title: "delivery-team Contributor Guide — Skill Token-Economy (Wave 1 additions)"
+title: "delivery-team Contributor Guide — Wave 2 additions"
 stage: 07-uat
 author: Bilbo (operations skill, tech-writer role)
 created: 2026-05-03
-supersedes: Wave 0 user-guide (2026-05-03)
+supersedes: Wave 1 user-guide (2026-05-03)
 ---
 
-# Contributor Guide: Skill Token-Economy (Wave 0 + Wave 1)
+# Contributor Guide: Skill Token-Economy (Wave 0–2)
 
 ## 1. Tier Budgets (unchanged)
-
 | Tier | Budget | Used for |
 |------|--------|----------|
-| A    | 500    | Orchestrators (`delivery-flow`) |
-| B    | 300    | Multi-role / multi-domain skills |
-| C    | 200    | Single-role or single-domain skills |
+| A | 500 | Orchestrators (`delivery-flow`) |
+| B | 300 | Multi-role / multi-domain skills |
+| C | 200 | Single-role or single-domain skills |
 
-## 2. Wave 1 Frontmatter Keys
+## 2. Wave 2 — Shared Doctrine File
+`delivery-team/references/shared/orchestrator-doctrine.md` is the canonical home for Prime
+Directive elaboration, Anti-Patterns, and collaboration pattern prose. Edit doctrine there,
+not inside individual SKILL.md files.
 
-```yaml
-model: sonnet                  # or haiku for router agents
-allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
-extended_thinking: false       # delivery-flow default; opt-in per annotated site
-phase_1_detector_model: haiku  # router/dispatch skills only
-```
+## 3. Architect Output Contracts
+Per-task contracts: `references/output-contracts/<task_type>.md`
+(greenfield-design · brownfield-migration · spike · design-sprint · transformation-planning).
+The task router loads the matched contract at dispatch time.
 
-Extensions to `allowed-tools` require an inline `# justification:` comment.
+## 4. Product-Delivery Patterns
+12 task-type patterns at `references/patterns/<slug>.md`.
+Skill body holds only the routing index — add new patterns as separate files.
 
-## 3. stages.yml — Authoritative Stage Manifest
+## 5. Developer Coding Standards
+- `references/agent-prompts/coding-standards.md` — shared standards
+- `references/coding-standards-template.md` — template for new languages
 
-`delivery-team/skills/delivery-flow/references/stages.yml` is the single source of truth.
-SKILL.md carries only a pointer block. Edit `stages.yml`, not SKILL.md, for stage changes.
-JSON Schema: `references/stages-schema.json` (CI-validated on every PR).
+Never inline language-specific standards back into `developer/SKILL.md`.
 
-## 4. Cache-Prefix Freeze Contract
-
-First ~2 KB of `delivery-flow/SKILL.md` (through end of Phase 3) is frozen.
-Any PR touching that region must:
-1. Regenerate `governance/cache-prefix-hash.txt` (SHA-256 of bytes 0–2048).
-2. Reference an ADR in the commit message.
-3. Add `Cache-Prefix-Change: <ADR-link>` to the PR body.
-
+## 6. Cache-Prefix Freeze (hash updated)
+First ~2 KB of `delivery-flow/SKILL.md` frozen at sha256 `9d4011d1…`.
+PRs touching that region must regenerate `governance/cache-prefix-hash.txt`, cite an ADR,
+and add `Cache-Prefix-Change: <ADR-link>` to the PR body.
 ```bash
-python3 -c "
-import hashlib
-h = hashlib.sha256(open('delivery-team/skills/delivery-flow/SKILL.md','rb').read()[:2048]).hexdigest()
-open('governance/cache-prefix-hash.txt','w').write(h + '\n'); print(h)"
+python3 -c "import hashlib; h=hashlib.sha256(open('delivery-team/skills/delivery-flow/SKILL.md','rb').read()[:2048]).hexdigest(); open('governance/cache-prefix-hash.txt','w').write(h+'\n'); print(h)"
 ```
 
-## 5. Adversarial Challenger Discipline
+## 7. Architect Model Split
+| Phase type | Model |
+|------------|-------|
+| Classification / task routing | `sonnet` |
+| Design synthesis / architecture output | `opus` |
 
-Challengers inherit the primary's model at dispatch. Never downgrade for cost savings.
-Wave 1: `audit_agent_prompt.py` emits `[CHALLENGER-TIER-WARN]` on mismatch (warn-only, exit 0).
-Wave 2: promotes to hard-block after 5-run zero-violation telemetry.
-
-## 6. Budget Exception + New SKILL.md Checklist
-
-Add `Budget-Exception: known-debt-tk0e` to the PR body to bypass the CI gate.
-New SKILL.md checklist: pick tier → add `tier:` + `model:` + `allowed-tools:` +
-`extended_thinking:` → add to `governance/skill-budgets.json` → run
-`python3 scripts/check_skill_budgets.py` → exception token + BACKLOG item if over-budget.
-
+## 8. Budget Exception + New SKILL.md Checklist (unchanged from Wave 1)
+`Budget-Exception: known-debt-tk0e` in PR body bypasses CI gate.
+New SKILL.md: tier → `model:` → `allowed-tools:` → `extended_thinking:` →
+`governance/skill-budgets.json` → `python3 scripts/check_skill_budgets.py`.
 See `plugin-dev:skill-development` for full authoring conventions.
+
+## 9. Rollback
+If a Wave 2 change misbehaves post-merge, see `.delivery/artifacts/07-uat/devops/release-plan.md` §4 for per-story rollback procedures. Quick reference:
+- delivery-flow restructure (Story 1): `git revert <merge-commit>` + restore prior `governance/cache-prefix-hash.txt`
+- architect / developer / product-delivery extraction: `git revert -- delivery-team/skills/<skill>/`
+- Story 5 admin (registry + retro backports): `git revert -- governance/ scripts/check_skill_budgets.py .delivery/backlog/BACKLOG-101*`

@@ -14,9 +14,7 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Role Context Isolation
 
-This skill keeps architecture-specific knowledge **out of the main context window**. When an architecture task is requested, the relevant role is detected, only the corresponding reference file(s) are loaded, and a sub-agent is spawned with that isolated context. The main context receives only the finished architecture artifact.
-
-Unlike the developer skill (one reference per sub-agent), architecture tasks frequently span concerns — a solution design may need security patterns and data modeling simultaneously. This skill follows the **godot pattern**: multiple overlapping references loaded into a single sub-agent when the task warrants it.
+Architecture-specific knowledge stays **out of the main context window**. Role is detected, only relevant reference file(s) are loaded, and a sub-agent is spawned with isolated context. Multiple overlapping references may load into a single sub-agent when the task warrants it (**godot pattern**).
 
 ---
 
@@ -33,7 +31,19 @@ Detect the relevant architect role(s) from (in priority order):
 
 **Declare before every task:**
 
-> `Role: [ROLE] | Task: [TYPE] | References: [list of reference files]`
+> `Role: [ROLE] | Task: [TYPE] | Model: [recommended_model] | References: [list of reference files]`
+
+### Model Split (W2-6)
+
+Skill router MUST return `{role, task_type, recommended_model}` to the orchestrator.
+
+| Phase | recommended_model | task_types |
+|-------|------------------|------------|
+| **Classification** | `sonnet` | Prior Art Analysis, paradigm pick, decomposition pick, `compliance-checklist`, `privacy-assessment`, `incident-response-plan`, `review`, `game-review` |
+| **Synthesis** | `opus` | `design`, `document`, `game-design-doc`, `transformation-planning`, `evaluate`, `data-design`, `security-design`, `strategic`, `integration` |
+| **Checklist/Policy** | `sonnet` | `security-requirements`, `audit-preparation`, `risk-assessment`, `policy-document`, `analyze-quality`, `model` |
+
+Orchestrator may override via `architecture.model_override` in `.delivery/config.yml`.
 
 ---
 
@@ -52,36 +62,29 @@ Read ALL user-provided specifications in full. Produce a written summary of:
 
 ### Step 2: Classify Each Element
 
-Produce a structured classification table for every substantive element in the user's specification:
+Produce a structured classification table for every substantive element:
 
 | Spec Element | Classification | Rationale |
 |---|---|---|
-| e.g., "REST API with PostgreSQL backend" | Decision Already Made | User explicitly specified technology stack |
-| e.g., "Authentication mechanism" | Open Question | User noted "TBD" for auth approach |
-| e.g., "Event-driven order processing" | Decision Already Made | User provided detailed event flow diagram |
-| e.g., "Caching strategy" | Open Question | Not addressed in user specification |
+| e.g., "REST API with PostgreSQL backend" | Decision Already Made | User explicitly specified |
+| e.g., "Caching strategy" | Open Question | Not addressed in specification |
 
 **Classification rules:**
-- **Decision Already Made** — The user has specified a concrete choice (technology, pattern, boundary, constraint). The Architect MUST NOT propose alternatives for these elements.
-- **Open Question** — The user left this element unspecified, marked it as TBD, or did not address it. The Architect is free to propose designs for these elements.
+- **Decision Already Made** — User specified a concrete choice. The Architect MUST NOT propose alternatives.
+- **Open Question** — Left unspecified or TBD. The Architect is free to propose designs.
 
 ### Step 3: Build On the Existing Design
 
-The Architect MUST build architecture ON the user's existing design:
-1. **Validate feasibility** — confirm the user's decisions are technically sound
-2. **Fill gaps** — design solutions for elements classified as "Open Question"
-3. **Map to implementation** — translate the user's design into actionable architecture artifacts (C4 diagrams, component breakdowns, data flows)
+The Architect MUST build ON the user's existing design:
+1. **Validate feasibility** — confirm decisions are technically sound
+2. **Fill gaps** — design solutions for "Open Question" elements
+3. **Map to implementation** — produce actionable artifacts (C4 diagrams, component breakdowns, data flows)
 
 ### Step 4: Deviation Protocol
 
-Proposing alternatives to elements classified as "Decision Already Made" is ONLY permitted when a specific, documented technical blocker makes the original decision infeasible. The burden of proof is on the Architect:
-- The specific technical blocker MUST be stated (not vague concerns like "might not scale")
-- The blocker MUST be concrete and verifiable (e.g., "PostgreSQL does not support graph traversals required by the adjacency query pattern specified in Section 3.2")
-- The alternative MUST be presented alongside the original decision, not as a replacement
+Proposing alternatives to "Decision Already Made" elements is ONLY permitted when a specific, documented technical blocker makes the original decision infeasible. State the concrete blocker; present the alternative alongside the original decision, not as a replacement.
 
-### Output
-
-The Prior Art Analysis summary and classification table MUST be included in the architecture artifact under a "Prior Art Analysis" section, positioned before the Architecture Decision section.
+**Output:** Include the Prior Art Analysis summary and classification table in the artifact under a "Prior Art Analysis" section, before the Architecture Decision.
 
 ---
 
@@ -111,15 +114,7 @@ You are an expert [ROLE] architect. Apply these architecture principles and patt
 
 ## Context
 
-[Include any of the following that are relevant:]
-- Existing system or game description
-- Constraints (performance, budget, team size, platform, regulatory)
-- Non-functional requirements or quality attributes
-- Technology stack or engine
-- Business drivers or game design goals
-- Related ADRs or prior architecture decisions
-- PRD or user stories (from Product-Owner skill output)
-- Prior Art Analysis results (if applicable): spec summary, decisions-already-made, open questions
+[Include relevant: existing system, constraints, NFRs, tech stack, business drivers, related ADRs, PRD reference, Prior Art Analysis results (decisions-already-made, open questions)]
 
 ## Output Requirements
 
@@ -207,33 +202,11 @@ Agent(
 
 **Non-decomposition bypass:** Task types that do not involve decomposition (`review`, `document`, `evaluate`, `model`, `compliance-checklist`, `security-requirements`, `incident-response-plan`, `privacy-assessment`, `audit-preparation`, `risk-assessment`, `policy-document`, `transformation-planning`) bypass paradigm routing entirely and execute through existing logic unchanged.
 
-#### Backwards Compatibility Fallback
-
-If the `paradigms/` directory does not exist (pre-migration state) OR the detected paradigm has no corresponding `paradigms/<id>/SKILL.md`, the router falls back to executing decomposition inline using the existing monolithic references and logic. No existing pipeline breaks — the current behavior is preserved as the default path.
+**Backwards compatibility:** If `paradigms/` does not exist or the paradigm has no `SKILL.md`, fall back to inline decomposition using existing references. No pipeline breaks.
 
 #### Paradigm Directory Structure
 
-Each paradigm sub-skill lives under `paradigms/<paradigm-id>/`:
-
-```
-delivery-team/skills/architect/
-├── paradigms/
-│   ├── volatility/
-│   │   ├── SKILL.md              # frontmatter: paradigm_id, display_name, shared_refs, task_types
-│   │   └── references/           # paradigm-specific references only
-│   │       ├── volatility-decomposition.md
-│   │       └── domain-discovery-volatility.md
-│   ├── ddd/
-│   │   ├── SKILL.md
-│   │   └── references/
-│   │       ├── strategic-ddd.md
-│   │       └── domain-discovery-ddd.md
-│   └── <new-paradigm>/          # add new paradigms here
-│       ├── SKILL.md
-│       └── references/
-```
-
-**To add a new paradigm:** Create `paradigms/<id>/SKILL.md` with frontmatter declaring `paradigm_id`, `display_name`, `shared_refs` (list of shared reference paths this paradigm needs), and `task_types` (typically `[decompose, design]`). Add paradigm-specific references under `paradigms/<id>/references/`. The router discovers paradigm sub-skills by directory — no registration in `plugin.json` is required (paradigms are internal implementation details, per ADR-001).
+Each paradigm sub-skill lives under `paradigms/<paradigm-id>/SKILL.md` with frontmatter declaring `paradigm_id`, `display_name`, `shared_refs`, and `task_types`. Add paradigm-specific references under `paradigms/<id>/references/`. The router discovers paradigm sub-skills by directory — no registration in `plugin.json` required (ADR-001).
 
 ---
 
@@ -249,16 +222,9 @@ Before producing architecture designs or decompositions, run a domain discovery 
 4. **Escalate to human** if PO cannot answer critical questions (present specific questions with why they matter and who should answer)
 5. **Record findings** in the architecture artifact as a "Domain Discovery" section
 
-### When to Run Discovery
+**When to run:** Before every `design` or `decompose` task, or when ambiguity is encountered. Skip for: `review`, `document`, `model`, `evaluate`.
 
-- Before every `design` or `decompose` task
-- When switching decomposition strategies
-- When ambiguity is encountered during design
-- NOT needed for: `review`, `document`, `model`, or `evaluate` tasks
-
-### Escalation
-
-If the PO lacks domain knowledge to answer, escalate using the dynamic escalation protocol with the domain discovery escalation format from `references/domain-discovery.md`. The architect can proceed with stated assumptions if the user approves, but assumptions and their risks must be documented.
+**Escalation:** If the PO cannot answer critical questions, escalate using the format in `references/domain-discovery.md`. Proceed with stated assumptions only if the user approves; document all assumptions and risks.
 
 ---
 
@@ -387,157 +353,17 @@ Game and software roles can combine freely. Common cross-role combinations:
 
 ## Output Contracts
 
-### Design Output (software)
+Phase 1 detects `task_type`; Phase 2 loads ONLY the matched contract file. Do not load all contracts.
 
-```
-## Architecture: [System/Feature Name]
-## Role: [ROLE]
-## Task: [TYPE]
+| task_type | Contract File |
+|-----------|--------------|
+| `design`, `decompose`, `model`, `analyze-quality`, `data-design`, `security-design`, `strategic`, `integration`, `transformation-planning` | `references/output-contracts/design.md` |
+| `document`, `game-design-doc` | `references/output-contracts/adr.md` |
+| `game-systems`, `level-design`, `netcode`, `render-pipeline` | `references/output-contracts/game.md` |
+| `review`, `game-review` | `references/output-contracts/review.md` |
+| `evaluate` | `references/output-contracts/evaluation.md` |
 
-### Context & Drivers
-[Business context, key drivers, constraints]
-
-### Architecture Decision
-[The design — components, interactions, data flows]
-
-### C4 Diagram Description
-[Text description suitable for rendering as C4 diagrams — Mermaid or PlantUML]
-
-### Trade-Off Analysis
-| Option | Pros | Cons | Decision |
-|--------|------|------|----------|
-
-### Quality Attributes
-| Attribute | Requirement | How Addressed |
-|-----------|-------------|---------------|
-
-### Risks & Mitigations
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-
-### Assumptions
-- [Listed explicitly]
-
-### Follow-Up
-- [ADRs to write]
-- [Spikes to run]
-- [Stakeholders to consult]
-```
-
-### ADR Output
-
-```
-## ADR-[NNN]: [Decision Title]
-
-**Status:** [Proposed | Accepted | Deprecated | Superseded]
-**Date:** [date]
-**Deciders:** [who was involved]
-
-### Context
-[What is the issue? What forces are at play?]
-
-### Decision
-[What is the change that we're proposing and/or doing?]
-
-### Consequences
-[What becomes easier? What becomes harder?]
-
-### Alternatives Considered
-| Alternative | Pros | Cons | Why Rejected |
-|-------------|------|------|--------------|
-```
-
-### Game Architecture Output
-
-```
-## Game Architecture: [System/Feature Name]
-## Role: [ROLE]
-## Task: [TYPE]
-
-### Design Goals
-[What gameplay or technical goals drive this design]
-
-### System Architecture
-[Components, data flow, system interactions]
-
-### Performance Budget
-| Metric | Target | Approach |
-|--------|--------|----------|
-| Frame time contribution | [X ms] | [How] |
-| Memory budget | [X MB] | [How] |
-| Network bandwidth | [X kbps] | [How] (if applicable) |
-
-### Platform Considerations
-[PC, console, mobile differences and accommodations]
-
-### Trade-Off Analysis
-| Option | Pros | Cons | Decision |
-|--------|------|------|----------|
-
-### Risks & Mitigations
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-
-### Integration Points
-[How this system connects to other game systems]
-
-### Follow-Up
-- [Prototypes to build]
-- [Performance tests to run]
-- [Design iterations needed]
-```
-
-### Review Output (software and game)
-
-```
-## Architecture Review: [System Name]
-## Role: [ROLE]
-
-### Summary
-[1-2 sentence assessment]
-
-### Findings
-
-#### Critical
-- [Finding]: [Explanation and recommendation]
-
-#### Warning
-- [Finding]: [Explanation and recommendation]
-
-#### Suggestion
-- [Finding]: [Explanation and recommendation]
-
-### Quality Attribute Assessment
-| Attribute | Current State | Risk Level | Recommendation |
-|-----------|--------------|------------|----------------|
-
-### Recommended Actions
-1. [Prioritized list of improvements]
-```
-
-### Technology Evaluation Output
-
-```
-## Technology Evaluation: [What is being evaluated]
-
-### Decision Context
-[Why this evaluation is needed]
-
-### Candidates
-| Criterion (Weight) | [Option A] | [Option B] | [Option C] |
-|---------------------|------------|------------|------------|
-| [Criterion 1] (W%) | Score: X | Score: X | Score: X |
-| **Weighted Total** | **X** | **X** | **X** |
-
-### Recommendation
-[Which option and why]
-
-### Migration / Adoption Plan
-[High-level steps if switching]
-
-### Risks
-[Key risks of the recommended option]
-```
+Load the matched contract file and include it verbatim in the sub-agent prompt under `## Output Requirements`.
 
 ---
 
@@ -600,6 +426,7 @@ For orchestration with other delivery-team skills, the architect skill accepts a
 {
   "task_type": "string",
   "role": "string",
+  "recommended_model": "sonnet | opus",
   "artifact_title": "string",
   "artifact": "string (markdown)",
   "trade_offs": ["array — key trade-off decisions made"],

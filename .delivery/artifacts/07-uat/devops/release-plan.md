@@ -1,73 +1,91 @@
 ---
-title: "Release Plan — Wave 1"
+title: "Release Plan — Wave 2"
 stage: 07-uat
 author: Sam (operations skill)
 created: 2026-05-03
-wave: W1
-branch: feature/skill-token-economy-wave-1-tk1
+wave: W2
+branch: feature/skill-token-economy-wave-2-tk2
 ---
 
-# Release Plan: Wave 1
+# Release Plan: Wave 2
 
-## 1. Release Scope — 55 files
+## 1. Release Scope — 65 files
 
-| Story | WIs | Files |
-|-------|-----|-------|
-| Story 1 — delivery-flow restructure | W1-1, W1-2, W1-6 | `delivery-flow/SKILL.md` (−91 lines), `references/stages.yml` (new), `references/stages-schema.json` (new), `governance/cache-prefix-hash.txt` (new), `.delivery/artifacts/` (plan/arch/ADR docs) |
-| Story 2 — frontmatter rollout | W1-3, W1-4, W1-7 | 12 SKILL.md (`allowed-tools`), 5 SKILL.md (`phase_1_detector_model: haiku`), `alias-creator/SKILL.md` (200 lines final), `governance/skill-budgets.json`, `scripts/check_skill_budgets.py`, `.claude-plugin/marketplace.json` |
-| Story 3 — challenger hook | W1-5 | `delivery-team/hooks/audit_agent_prompt.py` (+95 lines, additive) |
+| Story | Key Files |
+|-------|-----------|
+| S1 doctrine extract | `delivery-flow/SKILL.md`, `references/orchestrator-doctrine.md` (new), `cache-prefix-hash.txt` |
+| S2 architect contracts | `architect/SKILL.md` (500 locked), `architect/references/output-contracts/` (new), ADR-tk2-002 |
+| S3 developer | `developer/SKILL.md` (296), `references/agent-prompts/` (new), `coding-standards-template.md` |
+| S4 product-delivery | `product-delivery/SKILL.md` (299), `references/patterns/` (new) |
+| S5 admin | `skill-budgets.json`, `check_skill_budgets.py`, BACKLOG-101, ADR-tk2-001, ADR-tk2-003 |
 
-**Total changed files (git status --short):** 55
+No service deploy. CI gate already in place.
 
 ---
 
 ## 2. Pre-Merge Checklist
 
-- [ ] **DoD files (12):** `ls .delivery/artifacts/06-dev/dod/story-{1,2,3}-{dev,qa,architect,techwriter}-review.md` — expect 12 paths, all present
-- [ ] **alias-creator budget:** `wc -l delivery-team/skills/alias-creator/SKILL.md` — expect `200`
-- [ ] **allowed-tools coverage:** `find delivery-team -name SKILL.md ! -path '*delivery-flow*' -exec grep -L "^allowed-tools:" {} \;` — expect empty output
-- [ ] **delivery-flow frontmatter:** `grep -E "^model: sonnet|^## Volatile" delivery-team/skills/delivery-flow/SKILL.md` — expect 2 matches
-- [ ] **Cache-prefix hash:** `python3 -c "import hashlib; print(hashlib.sha256(open('delivery-team/skills/delivery-flow/SKILL.md','rb').read()[:2048]).hexdigest())" | diff - <(awk '{print $1}' governance/cache-prefix-hash.txt)` — expect no diff
-- [ ] **Hook syntax:** `python3 -m py_compile delivery-team/hooks/audit_agent_prompt.py` — expect exit 0
-- [ ] **CI budget gate:** `python3 scripts/check_skill_budgets.py 2>&1` — expect exit 0, 0 violations
-- [ ] **Marketplace description ≤500 chars:** `python3 -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); print(len([p for p in d['plugins'] if p['id']=='delivery-team'][0]['description']))"` — expect ≤500
-- [ ] **No LLM calls in hook:** `grep -rE 'anthropic|openai|litellm' delivery-team/hooks/` — expect empty
+```bash
+# 1 — All 20 Stage 6 DoD files exist (expect: 20)
+ls .delivery/artifacts/06-dev/dod/story-{1,2,3,4,5}-{architect,dev,qa,techwriter}-review.md | wc -l
+
+# 2 — All 20 have STATUS: line (expect: empty output)
+grep -rL "STATUS:" .delivery/artifacts/06-dev/dod/story-{1,2,3,4,5}-{architect,dev,qa,techwriter}-review.md
+
+# 3 — delivery-flow ≤500 (current 497 ✓)
+wc -l delivery-team/skills/delivery-flow/SKILL.md
+
+# 4 — architect ==500 (current 500 ✓)
+wc -l delivery-team/skills/architect/SKILL.md
+
+# 5 — developer ≤300 (current 296 ✓)
+wc -l delivery-team/skills/developer/SKILL.md
+
+# 6 — product-delivery ≤300 (current 299 ✓)
+wc -l delivery-team/skills/product-delivery/SKILL.md
+
+# 7 — cache-prefix sha256 matches stored (expect: OK)
+python3 -c "import hashlib; h=hashlib.sha256(open('delivery-team/skills/delivery-flow/SKILL.md','rb').read()).hexdigest(); s=open('governance/cache-prefix-hash.txt').read().split()[0]; print('OK' if h==s else f'MISMATCH {h}')"
+
+# 8 — skill-budgets.json valid + 7 debt entries (expect: debt=7)
+python3 -c "import json; d=json.load(open('governance/skill-budgets.json')); kd=d['known_debt']; print(f'debt={len(kd)}'); assert len(kd)==7"
+
+# 9 — CI gate exits 0
+python3 scripts/check_skill_budgets.py 2>&1; echo $?
+```
+
+> **BLOCKER:** 13/20 DoD files missing `STATUS:` (check 2). Resolve before merge.
 
 ---
 
 ## 3. Merge Sequencing
 
-Single PR — branch `feature/skill-token-economy-wave-1-tk1` → `main`. All 7 WIs are already committed as 3 story groups on the feature branch.
-
-Conventional-commit message for merge:
-```
-feat(token-economy): Wave 1 cache-freeze, haiku routing, challenger hook
-```
-
-No service deploy. CI gate (`.github/workflows/skill-line-budget.yml`) already in place from Wave 0.
+Single PR — `feature/skill-token-economy-wave-2-tk2` → `main`. File-disjoint stories; no ordering dependency. Merge commit: `feat(token-economy): Wave 2 doctrine extract, architect contracts, dev/PD trims`
 
 ---
 
-## 4. Rollback Plan
+## 4. Rollback per Story
 
-| Scenario | Action |
-|----------|--------|
-| Cache-prefix freeze breaks future pipeline runs | `git revert <merge-commit>` — reverts all Wave 1 changes; `cache-prefix-hash.txt` deletion is benign (CI will warn, not block) |
-| Frontmatter additions (`allowed-tools`, `phase_1_detector_model`) cause dispatch errors | Revert specific SKILL.md files; `allowed-tools` and `phase_1_detector_model` are additive — reverting selectively leaves others intact |
-| Challenger hook fires false positives | Warn-only by design (exit 0). Temporarily disable: add `# DISABLED` comment before the `_emit_challenger_warning()` call in `audit_agent_prompt.py`, then raise PR for proper fix before full revert |
+| Story | Rollback |
+|-------|---------|
+| S1 doctrine extract | `git revert <merge-commit>`; restore hash: `git show HEAD~1:governance/cache-prefix-hash.txt > governance/cache-prefix-hash.txt` |
+| S2 architect contracts | `git revert -- delivery-team/skills/architect/` |
+| S3 developer | `git revert -- delivery-team/skills/developer/` |
+| S4 product-delivery | `git revert -- delivery-team/skills/product-delivery/` |
+| S5 admin | `git revert -- governance/ scripts/check_skill_budgets.py .delivery/backlog/BACKLOG-101* .delivery/artifacts/04-architect/adrs/ADR-tk2-00*` |
 
 ---
 
 ## 5. Post-Merge Monitoring
 
-| Window | Check | Pass signal |
-|--------|-------|-------------|
-| First 5 pipeline invocations | Telemetry JSONL contains `"model": "haiku"` rows for Phase 1 routing | ≥1 haiku row per invocation |
-| First 5 PRs | CI budget gate exits 0 on clean PRs; fires on over-budget additions | No false block or false pass |
-| First adversarial dispatch | `[CHALLENGER-TIER-WARN]` present in stderr if model mismatch; absent when models match | Correct presence/absence in both cases |
+| Window | Check | Pass |
+|--------|-------|------|
+| First 5 pipeline invocations | `orchestrator-doctrine.md` loaded only in orchestrator role (telemetry) | No stray doctrine loads |
+| First 5 architect dispatches | `task_type` → contract file routing resolves correctly | Correct contract selected |
+| Cache hit ratio | Second run: `cache_read_input_tokens / input_tokens ≥ 0.85` (ADR-tk2-001) | Ratio ≥ 0.85 |
 
 ---
 
-## 6. Stop Rule (carryover)
+## 6. Stop Rule
 
-Defects/story rate > 0.4 across any rolling 3-PR window → **pause Wave 2**.
+Defects/story rate > 0.4 across any rolling 3-PR window → **pause Wave 3**.

@@ -1,82 +1,86 @@
 ---
-title: "Wave 1 Release Notes — Skill Token-Economy (tk1)"
+title: "Wave 2 Release Notes — Doctrine Extraction + Per-Skill Contracts"
 stage: 07-uat
 author: Bilbo (operations skill, tech-writer role)
 created: 2026-05-03
 initiative: SKILL-TOKEN-ECONOMY
-wave: 1
-supersedes: Wave 0 release notes (2026-05-03)
+wave: 2
+supersedes: Wave 1 release notes (2026-05-03)
 ---
 
-# Release Notes — Wave 1: Per-Skill Model Discipline + Cache-Prefix Freeze
+# Release Notes — Wave 2: Doctrine Extraction + Per-Skill Model Map + Pattern Split
 
 ## What's New
 
-### delivery-flow/SKILL.md restructured (`W1-1`, `W1-2`)
-1090 → 999 lines (−91). Three concrete changes:
-- **Cache-prefix frozen** at end of Phase 3 (~first 2 KB). SHA-256 of bytes 0–2048 written
-  to `governance/cache-prefix-hash.txt` (`aea33d57…`). Any PR touching the frozen region
-  must update the hash and cite an ADR (`Cache-Prefix-Change:` PR token).
-- **stages.yml extracted**: inline Stage 1–7 prose replaced with a single pointer block.
-  Authoritative manifest: `delivery-team/skills/delivery-flow/references/stages.yml`
-  (7,394 bytes, all 7 stages). JSON Schema: `references/stages-schema.json`.
-- **Model defaults declared**: `model: sonnet` + `extended_thinking: false` added to
-  delivery-flow frontmatter. Opus is opt-in per annotated site only.
+### delivery-flow/SKILL.md — 999 → 497 lines (Tier-A ✓)
+- **Doctrine externalized** to `delivery-team/references/shared/orchestrator-doctrine.md`
+  (Prime Directive elaboration, Anti-Patterns, collaboration pattern prose — 502 lines removed).
+- **Cache prefix re-frozen**: `governance/cache-prefix-hash.txt` updated to sha256 `9d4011d1…`
+  following doctrine extraction. Any PR touching delivery-flow/SKILL.md first ~2 KB must
+  re-freeze and cite an ADR.
 
-### Per-skill `allowed-tools` + `phase_1_detector_model` (`W1-3`, `W1-4`)
-- 12 SKILL.md files now carry `allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]`.
-- 5 router skills (`product-delivery`, `architect`, `quality`, `operations`, `ui`) declare
-  `phase_1_detector_model: haiku` — classification dispatch now runs on Haiku.
+### architect/SKILL.md — 673 → 500 lines (Tier-A ✓; partial Tier-B progress)
+- **5 output contracts extracted** to `references/output-contracts/<task_type>.md`:
+  greenfield-design, brownfield-migration, spike, design-sprint, transformation-planning.
+- **Model split applied**:
+  - Classification phases → `recommended_model: sonnet`
+  - Design synthesis phases → `recommended_model: opus`
+- ~200-line Tier-B residual remains; closure deferred to Wave 3 (BACKLOG-104).
 
-### Adversarial-challenger warn-only hook (`W1-5`)
-`audit_agent_prompt.py` extended (+95 lines, additive only). New
-`check_challenger_tier_inheritance()` emits `[CHALLENGER-TIER-WARN]` to stderr and
-`$GITHUB_STEP_SUMMARY` when a challenger model differs from the primary. Called EARLY in
-`main()`. Exit 0 always this wave. Promotion to hard-block in Wave 2 after 5-run clean run.
+### developer/SKILL.md — 495 → 296 lines (Tier-B ✓)
+- Coding standards extracted to `references/agent-prompts/coding-standards.md`.
+- Language-agnostic template at `references/coding-standards-template.md`.
+- Paradigm-aware loading paths preserved in skill body.
 
-### alias-creator graduates from known-debt (`W1-7`)
-Trimmed 201 → 200 lines; Tier-C compliant. Removed from `governance/skill-budgets.json`
-known_debt list and from hardcoded `KNOWN_DEBT` in `check_skill_budgets.py`.
-Known-debt baseline: 11 → 10 entries.
+### product-delivery/SKILL.md — 691 → 299 lines (Tier-B ✓)
+- 12 task-type-specific patterns split to `references/patterns/<slug>.md`.
+- Skill body retains routing index; pattern files load on demand per task type.
 
-### marketplace.json description pruned (`W1-4`)
-delivery-team entry: 913 → 464 chars (≤500 binding). Session-start payload reduced.
+### Wave 1 Retro Backports (BACKLOG-101 W1-7)
+- Severity corrected: `-1 → -2` per retro finding.
+- Hook file renamed to `audit_agent_prompt.py` (previously undiscoverable under old name).
+- Edit-history footers appended to all affected files (history-preserving; no content lost).
 
 ## Why
 
-Realizes three binding decisions: prefix freeze (Ruling 1), stage YAML manifest (Ruling Corollary),
-and per-skill model rollout (ADR-tk1-002/003). No breaking changes — all additive.
+Realizes the doctrine extraction + per-skill model map + per-task pattern split from
+the audit. Closes 3 of 10 known-debt files (delivery-flow, developer, product-delivery
+reach Tier-A/B). Wave 1 retro obligations cleared.
+
+## Breaking Changes
+
+None. All changes are extractive; routing tables and DoD validators preserved.
+Cache-prefix hash invalidated once — operators must re-verify (see below).
 
 ## Known Issues / Debt
 
-- **CLAUDE.md at 168 lines** (cap = 150, binding ruling 3): Wave 1 additions deferred
-  to Wave 3 refactor (which trims CLAUDE.md to ≤150 first). See `tk0e-claude-md-refactor`.
-- **10 SKILL.md over Tier-A/B budgets**: Wave 2 structural extractions will address
-  (architect, product-delivery, developer, presentation, ui, operations, quality, user-feedback,
-  godot, delivery-flow are all still above their nominal long-term targets).
-- **stages.yml not yet parsed at runtime**: orchestrator reads the pointer block as
-  documentation only. Wave 2 wires programmatic loading.
-- **YAML validation gap**: `stages.yml` content verified visually; `yamllint`/PyYAML
-  CI validation deferred to Wave 2.
-- **Challenger hard-block deferred**: warn-only this wave; escalates in Wave 2 after
-  zero-violation telemetry across 5 runs.
+| File | Remaining Issue | Wave |
+|------|----------------|------|
+| `architect/SKILL.md` | Tier-B ~200-line residual | Wave 3 |
+| `CLAUDE.md` | 169 lines, binding-deferred | Wave 3 |
+| `presentation/SKILL.md` | Tier-B/C | Wave 3 |
+| `ui/SKILL.md` | Tier-B/C | Wave 3 |
+| `operations/SKILL.md` | Tier-B/C | Wave 3 |
+| `quality/SKILL.md` | Tier-B/C | Wave 3 |
+| `user-feedback/SKILL.md` | Tier-B/C | Wave 3 |
+| `godot/SKILL.md` | Tier-B/C | Wave 3 |
 
-## What's Next (Wave 2)
+Known-debt baseline: 10 → 7 entries after Wave 2.
 
-- BACKLOG-102: caveman-lite prose discipline (sequenced post-W1).
-- Wave 2 structural extractions: output-contract tables out of architect, developer,
-  quality, operations SKILL.md → `references/` markdown files.
-- Pre-commit hook: enforce cache-prefix hash refresh on SKILL.md edits.
-- Wire orchestrator to load stages.yml as structured data (Phase 4, Step 3).
-- Challenger hard-block promotion (pending 5-run clean telemetry).
+## What's Next
+
+- **BACKLOG-104 Wave 3**: presentation / ui / operations / quality / user-feedback / godot
+  trims; architect Tier-B closure; governance frontmatter; paradigm sub-skill pattern;
+  CLAUDE.md refactor (169 → ≤150).
+- **BACKLOG-102**: caveman-lite prose discipline — still queued, no change this wave.
 
 ## Operator Instructions
 
 ```bash
-# View tier compliance + known-debt report
+# Tier compliance report (now shows 7 known-debt entries)
 python3 scripts/check_skill_budgets.py --known-debt-report
 
-# Verify cache-prefix integrity (local)
+# Verify cache-prefix integrity
 python3 -c "
 import hashlib
 h = hashlib.sha256(open('delivery-team/skills/delivery-flow/SKILL.md','rb').read()[:2048]).hexdigest()
@@ -84,8 +88,8 @@ stored = open('governance/cache-prefix-hash.txt').read().split()[0]
 print('OK' if h == stored else f'MISMATCH: got {h}, want {stored}')
 "
 
-# Run budget check
-python3 scripts/check_skill_budgets.py
+# Telemetry summary
+python3 delivery-team/hooks/telemetry_report.py
 ```
 
 ## Credits

@@ -1,0 +1,107 @@
+# Delivery Flow References Manifest
+# All reference files under delivery-team/skills/delivery-flow/references/
+# Loaded on demand during pipeline execution — not pre-loaded into context.
+
+references:
+  - file: references/pipeline-stages.md
+    purpose: >
+      Detailed sub-flow for each of the 7 stages: entry conditions, agent invocations,
+      task types, output artifact templates
+
+  - file: references/project-types.md
+    purpose: >
+      Full detection matrix for all 6 project types: signals, confidence boosters/reducers,
+      disambiguation rules, stage routing matrix, depth definitions
+
+  - file: references/quality-gates.md
+    purpose: >
+      Gate criteria for all 7 stages with severity levels (blocking, warning, suggestion),
+      DoD validator assignments, self-correction protocol, escalation rules
+
+  - file: references/team-patterns.md
+    purpose: >
+      All 6 collaboration patterns with protocols and prompt templates: Evaluator-Optimizer,
+      Adversarial Review, Multi-Perspective Review Board, Decision Ownership Routing,
+      Debate, Consensus
+
+  - file: references/memory-protocol.md
+    purpose: >
+      Tiered chunked memory system: routing index (Tier 1), stage + topic chunks (Tier 2),
+      run archive (Tier 3), retrieval protocol (2-3 reads per stage), chunk size limits,
+      pruning rules, decay protocol
+
+  - file: references/setup-wizard.md
+    purpose: >
+      Setup wizard protocol: scan detection matrix, 9 wizard questions with smart options,
+      config file format, directory initialization, pipeline integration
+
+  - file: references/config-schema.md
+    purpose: >
+      Config schema: all keys with types, defaults, valid values, consuming skills,
+      versioning, extension protocol, migration
+
+  - file: references/defect-tracking.md
+    purpose: >
+      Defect tracking protocol: registry format, classification rules, plugin improvement
+      PR triggers, PO defect rate tracking
+
+  - file: references/git-integration.md
+    purpose: Git integration: branching strategies, conventional commits, pipeline integration points
+
+  - file: references/github-integration.md
+    purpose: >
+      GitHub integration: issue creation, PR creation, commit linking, gh CLI usage
+
+  - file: references/getting-started.md
+    purpose: >
+      Getting started guide: quick-start wizard, skill map, first pipeline walkthrough,
+      command cheat sheet
+
+  - file: references/analytics.md
+    purpose: Pipeline analytics: metrics, data sources, dashboard format, trend analysis
+
+  - file: references/artifact-contracts.md
+    purpose: >
+      Artifact contracts: required sections per stage transition, input validation,
+      contract versioning
+
+  - file: references/monorepo.md
+    purpose: >
+      Monorepo orchestration: detection, per-package pipelines, affected-only runs,
+      shared ADRs
+
+  - file: references/notifications.md
+    purpose: >
+      Configurable notifications: event types, channels (console/file/slack/github-discussion),
+      report format, integration protocol
+
+  - file: references/project-templates.md
+    purpose: >
+      Project templates: pre-built starting artifacts for common stacks (nextjs-api,
+      python-cli, godot-game, dotnet-microservice, react-spa, express-api, fullstack-nx)
+
+  - file: references/feature-knowledge.md
+    purpose: >
+      Feature Knowledge System: FKCs, Impact Analysis Gate, interaction map, decision trail,
+      staleness detection
+
+  - file: references/pipeline-scope.md
+    purpose: Pipeline scope: code-only, all, custom modes with content-type-aware stage depth
+
+  - file: references/stages.yml
+    purpose: >
+      Machine-readable stage routing metadata: runs_for, skipped_for, light_for,
+      dod_validators, output_path, max_self_correction, human_checkpoint,
+      collaboration_patterns (validated by stages-schema.json)
+
+  - file: references/stages-schema.json
+    purpose: JSON Schema for stages.yml — validates structure of all 7 stage definitions
+
+  - file: references/config-keys.md
+    purpose: Full 35-row config settings table (all keys applied to pipeline from .delivery/config.yml)
+
+  - file: references/commands.md
+    purpose: Full 18-row user commands table (all commands recognized during pipeline session)
+
+  - file: references/manifest.yml
+    purpose: This file — references manifest (22 entries)

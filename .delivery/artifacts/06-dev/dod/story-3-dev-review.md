@@ -1,70 +1,43 @@
-# Story 3: Challenger Tier Model-Inheritance Hook — Dev Review
+# Story 3 DoD Validation: Developer Coding-Standards Extract
 
-## Gate Summary: ALL PASS ✓
+**Validator:** Gimli (fresh-eye) | **Date:** 2026-05-03 | **Status:** DONE
 
-### Gate 1: Python Syntax Validation
-```bash
-python3 -c "import ast; ast.parse(open('delivery-team/hooks/audit_agent_prompt.py').read()); print('OK')"
-```
-**Result:** ✓ PASS — No syntax errors.
+## Gate Results
 
-### Gate 2: Function Presence
-```bash
-grep -n "def check_challenger_tier_inheritance" delivery-team/hooks/audit_agent_prompt.py
-```
-**Result:** ✓ PASS — Function defined at line 30.
+| Gate | Requirement | Check | Result |
+|------|-------------|-------|--------|
+| 1 | SKILL.md line count ≤300 (Tier-B) | `wc -l delivery-team/skills/developer/SKILL.md` | **296 lines** ✓ |
+| 2 | Two new reference files exist | `test -f agent-prompts/coding-standards.md && test -f coding-standards-template.md` | **Both present** ✓ |
+| 3 | Router mentions 7 task types | Grep for write/fix/refactor/review/test/explain/coding-standards | **All 7 found** ✓ |
+| 4 | Inline block removed; pointer only | `grep -c "^### .*coding-standards"` = 1 | **1 match (dispatch section only)** ✓ |
 
-### Gate 3: Pure Stdlib Dependencies
-```bash
-grep -E "^import |^from " delivery-team/hooks/audit_agent_prompt.py | grep -vE "^(import|from) (re|sys|os|json|hashlib|argparse|pathlib)"
-```
-**Result:** ✓ PASS — Only project-internal `lib.hook_utils` import (expected).
+## Extraction Quality
 
-### Gate 4: Test 1 — Adversarial Mismatch Dispatch
-**Prompt:** Adversarial role with `model: opus` and `primary_model: sonnet.`
+**Inline block status:**
+- Former 80+ line coding-standards content removed from SKILL.md
+- Replaced with dispatch section: "Load `references/agent-prompts/coding-standards.md` for the sub-agent prompt"
+- New external files loaded on task trigger, not pre-loaded
 
-```bash
-python3 delivery-team/hooks/audit_agent_prompt.py < /tmp/test_adv_mismatch.json 2>&1
-```
-**Result:** ✓ PASS — Exit 0, stderr contains `[CHALLENGER-TIER-WARN]` with ADR-tk1-003 W1-5 citation and full mismatch details.
+**Task type routing:** Verified all 7 types routed correctly:
+- `write` → implement from scratch (language reference)
+- `fix` → identify root cause + patch
+- `refactor` → improve structure; cite clean code sections
+- `review` → audit + clean code checklist + enforcement
+- `test` → idiomatic framework; cover happy/edge/error
+- `explain` → code walkthrough with annotations
+- `coding-standards` → dispatch → agent prompt + template
 
-### Gate 5: Test 2 — Non-Adversarial Prompt
-**Prompt:** Generic assistant role (no adversarial/challenger keywords).
+## File Inspection
 
-**Result:** ✓ PASS — Exit 0, no warning emitted.
+Both new files created and properly linked:
+- `delivery-team/skills/developer/references/agent-prompts/coding-standards.md` — sub-agent prompt
+- `delivery-team/skills/developer/references/coding-standards-template.md` — 10-section template
 
-### Gate 6: Test 3 — Matching Model Fields
-**Prompt:** Adversarial role with `model: opus` and `primary_model: opus.`
+No duplicate content; clean separation of concerns.
 
-**Result:** ✓ PASS — Exit 0, no mismatch warning (models match, case-insensitive).
+## Summary
 
-### Gate 7: Test 4 — Malformed JSON
-**Input:** Single `{` (incomplete JSON).
+Story 3 extract complete. Coding-standards moved from inline (bloat) to external references (lazy-load). SKILL.md compressed to 296 lines. All 7 task types routed. DoD satisfied.
 
-**Result:** ✓ PASS — Exit 0, gracefully handled via exception guard in `read_hook_input()`.
-
-### Gate 8: hooks.json Validation
-```bash
-python3 -c "import json; json.load(open('delivery-team/hooks/hooks.json'))"
-```
-**Result:** ✓ PASS — Valid JSON structure.
-
-## Commands Run
-
-1. `python3 -c "import ast; ast.parse(open('delivery-team/hooks/audit_agent_prompt.py').read()); print('OK')"` → OK
-2. `grep -n "def check_challenger_tier_inheritance" delivery-team/hooks/audit_agent_prompt.py` → Line 30
-3. Import validation (stdlib + internal) → Pure + expected
-4. Adversarial mismatch test → Warning fired, exit 0
-5. Non-adversarial test → Silent, exit 0
-6. Matching models test → Silent, exit 0
-7. Malformed JSON test → Graceful, exit 0
-8. hooks.json valid → True
-
-## Implementation Notes
-
-- **Regex Patterns:** Three core patterns (challenger, model field, primary model) all fire correctly.
-- **Comparison Logic:** Case-insensitive model name matching; trailing punctuation preserved in capture (e.g., `sonnet.`).
-- **Wave 1 Policy:** Warn-only; no blocking. Warnings emitted to stderr + GITHUB_STEP_SUMMARY (if env var set).
-- **Error Handling:** All exceptions caught; non-blocking by design.
-- **Hook Contract:** Expects `tool_name`, `tool_input` from Claude Code hook input schema.
-
+---
+**Gimli's Voice:** "Extraction clean as a smithy floor. Context bounds honored. Read the dispatch; load what ye need. No waste, no bloat. Dwarven approval."

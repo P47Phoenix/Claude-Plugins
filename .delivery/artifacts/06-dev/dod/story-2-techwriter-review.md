@@ -1,6 +1,6 @@
 ---
 story: 2
-wi: W1-3, W1-4, W1-7
+wi: W2-2, W2-6
 reviewer: Bilbo
 date: 2026-05-03
 ---
@@ -9,35 +9,43 @@ date: 2026-05-03
 
 **SKILL_LOADED: operations | STATUS: DONE | ARTIFACT: story-2-techwriter-review.md**
 
-## Gate 1: Marketplace Description Discoverable
+## Gate 1: Contract Docstrings
 
-✓ **PASS** — Delivery-team description (464 chars, ≤500) names purpose + lists 11 skills explicitly.
+✓ **PASS** — All 5 contract files have docstring/intro explaining task types.
 
-> "Full delivery team with 11 skills covering the complete software delivery lifecycle: Delivery Flow (pipeline orchestrator), Product Delivery, Developer..."
+- `design.md`: design, decompose, model, analyze-quality, data-design, security-design, strategic, integration, transformation-planning
+- `adr.md`: document, game-design-doc
+- `game.md`: game-systems, level-design, netcode, render-pipeline
+- `review.md`: review, game-review
+- `evaluation.md`: evaluate
 
-Users discover scope immediately.
+## Gate 2: story-2-implementation.md Covers W2-2 + W2-6
 
-## Gate 2: story-2-implementation.md Covers All Edits
+✓ **PASS** — w2-story-2-implementation.md documents both outcomes.
 
-✓ **PASS** — All 12 SKILL.md + alias-creator + marketplace documented with pre/post counts.
+- W2-2: 5 contracts split to files, routing table added ✓
+- W2-6: model split table (sonnet/opus), paradigm frontmatter ✓
+- SKILL.md: 673 → 500 lines (Tier-A met) ✓
 
-- W1-3: phase_1_detector_model in 5 files ✓
-- W1-4: allowed-tools in 12 files ✓
-- W1-7: alias-creator -2 lines (201 → 200) ✓
+## Gate 3: Routing Table Human-Readable
 
-## Gate 3: Dogfood Evidence Complete
+✓ **PASS** — 5-row markdown table in architect/SKILL.md maps task_type → file path clearly.
 
-✓ **PASS** — Per-file wc -l baseline + delta, CI gate result, char count verified.
-
-- 12 pre/post line counts match implementation ✓
-- alias-creator math: 201 +1 -2 = 200 ✓
-- CI result: PASSED (0 violations) ✓
+```
+| task_type | Contract File |
+|-----------|---------------|
+| design... | references/output-contracts/design.md |
+| document... | references/output-contracts/adr.md |
+| game-systems... | references/output-contracts/game.md |
+| review... | references/output-contracts/review.md |
+| evaluate | references/output-contracts/evaluation.md |
+```
 
 ## Gate 4: No Stale References
 
-✓ **PASS** — All files exist; allowed-tools in 12/12; phase_1_detector_model in 5/5; alias-creator removed from known-debt.
+✓ **PASS** — All 5 files exist; no old inline contracts in SKILL.md; paths verified.
 
 ---
 
-**All gates clear. Story 2 ready for ship.**
+**All gates clear. Story 2 docs ready.**
 

@@ -1,98 +1,113 @@
----
-title: "Skill Token-Economy — Wave 1 Quick-Wins"
-scope: delivery-team plugin only
-wave: 1
-work_items: [W1-1, W1-2, W1-3, W1-4, W1-5, W1-6, W1-7]
-predecessor_run: run-2026-05-03-tk0e
-predecessor_pr: 87 (d0e0928)
-status: Draft
-author: Product Owner (product-delivery skill)
-created: 2026-05-03
-version: 1.0
----
+<!-- run: run-2026-05-05-tk2 | wave: 2 | predecessor: run-2026-05-04-tk1 b412a40 -->
 
-# Idea Brief: Skill Token-Economy — Wave 1 Quick-Wins
+# Idea Brief — Skill Token-Economy Wave 2
 
 ## 1. Scope
 
-Execute all 7 Wave 1 quick-wins from BACKLOG-101. Wave 0 (BACKLOG-100) merged clean (PR #87, d0e0928, GO). Telemetry (W0-1) and CI gate (W0-2) are in place; every Wave 1 item produces measurable token savings validated by telemetry and gated by CI.
+BACKLOG-103 W2-0 through W2-7 (8 WIs, 5 file-scope stories). Wave 1 merged clean as
+b412a40 (GO, run-2026-05-04-tk1). Wave 2 brings delivery-flow, architect,
+product-delivery, and developer into full tier compliance; all other files are Wave 3+.
 
 ## 2. In-Scope Work Items
 
-| ID | Title | Files | Risk | D/P[^1] |
-|----|-------|-------|------|---------|
-| W1-1 | Cache-prefix freeze for delivery-flow/SKILL.md | SKILL.md + new ADR | Med | P (ADR = D) |
-| W1-2 | Stage definitions to YAML manifest | SKILL.md + new stages.yml + JSON schema | Low | **D** (stages.yml created in Stage 6) |
-| W1-3 | Haiku for routing/dispatch sub-agents | product-delivery, architect, quality, operations, ui SKILL.md + audit_agent_prompt.py | Low | P (modify existing hook) |
-| W1-4 | Selective allowed-tools + description prune | All delivery-team SKILL.md frontmatter + marketplace.json | Low | P |
-| W1-5 | Adversarial challenger tier-inheritance + extended thinking OFF | delivery-flow SKILL.md (adversarial-review) + audit_agent_prompt.py | High | P (modify existing hook) |
-| W1-6 | Sonnet default for orchestrator + pure-Python hooks audit | delivery-flow SKILL.md frontmatter + all 7 hooks/*.py | Low | P |
-| W1-7 | alias-creator -1 line known-debt fix (carry-in from Wave 0) | alias-creator/SKILL.md | Low | P |
+| WI    | Description                                              | Effort | Risk     |
+|-------|----------------------------------------------------------|--------|----------|
+| W2-0  | Re-baseline `governance/skill-budgets.json`              | S      | Low      |
+| W2-1  | Externalize shared orchestrator doctrine + ADR-tk2-001   | L      | **High** |
+| W2-2  | Extract architect output contracts (×5)                  | M      | Low      |
+| W2-3  | Extract developer coding-standards template (×2 refs)    | M      | Low      |
+| W2-4  | Move config/commands/manifest tables from delivery-flow  | M      | Low      |
+| W2-5  | product-delivery 12 patterns split                       | M      | Low      |
+| W2-6  | Architect model split (Sonnet classification/Opus synthesis) | M  | Med      |
+| W2-7  | Wave 1 retro backports — math correction + filename      | S      | Low      |
 
-[^1]: D = Deliverable (created during pipeline); P = Prerequisite (already exists or derived from existing artifact). W1-2 `stages.yml` does not exist yet — it is produced by Stage 6 Dev, not consumed as input. W1-3 and W1-5 hook target is the **existing** file `delivery-team/hooks/audit_agent_prompt.py` (MODIFY, not create). BACKLOG-101 cites `agent_audit.py` — that filename is wrong; actual file is `audit_agent_prompt.py`. Downstream stages MUST use the actual filename. BACKLOG-101 correction logged for post-pipeline retro action.
-
-All 7 items are mechanically independent and dispatchable in parallel within Stage 6 Dev. See BACKLOG-101 §Sequencing.
+*BACKLOG-103 §§W2-0 – W2-7 are the authoritative spec per row.*
 
 ## 3. Out of Scope
 
-- Wave 2+ structural extractions (BACKLOG-102+)
-- mtg-commander agent-prompt extractions (next plugin BACKLOG)
-- All other plugins (hardware-team, agentic-flow-builder, etc.)
-- CLAUDE.md refactor (Wave 3 — `tk0e-claude-md-refactor` known-debt)
+Wave 3+: presentation/ui/operations/quality/user-feedback/godot Tier-B extractions
+(BACKLOG-104+); CLAUDE.md refactor 169→≤150; BACKLOG-102; governance frontmatter;
+paradigm sub-skill pattern; all other plugins.
 
-## 4. Carry-Forward from Wave 0 Retro
+## 4. Wave 1 Retro Carry-Forward
 
-| # | Action | Owner | Where applied |
-|---|--------|-------|---------------|
-| 2 | Wire pre-merge git hook for skill-budget local check | Gimli | W1-7 dogfood |
-| 3 | Add cross-doc consistency check to UAT TW gate template | Bilbo | Wave 1 UAT |
-| 4 | File issue: plugin-dev:skill-development invocation pattern | Gandalf | Separate one-off |
+| # | Action                                                          | Wave 2 status         |
+|---|-----------------------------------------------------------------|-----------------------|
+| 1 | Backport ADR-tk1-002 + BACKLOG-101 W1-7 line target −1 → −2    | **CLOSED by W2-7**    |
+| 2 | Backport BACKLOG-101 W1-3/W1-5 filename → `audit_agent_prompt.py` | **CLOSED by W2-7** |
+| 3 | Author BACKLOG-103                                              | DONE                  |
+| 4 | File issue: plugin-dev:skill-development invocation pattern     | Carryover post-pipeline |
 
-Note: Action #1 (Author BACKLOG-101) is closed — BACKLOG-101 exists and is the input to this run.
+## 5. Plugin-Dev Skill Routing (binding)
 
-## 5. Plugin-Dev Skill Routing (binding per CLAUDE.md + memory/stages/idea.md)
+Per `stages/idea.md` (validated run-2026-05-03-tk0e) and `topics/claude-plugins-repo.md`
+— pre-loaded to prevent Architect DoD bounce:
 
-Pre-loaded for Dev stage agents — do not re-derive:
-
-| WI | Hook changes? | SKILL.md frontmatter changes? | New files? | Required skills |
-|----|--------------|-------------------------------|------------|-----------------|
-| W1-1 | No | Yes (delivery-flow) | Yes (ADR) | plugin-dev:skill-development |
-| W1-2 | No | Yes (delivery-flow) | Yes (stages.yml + schema) | plugin-dev:skill-development |
-| W1-3 | Yes — modify existing `audit_agent_prompt.py` | Yes (5 SKILL.md) | No | plugin-dev:hook-development + plugin-dev:skill-development |
-| W1-4 | No | Yes (all delivery-team) | No | plugin-dev:skill-development |
-| W1-5 | Yes — modify existing `audit_agent_prompt.py` | Yes (delivery-flow) | No | plugin-dev:hook-development + plugin-dev:skill-development |
-| W1-6 | No (audit only) | Yes (delivery-flow) | No | plugin-dev:skill-development |
-| W1-7 | No | Yes (alias-creator) | No | plugin-dev:skill-development |
-
-Post-completion: `plugin-dev:skill-reviewer` on all modified SKILL.md; `plugin-dev:plugin-validator` before PR.
+- **W2-1, W2-2, W2-3, W2-4, W2-5, W2-6**: create/modify SKILL.md and/or references files
+  → `plugin-dev:skill-development` MUST be pre-loaded at each dispatch.
+- **W2-0, W2-7**: admin JSON/doc edits only; no SKILL.md or hook code changed → no
+  plugin-dev dispatch required.
+- Post-completion: `plugin-dev:skill-reviewer` on all modified SKILL.md;
+  `plugin-dev:plugin-validator` before PR.
 
 ## 6. Known-Debt Status
 
-**Cleared this wave (W1-7)**:
-- `delivery-team/skills/alias-creator/SKILL.md`: 201→≤200 lines, restoring Tier-C compliance; `known_debt` entry removed from `governance/skill-budgets.json`
+**Discovery-verified counts (wc -l 2026-05-05)** — note registry stale at delivery-flow 1089; W2-0 corrects to 999:
 
-**Remains after Wave 1**:
-- `CLAUDE.md`: 169 lines vs binding 150-line cap — deferred to Wave 3 (`tk0e-claude-md-refactor`; logged in run-2026-05-03-tk0e retro)
-- All Tier-B Wave-2 `target_wave` entries in `governance/skill-budgets.json` (presentation 543, ui 493, operations 417, quality 415, user-feedback 397) remain open until Wave 2
+| File (delivery-team/skills/…)   | Actual | Budget | Delta   | Wave 2 outcome        |
+|---------------------------------|--------|--------|---------|-----------------------|
+| delivery-flow/SKILL.md          | 999    | 500    | −499    | **CLEARED** → ≤500    |
+| architect/SKILL.md              | 673    | 300    | −373    | **CLEARED** → ≤300    |
+| product-delivery/SKILL.md       | 691    | 300    | −391    | **CLEARED** → ≤300    |
+| developer/SKILL.md              | 495    | 300    | −195    | **CLEARED** → ≤300    |
+| presentation, ui, operations, quality, user-feedback, godot | 234–543 | 200–300 | — | **REMAINS Wave 3** |
 
-## 7. Success Criteria (runnable verification)
+**CLAUDE.md**: 169/150. Wave 3.
 
-Reference: BACKLOG-101 §Acceptance Criteria.
+## 7. W2-1 Risk — F-08 Dispatch Fusion Regression (Opus 4.7)
 
-| # | Criterion | Verification command |
-|---|-----------|---------------------|
-| SC-1 | delivery-flow SKILL.md under Tier-A 500-line budget | `wc -l delivery-team/skills/delivery-flow/SKILL.md` — MUST return ≤500 |
-| SC-2 | alias-creator restored to Tier-C compliance | `wc -l delivery-team/skills/alias-creator/SKILL.md` — MUST return ≤200 |
-| SC-3 | No delivery-team hook contains LLM calls | `grep -rE "anthropic\|openai\|litellm" delivery-team/hooks/` — MUST return empty |
-| SC-4 | No marketplace.json description exceeds 500 chars | `python -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); [print(p['id'],len(p['description'])) for p in d['plugins'] if len(p.get('description',''))>500]"` — MUST return empty |
-| SC-5 | CI gate passes after all WIs land (no Budget-Exception needed for alias-creator) | `python scripts/check_skill_budgets.py` — MUST exit 0 without alias-creator warning |
+**Risk (High)**: Extracting orchestrator doctrine may lose the semantic anchors that
+delivery-flow Phase 3 route fusion requires. On Opus 4.7, absent anchors collapse
+sub-agent role boundaries — the F-08 failure mode (session 0876a59e analogue).
 
-## 8. References
+**Binding anchors that MUST stay inline**: Phase 0/1/2/3 routing skeleton, Stage Routing
+Matrix, One Role = One Sub-Agent invariant, Two-Channel Communication constraint.
+All other doctrine (anti-patterns, per-stage detail blocks, memory self-learning detail,
+Theme-Gated Reporting protocol) MAY move to `references/shared/orchestrator-doctrine.md`.
 
-| Artifact | Path |
-|----------|------|
-| Wave 1 canonical spec (7 WIs + full ACs) | `.delivery/backlog/BACKLOG-101-skill-token-economy-delivery-team-wave-1.md` |
-| Wave 0 run archive + carry-forward actions | `.delivery/memory/archive/run-2026-05-03-tk0e.md` |
-| Binding decisions (5 rulings + model map) | `.delivery/memory/topics/skill-token-economy.md` |
-| Stage 1 routing lesson (plugin-dev constraint) | `.delivery/memory/stages/idea.md` |
-| Current known-debt registry | `governance/skill-budgets.json` |
+**Mitigation — all required for merge**:
+1. ADR-tk2-001 (cache-prefix re-freeze) enumerates inline anchors vs extracted content;
+   `governance/cache-prefix-hash.txt` MUST be updated; CI hash-check MUST pass.
+2. Architect batching math simulation (Wave 1 lesson applied at Stage 4): ADR-tk2-001
+   shows before (999) → −Δ → after (≤500) with explicit anchor retention list.
+3. Architect dogfood-validates skeleton against synthetic multi-stage pipeline run
+   (Idea + Architect + Dev dispatch minimum) BEFORE merge. Routing misfire → restore
+   anchors inline; doctrine file grows to compensate — correctness beats line count.
+
+## 8. Success Criteria (runnable)
+
+```bash
+python3 scripts/check_skill_budgets.py                                    # exit 0
+wc -l delivery-team/skills/delivery-flow/SKILL.md                        # ≤ 500
+wc -l delivery-team/skills/architect/SKILL.md                            # ≤ 300
+wc -l delivery-team/skills/product-delivery/SKILL.md                     # ≤ 300
+wc -l delivery-team/skills/developer/SKILL.md                            # ≤ 300
+ls delivery-team/references/shared/orchestrator-doctrine.md
+ls delivery-team/skills/architect/references/output-contracts/           # 5 files
+ls delivery-team/skills/product-delivery/references/patterns/            # 12 files
+ls delivery-team/skills/delivery-flow/references/{config-keys,commands,manifest}.{md,yml}
+python3 scripts/check_skill_budgets.py --known-debt-report               # delivery-flow current=999
+grep -c "Edit-history" .delivery/backlog/BACKLOG-101-skill-token-economy-delivery-team-wave-1.md
+grep -c "Edit-history" .delivery/artifacts/04-architect/adrs/ADR-tk1-002-model-tools-rollout.md
+```
+
+Reference: BACKLOG-103 §Acceptance Criteria and §Stop-rule (defects/story ≤ 0.4).
+
+## 9. References
+
+- BACKLOG-103: `.delivery/backlog/BACKLOG-103-skill-token-economy-delivery-team-wave-2.md`
+- Wave 1 retro: `.delivery/memory/archive/run-2026-05-04-tk1.md`
+- Binding decisions: `.delivery/memory/topics/skill-token-economy.md`
+- Stage 1 lesson: `.delivery/memory/stages/idea.md`
+- Known-debt registry (stale; W2-0 fixes): `governance/skill-budgets.json`
+- Cache-prefix hash: `governance/cache-prefix-hash.txt`

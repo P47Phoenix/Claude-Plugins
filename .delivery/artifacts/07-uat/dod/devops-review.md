@@ -1,79 +1,85 @@
 ---
-title: "DevOps Review — Wave 1 UAT Cross-Validation"
+title: "Sam — DevOps Cross-Validation (R2)"
 stage: 07-uat
-role: Operations (Sam)
-created: 2026-05-03
-version: 1.0
+role: operations
+artifact_type: dod
+created: 2026-05-05
+revised: 2026-05-05
 ---
 
-# DevOps Review: Wave 1 UAT Cross-Validation
+# UAT Cross-Validation — Sam (DevOps Review R2)
 
-## Status Summary
+## Gate Status
 
-Wave 1 changeset VALIDATED. All 5 gates PASS. Release artifacts (test-plan, release-notes, user-guide, release-plan) exhibit internal consistency and operator readiness.
-
-## Git Status — Wave 1 Changeset
-
-```
-M .claude-plugin/marketplace.json
-M .delivery/artifacts/01-idea/dod/architect-review.md
-M delivery-team/hooks/audit_agent_prompt.py
-M delivery-team/skills/*/SKILL.md (13 files)
-M scripts/check_skill_budgets.py
-?? .delivery/artifacts/04-architect/adrs/ADR-tk1-*.md (3 files)
-?? .delivery/artifacts/06-dev/dod/story-*-review.md (12 files)
-?? governance/cache-prefix-hash.txt
-?? delivery-team/skills/delivery-flow/references/stages.*
-```
-**55 modified + 9 untracked files. Clean, Wave 1-scoped changeset.**
-
-## Gate 1: Changeset Integrity — PASS
-
-✓ 55 modified files align with release-plan Story breakdown  
-✓ No unrelated modifications; Wave 1 scope isolated  
-✓ Ready for `feature/skill-token-economy-wave-1-tk1` → `main` merge
-
-## Gate 2: Test-Plan Scenarios Reproducible — PASS (6/6)
-
-- **Scenario 1** (delivery-flow structure): 999 lines ✓, model:sonnet ✓, 5 Phases ✓, Volatile×1 ✓
-- **Scenario 2** (stages.yml manifest): size > 100B ✓, JSON valid ✓, schema key ✓
-- **Scenario 3** (budget gate): exit 0 ✓, alias-creator removed ✓
-- **Scenario 4** (allowed-tools): ≥12 files with frontmatter ✓
-- **Scenario 5** (challenger hook): warn-only, no LLM imports ✓
-- **Scenario 6** (cache-prefix): byte-stable hash match ✓
-
-## Gate 3: Release-Notes ↔ Release-Plan Monitoring — PASS
-
-✓ Release-plan: "Telemetry JSONL contains `model: haiku` rows for Phase 1"  
-✓ Release-notes: Provides operator instructions (cache-prefix check, budget check, commands)  
-✓ User-guide: Instructs on cache-prefix impact for post-release remediation  
-
-## Gate 4: User-Guide ↔ Release-Plan Rollback — PASS
-
-✓ Release-plan: `git revert <merge-commit>` + selective SKILL.md reverts  
-✓ User-guide: Instructs on cache-prefix PR token (ADR citation requirement)  
-✓ Challenger hook: Warn-only by design; disabling path documented  
-
-## Gate 5: GitHub Feature Support — PASS
-
-✓ `$GITHUB_STEP_SUMMARY` is standard GitHub Actions environment variable  
-✓ Release-notes documents: "emits warn to stderr and `$GITHUB_STEP_SUMMARY`"  
-✓ Hook properly guards availability: `summary_path = os.environ.get("GITHUB_STEP_SUMMARY")`  
-
-## Gate 6: CI Budget Gate — PASS
-
-```
-BUDGET CHECK PASSED: 13 file(s) checked, 10 known-debt, 0 exception(s).
-exit:0
-```
-
-✓ Zero violations. Known-debt: 11 → 10 entries (alias-creator removed)
-
-## Release Signal
-
-**RECOMMENDATION: PROCEED** to merge feature branch → main.
-
-All gates pass. Artifacts internally consistent. No blocking issues.
+| Gate | Check | Result |
+|------|-------|--------|
+| 1 | git status shows Wave 2 only | PASS |
+| 2 | Test-plan scenarios reproducible | PASS |
+| 3 | Release-notes monitoring ⊆ release-plan | PASS |
+| 4 | User-guide rollback ⊆ release-plan | PASS |
+| 5 | CI budget gate exits 0 | PASS |
 
 ---
-**Validated by:** Sam (DevOps) | **Date:** 2026-05-03
+
+## Gate 1: Changeset Isolation (PASS)
+
+47 files (M/??). Per `.delivery/state.md` in-scope_work_items (W2-0 through W2-7),
+all changes align with Wave 2 doctrine extraction, contracts, coding-standards,
+patterns, governance re-baseline, retro backports. No unrelated plugin work.
+
+Post-merge audit: `git diff HEAD~1 --name-only | sort` verifies scope containment.
+
+---
+
+## Gate 2: Test-Plan Acceptance (PASS)
+
+All 6 scenarios deterministic and reproducible:
+- Scenario 1: delivery-flow 497 lines + doctrine pointer + marker ✓
+- Scenario 2: 5 contracts + routing + architect ≤ 500 ✓
+- Scenario 3: coding-standards dispatch + 6 tasks intact ✓
+- Scenario 4: 12 patterns + product-delivery 299 ✓
+- Scenario 5: 7 known_debt + architect W3 + CI 0 ✓
+- Scenario 6: cache-prefix sha256 + one-line hash ✓
+
+No domain knowledge required for validation.
+
+---
+
+## Gate 3: Release-Notes Monitoring (PASS)
+
+Release-plan §5 defines 3 post-merge checks (orchestrator-doctrine telemetry,
+contract routing, cache-hit ≥0.85). Release-notes §Operator Instructions
+includes compatible telemetry commands. Operator can verify via manual dispatch.
+
+---
+
+## Gate 4: User-Guide Rollback Path (PASS)
+
+User-guide §9 Rollback now includes:
+- S1 doctrine: `git revert <merge-commit>` + cache-prefix restoration
+- S2–S4: selective `git revert -- delivery-team/skills/<skill>/`
+- S5 admin: revert governance files + scripts
+
+Rollback guidance complete. Contributor incident response unblocked.
+
+---
+
+## Gate 5: CI Budget Gate (PASS)
+
+```
+delivery-flow: 497 lines (≤500 ✓)
+architect: 500 lines (locked ✓)
+developer: 296 lines (≤300 ✓)
+product-delivery: 299 lines (≤300 ✓)
+skill-budgets.json: 7 known_debt entries ✓
+
+BUDGET CHECK PASSED: 13 file(s), 7 debt, 0 exception(s).
+EXIT CODE: 0
+```
+
+---
+
+## Summary
+
+**5/5 gates PASS.** Wave 2 ready for production. User-guide rollback section
+closes the contributor loop. Changeset isolated. Test plan reproducible. CI green.
