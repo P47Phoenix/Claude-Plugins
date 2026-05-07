@@ -1,97 +1,79 @@
----
-title: "Wave 2 UAT Test Plan"
-stage: 07-uat
-author: Legolas (quality skill)
-created: 2026-05-03
-version: 2.0
-stories: [story-1-delivery-flow-w2, story-2-architect-output-contracts, story-3-developer-coding-standards, story-4-product-delivery-patterns, story-5-admin-rebaseline]
----
+<!-- run: run-2026-05-05-tk3 | stage: 07-uat | depth: light | author: QA Engineer (Legolas Greenleaf) | role: qa-engineer | task: test-plan -->
 
-# Wave 2 UAT Test Plan
+# UAT Test Plan — Caveman-Lite Prose Discipline (run-2026-05-05-tk3)
+
+> "Five leagues hence — a host of structural ACs. Twelve verified. One waits beyond the next ridge."
+> — Legolas, marking the field.
+
+Stage 7 UAT for one Story (BACKLOG-102 W2-1 + W2-2 + W2-3 consolidated). Light depth — single story, mostly verification of Stage-6 Dev DoD output, plus the empirical core (synthetic structural dogfood + post-merge measurement protocol carry-forward).
+
+## Objective
+
+Validate that the caveman-lite prose discipline implementation lands cleanly: structural ACs (TC-1..8) all pass, the orchestrator's PROSE STYLE injection logic is correct under all four conditional paths (default caveman-lite, three auto-clarity exemptions, opt-out standard), and the post-merge empirical measurement protocol (BACKLOG-102 AC-1 token reduction; AC-2 DoD review byte reduction; AC-3 DoD pass-rate; AC-4 downstream artifact quality) is documented and ready to fire on the next pipeline run.
 
 ## Scope
 
-Contributor-perspective acceptance of 5 Wave 2 stories:
-- Story 1 — delivery-flow/SKILL.md trim to 497 lines (Tier-A)
-- Story 2 — architect output-contracts split + model split
-- Story 3 — developer coding-standards extraction to agent-prompts
-- Story 4 — product-delivery 12-pattern split
-- Story 5 — governance re-baseline (skill-budgets.json, Wave 1 retro backports)
+**In**: 8 TCs from `.delivery/artifacts/05-plan/qa/test-strategy.md`, all 13 Story-1 ACs, structural verification of all 6 ADR-tk3-001 contract elements, 5-dispatch synthetic structural dogfood, post-merge measurement protocol carry-forward. **Out**: Real post-merge token measurements (by design — requires next pipeline run); per-role overrides; Tier 2 retrospective/sprint-plan A/B (BACKLOG-103+).
 
-Stage 6 dogfood covers unit/integration. UAT answers: **"would a contributor pick this up cleanly?"**
+## Strategy Summary
 
-## Pre-conditions
+Two halves:
 
-- All 5 story branches merged to main; clean git tree.
-- Files exist:
-  - `delivery-team/skills/delivery-flow/SKILL.md` (497 lines)
-  - `delivery-team/skills/architect/references/output-contracts/` (5 files)
-  - `delivery-team/skills/developer/references/agent-prompts/coding-standards.md`
-  - `delivery-team/skills/product-delivery/references/patterns/` (12 files)
-  - `governance/skill-budgets.json` (7 known_debt entries)
-  - `governance/cache-prefix-hash.txt`
-- Python 3.8+ stdlib-only environment available.
-- `scripts/check_skill_budgets.py` present and runnable.
+1. **Structural verification** (TC-1 through TC-8) — re-run every Stage-6 Dev DoD verification command. Every command from `06-dev/developer/story-1-implementation.md` §"Verification Commands and Outputs" gets re-executed by Legolas independently. PASS only on byte-exact match to expected output.
+2. **Empirical structural dogfood** (5 synthetic dispatches) — verify the orchestrator's Phase 4 Step 4/5/7 prompt-construction logic produces the right PROSE STYLE block under each conditional branch (default; security; destructive-op; multi-step; opt-out). No real Agent dispatch needed — the PROSE STYLE block is in-prompt directive, so the agent is the detector for exemptions per ADR-tk3-001 Element 3. Verifying the directive is structurally present and unambiguous closes AC-5 and AC-6 short of a full pipeline run.
 
-## Acceptance Scenarios
+The empirical AC-13 sub-clause (BACKLOG-102 AC-1: ≥20% prose-token reduction over 5 dispatches; AC-2: ≥25% DoD review byte reduction) cannot close pre-merge — by definition it requires post-merge dispatches against this implementation. Documented as carry-forward in `dogfood-report.md` §3.
 
-### Scenario 1 — delivery-flow Tier-A compliance + doctrine reference
-**Question**: Is delivery-flow/SKILL.md at 497 lines and doctrine pointer intact?
+## Test Schedule
 
-- Verify `wc -l` == 497 (Tier-A ≤ 500).
-- Verify at least one reference to `orchestrator-doctrine.md` in the file.
-- Verify `## Volatile` marker present exactly once.
-- **Pass**: all 3 checks pass.
+| Phase | Activities | Duration | Dependencies |
+|---|---|---|---|
+| Phase 1 — Structural verification | TC-1..8 re-runs | 5 min | Stage 6 implementation report |
+| Phase 2 — Synthetic structural dogfood | 5 dispatch-prompt constructions | 10 min | Phase 1 PASS |
+| Phase 3 — Carry-forward documentation | Post-merge measurement protocol | 5 min | Phase 2 PASS |
 
-### Scenario 2 — architect routes to output-contracts per task type
-**Question**: Does architect/SKILL.md carry a complete routing table pointing to all 5 contract files?
+## Test Cases
 
-- Verify `references/output-contracts/` contains exactly 5 `.md` files: `design.md`, `adr.md`, `game.md`, `review.md`, `evaluation.md`.
-- Verify SKILL.md routing table maps each of the 5 contracts (grep for each filename in SKILL.md).
-- Verify architect/SKILL.md line count ≤ 500 (partial-compliance Tier-A ceiling).
-- **Pass**: 5 files present; all 5 referenced in routing table; line count ≤ 500.
+Embedded in `test-cases.md` (one entry per TC + pass/fail with evidence).
 
-### Scenario 3 — developer routes coding-standards to agent-prompts; 6 other tasks unaffected
-**Question**: Is coding-standards dispatch isolated without disturbing other task routing?
+## Shared-Module Review
 
-- Verify `references/agent-prompts/coding-standards.md` exists.
-- Verify developer/SKILL.md references `references/agent-prompts/coding-standards.md`.
-- Verify developer/SKILL.md line count ≤ 300 (Tier-B target after extraction).
-- Verify SKILL.md still routes `write`, `fix`, `refactor`, `review`, `test`, `explain` tasks (6 non-coding-standards types present).
-- **Pass**: file present; routing pointer in SKILL.md; line count ≤ 300; 6 other task types intact.
+Five files modified by Stage 6 are referenced across multiple stages (Idea/Refine/Architect/Plan/Dev artifacts):
 
-### Scenario 4 — product-delivery routes to patterns/<slug>.md per task_type
-**Question**: Does product-delivery carry a full 12-row routing table pointing to individual pattern files?
+| Module Path | Stages Referencing | Modified in Dev | Test Coverage | Status |
+|---|---|---|---|---|
+| `delivery-team/skills/delivery-flow/SKILL.md` | 04-architect, 05-plan, 06-dev | Yes | TC-7 (sha), TC-8 (budget), Dispatch 1+5 (Phase 0 directive) | PASS |
+| `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | 04-architect, 05-plan, 06-dev | Yes | TC-2 (3 templates), Dispatch 1-5 (delimiter ordering) | PASS |
+| `delivery-team/skills/delivery-flow/references/quality-gates.md` | 04-architect, 05-plan, 06-dev | Yes | TC-3 (verdict-prose, STATUS, FINDINGS) | PASS |
+| `delivery-team/skills/delivery-flow/references/config-schema.md` | 04-architect, 05-plan, 06-dev | Yes | TC-1, TC-6 (v2.9 + prose_style row) | PASS |
+| `delivery-team/skills/delivery-flow/references/config-schema.json` | 06-dev (regenerated) | Yes | TC-6 (Python json.load assertion) | PASS |
+| `governance/cache-prefix-hash.txt` | 04-architect (ADR Element 5), 06-dev | Yes | TC-7 (sha-match) | PASS |
+| `delivery-team/skills/delivery-flow/references/prose-style.md` | 06-dev (NEW) | Yes (created) | Dispatch 2-4 (verbatim exemption clauses) | PASS |
 
-- Verify `references/patterns/` contains exactly 12 `.md` files.
-- Verify SKILL.md line count == 299 (Tier-B ≤ 300 compliant).
-- Verify routing table present in SKILL.md (grep for "references/patterns/").
-- **Pass**: 12 files present; line count 299; routing table confirmed.
+**Findings**: No gaps. Every modified shared module has a TC or dispatch covering its consuming context. The new `prose-style.md` reference is the canonical fixture for the verbatim PROSE STYLE block; it is not registered in `marketplace.json` because it is a reference (not a sub-skill) — same pattern as `pipeline-stages.md` and `quality-gates.md`.
 
-### Scenario 5 — governance/skill-budgets.json shows 7 known_debt entries; CI gate passes
-**Question**: Is the registry exactly 7 entries (architect + 6 Wave-3 targets) and gate clean?
+## Entry / Exit Criteria
 
-- `python3 -c "import json; d=json.load(open('governance/skill-budgets.json')); print(len(d['known_debt']))"` → 7.
-- Verify architect entry has `target_wave == 3`.
-- Run `python3 scripts/check_skill_budgets.py` → exit 0.
-- **Pass**: count == 7; architect wave 3; gate exits 0.
+**Entry**: Stage 6 implementation report exists with STATUS: CODE_COMPLETE; all source files referenced in the report exist on disk.
 
-### Scenario 6 — cache-prefix-hash.txt matches sha256(bytes 0..2048) of current SKILL.md; old hash retired
-**Question**: Does the frozen hash still match after the 497-line trim?
+**Exit**: TC-1..8 all PASS; 5 synthetic dispatches verify conditional logic structurally; post-merge measurement protocol documented in `dogfood-report.md`; PO go/no-go input emitted.
 
-- Recompute `sha256(bytes 0..2048)` of `delivery-team/skills/delivery-flow/SKILL.md`.
-- Compare to value stored in `governance/cache-prefix-hash.txt`.
-- Verify hash file contains exactly one line (old pre-trim hash absent).
-- **Pass**: live hash matches stored hash; file has one line.
+**CODE_COMPLETE rationale**: AC-13 sub-clause (BACKLOG-102 initiative AC-1/AC-2 telemetry deltas) cannot empirically close without a post-merge pipeline run. Per UAT memory lesson 3, structural-only validation caps confidence below 5/5 and carries a P1 follow-up. This is GO_WITH_NOTES territory, not NO_GO.
 
-## Pass Criteria
+## Risks and Mitigations
 
-All 6 scenarios green. A scenario is green when every Verify bullet is satisfied
-without manual workarounds.
+| Risk | Mitigation |
+|---|---|
+| First post-merge run shows <15% prose-token reduction | BACKLOG-102 stop-rule armed; pause Tier-2 A/B; root-cause retro before further waves |
+| Auto-clarity false-positive in production (security warning compressed) | In-prompt directive verbatim per ADR Element 3; agent is the detector; spot-check the first 3 post-merge dispatches that touch security/destructive/multi-step contexts |
+| Telemetry hook (BACKLOG-100 W0-1) emits zero-value rows on next run | Existing rows in `.delivery/telemetry/skill-loads.jsonl` are zero-token placeholders from a single 21ms burst on 2026-05-04; Wave 2 archive prose-byte data is the de-facto baseline |
 
-## Out of Scope
+## Sign-Off
 
-- BACKLOG-102 (caveman refactor), Wave 3 trims.
-- Other plugins (hardware-team, mtg-commander, etc.).
-- End-to-end pipeline timing or throughput benchmarks.
-- Paradigm sub-skill deep-routing (Wave 3 scope).
+QA recommends GO_WITH_NOTES at PO checkpoint. Evidence: `test-cases.md` (8/8 PASS), `dogfood-report.md` (5/5 dispatches PASS structural, AC-13 carry-forward documented), `go-no-go-input.md`.
+
+---
+
+STATUS: CODE_COMPLETE
+ARTIFACT: .delivery/artifacts/07-uat/qa/test-plan.md
+SUMMARY: Light UAT plan; 8 TCs structurally verified; 5-dispatch synthetic dogfood; AC-13 telemetry carry-forward to next pipeline run.

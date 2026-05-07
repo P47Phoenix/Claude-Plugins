@@ -115,10 +115,11 @@ For axes with ≥3 mutually-exclusive variants (research types, paradigm choices
 
 ## Initiative Sequencing (delivery-team first)
 
-- **Wave 0**: Telemetry hook + tiered line-budget CI gate (foundations)
-- **Wave 1**: Cache-prefix freeze, stage YAML, Haiku routing, allowed-tools+description prune, challenger-tier rule, Sonnet orchestrators+Python hooks (all Effort S, in parallel)
-- **Wave 2**: Doctrine externalization, architect/developer extractions, config/commands tables, product-delivery patterns split, architect model split (Effort M)
-- **Wave 3**: Multiplexer Phase 1/2 routing, governance frontmatter + retro KPI, paradigm sub-skill pattern (slow-burn)
+- **Wave 0** SHIPPED (run-2026-05-03-tk0e) — Telemetry hook + tiered line-budget CI gate (foundations)
+- **Wave 1** SHIPPED (run-2026-05-04-tk1) — Cache-prefix freeze, stage YAML, Haiku routing, allowed-tools+description prune, challenger-tier rule, Sonnet orchestrators+Python hooks
+- **Wave 2** SHIPPED (run-2026-05-05-tk2) — Doctrine externalization, architect/developer extractions, config/commands tables, product-delivery patterns split, architect model split
+- **caveman-lite** SHIPPED (run-2026-05-05-tk3) — Status: GO; AC-13 telemetry deferred to next run; Tier-A 500/500 ceiling held via mid-implementation extraction; cache-prefix re-freeze (one-time ~2KB re-warm) accepted per ADR-tk3-001.
+- **Wave 3** PENDING (BACKLOG-104 — to be authored next per user's 4-step plan): Multiplexer Phase 1/2 routing, governance frontmatter + retro KPI, paradigm sub-skill pattern (slow-burn)
 
 After delivery-team Wave 0+1 lands and proves out: hardware-team, then mtg-commander, then remaining plugins.
 

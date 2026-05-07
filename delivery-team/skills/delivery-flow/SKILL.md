@@ -71,6 +71,7 @@ Before checking config, check for an existing pipeline state:
      normalized v2.7 shape cleanly.
    - Announce: `> Config loaded from .delivery/config.yml (v[version], created [date])`
    - Apply settings: project type, tech stack, checkpoints, collaboration patterns, DoD validators, iteration limits, compliance requirements, persona config, alias theme.
+   - **Read `prose_style`** (top-level; default `caveman-lite`; valid `caveman-lite | standard`); cache on loaded-config; consumed at Phase 4 Step 4 (conditional PROSE STYLE block) and Step 7 (DoD validator framing). See ADR-tk3-001.
    - **Load alias theme**: Read `aliases.theme` from config (default: `business`). If the
      value is not `business` (which uses default professional names and has no personality
      injection), load the theme file:
@@ -333,6 +334,8 @@ Construct the prompt using the Agent Invocation Template (see
 **SKILL**, **TASK_TYPE**, **ROLE**, **INPUT ARTIFACTS** (file paths only — not content),
 **MEMORY LESSONS**, **ALIAS** (personality block if non-business theme; see
 `references/pipeline-stages.md` for injection format), **OUTPUT** (namespaced path).
+
+**PROSE STYLE block injection** (post-ALIAS, pre-OUTPUT): if `config.prose_style == caveman-lite` (default), inject the verbatim PROSE STYLE block from `references/prose-style.md` into the dispatch prompt; if `standard`, omit the block entirely (no placeholder line). Same rule applies uniformly to Primary (this Step 4), Supporting (Step 5), and DoD Validator (Step 7) dispatches. See ADR-tk3-001 Element 2.
 
 The sub-agent writes its artifact and responds with a signal block:
 ```

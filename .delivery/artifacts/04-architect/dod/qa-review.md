@@ -1,144 +1,110 @@
-# QA Review — Stage 4 Architect DoD — Legolas validation (Wave 2)
+# QA DoD Review — Stage 4 (Architect, light), Round 1
 
-**Date**: 2026-05-05  
-**Reviewer**: Quality (QA engineer)  
-**Artifacts reviewed**:
-- ADR-tk2-001 (doctrine extraction + cache re-freeze)
-- ADR-tk2-002 (architect contracts split + model split)
-- ADR-tk2-003 (product-delivery patterns + developer coding-standards)
-- Solution architecture sketch (architecture-tk2-wave2.md)
-- PRD Functional Requirements (02-refine/po/prd.md)
+**Pipeline**: run-2026-05-05-tk3
+**Reviewer**: QA Engineer (DoD validator)
+**Lens**: testability + AC coverage (LIGHT, blocking only)
+**Date**: 2026-05-05
 
----
+**Artifacts validated**:
+- ADR-tk3-001 — `.delivery/artifacts/04-architect/adrs/ADR-tk3-001-prose-style-config.md`
+- Architecture summary — `.delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md`
 
-## Gate Validation Results
-
-### ✓ GATE 1 — PRD FR Traceability
-
-**ADR-tk2-001**: Maps FR-02 (doctrine MOVE), FR-03 (F-08 anchors STAY), FR-04 (batching math), FR-05 (cache re-freeze). **PASS**
-
-**ADR-tk2-002**: Maps FR-06 (5 contracts move), FR-07 (model split router). **PASS**
-
-**ADR-tk2-003**: Maps FR-08 (developer coding-standards), FR-10 (product-delivery patterns). **PASS**
-
-All 3 ADRs bind to multi-WI stories (W2-1+W2-4, W2-2+W2-6, W2-3+W2-5). PRD FRs 1–13 distributed across all ADRs and W2-0/W2-7 admin work. **COMPLETE**
-
-### ✓ GATE 2 — Binary Status Field
-
-All 3 ADRs: `Status: Accepted` (no "Proposed", no "Approved-pending"). **PASS**
-
-### ✓ GATE 3 — Alternatives Substantive
-
-**ADR-tk2-001**: 3 rejected alternatives (full rewrite ❌ destroys memory, split SKILL.md file ❌ requires protocol change, defer to Wave 3 ❌ blocks 30% reduction goal). **PASS**
-
-**ADR-tk2-002**: 2 rejected alternatives (full Tier-B Wave 2 ❌ exceeds 5-story ceiling, config option ❌ removes principled classification). **PASS**
-
-**ADR-tk2-003**: 2 rejected alternatives (single all-patterns.md ❌ loses routing benefit, Python builder ❌ escaping risk). **PASS**
-
-All rejections cite load-bearing rationales. **SUBSTANTIVE**
-
-### ✓ GATE 4 — Consequences Explicit
-
-**ADR-tk2-001**: 3 positive (999→489 lines, 9,600 tok/load savings ≥30%, cache stabilized), 3 negative (doctrine consultation burden, one-time cache miss, F-08 regression risk → mitigated by dogfood). **BALANCED**
-
-**ADR-tk2-002**: 2 positive (673→498 lines, ≥3× cost reduction on classification), 2 negative (198-line Tier-B debt Wave 3, judgment-call boundary mitigated by 10-input regression). **BALANCED**
-
-**ADR-tk2-003**: 2 positive (691→≤300 product-delivery, 495→≤300 developer per-invocation savings), 2 negative (+11 and +40 surplus risk, pattern renames break cache). **BALANCED**
-
-### ✓ GATE 5 — Binding Decisions Honored
-
-**F-08 anchor preservation** (topics/skill-token-economy.md Ruling binding): ADR-tk2-001 §A explicitly enumerates Phase 0/1/2/3/4, Stage Routing Matrix, One Role invariant (1-line), Two-Channel constraint (1-line) as load-bearing STAY inline. Doctrine detail moves; semantics preserved. **HONORED**
-
-**Doctrine 1-line invariants** (memory model awareness binding): ADR-tk2-001 §A Step 6 (Steps 6,7,9 retain dispatch semantics). ADR-tk2-001 §B declares memory and Self-Learning moves to doctrine but Phase 4 Step 8.5 retains state-write behavioral gate. **HONORED**
-
-**Batching math discipline** (Wave 1 binding lesson): All 3 ADRs show before→−Δ→after numerically. ADR-tk2-001 shows 999→−480→−30→489; ADR-tk2-002 shows 673→−155→−20→498; ADR-tk2-003 shows two targets (691→−380→311+11 surplus, 495→−155→340+40 surplus). Surplus explicitly tracked when after > target. **DISCIPLINED**
-
-### ✓ GATE 6 — Batching Math Completeness
-
-**ADR-tk2-001**: Baseline 999 lines. W2-1 extraction ~480 (374 doctrine + 106 cleanup per §B). W2-4 tables ~30 lines. Target 489. Formula correct; CI verification gate specified (wc -l post-extract). **CORRECT**
-
-**ADR-tk2-002**: Baseline 673 lines. W2-2 contracts ~155. W2-6 model split ~20. Target 498 (Tier-A ≤500 met; Tier-B ≤300 deferred Wave 3 BACKLOG-104). Debt tracked in skill-budgets.json. **CORRECT**
-
-**ADR-tk2-003**: product-delivery 691→−380→311; surplus +11 identified for Stage 6 Dev trim (whitespace, headers, routing). developer 495→−155→340; surplus +40 identified for Stage 6 Dev trim (consolidate matrix, remove duplication). Known-debt fallback named if not achieved. **CORRECT + MITIGATED**
-
-### ✓ GATE 7 — Architecture Sketch Completeness
-
-**Architecture mermaid (lines 25–68)**:
-- Story 5 (W2-0 + W2-7) pre-flight gate: budgets.json accuracy ✓
-- Story 1 (W2-1 + W2-4) CRITICAL PATH: doctrine extract → cache re-freeze → dogfood gate ✓
-- Story 2 (W2-2 + W2-6) parallel: contracts + model split + regression set ✓
-- Story 3 (W2-3) parallel: coding-standards extract + dogfood ✓
-- Story 4 (W2-5) parallel: 12 patterns extract + dogfood ✓
-- Sequencing: S5→S1, S1→{S2,S3,S4}, S2↔S3 parallel, S3↔S4 parallel ✓
-
-**W2-1 cache-prefix dogfood gate (ADR-tk2-001 §E)**:
-- Phase 0: state detection → config detection → config load ✓
-- Phase 1: project-type detection (FEATURE signal) ✓
-- Phase 2: memory load (index.md read → lessons injected) ✓
-- Phase 3: Stage Routing Matrix → Stage 2 Refine dispatch ✓
-- Acceptable dogfood: Wave 2 pipeline itself continues without routing breakage. **RECURSIVE** ✓
-
-**Line-count targets table (lines 72–82)**:
-- delivery-flow 999→489 (Tier-A) ✓
-- architect 673→498 (Tier-A ✓ / Tier-B deferred) ✓
-- product-delivery 691→300 (Tier-B if Stage 6 trim) ✓
-- developer 495→300 (Tier-B if Stage 6 trim) ✓
-
-**New file inventory (lines 98–107)**: 22 files across 5 stories (1×doctrine, 3×config/command/manifest, 5×contracts, 2×coding-standards, 12×patterns). **INVENTORIED**
-
-**All 5 stories + dogfood gates + file inventory + Wave 1 lessons applied section covers complete end-to-end design.** **COMPLETE**
+**Reference**:
+- BACKLOG-102 — `.delivery/backlog/BACKLOG-102-caveman-prose-discipline.md` (6 initiative-level ACs, lines 116-121)
+- PRD — `.delivery/artifacts/02-refine/po/prd.md`
 
 ---
 
-## Batching Math Spot-Checks (Precision Validation)
+## STATUS
 
-**ADR-tk2-001 W2-1 doctrine extraction**:
-- Total doctrine blocks (§B): Design Principle (14) + Core Principles (47) + Model Awareness (7) + Anti-Patterns (53) + Team DoD (37) + Escalation Protocol (46) + Cross-Stage Flow (22) + Memory detail (63) + Guardrails detail (55) + Theme-Gated (30) = **373 lines**
-- ADR claims "~374 lines" ✓
-- Plus cleanup ~106 lines to hit 480 total extraction ✓
-- 999 − 480 = 519 pre-W2-4; 519 − 30 (W2-4) = 489 ✓
-
-**ADR-tk2-002 W2-2 architect contracts**:
-- Design (25) + ADR (28) + Game (22) + Review (40) + Evaluation (40) = **155 lines**
-- ADR claims "~155 lines" ✓
-- W2-6 model split ~20 lines ✓
-- 673 − 155 − 20 = 498 ✓
-
-**ADR-tk2-003 product-delivery W2-5**:
-- 12 Pattern blocks ~380 lines (§B PRD context confirms "~380 lines, lines ~140–511")
-- 691 − 380 = 311 (+11 over Tier-B 300) ✓
-- Stage 6 Dev trim candidates named: whitespace, headers, routing ✓
-
-**ADR-tk2-003 developer W2-3**:
-- coding-standards block ~155 lines (split into 100-line agent-prompt + 55-line template) ✓
-- 495 − 155 = 340 (+40 over Tier-B 300) ✓
-- Stage 6 Dev trim candidates named: consolidate matrix, remove duplication ✓
-
-**All line-count targets numerically verified against PRD FR-13 requirement.** **PASSED**
+**STATUS: DONE**
 
 ---
 
-## Binding Lessons Validation
+## Gate Findings
 
-| Lesson | Applied | Evidence |
-|--------|---------|----------|
-| Batching math simulation | ✓ | All 3 ADRs show before→−Δ→after; known-debt explicit if over (architect ~198, product-delivery +11, developer +40) |
-| F-08 anchor preservation | ✓ | ADR-tk2-001 §A lines 33–48 enumerate inline anchors with line-range estimates (Phase 0 ~135L, Phase 1 ~46L, Phase 2 ~32L, Phase 3 ~38L, Phase 4 ~280L) |
-| Cache-prefix re-freeze contract | ✓ | ADR-tk2-001 §D procedure: retire Wave 1 hash, compute new SHA-256 post-W2-1, write to governance/cache-prefix-hash.txt, CI re-baseline, one-time deliberate change rule |
-| Plugin-dev pre-load (FR-12) | ✓ | All 3 ADRs cite FR-12: W2-1/2/3/4/5/6 MUST pre-load plugin-dev:skill-development before SKILL.md creation |
-| Dogfood before merge | ✓ | S1 dogfood gate (ADR-tk2-001 §E) Architect-mandated; S2/S3/S4 dogfood evidence required in PR body (PRD §8 Verification) |
+### Gate 1 — Every ADR Decision element is TESTABLE
 
-**All Wave 1 binding decisions integrated into Wave 2 ADRs.** **CONSISTENT**
+**PASS.** All 6 contract elements imply concrete verifiable checks.
+
+| Element | Test path identified |
+|---|---|
+| 1 — `prose_style` config key (ADR §Decision Element 1) | Verifiable by loading `.delivery/config.yml` and asserting key shape: top-level scalar, type string, valid values `caveman-lite \| standard`, default `caveman-lite`. ADR specifies the YAML grammar (`prose_style: caveman-lite`); top-level placement matches `wizard_completed` precedent. |
+| 2 — PROSE STYLE block contract (ADR §Decision Element 2) | Verifiable by reading rendered prompt at the three loci named in the ADR table (`pipeline-stages.md` after L70 / L113 / L161, before `--- OUTPUT ---`) and grepping for the verbatim block. ADR Element 2 step 3 also names the inverse check: with `prose_style: standard`, zero block bytes appear (omission test). |
+| 3 — Auto-clarity exemptions (ADR §Decision Element 3) | Verifiable two ways per Gate 2 below; ADR explicitly identifies "Validation surface" as Stage 6 dogfood inspecting 3 synthetic dispatches (security warning / `git revert` / 4-step migration) for standard-prose verdict. |
+| 4 — DoD validator verdict-prose treatment (ADR §Decision Element 4) | Verifiable by reading any post-merge DoD review file and asserting per-section style: `STATUS:` literal-token grep (downstream parsers are the test harness), `FINDINGS:` standard prose preserved, verdict prose ≤3 sentences in caveman-lite. ADR §Element 4 table gives a row-by-row rule. AC-2 (≥25% reduction) is the quantitative target via W0-1 telemetry. |
+| 5 — Cache-prefix re-freeze procedure (ADR §Decision Element 5) | Verifiable per Gate 3 below; ADR specifies command, expected change, and rollback path. |
+| 6 — Schema bump v2.9 (ADR §Decision Element 6) | Verifiable per Gate 4 below; ADR names exact loci (L5, L15, schema table, template, history), default-application path, and migration-banner string. |
+
+No element is purely declarative. AC-1 (≥20% prose reduction) and AC-2 (≥25% DoD reduction) are explicitly bound to W0-1 telemetry (`.delivery/telemetry/skill-loads.jsonl`), giving every quantitative claim a measurable test surface. Architecture summary §2 (system boundary diagram) and §4 (cache-prefix impact summary) reinforce inspection points for Elements 1, 2, 3, 4, 5.
 
 ---
 
-## Summary
+### Gate 2 — Auto-clarity exemption mechanism is INSPECTABLE
 
-**All 7 gates PASS.** ADRs bind 8 work items across 5 stories with explicit batching math, F-08 anchor preservation honored, cache re-freeze ceremony documented, and architecture sketch complete end-to-end. Dogfood gates enforce pre-merge validation on critical-path S1 (routing correctness) and parallel S2–S4 (dispatch logging + regression set). Known-debt entries tracked with Wave 3 targets. Ready for execution.
+**PASS.** ADR §Decision Element 3 chose "in-prompt directive enforcement by the agent" as the v1 mechanism. Both inspection paths from the gate criterion are identifiable:
+
+- **Path (a) — read agent output and grep**: Stage 6 dogfood per ADR §Element 3 "Validation surface" specifies three synthetic dispatches (security warning, `git revert` confirmation, 4-step migration). Inspector reads each agent response and asserts the verdict prose is standard (articles preserved, no fragment compression of the four exempt contexts). Failure on any of three trips the BACKLOG-102 stop-rule.
+- **Path (b) — read dispatch prompt and verify directive**: ADR §Element 2 names the verbatim block content including the directive line `Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications.` Inspector renders any Phase 4 Step 4 dispatch with `prose_style: caveman-lite` and greps the prompt body for that exact substring at the `--- PROSE STYLE ---` insertion point.
+
+Both paths are documented; either suffices for gate satisfaction.
 
 ---
 
-**SKILL_LOADED: quality**  
-**STATUS: DONE**  
-**ARTIFACT: .delivery/artifacts/04-architect/dod/qa-review.md**  
-**SUMMARY**: Wave 2 Architect DoD passes all 7 gates; F-08 anchors honored, batching math precise, architecture complete.
+### Gate 3 — Cache-prefix re-freeze procedure has a verification step
+
+**PASS.** ADR §Decision Element 5 specifies all three required components:
+
+| Required | Provided in ADR |
+|---|---|
+| Command X to regenerate hash | `sha256sum delivery-team/skills/delivery-flow/SKILL.md > governance/cache-prefix-hash.txt` (verbatim, in code block, ADR L121-125) |
+| Expected change Y | "the whole-file SHA-256 in `governance/cache-prefix-hash.txt` will flip the moment Phase 0 changes" — current value `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f` will change post-edit; flip is observable as a single-line diff in `governance/cache-prefix-hash.txt`. Byte-impact math table (ADR L106-114) projects +50-120 bytes Δ. |
+| Rollback path Z | §Reversibility "Schema-level rollback": revert v2.9 schema bump and Phase 0 edit; `cache-prefix-hash.txt` regenerates back to current `9d4011d…`. No data migration. |
+
+Procedure is also locked into Stage 5 Plan as an explicit Story DoD task per ADR §Element 5 point 2 and architecture-tk3-caveman-lite.md §4. The two-interpretation reconciliation (documented 2KB prefix vs whole-file SHA) explicitly resolves which surface produces a hash flip and which does not. Not hand-wavy: command, file, expected delta direction, and rollback are all named.
+
+---
+
+### Gate 4 — Schema bump procedure has migration safety check
+
+**PASS.** ADR §Decision Element 6 specifies both required guarantees:
+
+| Required | Provided in ADR |
+|---|---|
+| Existing v2.7 configs continue to load | "Existing v2.7-or-earlier configs auto-migrate (Phase 0 lines 60-64 of SKILL.md). If `prose_style` is absent on load, the orchestrator applies the default `caveman-lite` and surfaces the standard upgrade banner: `> Config upgraded from v2.7 to v2.9. New settings applied with defaults: prose_style=caveman-lite`." Existing v2.6→v2.7 strip-and-default path (SKILL.md L65-71) preserved untouched. |
+| Default `caveman-lite` applies on missing key | Same passage; default named, banner string named, regression-safe path preserved. |
+
+Verifiable post-merge by loading any existing `.delivery/config.yml` (none currently set `prose_style`), running Phase 0, and asserting (a) no parse error, (b) `config.prose_style == "caveman-lite"` in the loaded struct, (c) the upgrade banner is emitted. v2.8 → v2.9 collision avoidance (DESIGN routing already at v2.8 per PRD §3) is also addressed: "v2.9 advances past the v2.8 DESIGN-routing slot rather than colliding with it." JSON regeneration is bound to a Stage 5 Plan task: `python3 delivery-team/scripts/generate-schema.py`.
+
+---
+
+### Gate 5 — All 6 BACKLOG-102 acceptance criteria map to a Decision element OR Stage 6 dogfood
+
+**PASS.** All 6 initiative-level ACs (BACKLOG-102 lines 116-121) trace to ADR contract elements and/or Stage 6 dogfood activities. Criterion correctly counted as 6 (not 5) per the lesson honored.
+
+#### Traceability matrix (6 ACs → contract elements / dogfood)
+
+| AC # | BACKLOG-102 text (abridged) | Maps to | Verification surface |
+|---|---|---|---|
+| AC-1 | Agent narrative-framing prose MEASURABLY shorter (≥20% reduction in response-prose tokens, telemetry-verified) | ADR §Element 1 + §Element 2 | W0-1 telemetry hook (`.delivery/telemetry/skill-loads.jsonl`); 5 dispatches post vs 5 pre-baseline (PRD §FR-1); ADR §Consequences Positive bullet 1 |
+| AC-2 | DoD review files MEASURABLY smaller (≥25% reduction) | ADR §Element 4 | Post-merge DoD file size measurement vs run-2026-05-03-tk0e baseline; ADR §Consequences Positive bullet 1; Element 4 table row "Free-form verdict prose" |
+| AC-3 | NO regression in DoD pass rate (currently 4/7 first-try) | ADR §Element 4 + §Negative/risks row "Validator over-compression masks findings" | Stage 7 UAT measures pass-rate vs 4/7 baseline; FINDINGS bullets stay standard-prose (Element 4 table); stop-rule armed (NFR-7) |
+| AC-4 | NO regression in artifact quality (PRDs/ADRs/release-notes still pass downstream agents' reads) | ADR §Element 4 (artifact body uses standard prose; Tier 3 unchanged) + §Element 2 block content ("Artifact body uses standard prose") | Verified by next pipeline run reading post-change DoD/PRD/ADR artifacts (downstream-agent integration test) |
+| AC-5 | Auto-clarity boundaries respected (security/destructive/multi-step/clarification prose remains standard) | ADR §Element 3 + Stage 6 dogfood "Validation surface" | Stage 6 dogfood: 3 synthetic dispatches inspected; failure on any of three trips stop-rule (PRD §8.4) |
+| AC-6 | Opt-out via `prose_style: standard` works (one-line config change reverts behavior) | ADR §Element 1 + §Element 6 + §Reversibility "Config-level reversal" | 3-dispatch dogfood with `prose_style: standard` verifies zero PROSE STYLE block bytes emitted (named in ADR §Element 2 step 3) |
+
+Every AC has at least one ADR contract element traceable; ACs 1, 5, and 6 additionally name explicit Stage 6 dogfood activities. No AC is unmapped.
+
+---
+
+## Verdict
+
+ADR-tk3-001 and the architecture summary collectively define a testable, AC-traceable contract for caveman-lite prose discipline. Every contract element implies a verifiable check (config-shape grammar, prompt-prefix grep, telemetry deltas, hash regeneration, migration banner), the auto-clarity mechanism is inspectable from both prompt-side and output-side, and the re-freeze and schema-bump procedures both have explicit verification steps. All 6 BACKLOG-102 ACs trace to either contract elements or Stage 6 dogfood — no orphaned criteria.
+
+---
+
+```
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/04-architect/dod/qa-review.md
+SUMMARY: 5/5 QA gates pass. 6/6 ACs traceable to ADR elements or Stage 6 dogfood. Contract testable; cache-prefix and schema migrations have explicit verification.
+```

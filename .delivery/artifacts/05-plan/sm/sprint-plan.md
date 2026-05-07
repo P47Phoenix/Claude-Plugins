@@ -1,182 +1,62 @@
----
-title: "Sprint Plan — Skill Token-Economy Wave 2"
-sprint: Wave-2
-stage: 05-plan
-role: scrum_master
-author: Scrum Master (product-delivery skill)
-sources: [prd.md v1.0, ADR-tk2-001, ADR-tk2-002, ADR-tk2-003, architecture-tk2-wave2.md]
-created: 2026-05-03
-version: 1.0
----
+<!-- run: run-2026-05-05-tk3 | stage: 05-plan | depth: light | author: Scrum Master (Samwise Gamgee) | sources: stories.md, prd.md, ADR-tk3-001, .delivery/memory/stages/plan.md -->
 
-# Sprint Plan: Skill Token-Economy Wave 2
+# Sprint Plan — run-2026-05-05-tk3 (Wave 2: Caveman-Lite Prose Discipline)
 
-## 1. Sprint Goal
+> "By rights we shouldn't even be here, Mr. Frodo. But we are."
+> — Sam, taking the next step because it's the one in front of us.
 
-Wave 2 brings delivery-flow under Tier-A 500 and ships partial Tier-B compliance for architect, product-delivery, and developer.
+One Story, one sprint, one PR. The way is plain. I'll keep watch on the rations and the road, and call the hazards by their right names.
 
----
+## Sprint Goal
 
-## 2. Sprint Dates
+Ship the caveman-lite prose directive across all three prompt-template surfaces (Primary, Supporting, DoD Validator) plus the `prose_style` config key and v2.8 → v2.9 schema bump in a single sprint, leaving telemetry ready for the next pipeline run to measure prose-token and DoD-review-byte deltas.
 
-**Sprint Wave-2** — single iteration; no mid-sprint replan; 5-story ceiling (absolute).
+## Sprint Capacity (carried verbatim from stories.md §Capacity Declaration)
 
----
+- **Velocity baseline**: 1 Story per sprint for this single-pipeline run (tk3 is a single-wave engagement; baseline is the per-run committed-Story count, not a multi-sprint historical mean).
+- **80% ceiling**: honored — 1 Story at Effort S in a single sprint leaves capacity headroom for retro / PR / dogfood overhead; no overcommit possible.
+- **Single-sprint commitment**: one S-effort Story = one sprint = within ceiling.
+- **Commitment %**: 100% of capacity is the one S Story; 80% ceiling is satisfied because S sits well under the implicit M/L per-sprint cap.
 
-## 3. Capacity Declaration
+## Story Sequence
 
-| Parameter | Value |
-|-----------|-------|
-| Team size | 1 (solo) |
-| Effective capacity ceiling | 80% |
-| Buffer | 20% — dogfood re-runs and surplus-trim attempts only |
-| Replan trigger | None — 5-story ceiling is absolute per BACKLOG-103 |
+| # | Story | Effort | Dependencies | Parallelism |
+|---|-------|--------|--------------|-------------|
+| 1 | Caveman-Lite Prose Discipline (W2-1 + W2-2 + W2-3 consolidated by file-scope) | S | None | None — single Story, single dispatch |
 
----
+No parallelism needed. The whole sprint is Story 1.
 
-## 4. Committed Stories
+## Risks + Mitigations
 
-| Story | Title | Estimate | Commit Group | Dependencies |
-|-------|-------|----------|--------------|--------------|
-| S1 | delivery-flow: doctrine extract (W2-1) + config/tables (W2-4) | L | A | Story 5 pre-flight complete |
-| S2 | architect: output contracts (W2-2) + model split (W2-6) | M | B | Story 1 merged; cache-prefix stable |
-| S3 | developer: coding-standards extract (W2-3) | M | B | Story 1 merged; cache-prefix stable |
-| S4 | product-delivery: 12-pattern split (W2-5) | M | B | Story 1 merged; cache-prefix stable |
-| S5 | Admin: registry re-baseline (W2-0) + Wave 1 retro backports (W2-7) | S | B | None (anytime) |
+| # | Risk | Mitigation |
+|---|------|------------|
+| R1 | Cache-prefix re-freeze cost on Phase 0 SKILL.md edit | Already accepted in ADR-tk3-001 Element 5 — one-time ~2KB re-warm; AC-CACHE-PREFIX (AC #11) gates the same-PR commit of `governance/cache-prefix-hash.txt`. No further mitigation needed; cost is baked in. |
+| R2 | Tier-A budget tight (497/500 lines on `delivery-flow/SKILL.md`) | Phase 0 edit MUST be ≤3 lines (config-read for `prose_style` + ADR Element 5 budget cap). If Stage 6 measurement shows >3 lines added, batch-trim the Refine-stage memory section in SKILL.md or decline the wave outright — light routing has no Wave-N+1 escape, so the Story does not ship if the budget breaks. AC-TIER-A-BUDGET (AC #12) gates this. |
+| R3 | Schema-JSON regen forgotten after the v2.9 `.md` bump | Story 1 DoD line 4 explicitly checks for `python3 delivery-team/scripts/generate-schema.py` invocation; AC #10 (`prose_style` present in `properties`, `config_version.default == 2.9`) fails the build if the regen step is skipped. |
+| R4 | Synthetic dogfood dispatches fail (caveman directive not honored, or auto-clarity exemption skipped, or opt-out not respected) | Light Stage 7 dogfood is mandatory, not optional. Three synthetic dispatches required: (a) caveman-lite active, (b) auto-clarity exemption on a destructive-op narrative, (c) `prose_style: standard` opt-out reverts cleanly. ACs #5, #6, plus DoD checklist lines 5–7 enforce this. |
+| R5 | Plan stage has the lowest first-try pass rate (memory lesson #5; 4/7 runs) | Constraints injected upstream, not just at validation: stories.md already names file-scope, Tier-A line cap, cache-prefix re-freeze, and plugin-dev routing. SM's role here is not to re-derive constraints but to carry them faithfully into developer dispatch. |
 
-**WI consolidation:** 8 WIs → 5 stories by file scope (Wave 1 retro lesson applied).
-**Estimates:** S ≈ 1 hr; M ≈ 2–3 hrs including verification; L ≈ 4–6 hrs.
+## Daily Cadence
 
----
+Single-day execution. No daily standups for a 1-Story sprint. Cadence is: developer dispatches → DoD validation (5 validators in parallel: SM / QA / Dev / Architect / Tech-Writer) → adversarial review if any validator says NOT_DONE → PR open → light Stage 7 dogfood → retro. Sam stays at the gate the whole way.
 
-## 5. Sequencing Groups
+## Sprint Definition of Done (carried verbatim from stories.md)
 
-### Group A — Story 1 (serial; critical path)
+- [ ] All 13 ACs pass (Dev runs the commands and pastes outputs into the implementation report).
+- [ ] `governance/cache-prefix-hash.txt` regenerated post Phase 0 edit and committed in the same PR.
+- [ ] Tier-A budget preserved: SKILL.md ≤ 500 lines; `check_skill_budgets.py` exits 0.
+- [ ] `references/config-schema.json` regenerated via `generate-schema.py` alongside the `.md` v2.9 bump.
+- [ ] caveman-lite directive verified active in one synthetic dispatch transcript with `prose_style: caveman-lite`.
+- [ ] Auto-clarity exemption verified in one synthetic destructive-op dispatch transcript (PROSE STYLE block sent; standard-prose security/destructive-op narrative emitted).
+- [ ] `prose_style: standard` opt-out verified in one synthetic dispatch transcript (PROSE STYLE block absent; standard-prose narrative emitted).
+- [ ] `plugin-dev:skill-reviewer` and `plugin-dev:plugin-validator` both run clean post-edit.
 
-Story 1 owns the cache-prefix invalidation. Nothing in Group B may merge until
-Story 1's dogfood gate passes and `governance/cache-prefix-hash.txt` is updated.
+## Stop-rule (verbatim from idea-brief §9, mirrored in stories.md)
 
-**Story 1 — delivery-flow doctrine extract + config/commands/manifest tables**
-
-Pre-merge gate (Architect dogfood — ADR-tk2-001 §E): synthetic Phase 0–3 pipeline run
-(config detect, FEATURE type detect, memory load, Stage 2 Refine dispatch) — zero
-routing failures; `wc -l` ≤ 500 (if >520: restore anchors first); cache-prefix hash
-updated; W2-4 tables in same PR; bytes 0..2048 unchanged after W2-4.
-`plugin-dev:skill-development` pre-loaded (FR-12).
-
-Artifacts (Story 1):
-- NEW `delivery-team/references/shared/orchestrator-doctrine.md`
-- UPDATED `delivery-team/skills/delivery-flow/SKILL.md` (target ≤ 489 lines)
-- UPDATED `governance/cache-prefix-hash.txt` (Wave 1 hash aea33d57... retired)
-- NEW `delivery-team/skills/delivery-flow/references/config-keys.md`
-- NEW `delivery-team/skills/delivery-flow/references/commands.md`
-- NEW `delivery-team/skills/delivery-flow/references/manifest.yml`
-- NEW ADR commit (ADR-tk2-001 ratified in-tree)
-
-### Group B — Stories 2, 3, 4, 5 (parallel; non-overlapping file scope)
-
-File-scope isolation enforced: each story touches exactly one SKILL.md and its
-own references subtree. No cross-story file overlap permitted.
-
-**Story 2 — architect output contracts + model split** (`plugin-dev:skill-development` FR-12)
-- NEW 5 files: `architect/references/output-contracts/{design,adr,game,review,evaluation}.md`
-- UPDATED `architect/SKILL.md` ≤498 lines; task_type → contract routing table retained; `{role, task_type, recommended_model}` router + phase-to-model map (~8 lines inline); skill router frontmatter; 198-line Tier-B debt in `skill-budgets.json` (`target_wave: 3`)
-
-**Story 3 — developer coding-standards extract** (`plugin-dev:skill-development` FR-12)
-- NEW `developer/references/agent-prompts/coding-standards.md` + `coding-standards-template.md`
-- UPDATED `developer/SKILL.md` target ≤300; if ≤340 after Stage 6 trim, register +40 as W3 known-debt
-
-**Story 4 — product-delivery 12-pattern split** (`plugin-dev:skill-development` FR-12)
-- NEW 12 files: `product-delivery/references/patterns/<slug>.md` (stable slugs)
-- UPDATED `product-delivery/SKILL.md` target ≤300; Phase 1 routing table (~14 lines) retained; if ≤311 after Stage 6 trim, register +11 as W3 known-debt
-
-**Story 5 — Admin: registry re-baseline + Wave 1 retro backports** (no plugin-dev required FR-12)
-- UPDATED `governance/skill-budgets.json`: post-W1 counts accurate (delivery-flow 999); W3 known-debt entries (architect ~198, product-delivery +11 risk, developer +40 risk)
-- UPDATED `BACKLOG-101` + `ADR-tk1-002`: W1-7 math −1→−2; filename `agent_audit.py`→`audit_agent_prompt.py`; edit-history footer appended
+Defects/story rate >0.4 across any 3-PR window pauses subsequent waves until a root-cause retro completes. Engagement-local (BACKLOG-102 §Stop-rule): Tier-1 measurement <15% prose-token reduction OR any DoD validator missing a finding due to over-compression pauses Tier-2 A/B and triggers a root-cause retro. Both stop-rules armed for this run.
 
 ---
 
-## 6. Commitment Rationale
-
-All 5 stories are mechanically scoped with pre-confirmed artifact lists and explicit
-line-count math from the three ADRs. No open architectural decisions remain.
-
-Story 1 is the sole serial dependency: it owns the cache-prefix freeze, unblocking all
-Group B stories from conflicting on a moving hash target. Group B parallelism is safe
-because W2-2, W2-3, and W2-5 each touch a distinct SKILL.md and non-overlapping
-references subdirectories. Story 5 admin carries zero file overlap and may land in
-any order without coordination cost.
-
-Surplus risk (+11 product-delivery, +40 developer) is bounded and has a defined
-fallback: Stage 6 trim then known-debt registration. Architect Tier-B (198-line debt)
-is explicitly deferred to BACKLOG-104 Wave 3 per ADR-tk2-002.
-
----
-
-## 7. Risks to Sprint Goal
-
-| # | Risk | Severity |
-|---|------|----------|
-| a | **F-08 dispatch fusion regression**: doctrine extraction inadvertently removes a Phase 0–4 routing anchor; project-type or stage dispatch misfires post-merge | High |
-| b | **Cache-prefix invalidation**: re-freeze procedure error (wrong byte range, stale hash, W2-4 not co-shipped) breaks CI hash-check | High |
-| c | **Surplus lines exceed trim capacity**: architect (+198), product-delivery (+11), developer (+40) not registered in `skill-budgets.json` promptly; Wave-3 scope creep | Medium |
-| d | **Doctrine extraction misjudgment**: prose marked safe-to-move contains a Phase 4 behavioral gate; pipeline misfires require partial revert + re-merge | High |
-
----
-
-## 8. Risk Mitigations
-
-**(a) F-08 regression**
-ADR-tk2-001 §A enumerates every load-bearing anchor with line-range estimates. Stage 6
-Dev verifies each named anchor present after extraction. Architect dogfood gate (§E) is
-a hard pre-merge gate — Phase 0–3 synthetic run MUST pass; any phase misfire restores
-the affected anchor before merge. Correctness > line count (ADR-tk2-001 §C).
-
-**(b) Cache-prefix invalidation**
-Follow ADR-tk2-001 §D procedure exactly: W2-4 tables co-shipped in same PR as W2-1;
-new hash computed via `head -c 2048 delivery-team/skills/delivery-flow/SKILL.md | sha256sum`
-post-merge; CI re-baseline committed atomically. W2-4 content verified to touch only
-the post-prefix region before closing the hash cycle.
-
-**(c) Surplus lines**
-Stage 6 Dev attempts identified surplus-trim candidates first: developer (condense
-14-language matrix to routing-table-only; remove duplicate paradigm commentary);
-product-delivery (whitespace, duplicate headers, routing commentary). If trim yields
-≥ 20 lines but not full target: register remainder as `target_wave: 3` in
-`governance/skill-budgets.json` — do NOT block merge on surplus. Story 5 (W2-0)
-MUST include these partial known-debt entries; omission is a merge blocker.
-
-**(d) Doctrine misjudgment**
-ADR-tk2-001 §B extraction list is conservative — prose elaborations only; behavioral
-gate sentences explicitly stay inline. If post-merge pipeline misfires: `git revert`
-the extraction commit; restore the affected anchor inline; doctrine file absorbs
-compensating growth to maintain Tier-A target.
-
----
-
-## 9. Dogfood Plan
-
-Per BACKLOG-100 W0-1 directive: end-to-end pipeline iteration before any WI is Done.
-
-| Story | Dogfood Method | Pass Criterion |
-|-------|---------------|----------------|
-| S1 (W2-1 + W2-4) | **Recursive**: THIS pipeline run (Wave 2) continues into Stage 6 without routing failure after Story 1 merges. Phase 0–3 all fire on the reduced SKILL.md. | No phase misfire; `cache-prefix-hash.txt` non-empty and ≠ aea33d57...; CI green |
-| S2 (W2-2 + W2-6) | Synthetic dispatch: 10 representative inputs (Prior Art, ADR draft, TO-BE, Tech Eval, Game Arch, Compliance, Paradigm pick, IR, Review, Decomp). Verify routing table loads only the matched contract; `recommended_model` correct for each. | 10/10 correct contract load + model tier; log attached to PR body |
-| S3 (W2-3) | Two synthetic invocations: (1) `write` task → coding-standards template NOT in context; (2) `coding-standards` task → both reference files ARE loaded. | File-presence log confirms conditional load in both cases |
-| S4 (W2-5) | 12-task-type dispatch log: each of the 12 task types loads only its matched pattern file; routing table covers all 12. | 12/12 dispatch entries in PR body; no "file not found" errors |
-| S5 (W2-0 + W2-7) | `python3 scripts/check_skill_budgets.py --known-debt-report` shows Wave-3 entries for architect (198), and any unresolved product-delivery/developer surplus. Diff of BACKLOG-101 + ADR-tk1-002 shows corrected filenames and math. | Script exits 0; Wave-3 entries visible; corrected docs verified by diff |
-
----
-
-## 10. Definition of Done (Sprint-Level)
-
-- [ ] All 5 stories merged; all 22 new reference files present in-tree
-- [ ] `delivery-team/skills/delivery-flow/SKILL.md` ≤ 500 lines (`wc -l` output in PR body)
-- [ ] `delivery-team/skills/architect/SKILL.md` ≤ 500 lines (Tier-A met; Tier-B ≤300 deferred Wave 3 — entry in `skill-budgets.json`)
-- [ ] `delivery-team/skills/product-delivery/SKILL.md` ≤ 300 lines OR Wave-3 known-debt entry registered in `governance/skill-budgets.json`
-- [ ] `delivery-team/skills/developer/SKILL.md` ≤ 300 lines OR Wave-3 known-debt entry registered in `governance/skill-budgets.json`
-- [ ] `governance/cache-prefix-hash.txt` updated (≠ aea33d57...); CI hash-check green
-- [ ] All 13 delivery-team SKILL.md tier frontmatter entries intact (no tier field removed or degraded)
-- [ ] `delivery-team/hooks/audit_agent_prompt.py` unchanged (filename corrections are docs-only; no script modifications)
-- [ ] Telemetry post-merge captures Wave 2 line counts and per-pipeline token delta (delivery-flow ≥ 30% reduction vs Wave 1 baseline)
-- [ ] Retrospective completed; defects logged; Wave 2 changelog drafted
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/05-plan/sm/sprint-plan.md
+SUMMARY: One Story, one sprint, capacity carried plain from Frodo's declaration; five hazards named with mitigations; DoD and stop-rule preserved verbatim. The road is short, Mr. Frodo.

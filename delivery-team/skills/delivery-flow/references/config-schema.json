@@ -7,7 +7,15 @@
   "properties": {
     "config_version": {
       "type": "string",
-      "default": "2.7"
+      "default": "2.9"
+    },
+    "prose_style": {
+      "type": "string",
+      "enum": [
+        "caveman-lite",
+        "standard"
+      ],
+      "default": "caveman-lite"
     },
     "routing": {
       "type": "object",

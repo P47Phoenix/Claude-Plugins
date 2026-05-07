@@ -1,139 +1,91 @@
----
-title: "Wave 0 Test Strategy"
-work_items: [W0-1, W0-2]
-stage: 05-plan
-author: QA Engineer (quality skill)
-adrs: [ADR-tk0e-001, ADR-tk0e-002, ADR-tk0e-003]
-created: 2026-05-03
-version: 1.0
----
+<!-- run: run-2026-05-05-tk3 | stage: 05-plan | depth: light | author: QA Engineer (Peregrin "Pippin" Took) | role: qa-engineer | task: test-strategy -->
 
-# Wave 0 Test Strategy
+# Test Strategy — Caveman-Lite Prose Discipline (run-2026-05-05-tk3)
 
-## Test Approach Summary
+> "But what about second breakfast? Elevenses? Luncheon? Afternoon tea?"
+> — Pippin, refusing to leave a meal — or an AC — uncovered.
 
-**Test pyramid**: Unit tests cover frontmatter parsing and hash computation in isolation.
-Integration tests exercise the full hook-firing path and CI workflow against fixture inputs.
-Dogfood validation runs the real pipeline and a real draft PR to produce evidence.
+Light depth. TARGET-state framing — what Stage 6 Dev DoD will run to verify Story 1, not what passes today on `main`.
 
-**Coverage target**: 100% of PRD §8 ACs (AC-1 through AC-12) by at least one test case.
-ADR-003 full audit: 11 of 13 SKILL.md files are over-budget; `check_skill_budgets.py` MUST
-declare all 11 as known-debt. AC-10's "6 lines" is a floor, not a ceiling.
+## Scope
 
-**Empirical validation**: A real pipeline iteration MUST produce a JSONL row; a real synthetic
-draft PR MUST fire the CI gate. Both are Stage 6 Dev DoD blockers.
+**In**: 13 Story-1 ACs, 6 BACKLOG-102 initiative ACs, 3 PRD FRs (FR-1 PROSE STYLE block, FR-2 verdict-prose, FR-3 schema bump), 6 ADR-tk3-001 contract elements. **Out**: Tier 2/3 surfaces (PRD/ADR/release-notes/CLAUDE.md prose); per-role overrides; full/ultra caveman ladder.
 
----
+## Coverage Map (FR / WI / AC traceability — ZERO gaps)
 
-## W0-1 Test Cases
+| FR | WI | Story-1 AC(s) | Initiative AC | Test Case | Verification (canonical paths) |
+|---|---|---|---|---|---|
+| FR-1 | W2-1 | S1, S2, S3 | AC-1, AC-5 | TC-2, TC-4 | `grep -c "^PROSE STYLE: caveman-lite for narrative-framing prose ONLY" delivery-team/skills/delivery-flow/references/pipeline-stages.md` → `3`; `grep -c "Auto-clarity exemptions apply" …pipeline-stages.md` → `3`; `grep -nE "PROSE STYLE\|prose_style" delivery-team/skills/delivery-flow/SKILL.md` ≥1 in L329-345 |
+| FR-2 | W2-2 | S1, S2, S3 | AC-2, AC-3 | TC-3 | `grep -nE "STATUS:.*(DONE\|NOT_DONE\|CODE_COMPLETE)" delivery-team/skills/delivery-flow/references/quality-gates.md` matches L21-38 verbatim; `grep -c "caveman-lite" …quality-gates.md` ≥1; `grep -nE "file/line/criterion\|name file" …quality-gates.md` preserved |
+| FR-3 | W2-3 | S1, S2, S3, S4 + Phase 0 wiring | AC-6 | TC-1, TC-5, TC-6 | `grep -n "^## Current Version: 2.9" …config-schema.md` on L5; `grep -nE '^\| `prose_style`' …config-schema.md` returns one row; `grep -n '^\| 2.9 ' …config-schema.md` returns one Version History row dated 2026-05-05; `python3 -c "import json; d=json.load(open('…/config-schema.json')); assert 'prose_style' in d['properties']; assert d['properties']['config_version']['default']=='2.9'"` exits 0; `grep -nE "prose_style" …/SKILL.md` ≥1 in L56-89 |
+| cross | — | AC-CACHE-PREFIX | (NFR-1) | TC-7 | `sha256sum delivery-team/skills/delivery-flow/SKILL.md` = `governance/cache-prefix-hash.txt` line 1; same PR |
+| cross | — | AC-TIER-A-BUDGET | (Ruling 3) | TC-8 | `python3 delivery-team/scripts/check_skill_budgets.py` exits 0; `wc -l SKILL.md` ≤500 |
+| cross | — | AC-INITIATIVE-GATES | AC-1, AC-2, AC-3, AC-4 | Empirical Protocol §below | telemetry-driven post-merge |
 
-**TC-W0-1-1**: Hook fires on PreToolUse Skill and writes JSONL row (AC-1, happy path)
-- **Given**: `telemetry.py` + `hooks.json` installed; `.delivery/telemetry/` absent
-- **When**: `python3 delivery-team/hooks/telemetry.py '{"tool_name":"Skill","tool_input":{"skill":"delivery-team:developer"}}'`
-- **Then**: `tail -1 .delivery/telemetry/skill-loads.jsonl | python3 -c "import sys,json; r=json.loads(sys.stdin.read()); assert r; print('PASS')"` → exit 0, stdout `PASS`
+**Gap audit**: every Story-1 AC, every initiative AC, every PRD FR maps to ≥1 TC. **Zero gaps**. Pippin satisfied.
 
-**TC-W0-1-2**: All 9 schema fields present in emitted row (AC-2)
-- **Given**: ≥1 row in `.delivery/telemetry/skill-loads.jsonl`
-- **When**: `python3 -c "import json; rows=[json.loads(l) for l in open('.delivery/telemetry/skill-loads.jsonl')]; req={'version','skill','model','prefix_hash','input_tokens','cache_read_tokens','cache_write_tokens','timestamp','session_id'}; missing=[req-set(r.keys()) for r in rows if req-set(r.keys())]; assert not missing,missing; print('PASS',len(rows),'rows')"`
-- **Then**: exit 0; stdout matches `PASS \d+ rows`
+## Test Cases (8, light depth)
 
-**TC-W0-1-3**: Hook overhead < 50 ms mean across 10 dry-run invocations (NFR-01 / AC-5)
-- **Given**: `telemetry.py` supports `--dry-run` (no write, measures execution only)
-- **When**: `python3 -c "import time,subprocess,statistics; t=[((lambda t0: (time.perf_counter()-t0)*1000)(time.perf_counter()) if not subprocess.run(['python3','delivery-team/hooks/telemetry.py','--dry-run'],check=True) else 0) for _ in range(10)]; m=statistics.mean(t); print(f'mean={m:.1f}ms'); assert m<50,f'FAIL {m:.1f}ms'"`
-- **Then**: exit 0; stdout contains `mean=` with value < 50
+- **TC-1 — Phase 0 reads `prose_style` at startup** (W2-3 / FR-3 / ADR Element 1): `grep -nE "prose_style" delivery-team/skills/delivery-flow/SKILL.md | awk -F: '$2>=56 && $2<=89'` → ≥1 line referencing `config.prose_style` load; default applied when key absent.
 
-**TC-W0-1-4**: Hook resilient to read-only telemetry directory — Skill not blocked (ADR-001 failure mode)
-- **Given**: `.delivery/telemetry/` chmod 000
-- **When**: `chmod 000 .delivery/telemetry && python3 delivery-team/hooks/telemetry.py '{"tool_name":"Skill","tool_input":{"skill":"delivery-team:developer"}}'; echo "Exit: $?"; chmod 755 .delivery/telemetry`
-- **Then**: exit 0 (hook exits cleanly); stderr contains error text; no Python traceback to stdout
+- **TC-2 — PROSE STYLE block injected post-ALIAS pre-OUTPUT in all 3 dispatch templates** (W2-1 / FR-1 / ADR Element 2): three `grep -c` commands above return `3`; plus `grep -nE "^--- (ALIAS\|PROSE STYLE\|OUTPUT) ---" …/pipeline-stages.md` → 9 lines, ordered ALIAS→PROSE STYLE→OUTPUT in three template blocks (L44, L87, L130 anchors).
 
-**TC-W0-1-5**: prefix_hash deterministic for identical SKILL.md content (idempotency)
-- **Given**: `delivery-team/skills/developer/SKILL.md` unchanged between two calls
-- **When**: `python3 -c "import hashlib; c=open('delivery-team/skills/developer/SKILL.md','rb').read(2048); h1=hashlib.sha256(c).hexdigest()[:8]; h2=hashlib.sha256(c).hexdigest()[:8]; assert h1==h2; assert len(h1)==8; print('PASS',h1)"`
-- **Then**: exit 0; stdout `PASS <8-char-hex>` (same hex both runs)
+- **TC-3 — DoD validator template directs caveman-lite verdict prose; STATUS verbatim; FINDINGS preserved** (W2-2 / FR-2 / ADR Element 4): three FR-2 grep commands above; plus synthetic dispatch on a fixture review with `prose_style: caveman-lite` → transcript at `.delivery/artifacts/06-development/dogfood/dod-validator-caveman-lite.md` shows verdict prose ≤3 sentences, STATUS line literal, FINDINGS bullets each name file/line/criterion.
 
-**TC-W0-1-6**: No Anthropic/OpenAI SDK import in telemetry.py (FR-11)
-- **When**: `grep -n 'anthropic\|openai\|litellm' delivery-team/hooks/telemetry.py; echo "Grep: $?"`
-- **Then**: grep exits 1 (no matches); output `Grep: 1`
+- **TC-4 — Auto-clarity exemption: destructive-op dispatch produces standard prose** (W2-1 / BACKLOG-102 AC-5 / ADR Element 3): with `prose_style: caveman-lite`, run 3 synthetic dispatches — security warning, `git revert` confirmation, 4-step migration sequence. Capture: `.delivery/artifacts/06-development/dogfood/auto-clarity-{1,2,3}.md`. Expect: PROSE STYLE block present in dispatch prompt; narrative output is standard prose for all 3/3. Any fragment-prose in security/destructive/multi-step narrative → BACKLOG-102 stop-rule fires.
 
-**TC-W0-1-7**: Every script path in hooks.json exists on disk (FR-12, phantom-path guard)
-- **When**: `python3 -c "import json,os; h=json.load(open('delivery-team/hooks/hooks.json')); bad=[e['script'] for e in h.get('hooks',[]) if not os.path.exists(e['script'])]; assert not bad,f'PHANTOM: {bad}'; print('PASS',len(h['hooks']),'hook(s)')"`
-- **Then**: exit 0; stdout `PASS N hook(s)`
+- **TC-5 — Opt-out: `prose_style: standard` reverts behavior** (W2-3 / BACKLOG-102 AC-6 / ADR Element 1): edit `.delivery/config.yml` → `prose_style: standard`; restart pipeline; run 3 dispatches → `.delivery/artifacts/06-development/dogfood/optout-{1,2,3}.md`. Expect: PROSE STYLE block ABSENT from prompt (no `--- PROSE STYLE ---` delimiter); narrative prose matches pre-merge baseline (no compression artifacts). Restore `prose_style: caveman-lite` after.
 
----
+- **TC-6 — Schema bump v2.8 → v2.9; v2.7 configs auto-default** (W2-3 / FR-3 / ADR Element 6): four FR-3 commands above, plus a synthetic v2.7 config (no `prose_style` key) loads cleanly and the orchestrator emits banner `Config upgraded from v2.7 to v2.9. New settings applied with defaults: prose_style=caveman-lite`.
 
-## W0-2 Test Cases
+- **TC-7 — Cache-prefix hash regenerated alongside Phase 0 edit** (cross-cutting / ADR Element 5 / NFR-1): `sha256sum delivery-team/skills/delivery-flow/SKILL.md | awk '{print $1}'` matches line 1 of `governance/cache-prefix-hash.txt`; `git log -1 --name-only --pretty=format: -- governance/cache-prefix-hash.txt delivery-team/skills/delivery-flow/SKILL.md` shows BOTH files in the same commit; hash differs from pre-edit value `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f`.
 
-**TC-W0-2-1**: Synthetic over-budget SKILL.md → exit 1, names file + tier + delta (AC-9)
-- **When**: `python3 -c "open('/tmp/ob_c.md','w').write('---\ntier: C\n---\n'+'# x\n'*201)" && python3 scripts/check_skill_budgets.py --check /tmp/ob_c.md --tier C; echo "Exit: $?"`
-- **Then**: exit 1; output matches `BUDGET VIOLATION.*ob_c.*201/200`
+- **TC-8 — Tier-A budget preserved post-edit** (cross-cutting / Ruling 3): `python3 delivery-team/scripts/check_skill_budgets.py` exits `0`; `wc -l delivery-team/skills/delivery-flow/SKILL.md | awk '{print $1}'` ≤ `500`. Pre-edit baseline 497 lines; ADR caps Phase 0 edit at +3 max.
 
-**TC-W0-2-2**: Clean SKILL.md (under budget) → exit 0 (AC-9 inverse)
-- **When**: `python3 scripts/check_skill_budgets.py --check delivery-team/skills/architect/paradigms/ddd/SKILL.md; echo "Exit: $?"`
-- **Then**: exit 0; no `BUDGET VIOLATION` in output
+## Test Data
 
-**TC-W0-2-3**: PR body with `Budget-Exception:` token → exit 0 + warning summary (FR-10)
-- **When**: `python3 -c "open('/tmp/ob_b.md','w').write('---\ntier: B\n---\n'+'# x\n'*301)" && PR_BODY="Budget-Exception: known-debt-tk0e" python3 scripts/check_skill_budgets.py --check /tmp/ob_b.md; echo "Exit: $?"`
-- **Then**: exit 0; output contains `EXCEPTION ACKNOWLEDGED`
+- **Theme alias**: existing `lotr` — no new alias bundles.
+- **Synthetic dispatch fixtures**: fresh sub-skill agent context per dispatch; rotate role across primary / supporting / DoD-validator templates to exercise all three insertion points.
+- **Pre-merge baseline telemetry**: last 5 dispatches in `.delivery/telemetry/skill-loads.jsonl` from Wave 2 archive `.delivery/memory/archive/run-2026-05-05-tk2.md` (predecessor commit c2e7d5a). Dispatch IDs entering the baseline get recorded in `w2-1-implementation.md` per PRD §8.1.
+- **DoD review baseline**: byte-length sample over `.delivery/artifacts/*/dod/*-review.md` from the same 5 pre-merge runs.
+- **v2.7 fixture config**: synthetic `.delivery/config.yml.v2.7` (no `prose_style` key) — used in TC-6 migration check.
+- **Destructive-op fixture prompts**: `.delivery/artifacts/05-plan/qa/fixtures/{security-warning,git-revert,four-step-migration}.md` — Stage 6 Dev creates these alongside dogfood transcripts.
 
-**TC-W0-2-4**: SKILL.md missing `tier:` field → exit 1 with hint (FR-06)
-- **When**: `python3 -c "open('/tmp/no_tier.md','w').write('# No frontmatter\n'+'# x\n'*10)" && python3 scripts/check_skill_budgets.py --check /tmp/no_tier.md; echo "Exit: $?"`
-- **Then**: exit 1; output matches `MISSING TIER.*no_tier.*tier: A\|B\|C`
+## Empirical Measurement Protocol (post-merge dogfood)
 
-**TC-W0-2-5**: Permissive language in fenced code block → NOT flagged (ADR-002 exempt zones)
-- **When**: `python3 -c "open('/tmp/code_block.md','w').write('---\ntier: C\n---\n\`\`\`python\n# should be ignored\n\`\`\`\n'+'# x\n'*5)" && python3 scripts/check_skill_budgets.py --warn-permissive /tmp/code_block.md; echo "Exit: $?"`
-- **Then**: exit 0; no permissive-language warning in output
+Telemetry-grade evidence for AC-1 (≥20% prose-token reduction) and AC-2 (≥25% DoD review reduction). Bash + python3 stdlib only — no `jq`/`xq`/`yq` (NFR-5).
 
-**TC-W0-2-6**: Permissive language in prose → flagged to stderr, exit 0 (FR-09 / AC-11 warn-only)
-- **When**: `python3 -c "open('/tmp/prose.md','w').write('---\ntier: C\n---\nYou should check this.\n'+'# x\n'*5)" && python3 scripts/check_skill_budgets.py --warn-permissive /tmp/prose.md; echo "Exit: $?"`
-- **Then**: exit 0; stderr contains warning matching `should`; no exit 1
+**AC-1 — response-prose token reduction ≥20%**:
 
-**TC-W0-2-7**: Permissive language in blockquote → NOT flagged (ADR-002 exempt zones)
-- **When**: `python3 -c "open('/tmp/bq.md','w').write('---\ntier: C\n---\n> The challenger may propose.\n'+'# x\n'*5)" && python3 scripts/check_skill_budgets.py --warn-permissive /tmp/bq.md; echo "Exit: $?"`
-- **Then**: exit 0; no `may` warning (blockquote line exempted)
+1. Pre-merge baseline (last 5 rows from predecessor runs):
+   ```
+   python3 -c "import json; rows=[json.loads(l) for l in open('.delivery/telemetry/skill-loads.jsonl')]; pre=[r['response_prose_tokens'] for r in rows if r.get('run_id','').startswith(('run-2026-05-05-tk2','run-2026-05-04-tk1'))][-5:]; print('pre_mean=',sum(pre)/len(pre))"
+   ```
+2. Post-merge sample: same one-liner with `run_id` prefix `run-2026-05-05-tk3` after Story 1 lands; trigger 5 dispatches against routine pipeline work.
+3. Compute: `reduction = (pre_mean - post_mean) / pre_mean ≥ 0.20`. If `< 0.15` → BACKLOG-102 stop-rule fires; pause Tier-2; root-cause retro.
 
-**TC-W0-2-8**: Permissive language in table cell → NOT flagged (ADR-002 exempt zones)
-- **When**: `python3 -c "open('/tmp/tbl.md','w').write('---\ntier: C\n---\n| Col1 | Col2 |\n|------|------|\n| can  | skip |\n'+'# x\n'*5)" && python3 scripts/check_skill_budgets.py --warn-permissive /tmp/tbl.md; echo "Exit: $?"`
-- **Then**: exit 0; no `can` warning (table row exempted)
+**AC-2 — DoD review file size reduction ≥25%**: `find .delivery/artifacts -path '*dod/*-review.md' -print0 | xargs -0 wc -c` over 5 pre-merge vs 5 post-merge reviews; mean-byte reduction ≥0.25; same stop-rule on <0.20.
 
-**TC-W0-2-9**: Known-debt report lists ≥6 over-budget skills (AC-10 floor; ADR-003 full = 11)
-- **When**: `python3 scripts/check_skill_budgets.py --known-debt-report`
-- **Then**: exit 0; ≥6 lines matching `KNOWN-DEBT: .*/SKILL\.md \d+/\d+ lines — target wave: W\d`; line for `delivery-flow` shows `1089/500`
+**AC-3 — DoD pass-rate preserved**: `grep -h '^STATUS: DONE' .delivery/artifacts/*/dod/*-review.md | wc -l` divided by total validator dispatches (7 per run); threshold ≥`4/7` first-try (matches `memory/index.md` baseline). Any post-merge review missing a finding that Wave 2 flagged → over-compression failure → stop-rule fires.
 
-**TC-W0-2-10**: Tier frontmatter present in all 13 delivery-team SKILL.md files (AC-8)
-- **When**: `find delivery-team -name 'SKILL.md' | wc -l && find delivery-team -name 'SKILL.md' -exec grep -qL "^tier:" {} \; -print && grep "^tier:" delivery-team/skills/architect/paradigms/ddd/SKILL.md && grep "^tier:" delivery-team/skills/architect/paradigms/volatility/SKILL.md`
-- **Then**: first command outputs `13`; second command outputs nothing (all files have tier); third and fourth output `tier: C`
+**AC-4 — downstream artifact quality**: next pipeline run's PRD/ADR/release-notes reads complete without re-reads or clarification dispatches; UAT spot-checks transcript bytes.
+
+**AC-5 / AC-6**: covered by TC-4 / TC-5 transcripts; binary pass/fail.
+
+## Risk Areas (3, ranked by likelihood × impact)
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| **Cache-prefix hash forgotten** — Phase 0 edit lands without `governance/cache-prefix-hash.txt` regen; CI hash-check fails | medium | high (blocks merge) | TC-7 enforces same-PR commit; Story 1 DoD lists `sha256sum > governance/cache-prefix-hash.txt` explicitly. |
+| **Schema-JSON drift** — `config-schema.md` edited but `config-schema.json` not regenerated via `generate-schema.py` | medium | medium (Phase 0 config-load fails next run) | TC-6 python `json.load` assertion catches drift; Story 1 DoD lists `python3 delivery-team/scripts/generate-schema.py` explicitly. |
+| **Auto-clarity false-positive** — agent over-applies caveman-lite to security/destructive/multi-step prose; finding masked or warning compressed | low-medium | high (NFR-7 regression; user safety) | TC-4 covers all 3 exempt contexts; ADR Element 3 in-prompt directive names exemptions verbatim; BACKLOG-102 stop-rule armed on any 1/3 failure. |
+
+## Entry / Exit Criteria
+
+**Entry**: ADR-tk3-001 accepted; Stage 5 stories.md emitted; baseline telemetry rows present in `.delivery/telemetry/skill-loads.jsonl`.
+
+**Exit (Stage 6 Dev DoD)**: TC-1..8 all pass; AC-1 / AC-2 thresholds met on post-merge dogfood; AC-3 no regression; AC-4 deferred to UAT next-run read; AC-5 / AC-6 transcripts captured and clean.
 
 ---
 
-## Dogfood Plan (Stage 6 Dev DoD MUST execute)
-
-**After W0-1 lands** — invoke any delivery-team skill through the normal pipeline; verify:
-```bash
-tail -1 .delivery/telemetry/skill-loads.jsonl | python3 -c "
-import sys,json
-r=json.loads(sys.stdin.read())
-req={'version','skill','model','prefix_hash','input_tokens','cache_read_tokens','cache_write_tokens','timestamp','session_id'}
-assert not req-set(r.keys()), req-set(r.keys())
-print('DOGFOOD PASS'); print(json.dumps(r,indent=2))
-"
-```
-
-**After W0-2 lands** — open a draft PR with synthetic over-budget SKILL.md; verify CI check fails
-(annotation names file + overage). Open second draft PR with same file + `Budget-Exception:
-known-debt-tk0e` in body; verify CI passes with warning summary.
-
-**Evidence to capture** in `.delivery/artifacts/06-dev/dogfood-evidence/`:
-- `telemetry-sample.jsonl` — real row(s) from pipeline run
-- `overhead-timing.txt` — stdout of TC-W0-1-3 (mean < 50 ms)
-- `ci-failure-log.txt` or CI run URL — AC-9 violation failing
-- `tier-count.txt` — `find … | wc -l` showing `13` + two `tier: C` paradigm greps
-- `known-debt-report.txt` — full `--known-debt-report` output (≥6 KNOWN-DEBT lines)
-
----
-
-## Test Order / Sequencing
-
-1. **Unit** (no environment required): TC-W0-1-5, TC-W0-1-6, TC-W0-2-10 (grep/hash only)
-2. **Integration** (scripts installed, no live CI): TC-W0-1-1 → TC-W0-1-4, TC-W0-1-7, TC-W0-2-1 → TC-W0-2-9
-3. **Dogfood** (Stage 6 DoD, real pipeline + draft PR): telemetry row evidence, CI gate evidence
+STATUS: DONE

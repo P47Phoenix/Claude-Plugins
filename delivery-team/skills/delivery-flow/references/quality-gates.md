@@ -37,6 +37,8 @@ SUMMARY: [one sentence, max 200 characters]
 FINDINGS: [if NOT_DONE: bullet list of specific failures]
 ```
 
+**Verdict-prose style**: when `config.prose_style == caveman-lite` (default), the validator's free-form verdict prose (the ≤3 sentences surrounding the gate-result table in the review file) uses caveman-lite. The `STATUS:` line values (DONE / NOT_DONE / CODE_COMPLETE) remain verbatim, the `FINDINGS:` bullet list (each finding names file/line/criterion) stays in standard prose, and gate-result tables remain in current Markdown format. When `config.prose_style == standard`, the entire review file uses standard prose. See ADR-tk3-001 Element 4 and `references/prose-style.md`.
+
 **STATUS values**:
 - **DONE** -- all criteria met from your perspective.
 - **CODE_COMPLETE** -- (Stage 6 Development only) code passes all structural criteria, but acceptance criteria requiring runtime validation exist (see the Verification Status section). List the empirical criteria pending validation.

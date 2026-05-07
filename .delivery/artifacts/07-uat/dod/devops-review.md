@@ -1,85 +1,27 @@
----
-title: "Sam — DevOps Cross-Validation (R2)"
-stage: 07-uat
-role: operations
-artifact_type: dod
-created: 2026-05-05
-revised: 2026-05-05
----
+<!-- run: run-2026-05-05-tk3 | stage: 07-uat | dod-round: 1 | reviewer: DevOps (FRESH) | author: DevOps DoD lens | sources: release-plan.md, go-no-go-input.md, ADR-tk3-001 -->
 
-# UAT Cross-Validation — Sam (DevOps Review R2)
+# Stage 7 DoD Review — DevOps Lens (Round 1)
 
-## Gate Status
+STATUS: DONE
 
-| Gate | Check | Result |
-|------|-------|--------|
-| 1 | git status shows Wave 2 only | PASS |
-| 2 | Test-plan scenarios reproducible | PASS |
-| 3 | Release-notes monitoring ⊆ release-plan | PASS |
-| 4 | User-guide rollback ⊆ release-plan | PASS |
-| 5 | CI budget gate exits 0 | PASS |
+## Findings
 
----
+| # | Criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | Pre-merge verification commands runnable (3 spot-checked) | PASS | `wc -l SKILL.md` returned `500`. `python3 -c "...prose_style default..."` returned `caveman-lite`. `git status --short \| wc -l` returned `49` (drift from author-time `39` is expected — release-plan §1 names orchestrator re-capture). All three are bash + python3 stdlib (`json`, `hashlib`, `wc`, `git`); no new CLI deps. `scripts/check_skill_budgets.py` and `governance/cache-prefix-hash.txt` both present on disk. |
+| 2 | Merge procedure deterministic | PASS | §3 lists exact commands in correct order: `git add -A`, `git commit -m <heredoc>`, `git checkout main`, `git rebase feature/caveman-lite-tk3`, `git merge --ff-only feature/caveman-lite-tk3`, `git push origin main`, `git branch -d feature/caveman-lite-tk3`. No hand-wavy steps. Squash-rebase + ff-merge proven in Waves 0/1/2. |
+| 3 | Commit message follows Wave 0/1/2 precedent | PASS | Subject `feat(delivery-team): Wave caveman-lite prose discipline (BACKLOG-102)` matches `feat(delivery-team): Wave <name> <subject>` precedent (verified against `git log --oneline -5`: `Wave 0`, `Wave 1`, `Wave 2` foundations all use the same pattern). Body cites ADR-tk3-001, BACKLOG-102, run-2026-05-05-tk3 — all required references present. |
+| 4 | Post-merge verification commands present and runnable | PASS | §4 specifies `git log --oneline -3`, `git diff main..origin/main`, `ls .github/workflows/skill-line-budget.yml`. All three are git/coreutils, no deps. The skill-line-budget.yml file exists. Note correctly captures that the workflow triggers on `pull_request:` only and the §2 local invocation IS the authoritative budget gate for this ff-push run — documented honestly, not glossed. |
+| 5 | Rollback has BOTH paths documented | PASS | §5 documents (a) **runtime opt-out**: one-line `prose_style: standard` in `.delivery/config.yml`, no source revert, no hash regen, AC-6 satisfied by construction; (b) **structural revert**: `git revert <merge-commit-sha>` plus explicit hash-restore command (`echo "9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f  delivery-team/skills/delivery-flow/SKILL.md" > governance/cache-prefix-hash.txt`) plus `sha256sum` verification plus `git push origin main`. Preference order stated. ADR-tk3-001 Element 5 cross-referenced and consistent. |
+| 6 | Hazards section names real risks (not generic) | PASS | Three hazards named, each concrete: (1) **cache re-warm cost** — bounded ~2KB one-time, ADR-tk3-001 Element 5 cited, informational watch; (2) **AC-13 stop-rule trigger threshold** — explicit `<15% prose-token reduction trips BACKLOG-102 stop-rule retro` with telemetry-capture mandate; (3) **v2.7-config auto-default verified** — checked `.delivery/config.yml` does NOT pin `prose_style`, so `caveman-lite` migration default IS in effect on next run, Phase 0 upgrade banner surfaces it. Verified independently: `cat .delivery/config.yml` shows only `config_version: "2.7"` at top level, no `prose_style` key. |
+| 7 | Branch state correct — `.delivery/artifacts/` staged in same commit | PASS | `git branch --show-current` = `feature/caveman-lite-tk3` (matches §3 precondition). `git add -A` in §3 captures all 20 modified + 29 untracked paths (49 total) — including the full `.delivery/artifacts/` Stages 1..7 run record, ADR-tk3-001, architecture-tk3-caveman-lite.md, story-1-implementation.md, release-plan.md, go-no-go-input.md, and DoD review files. Riding the run record in the same commit matches Wave 0/1/2 precedent. |
 
-## Gate 1: Changeset Isolation (PASS)
+## Verdict
 
-47 files (M/??). Per `.delivery/state.md` in-scope_work_items (W2-0 through W2-7),
-all changes align with Wave 2 doctrine extraction, contracts, coding-standards,
-patterns, governance re-baseline, retro backports. No unrelated plugin work.
-
-Post-merge audit: `git diff HEAD~1 --name-only | sort` verifies scope containment.
+Release plan is operationally executable as written: pre-merge gates spot-check clean, merge sequence is fully scripted, and the rollback envelope is genuinely two-tiered with the cheap path preferred. Hazards are concrete and the live failure mode (AC-13 stop-rule) is correctly armed with an explicit telemetry-capture mandate on first post-merge dispatch. DevOps DoD passes round 1; ship it.
 
 ---
 
-## Gate 2: Test-Plan Acceptance (PASS)
-
-All 6 scenarios deterministic and reproducible:
-- Scenario 1: delivery-flow 497 lines + doctrine pointer + marker ✓
-- Scenario 2: 5 contracts + routing + architect ≤ 500 ✓
-- Scenario 3: coding-standards dispatch + 6 tasks intact ✓
-- Scenario 4: 12 patterns + product-delivery 299 ✓
-- Scenario 5: 7 known_debt + architect W3 + CI 0 ✓
-- Scenario 6: cache-prefix sha256 + one-line hash ✓
-
-No domain knowledge required for validation.
-
----
-
-## Gate 3: Release-Notes Monitoring (PASS)
-
-Release-plan §5 defines 3 post-merge checks (orchestrator-doctrine telemetry,
-contract routing, cache-hit ≥0.85). Release-notes §Operator Instructions
-includes compatible telemetry commands. Operator can verify via manual dispatch.
-
----
-
-## Gate 4: User-Guide Rollback Path (PASS)
-
-User-guide §9 Rollback now includes:
-- S1 doctrine: `git revert <merge-commit>` + cache-prefix restoration
-- S2–S4: selective `git revert -- delivery-team/skills/<skill>/`
-- S5 admin: revert governance files + scripts
-
-Rollback guidance complete. Contributor incident response unblocked.
-
----
-
-## Gate 5: CI Budget Gate (PASS)
-
-```
-delivery-flow: 497 lines (≤500 ✓)
-architect: 500 lines (locked ✓)
-developer: 296 lines (≤300 ✓)
-product-delivery: 299 lines (≤300 ✓)
-skill-budgets.json: 7 known_debt entries ✓
-
-BUDGET CHECK PASSED: 13 file(s), 7 debt, 0 exception(s).
-EXIT CODE: 0
-```
-
----
-
-## Summary
-
-**5/5 gates PASS.** Wave 2 ready for production. User-guide rollback section
-closes the contributor loop. Changeset isolated. Test plan reproducible. CI green.
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/07-uat/dod/devops-review.md
+SUMMARY: 7/7 PASS — pre-merge spot-checks clean, merge sequence deterministic, commit format matches Wave 0/1/2, rollback dual-path armed, hazards concrete, branch state verified.

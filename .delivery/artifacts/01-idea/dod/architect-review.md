@@ -1,53 +1,25 @@
-# Architect DoD Review — Wave 2 Idea-Brief
+# Architect DoD Review — Caveman-Lite Idea-Brief (run-2026-05-05-tk3)
 
-**Reviewer**: Celebrimbor (Architect)  
-**Date**: 2026-05-05  
+**Reviewer**: Solution Architect (DoD validator, Stage 1 round 1)
+**Date**: 2026-05-05
+**Pipeline**: run-2026-05-05-tk3
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Mode**: light (round 1 of max 2)
 
-## Gate 1 — Feasibility: 8 WIs Achievable
+## STATUS: NOT_DONE
 
-**PASS**. W2-1 (999→≤500 extraction) is mechanically doable: ~500 lines of doctrine extraction (Phase 0/1/2/3 routing skeleton, Stage Routing Matrix, role invariants, communication constraint stay inline; anti-patterns, per-stage detail, memory learning, theme reporting move to `references/shared/orchestrator-doctrine.md`). Baseline precedent exists in Wave 1 ADRs. Remaining 7 WIs are administrative or low-scope refactors. No unexpected complexity detected.
+## Findings
 
-## Gate 2 — No Phantom File Paths
+- **Criterion 1 — Plugin-dev:skill-development acknowledged: PASS.** §5 line 49 explicitly binds `plugin-dev:skill-development` pre-load at the Stage 6 developer dispatch and adds `plugin-dev:skill-reviewer` + `plugin-dev:plugin-validator` post-completion. Routing table §7 line 64 reinforces. Memory lesson honored.
 
-**PASS**. All cited paths verified:
-- `.delivery/backlog/BACKLOG-103-skill-token-economy-delivery-team-wave-2.md` ✓ (spec)
-- `.delivery/memory/archive/run-2026-05-04-tk1.md` ✓ (Wave 1 retro, exists)
-- `.delivery/memory/topics/skill-token-economy.md` ✓ (binding decisions, verified 2026-05-03)
-- `governance/skill-budgets.json` ✓ (exists, v1 schema, to be updated W2-0)
-- `governance/cache-prefix-hash.txt` ✓ (exists, 110 bytes, Wave 0 hash of delivery-flow/SKILL.md)
-- `delivery-team/skills/delivery-flow/SKILL.md` ✓ (999 lines, candidate for extraction)
-- Architect, product-delivery, developer SKILL.md ✓ (all exist; ready for tier compliance in W2-2 onwards)
-- Wave 1 ADRs (ADR-tk1-001, ADR-tk1-002, ADR-tk1-003) ✓ (verified in `.delivery/artifacts/04-architect/adrs/`)
+- **Criterion 2 — Ruling 1 cache-prefix invariant + Stage 4 ADR routing: PASS.** §6 (lines 51-53) is a dedicated call-out naming `ADR-tk3-001` as owner of any re-freeze, requires byte enumeration if prefix bytes move, references `governance/cache-prefix-hash.txt`, and mandates CI hash-check. §7 line 62 routes Stage 4 as "light w/ **ADR-tk3-001**" — the light-with-ADR routing is visible.
 
-## Gate 3 — Cache-Prefix Re-Freeze Acknowledged
+- **Criterion 3 — Technical surface accurately identified: NOT_PASS.** §4 line 32 enumerates Phase 0 config-read, Step 4 prompt construction, `references/pipeline-stages.md`, `references/quality-gates.md`, and `references/config-schema.md` v2.7→v2.8 — five of the six required surfaces are present. The sixth, **`config-schema.json` regenerate**, is missing: §4 line 32 only names the `.md` schema bump, and §6 line 53 references only the `.md` artifact. Per the gate criterion ("If any of those surfaces are missing, NOT_DONE"), schema bumps in this repo require both the prose `config-schema.md` change AND a regenerated `config-schema.json` (validator toolchain artifact per CLAUDE.md "Config validation toolchain: JSON Schema generation + validation scripts"). Cite: `.delivery/artifacts/01-idea/po/idea-brief.md:32`. Also note: §4 names `pipeline-stages.md` but does not call out that **three** dispatch-template families live there (agent prompts, DoD validator prompts, and stage-summary prose) — naming the file is sufficient under criterion 3's surface-enumeration requirement, so this sub-point passes; the `.json` omission is what blocks.
 
-**PASS with binding action**. Brief correctly names W2-1 risk (F-08 dispatch fusion) and mandates:
-1. ADR-tk2-001 enumerates inline anchors vs extracted content (NOT YET WRITTEN — must be authored during Plan stage).
-2. `governance/cache-prefix-hash.txt` MUST be UPDATED post-extraction (not merely preserved).
-3. CI hash-check MUST pass (gatekeeping mechanism).
+- **Criterion 4 — Stop-rule preserves historical continuity: PASS.** §9 line 84 reproduces the canonical threshold verbatim: "defects/story rate >0.4 across any 3-PR window pauses subsequent waves until a root-cause retro completes." Matches Wave 0/1/2 stop-rule and the binding rule in `skill-token-economy.md` line 127. The engagement-local stop-rule on §9 lines 86 (telemetry <15% reduction or quality regression) is additive, not a substitute — both are armed (line 88), which is correct.
 
-Current hash reflects stale 999-line delivery-flow. Post-extraction hash will be recomputed and stored as binding pre-deployment artifact.
+- **Criterion 5 — Does not over-specify ADR-tk3-001 territory: PASS.** §6 line 53 explicitly hands "enumerate the bytes that move, justify, update the hash" to `ADR-tk3-001`, not the brief. §3 states intent (5 surfaces a–e) and §8 quotes BACKLOG-102 acceptance gates verbatim, but the brief does not pin (a) where in SKILL.md the PROSE STYLE block sits, (b) the precedence order for `prose_style:` resolution (project config vs role override vs dispatch-time override), or (c) the exact verdict-prose grammar. Intent + constraints, no contract pre-decided.
 
-## Gate 4 — Allowed-Tools Whitelist Respected
+## Verdict
 
-**PASS**. Brief does not prescribe specific tools. W2-1–W2-6 dispatch will route through `plugin-dev:skill-development` (which enforces whitelist Ruling 5 from binding decisions: Tier-A requires `Read, Edit, Write, Bash, Skill, ToolSearch`). Pre-loaded at each WI dispatch per §5 Plugin-Dev Skill Routing.
-
-## Gate 5 — F-08 Dispatch Fusion Risk Explicitly Named + Mitigated
-
-**PASS**. §7 W2-1 Risk names the failure mode explicitly: "Extracting orchestrator doctrine may lose semantic anchors that delivery-flow Phase 3 route fusion requires." Mitigation concrete and ordered:
-1. ADR-tk2-001 cache-prefix re-freeze (enumerates anchors).
-2. Batching-math simulation (Wave 1 lesson, before→−Δ→after).
-3. Architect dogfood validation (synthetic multi-stage run, Idea+Architect+Dev minimum; abort if routing misfires).
-
-All three required for merge per brief §7 Mitigation.
-
-## Gate 6 — Batching-Math Discipline (ADR-tk2-001 Binding)
-
-**CONDITIONAL PASS**. Brief correctly cross-references Wave 1 retro lesson (§7, point 2): "ADR-tk2-001 shows before (999) → −Δ → after (≤500) with explicit anchor retention list." ADR-tk2-001 does NOT yet exist but is a deliverable artifact of W2-1 Plan stage. Brief mandates numerics; ADR composition during execution will satisfy discipline. Success criteria (§8) reference no test for ADR-tk2-001 content — validation deferred to stage-exit gate.
-
-## Summary
-
-**STATUS: PASS** — All six gates satisfied. W2-1 risk is well-named with concrete, ordered mitigations binding ADR-tk2-001 composition and cache-hash update. No phantom paths. Feasibility confirmed. Plugin-dev binding prevents tool-whitelist drift. Brief is ready for Plan stage.
-
-**Next move**: Author ADR-tk2-001 during Plan (Phase 3 doctrine extraction roadmap, before→−Δ→after numerics, anchor enumeration, dogfood validation protocol).
+The brief is well-formed across four of five criteria — plugin-dev routing, cache-prefix invariant with ADR-tk3-001 ownership, stop-rule continuity, and Stage-4 architectural restraint are all explicit and well-cited. The single blocker is §4's omission of `config-schema.json` regeneration alongside the `config-schema.md` v2.7→v2.8 bump; this is a required surface in this repo's config-validation toolchain, not an implementation detail Stage 4 can recover. Recommended fix: add `config-schema.json` to §4 line 32's surface list and to §7 Stage 5 Plan (or Stage 6 Dev) routing notes — single-line edit, no scope change.

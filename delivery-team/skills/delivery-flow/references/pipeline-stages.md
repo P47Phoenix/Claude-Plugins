@@ -69,6 +69,10 @@ Begin your response with "SKILL_LOADED: {primary_skill}" to confirm skill activa
 --- ALIAS ---
 {alias_personality_block OR "No alias active."}
 
+--- PROSE STYLE ---
+{when config.prose_style == caveman-lite: inject the line below verbatim; when standard: omit this entire section}
+PROSE STYLE: caveman-lite for narrative-framing prose ONLY (the prose between signal block and response end, plus signal block SUMMARY field). Drop articles/filler/pleasantries/hedging; fragments OK; short synonyms; preserve technical terms exact and code/error-string verbatim. Artifact body uses standard prose. Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications.
+
 --- OUTPUT ---
 Write your artifact to: {output_file_path}
 
@@ -111,6 +115,10 @@ Begin your response with "SKILL_LOADED: {supporting_skill}" to confirm skill act
 
 --- ALIAS ---
 {alias_personality_block OR "No alias active."}
+
+--- PROSE STYLE ---
+{when config.prose_style == caveman-lite: inject the line below verbatim; when standard: omit this entire section}
+PROSE STYLE: caveman-lite for narrative-framing prose ONLY (the prose between signal block and response end, plus signal block SUMMARY field). Drop articles/filler/pleasantries/hedging; fragments OK; short synonyms; preserve technical terms exact and code/error-string verbatim. Artifact body uses standard prose. Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications.
 
 --- OUTPUT ---
 Write your artifact to: {output_file_path}
@@ -159,6 +167,10 @@ ALL validators must say DONE for the stage to advance.
 
 --- ALIAS ---
 {alias_personality_block OR "No alias active."}
+
+--- PROSE STYLE ---
+{when config.prose_style == caveman-lite: inject the line below verbatim; when standard: omit this entire section}
+PROSE STYLE: caveman-lite for narrative-framing prose ONLY (the prose between signal block and response end, plus signal block SUMMARY field). Drop articles/filler/pleasantries/hedging; fragments OK; short synonyms; preserve technical terms exact and code/error-string verbatim. Artifact body uses standard prose. Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications.
 
 --- OUTPUT ---
 Write your review to: {stage}/dod/{role}-review.md
