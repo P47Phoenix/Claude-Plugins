@@ -1,7 +1,7 @@
 # Delivery Pipeline Memory Index
 
 - total_runs: 32
-- last_updated: 2026-05-05
+- last_updated: 2026-05-09
 - last_run_id: run-2026-05-05-tk3
 
 ## Stage Health (last 5 runs)
@@ -46,5 +46,5 @@
 - [archive/run-2026-05-05-tk3.md](archive/run-2026-05-05-tk3.md) — FEATURE caveman-lite: Tier-A 500/500 ceiling held via mid-impl extraction; cache-prefix re-freeze accepted (ADR-tk3-001); GO; AC-13 telemetry deferred; producer-validator + stale-sweep lessons surfaced
 - [archive/run-2026-05-05-tk2.md](archive/run-2026-05-05-tk2.md) — FEATURE Wave 2: doctrine extract + per-skill contracts/patterns + model split; GO with PASS_WITH_NOTES; 8 WIs in 5 stories
 - [archive/run-2026-05-04-tk1.md](archive/run-2026-05-04-tk1.md) — FEATURE Wave 1: cache freeze + stages.yml + frontmatter rollout + challenger hook; GO; 7 WIs in 3 file-scope stories, 0 defects
-- [archive/run-2026-05-03-tk0e.md](archive/run-2026-05-03-tk0e.md) — FEATURE Wave 0: telemetry hook + line-budget CI gate; GO; 2 stories shipped, 0 defects
-- [archive/run-2026-04-22-4x7e.md](archive/run-2026-04-22-4x7e.md) — FEATURE: 14-WI Opus 4.7 execution engagement; GO; PR #86
+## Initiative Retros
+- [initiative-retros/skill-token-economy-meta-retro-2026-05-09.md] — delivery-team token-economy: 4/5 waves SHIPPED, Wave 3 deferred

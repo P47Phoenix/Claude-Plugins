@@ -119,7 +119,8 @@ For axes with ≥3 mutually-exclusive variants (research types, paradigm choices
 - **Wave 1** SHIPPED (run-2026-05-04-tk1) — Cache-prefix freeze, stage YAML, Haiku routing, allowed-tools+description prune, challenger-tier rule, Sonnet orchestrators+Python hooks
 - **Wave 2** SHIPPED (run-2026-05-05-tk2) — Doctrine externalization, architect/developer extractions, config/commands tables, product-delivery patterns split, architect model split
 - **caveman-lite** SHIPPED (run-2026-05-05-tk3) — Status: GO; AC-13 telemetry deferred to next run; Tier-A 500/500 ceiling held via mid-implementation extraction; cache-prefix re-freeze (one-time ~2KB re-warm) accepted per ADR-tk3-001.
-- **Wave 3** PENDING (BACKLOG-104 — to be authored next per user's 4-step plan): Multiplexer Phase 1/2 routing, governance frontmatter + retro KPI, paradigm sub-skill pattern (slow-burn)
+- **Wave 3** PLANNED + DEFERRED — BACKLOG-104 authored 2026-05-05 (345 lines, 18 WIs, 7 file-scope stories per PO recommendation, runs-the-command-verified line counts). Execution deferred from this session per user redirect (3->4); ready for fresh-session re-invocation. Initiative is at a clean handoff point: 4/5 waves SHIPPED, no in-flight ambiguity.
+- **Initiative status (as of 2026-05-09)**: 4/5 milestones SHIPPED (80% complete); Wave 3 PLANNED-AND-DEFERRED; meta-retrospective at `.delivery/memory/initiative-retros/skill-token-economy-meta-retro-2026-05-09.md`. Next-plugin migration (mtg-commander Wave 0 or hardware-team Wave 0) ON HOLD until Wave 3 closes per user direction "one plugin at a time".
 
 After delivery-team Wave 0+1 lands and proves out: hardware-team, then mtg-commander, then remaining plugins.
 
