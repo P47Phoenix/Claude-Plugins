@@ -4,6 +4,22 @@
 
 ---
 
+## AMENDMENT — Wave 3 SHIPPED 2026-05-09
+
+This meta-retro was authored prematurely on 2026-05-09 with Wave 3 labeled "PLANNED+DEFERRED" after a misread of user intent ("3->4" was sequencing not skip). Wave 3 ran the same day (run-2026-05-09-tk4) and SHIPPED. The original retro body below remains for historical record; updated facts:
+
+- **Initiative status**: 5/5 milestones SHIPPED — **INITIATIVE COMPLETE** (was 4/5 PLANNED+DEFERRED)
+- **Wave 3 outcome**: 7 stories / 35 ACs / 0 defects / 71% first-try; 7 over-budget SKILL.md files cleared; CLAUDE.md 168→112; governance frontmatter on 11 SKILL.md; 9 paradigm sub-skills; 6 retro carry-forwards discharged
+- **Cumulative structural reduction**: 5807 → 3090 lines = **46.79%** across all SKILL.md
+- **AC-13 close-out**: deferred 1 pipeline due to W3-18 chicken-and-egg (telemetry hardening can't measure itself); first effective baseline next post-merge run
+- **DEFECT-006**: CLOSED at this Wave 3 merge (W3-17 Stage-7 stale-sweep ships systemic fix)
+- **Defects/story 3-PR rolling**: 0.111 (well under 0.4 stop-rule)
+- **Original Step 4 §6 conclusion (NOT formally complete) is now SUPERSEDED — initiative IS formally complete**
+
+Sections 1-9 below preserved as historical snapshot of Step-4-then-state.
+
+---
+
 ## 1. Initiative Header
 
 - **Initiative name**: Skill Token-Economy — delivery-team plugin

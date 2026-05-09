@@ -57,10 +57,33 @@ def _iso_utc() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _build_row(skill_name: str, prefix_hash: str | None) -> dict:
-    """Construct the telemetry JSONL row."""
+def _build_row(skill_name: str, prefix_hash: str | None, hook_input: dict) -> dict:
+    """Construct the telemetry JSONL row.
+
+    W3-18 hardening: PreToolUse hooks fire BEFORE token usage is observable
+    (the model has not yet dispatched). So token fields are emitted as
+    placeholders (`placeholder=true`) per PRD §FR-7.6 — downstream KPI
+    compute (W3-10) MUST exclude rows where `placeholder == true`.
+
+    `prose_tokens` is recorded ONLY when the hook input includes a
+    `prose_tokens` field (e.g. PostToolUse enrichment from a wrapper).
+    Pipeline-id (when present in cwd's `.delivery/state.md` frontmatter or
+    in the hook environment) is captured for run-scoped summary aggregation.
+    """
     session_id = os.environ.get("CLAUDE_SESSION_ID", "unknown")
     model = os.environ.get("CLAUDE_MODEL", None)
+    pipeline_id = os.environ.get("DELIVERY_PIPELINE_ID", None) or hook_input.get("pipeline_id")
+
+    # If hook_input carries actual measurements (PostToolUse-style enrichment),
+    # capture them and clear the placeholder flag.
+    prose_tokens = hook_input.get("prose_tokens")
+    input_tokens = hook_input.get("input_tokens")
+    cache_read = hook_input.get("cache_read_tokens")
+    cache_write = hook_input.get("cache_write_tokens")
+    has_measurement = any(
+        v is not None and v != 0 for v in (prose_tokens, input_tokens, cache_read, cache_write)
+    )
+
     return {
         "version": "1",
         "timestamp": _iso_utc(),
@@ -68,9 +91,12 @@ def _build_row(skill_name: str, prefix_hash: str | None) -> dict:
         "skill": skill_name,
         "model": model,
         "prefix_hash": prefix_hash,
-        "input_tokens": 0,
-        "cache_read_tokens": 0,
-        "cache_write_tokens": 0,
+        "pipeline_id": pipeline_id,
+        "prose_tokens": prose_tokens if prose_tokens is not None else 0,
+        "input_tokens": input_tokens if input_tokens is not None else 0,
+        "cache_read_tokens": cache_read if cache_read is not None else 0,
+        "cache_write_tokens": cache_write if cache_write is not None else 0,
+        "placeholder": not has_measurement,
     }
 
 
@@ -111,7 +137,7 @@ def main() -> None:
         skill_md = _resolve_skill_md(skill_name, cwd)
         prefix_hash = _compute_prefix_hash(skill_md) if skill_md else None
 
-        row = _build_row(skill_name, prefix_hash)
+        row = _build_row(skill_name, prefix_hash, hook_input)
 
         # EARLY write (before any optional enrichment) — memory lesson 3
         if not dry_run:

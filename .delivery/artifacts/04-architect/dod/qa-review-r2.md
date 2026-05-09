@@ -1,152 +1,154 @@
 # QA DoD Review — Stage 4 (Architect, light), Round 2
 
-**Pipeline**: run-2026-05-05-tk3
-**Reviewer**: QA Engineer (DoD validator, fresh dispatch)
-**Lens**: testability + AC coverage + round-2 regression check (LIGHT, blocking only)
-**Date**: 2026-05-05
+**Pipeline**: run-2026-05-09-tk4
+**Reviewer**: QA Engineer (DoD validator, FRESH dispatch round 2)
+**Lens**: testability + AC traceability + round-2 regression check (LIGHT, blocking only)
+**Date**: 2026-05-09
 
-**Artifacts validated**:
-- ADR-tk3-001 (revised) — `.delivery/artifacts/04-architect/adrs/ADR-tk3-001-prose-style-config.md`
-- Architecture summary (revised) — `.delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md`
+**Artifacts validated (revised)**:
+- ADR-tk4-001 (revised) — `.delivery/artifacts/04-architect/adrs/ADR-tk4-001-tier-b-closure-approach.md`
+- ADR-tk4-002 — `.delivery/artifacts/04-architect/adrs/ADR-tk4-002-paradigm-sub-skill-pattern.md`
+- ADR-tk4-003 (revised) — `.delivery/artifacts/04-architect/adrs/ADR-tk4-003-governance-frontmatter-shape.md`
+- Architecture summary (revised) — `.delivery/artifacts/04-architect/solution/architecture-tk4-wave-3.md`
 
-**Round-1 baseline for regression comparison**:
-- `.delivery/artifacts/04-architect/dod/qa-review.md` (round-1, all 5 gates PASS)
+**Round-1 baseline**: `.delivery/artifacts/04-architect/dod/qa-review.md` (gates 1-3 PASS, gates 4-5 NOT_PASS)
 
-**Reference**:
-- BACKLOG-102 — `.delivery/backlog/BACKLOG-102-caveman-prose-discipline.md` (6 initiative-level ACs, lines 116-121)
-- PRD — `.delivery/artifacts/02-refine/po/prd.md`
-
----
-
-## STATUS
-
-**STATUS: DONE**
+**Upstream traced**: PRD `.delivery/artifacts/02-refine/po/prd.md` §6 AC-1..AC-7; BACKLOG-104 init ACs 1..10.
 
 ---
 
-## Gate Findings (7 gates: 5 round-1 + 2 round-2 regression gates)
+## STATUS: DONE
 
-### Gate 1 — Every ADR Decision element is TESTABLE
-
-**PASS.** All 6 contract elements expose a concrete verifiable check; round-2 corrections preserve testability.
-
-| Element | Test path |
-|---|---|
-| 1 — `prose_style` config key (ADR Decision Element 1) | Load `.delivery/config.yml`; assert top-level scalar key, type string, valid values `caveman-lite \| standard`, default `caveman-lite`. ADR fixes YAML grammar (`prose_style: caveman-lite`) and top-level placement (matches `wizard_completed` precedent). |
-| 2 — PROSE STYLE block contract (ADR Decision Element 2) | Render any Phase 4 Step 4 dispatch; grep verbatim block at the three loci (`pipeline-stages.md` after L70 / L113 / L161, before `--- OUTPUT ---`, delimiter `--- PROSE STYLE ---`). Inverse omission test: with `prose_style: standard`, zero block bytes are emitted (Element 2 step 3). |
-| 3 — Auto-clarity exemptions (ADR Decision Element 3) | Two inspection paths (prompt-grep on directive substring; output-grep on standard-prose verdict for security / `git revert` / 4-step migration). ADR names Stage 6 dogfood as "Validation surface". |
-| 4 — DoD validator verdict-prose treatment (ADR Decision Element 4) | Per-section grade against Element 4 row table: `STATUS:` literal-token grep, `FINDINGS:` standard-prose preservation, verdict prose ≤3 sentences in caveman-lite. Quantitative target AC-2 (≥25% reduction) bound to W0-1 telemetry. |
-| 5 — Cache-prefix re-freeze procedure (ADR Decision Element 5) | Per Gate 3 below; ADR L121-125 names exact command, expected hash flip, and rollback (separated from runtime opt-out). |
-| 6 — Schema bump v2.9 (ADR Decision Element 6) | Per Gate 4 below; ADR Element 6 table names exact loci (L5, L15, schema row, template, history), default-application path, and migration banner string. |
-
-No element is purely declarative. AC-1 / AC-2 quantitative claims bound to `.delivery/telemetry/skill-loads.jsonl` (telemetry surface confirmed present at `/var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/telemetry/skill-loads.jsonl`). Architecture summary §2 (system boundary diagram) and §4 (cache-prefix impact summary) reinforce inspection points for Elements 1, 2, 3, 4, 5.
+All 5 blocking gates PASS. Both round-1 NOT_PASS gates are remediated with surgical, runnable additions. Gates 1-3 regression check confirms no perturbation.
 
 ---
 
-### Gate 2 — Auto-clarity exemption mechanism is INSPECTABLE
+## Gate-by-gate verdict (round 2)
 
-**PASS.** ADR Decision Element 3 chose "in-prompt directive enforcement by the agent" as v1; both inspection paths from the gate criterion are documented.
+### Gate 1 — Every Decision element across all 3 ADRs is TESTABLE: **PASS** (regression)
 
-- **Path (a) — output-side grep**: Stage 6 dogfood per ADR Element 3 "Validation surface" runs three synthetic dispatches (security warning, `git revert` confirmation, 4-step migration). Inspector reads each agent response and asserts standard-prose verdict (articles preserved, no fragment compression on the four exempt contexts). Failure on any of three trips the BACKLOG-102 stop-rule.
-- **Path (b) — prompt-side grep**: ADR Element 2 fixes the verbatim block including the directive line `Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications.` Inspector renders any Phase 4 Step 4 dispatch with `prose_style: caveman-lite` and greps the prompt body for that exact substring at the `--- PROSE STYLE ---` insertion point.
+Round-1 PASS verdict is preserved. Round-2 revisions did NOT remove or weaken any Decision element:
 
-Either path satisfies the gate; both are present.
-
----
-
-### Gate 3 — Cache-prefix re-freeze procedure has a verification step
-
-**PASS.** ADR Decision Element 5 specifies all three required components, and the round-2 rewrite makes them MORE testable than round 1.
-
-| Required | Provided in ADR |
-|---|---|
-| Command X to regenerate hash | `sha256sum delivery-team/skills/delivery-flow/SKILL.md > governance/cache-prefix-hash.txt` (verbatim, ADR Element 5 point 4). |
-| Expected change Y | Whole-file SHA-256 in `governance/cache-prefix-hash.txt` flips from current value `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f` (verified present at `/var/home/meconnelly/Documents/GitHub/Claude-Plugins/governance/cache-prefix-hash.txt`); flip is observable as a single-line diff. Byte-impact math table (ADR L106-114) projects +50-120 bytes Δ. |
-| Rollback path Z | Element 5 point 5 separates **structural rollback** (revert Phase 0 edit AND restore prior `cache-prefix-hash.txt` value `9d4011d…`; one PR; cache-warmup slice returns to pre-edit byte-stable state) from **runtime opt-out** (one-line config change `prose_style: standard`, no SKILL.md or hash touch). |
-
-Round-2 strengthening: Element 5 reconciles the two-interpretation freeze (cache-warmup 0..2048 prefix slice vs whole-file SHA-256) with measured byte positions (Phase 0 heading at byte 1803, INSIDE the 0..2048 slice — corrects the prior round's inversion). The whole-file SHA-256 covers both interpretations in one regeneration, so the procedure is monotonic and unambiguous. Stage 5 Plan binding (point 2 + architecture-tk3-caveman-lite.md §4) makes the regeneration an explicit Story DoD task.
-
----
-
-### Gate 4 — Schema bump procedure has migration safety check
-
-**PASS.** ADR Decision Element 6 specifies both required guarantees.
-
-| Required | Provided in ADR |
-|---|---|
-| Existing v2.7 / v2.8 configs continue to load | "Existing v2.7-or-earlier configs auto-migrate (Phase 0 lines 60-64 of SKILL.md). If `prose_style` is absent on load, the orchestrator applies the default `caveman-lite` and surfaces the standard upgrade banner: `> Config upgraded from v2.7 to v2.9. New settings applied with defaults: prose_style=caveman-lite`." Existing v2.6→v2.7 strip-and-default path (SKILL.md L65-71) preserved untouched. v2.8 configs (none currently in repo per PRD §3) similarly default. |
-| Default `caveman-lite` applies on missing key | Same passage; default named, banner string named, regression-safe path preserved. |
-
-Verifiable post-merge by loading any existing `.delivery/config.yml` (none currently set `prose_style`), running Phase 0, and asserting (a) no parse error, (b) `config.prose_style == "caveman-lite"` in the loaded struct, (c) the upgrade banner is emitted. v2.8 → v2.9 collision avoidance addressed: ADR Element 6 opens with "the v2.8 slot is already taken (DESIGN routing, dated 2026-04-05 at `config-schema.md` L368). The schema MUST bump to **v2.9**." JSON regeneration bound to a Stage 5 Plan task (`python3 delivery-team/scripts/generate-schema.py`).
-
----
-
-### Gate 5 — All 6 BACKLOG-102 acceptance criteria map to a Decision element OR Stage 6 dogfood
-
-**PASS.** All 6 initiative-level ACs (BACKLOG-102 lines 116-121) trace to ADR contract elements and/or Stage 6 dogfood activities. Criterion correctly counted as 6 (not 5) per the lesson honored.
-
-#### Traceability matrix (6 ACs → contract elements / dogfood)
-
-| AC # | BACKLOG-102 text (abridged) | Maps to | Verification surface |
+| ADR | Round-1 testable elements | Round-2 delta | Verdict |
 |---|---|---|---|
-| AC-1 | Agent narrative-framing prose MEASURABLY shorter (≥20% reduction in response-prose tokens, telemetry-verified) | ADR Element 1 + Element 2 | W0-1 telemetry hook (`.delivery/telemetry/skill-loads.jsonl`); 5 dispatches post vs 5 pre-baseline (PRD §8.2); ADR Consequences Positive bullet 1 |
-| AC-2 | DoD review files MEASURABLY smaller (≥25% reduction) | ADR Element 4 | Post-merge DoD file size measurement vs run-2026-05-03-tk0e baseline (PRD §8.3); ADR Element 4 row "Free-form verdict prose"; ADR Consequences Positive bullet 1 |
-| AC-3 | NO regression in DoD pass rate (currently 4/7 first-try) | ADR Element 4 + Negative/risks row "Validator over-compression masks findings" | Stage 7 UAT measures pass-rate vs 4/7 baseline; FINDINGS bullets stay standard-prose (Element 4 table); stop-rule armed (PRD §NFR-7) |
-| AC-4 | NO regression in artifact quality (PRDs/ADRs/release-notes still pass downstream agents' reads) | ADR Element 4 (artifact body uses standard prose; Tier 3 unchanged) + Element 2 block content ("Artifact body uses standard prose") | Verified by next pipeline run reading post-change DoD/PRD/ADR artifacts (downstream-agent integration test) |
-| AC-5 | Auto-clarity boundaries respected (security/destructive/multi-step/clarification prose remains standard) | ADR Element 3 + Stage 6 dogfood "Validation surface" | Stage 6 dogfood (PRD §8.4): 3 synthetic dispatches inspected; failure on any of three trips stop-rule |
-| AC-6 | Opt-out via `prose_style: standard` works (one-line config change reverts behavior) | ADR Element 1 + Element 6 + Reversibility "Config-level reversal" + Element 5 point 5 (runtime opt-out) | 3-dispatch dogfood with `prose_style: standard` (PRD §8.5); zero PROSE STYLE block bytes emitted (named in ADR Element 2 step 3) |
+| tk4-001 | 7 per-file extractions (W3-1..W3-7) with `before → -Δ + router-Δ = after`; per-file `wc -l ≤ ceiling`; ~42-input dogfood router regression set | W3-7 godot deepened (236 → 197 instead of 198) via one extra 1-line `Architecture Guardrails` consolidation; math `236 → -38 -1 = 197` cited (line 97); cross-file headroom table (line 99) re-asserts ≥9-line margins on the other 6 files | PASS — strengthened, not weakened |
+| tk4-002 | Canonical `<plugin>/skills/<axis>/<variant>/SKILL.md` shape + 7-key frontmatter contract + parent router contract + marketplace lint regex | Untouched in round 2 (no revisions detected by content scan) | PASS |
+| tk4-003 | 3 frontmatter keys + per-file +50-byte impact + sequencing gate + `regenerate_cache_prefix_hash.py` regeneration command + ISO-8601 + `context_budget`-matches-`tier` lint | New §"Post-Story-5 budget verification" subsection added (lines 78-86) — adds a NEW testable element, does not weaken any existing one | PASS — strengthened |
 
-Every AC has at least one ADR contract element traceable; ACs 1, 5, and 6 additionally name explicit Stage 6 dogfood activities. No AC is unmapped. Round-2: ACs 1, 2, 3, 4, 5, 6 all retained (no AC dropped between rounds).
+Every Decision element across all 3 ADRs has either an explicit runnable verification command or an artifact-level invariant. No narrative-only decisions detected.
 
 ---
 
-### Gate 6 (R2) — Round-2 corrections did NOT remove or weaken any contract element
+### Gate 2 — Cache-prefix re-freeze verification step exists in ADR-tk4-003: **PASS** (regression)
 
-**PASS.** All 6 contract elements remain present and at least as testable as round 1; Element 5 is strictly more testable.
+Round-1 PASS verdict is preserved. ADR-tk4-003 §"Cumulative cache-prefix re-freeze procedure" (lines 48-68) is byte-identical to round-1 in substance:
 
-| Element | Round-1 status | Round-2 status | Δ testability |
+- **Step 2 (regeneration command)** — line 64: `python3 scripts/regenerate_cache_prefix_hash.py --target governance/cache-prefix-hash.txt --files delivery-team/skills/*/SKILL.md delivery-team/skills/*/paradigms/*/SKILL.md`. Explicit, runnable.
+- **Step 3 (verification)** — line 67: "Stage 6 DoD validator MUST cite the regenerated hash file's actual byte counts, NOT the +650-byte projection." Binding.
+- **Step 4 (gate)** — line 68: hash file updated ONCE at end of Story 5.
+
+The newly-added §"Post-Story-5 budget verification" (Gate 4 closure) is *additive* — it does not displace or modify the re-freeze procedure. PASS.
+
+---
+
+### Gate 3 — All 7 PRD AC-1..AC-7 map to ADR contract element OR Stage 6/7 dogfood: **PASS** (regression)
+
+Round-1 PASS verdict is preserved. Re-validated traceability matrix (PRD §6 numbering; BACKLOG-104 init ACs 1..10 collapsed into PRD's 7 per Refine):
+
+| PRD AC | BACKLOG-104 init AC(s) | Source WI | Mapped to | Round-2 specific element |
+|---|---|---|---|---|
+| AC-1 | 1 | W3-1..7 + W3-9 budgets clear (`check_skill_budgets.py` exits 0) | **ADR-tk4-001** + **ADR-tk4-003** | tk4-001 §W3-1..W3-7 per-file math (godot revised to 197); tk4-003 §"Mandatory-rollout sequencing" (line 74-76) + new §"Post-Story-5 budget verification" (lines 78-86) close the round-1 Gate-4 gap |
+| AC-2 | 2 | W3-12 CLAUDE.md ≤150 lines | **Stage 6 dogfood** (mechanical) | unchanged from round 1 |
+| AC-3 | 3 | W3-9 governance frontmatter on all delivery-team SKILL.md | **ADR-tk4-003** | §"Frontmatter contract" + §"CI lint" (line 46) |
+| AC-4 | 4 | W3-13..16 (Wave 2 carry-forwards) | **Architecture summary** §"Open questions" #2 (W3-15 standardize ruling, line 94) + Stage 6 dogfood | unchanged from round 1 |
+| AC-5 | 5 | W3-17 + W3-18 + DEFECT-006 close | **Architecture summary** §"Open questions" #3 (W3-17 Option A ruling, line 95) + Stage 6 dogfood (W3-18 telemetry) | new round-2 §"Stop-Rule Tripwire Mechanics" tail (line 81) folds the `--baseline pre-caveman-lite` flag addition into W3-18 — tightens AC-5 contract |
+| AC-6 | 6 | W3-8 paradigm sub-skill ≥3 axes | **ADR-tk4-002** | §"Canonical directory shape" Wave-3 table (research-agent 5, user-feedback 4, presentation conditional) |
+| AC-7 | 7 + 10 | NFR-4 ≥50% telemetry-measured cumulative reduction + W3-11 fitness review | **Architecture summary** §"Cache-prefix impact summary" + new §"Stop-Rule Tripwire Mechanics" + Stage 6 dogfood | tripwire mechanics now name `python3 scripts/compute_token_reduction.py --baseline pre-caveman-lite --window 3 --output .delivery/telemetry/stop-rule-tk4.txt` and the comparison baseline (`.delivery/memory/archive/run-2026-05-05-tk2.md`) — strengthens AC-7 |
+
+BACKLOG-104 init ACs 8 (no first-try DoD pass-rate regression) and 9 (defects/story ≤0.4) remain pipeline-runtime KPIs (correctly omitted from PRD §6 collapse and not flagged here). PASS.
+
+---
+
+### Gate 4 — Post-Story-5 `check_skill_budgets.py` exit-0 verification step exists: **PASS** (round-1 NOT_PASS → round-2 PASS)
+
+**Round-1 finding**: An explicit post-Story-5 verification step was missing; godot was projected to land at 198 + 3 frontmatter = 201, +1 over Tier-C ceiling, with the §W3-7 escape hatch only described as conditional in tk4-001 ("if buffer is tighter than the math suggests").
+
+**Round-2 closure (TWO complementary fixes)**:
+
+1. **ADR-tk4-001 §W3-7 deepened** (lines 90-97). Round-2 revision retargets godot to ≤197 (not 198) by folding **one additional 1-line trim** in `## Architecture Guardrails` (consolidate the two performance-budgets/frame-time-awareness bullets into one composite line; semantic loss = nil per Stage 6 Dev confirmation). Math: `236 → -38 -1 = 197`. The escape hatch is now MOOT at PR time — the round-1 conditional 5-line guardrails fold is RETAINED only as a Stage-6 *reserve* if measured `wc -l` exceeds the projection by 1-2 lines.
+
+2. **ADR-tk4-003 §"Post-Story-5 budget verification" added** (lines 78-86, round-2 addition). Mandates:
+   ```bash
+   python3 scripts/check_skill_budgets.py
+   ```
+   exit 0 BEFORE the Story 5 PR merges. Explicitly states: "Post-Wave-3 `governance/skill-budgets.json known_debt` MUST be empty; any non-empty `known_debt` entry blocks AC-1." Cross-file headroom is re-asserted (architect 291/300; ui 276/300; operations 258/300; quality 279/300; user-feedback 253/300; presentation ~163/300; godot 200/200 exactly).
+
+**Empirical re-check** with revised godot target:
+
+| File | tk4-001 round-2 after | + frontmatter (+3) | Tier ceiling | Status |
+|---|---:|---:|---:|---|
+| architect | 288 | 291 | 300 | OK (margin 9) |
+| presentation | ~160 | ~163 | 300 | OK (margin ~137) |
+| ui | 273 | 276 | 300 | OK (margin 24) |
+| operations | 255 | 258 | 300 | OK (margin 42) |
+| quality | 276 | 279 | 300 | OK (margin 21) |
+| user-feedback | 250 | 253 | 300 | OK (margin 47) |
+| **godot (revised)** | **197** | **200** | **200** | **OK (held EXACTLY at 200)** |
+
+All 7 in-scope files clear with `after + 3 ≤ ceiling` satisfied. The contract for Stage 6 to test is now: run `check_skill_budgets.py` and verify exit 0. **PASS.**
+
+---
+
+### Gate 5 — Stop-rule tripwire detection mechanism is testable (<15% prose-token reduction): **PASS** (round-1 NOT_PASS → round-2 PASS)
+
+**Round-1 finding**: BACKLOG-104 §Stop-rule trigger #2 specified the gate but no ADR or architecture artifact specified HOW Stage 6 detects the <15% condition, making the gate narrative-only.
+
+**Round-2 closure**: architecture-tk4-wave-3.md §"Stop-Rule Tripwire Mechanics" added (lines 72-81, round-2 addition). The section operationalizes the tripwire end-to-end:
+
+| Tripwire element | Specification (line in architecture-tk4-wave-3.md) |
+|---|---|
+| Source telemetry | `.delivery/telemetry/skill-loads.jsonl` post-merge dispatches; `prose_tokens` field made reliable by W3-18 (line 76) |
+| Calculation | mean response-prose tokens across the **first 3 post-merge dispatches** (line 77) |
+| Runnable command | `python3 scripts/compute_token_reduction.py --baseline pre-caveman-lite --window 3 --output .delivery/telemetry/stop-rule-tk4.txt` (line 77) |
+| Comparison baseline | Wave 2 archive `.delivery/memory/archive/run-2026-05-05-tk2.md` (line 78) |
+| Threshold | `<15%` reduction → HALT pipeline before W3-9 PR opens (line 79); Stories 1–4 + Story 7 admin may continue |
+| Recovery path | Trigger BACKLOG-102 stop-rule retro on caveman-lite; architect re-evaluates; outcome → Stage 4 round 3 or Wave 4 deferral (line 80) |
+| DoD citation artifact | `.delivery/telemetry/stop-rule-tk4.txt` MUST be present and parsed before Story 5 PR opens; narrative "looks fine" claims rejected (line 81) |
+| Flag-availability fallback | If `compute_token_reduction.py` lacks `--baseline pre-caveman-lite` support today, that flag addition folds into W3-18 telemetry hardening and ships before Story 5 (line 81) |
+
+The contract a Stage 6 Dev would now run is fully specified: command + baseline + window + threshold + output path + halt/proceed semantics. The gate is no longer narrative-only. **PASS.**
+
+---
+
+## Summary scoreboard
+
+| Gate | Round 1 | Round 2 | Blocking? |
 |---|---|---|---|
-| 1 — `prose_style` config key | Present, testable | Present, testable | Unchanged (still names YAML grammar, top-level placement, default) |
-| 2 — PROSE STYLE block contract | Present, testable | Present, testable | Unchanged (still names verbatim block, three loci, omission inverse test) |
-| 3 — Auto-clarity exemptions | Present, testable | Present, testable | Unchanged (still names in-prompt directive mechanism + Stage 6 validation surface) |
-| 4 — DoD validator verdict-prose treatment | Present, testable | Present, testable | Unchanged (per-section row table preserved verbatim) |
-| 5 — Cache-prefix re-freeze procedure | Present, testable | **Present, MORE testable** | **Strengthened**: prior reading "Phase 0 outside the prefix" was inverted (per ADR L117 "the prior reading inverts the measurement and is hereby corrected"); round-2 now grounds the freeze on measured byte positions (Phase 0 heading at byte 1803, INSIDE the 0..2048 slice), introduces explicit re-freeze command, separates structural rollback from runtime opt-out, and binds Stage 5 Plan as DoD-list custodian. |
-| 6 — Schema bump v2.9 | Present, testable | Present, testable | Unchanged (locus table preserved verbatim; v2.8 collision narrative preserved) |
+| 1. Decision elements TESTABLE across all 3 ADRs | PASS | **PASS** (regression) | — |
+| 2. Cache-prefix re-freeze verification step in ADR-tk4-003 | PASS | **PASS** (regression) | — |
+| 3. PRD AC-1..AC-7 traceability to ADR / Stage 6 dogfood | PASS | **PASS** (regression) | — |
+| 4. Post-Story-5 `check_skill_budgets.py` exit-0 verification | NOT_PASS | **PASS** (closed) | — |
+| 5. <15% prose-token reduction stop-rule tripwire mechanism | NOT_PASS | **PASS** (closed) | — |
 
-Element 5 round-2 rewrite explicitly satisfies the gate-criterion clause "MORE testable than round 1": round-1 lacked the explicit re-freeze command in the Decision body; round-2 includes the command verbatim in code-block form (ADR L121-125, point 4) and additionally binds Stage 5 Plan to list it as a Story DoD task. Two-interpretation reconciliation (cache-warmup prefix slice + whole-file SHA-256) is now explicit; one regeneration discharges both. No round-2 correction removed, weakened, or replaced any contract element.
-
----
-
-### Gate 7 (R2) — Cache-prefix one-time cost is testable (telemetry-observable second-dispatch behavior)
-
-**PASS.** ADR Decision Element 5 point 2 specifies the one-time-cost claim with an observable second-dispatch behavior:
-
-> "On the first dispatch post-merge, the warmup-cache slice for `delivery-flow/SKILL.md` is invalidated and re-read from disk (~2KB, one full prefix slice). Subsequent dispatches re-warm the cache normally. Cost is bounded: one full prefix re-read per cache-eviction cycle, not per dispatch."
-
-**Verification path** (telemetry-observable, no new instrumentation needed):
-
-| Step | Action | Expected observable |
-|---|---|---|
-| 1 | Inspect `.delivery/telemetry/skill-loads.jsonl` before merge | Baseline cache-hit / cache-miss pattern for `delivery-flow/SKILL.md` (W0-1 hook) |
-| 2 | Land Phase 0 edit + run `sha256sum > governance/cache-prefix-hash.txt`; commit both in one PR | Hash file flips from `9d4011d…` to new SHA-256 (single-line diff) |
-| 3 | Trigger first post-merge pipeline dispatch | First skill-load row shows cache miss / re-read (~2KB prefix slice) — the one-time cost |
-| 4 | Trigger second post-merge dispatch | Second skill-load row shows cache hit (cached prefix re-used) — the one-time-only claim is verified telemetry-observably |
-| 5 | Roll forward to dispatches 3-5 | All show cache hit (cost did not recur per dispatch) |
-
-The "one-time" assertion is therefore not hand-wavy — it is operationalized as: **second skill-load row for `delivery-flow/SKILL.md` shows cache hit, not cache miss**. The telemetry surface (`.delivery/telemetry/skill-loads.jsonl`, confirmed present and active per W0-1) is the test harness; no new instrumentation is required. Element 5 point 2's "Cost is bounded: one full prefix re-read per cache-eviction cycle, not per dispatch" is the falsifiable claim. The hash-file flip in step 2 is the secondary observable that confirms the re-freeze happened. Stage 6 dogfood gains an implicit data point (the 5-dispatch post-merge sample in PRD §8.2 doubles as the cache-cost verification window).
-
-Architecture summary §4 reinforces: "Cache-warmup mechanics see a one-time ~2KB prefix re-read on the first post-merge dispatch, then re-warm normally" — same observable, expressed at the architecture level.
+**Overall STATUS: DONE.** All 5 gates PASS. No NOT_PASS gates remain.
 
 ---
 
-## Verdict
+## Round-2 traceability matrix (closure evidence)
 
-ADR-tk3-001 round-2 retains all 6 contract elements with no regression in testability; the Element 5 rewrite is strictly stronger than round 1 (explicit re-freeze command, separated structural-vs-runtime rollback, measured byte positions correcting the prior prefix inversion). The one-time cache-cost claim is telemetry-observable via the existing W0-1 hook (second-dispatch cache hit on `delivery-flow/SKILL.md`), and all 6 BACKLOG-102 ACs trace to contract elements or Stage 6 dogfood. Stage 4 LIGHT round-2 DoD passes 7/7 gates.
+| Round-1 NOT_PASS gate | Required remediation | Round-2 artifact change | Location | Verifiable contract |
+|---|---|---|---|---|
+| Gate 4 — post-Story-5 budget exit-0 | Explicit step mandating `check_skill_budgets.py` exit 0 + godot escape hatch as MANDATORY (not conditional) | (a) ADR-tk4-001 §W3-7 deepened: godot 236 → 197 via extra `Architecture Guardrails` 1-line consolidation, escape hatch demoted to Stage-6 reserve. (b) ADR-tk4-003 new §"Post-Story-5 budget verification". | (a) ADR-tk4-001 lines 90-97; (b) ADR-tk4-003 lines 78-86 | `python3 scripts/check_skill_budgets.py` → exit 0 BEFORE Story 5 PR merges; `governance/skill-budgets.json known_debt` MUST be empty post-Wave-3 |
+| Gate 5 — <15% prose-tripwire detection mechanism | Specify runnable command + baseline + window + threshold + halt semantics for the BACKLOG-104 §Stop-rule trigger #2 | architecture-tk4-wave-3.md new §"Stop-Rule Tripwire Mechanics" | architecture-tk4-wave-3.md lines 72-81 | `python3 scripts/compute_token_reduction.py --baseline pre-caveman-lite --window 3 --output .delivery/telemetry/stop-rule-tk4.txt`; if `<15%` → HALT before Story 5 PR; output file is binding DoD citation artifact |
 
 ---
 
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/04-architect/dod/qa-review-r2.md
-SUMMARY: 7/7 R2 QA gates pass. R2 corrections preserve all 6 elements; Element 5 strictly stronger; one-time cache-cost telemetry-observable via W0-1.
-```
+## TARGET vs CURRENT discipline check (regression)
+
+Round-1 verdict preserved: ADRs continue to distinguish TARGET (post-extraction line counts) from CURRENT (verified `wc -l` snapshot from PRD §3). Round-2 godot revision (236 → 197) explicitly cites the verified CURRENT (236 from PRD §3) and projects TARGET (197) with the Δ math written out (`-38 -1 = 197`). No conflation introduced. Round-2 §"Cross-file headroom check" table (ADR-tk4-001 line 99-109) re-asserts the +3 frontmatter overlay against tier ceilings cleanly. Lesson honored.
+
+---
+
+**Verdict (≤3 sentences)**: All 5 blocking gates now PASS — both round-1 NOT_PASS gaps are closed with surgical, runnable additions (godot deepened to 197 + new §"Post-Story-5 budget verification" in ADR-tk4-003 for Gate 4; new §"Stop-Rule Tripwire Mechanics" in architecture-tk4-wave-3.md for Gate 5) and Gates 1-3 show no regression. The contracts a Stage 6 Dev must run are now fully specified end-to-end (commands, baselines, windows, thresholds, output artifacts, halt semantics), and the godot escape hatch is correctly demoted to a Stage-6 reserve rather than a PR-time conditional. Stage 4 Architect (LIGHT) round-2 DoD: **DONE** — pipeline may proceed to Stage 5.
+
+— QA Engineer (DoD validator, FRESH dispatch round 2), run-2026-05-09-tk4, Stage 4 (Architect, LIGHT) round 2.

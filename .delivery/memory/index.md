@@ -1,26 +1,26 @@
 # Delivery Pipeline Memory Index
 
-- total_runs: 32
+- total_runs: 33
 - last_updated: 2026-05-09
-- last_run_id: run-2026-05-05-tk3
+- last_run_id: run-2026-05-09-tk4
 
 ## Stage Health (last 5 runs)
-- Idea: 60% first-try (tk3 required R2 — caught upstream scope clarification)
-- Refine: 60% first-try (tk3 first-try; tk1 R1 misread gate criteria TARGET vs CURRENT)
-- Design: 100% first-try (when light, DX surface) — also valid SKIP for DX-only deviation
-- Architect: 60% first-try (tk3 required R2 — Phase-0 byte-offset inversion caught at Dev DoD; Wave 1+0 first-try)
-- Plan: 100% first-try (tk3 first-try; Wave 1 caught real budget-math defect via Dev runs-the-command)
-- Development: ~90% first-try per-story (tk3 first-try via mid-impl reference-extraction)
-- UAT: 80% first-try (tk3 required R2 — producer-validator separation + stale Wave-N-1 carry-over sweep)
+- Idea: 80% first-try (tk4 first-try; tk3 R2)
+- Refine: 80% first-try (tk4 + tk3 first-try)
+- Design: 100% first-try (when light); valid SKIP for DX-only deviation (tk4)
+- Architect: 60% first-try (tk4 R2 godot ceiling under mandatory-rollout; tk3 R2 byte-offset)
+- Plan: 80% first-try (tk4 R2 QA coverage tally; tk3 first-try)
+- Development: ~80% first-try per-story (tk4 5/7=71%; tk3 first-try via mid-impl extraction)
+- UAT: 100% first-try (tk4 first-try GO_WITH_NOTES; tk3 R2)
 
 ## Hot Lessons (inject into ALL agent prompts — top 6 by validation count + impact)
 
-1. **Developer DoD runs the command, does not read the command.** On any artifact that names executable commands (grep, bash, path lookups, config keys), Developer DoD must actually run them from the repo root — reading is not enough. Three consecutive validations (04-20, 04-22, 05-03) confirm: this catches regex/path/type bugs that all reasoning-only validators miss. Most recent: caught PRD's "11 SKILL.md files" claim (actually 13). "Light mode" means reduced prose depth, not reduced command execution.
+1. **Developer DoD runs the command, does not read the command.** On any artifact that names executable commands (grep, bash, path lookups, config keys), Developer DoD must actually run them from the repo root — reading is not enough. 10x validated across waves; tk4 caught Stage-5 QA tally drift (49 vs 52). Light mode = reduced depth, NOT reduced command execution.
 2. **PRD citation discipline is load-bearing for migration PRDs.** Every external claim cites a live URL; adversarial reviewer independently re-fetches load-bearing URLs.
-3. **Mixed-version CI guards need allowlist-over-deny.** Canonical set pinned in `.github/workflows/stale-model-id-guard.yml`; everything else dated is stale. Provenance-comment exemption (`^\s*#`) travels with ADR-002.
-4. **Honest readiness markers beat uniform.** Two-tier stamp (`opus-4-7` vs `opus-4-7-frontmatter-only`) names the work state. Uniform stamping lies cheaply.
-5. **Dogfood-before-edit is the highest-leverage tone-risk discipline.** Runs-the-command at Refine + runs-the-dogfood at Development. Prose edits only if the empirical check fails — prevents drift-by-edit.
-6. **Architect runs-the-command at DoD is binding for cache-prefix-impacting ADRs.** Run-2026-05-05-tk3 caught a Phase-0 byte-offset inversion (3603 vs actual 1803) that would have shipped a contract with backwards cache-prefix logic.
+3. **Mixed-version CI guards need allowlist-over-deny.** Canonical set pinned in `.github/workflows/stale-model-id-guard.yml`; provenance-comment exemption (`^\s*#`) travels with ADR-002.
+4. **Honest readiness markers beat uniform.** Two-tier stamp (`opus-4-7` vs `opus-4-7-frontmatter-only`) names the work state.
+5. **Dogfood-before-edit is the highest-leverage tone-risk discipline.** Runs-the-command at Refine + runs-the-dogfood at Development. Prose edits only if empirical check fails.
+6. **QA coverage validator MUST enumerate ALL initiative ACs by ID** (count carefully; don't trust upstream tally). tk4 Pippin caught BACKLOG-104 had 10 init ACs (not 7); 3 unmapped. Same risk class as runs-the-command. (validated:1)
 
 ## Active Decisions
 - [topics/claude-plugins-repo.md](topics/claude-plugins-repo.md) — keystone files, repo surface facts, config gotchas
@@ -43,8 +43,8 @@
 - [topics/skill-token-economy.md](topics/skill-token-economy.md) — 5 binding rulings + per-skill model map + tiered budgets; Wave 0/1/2/caveman-lite SHIPPED, Wave 3 PENDING (NEW)
 
 ## Archive
-- [archive/run-2026-05-05-tk3.md](archive/run-2026-05-05-tk3.md) — FEATURE caveman-lite: Tier-A 500/500 ceiling held via mid-impl extraction; cache-prefix re-freeze accepted (ADR-tk3-001); GO; AC-13 telemetry deferred; producer-validator + stale-sweep lessons surfaced
-- [archive/run-2026-05-05-tk2.md](archive/run-2026-05-05-tk2.md) — FEATURE Wave 2: doctrine extract + per-skill contracts/patterns + model split; GO with PASS_WITH_NOTES; 8 WIs in 5 stories
-- [archive/run-2026-05-04-tk1.md](archive/run-2026-05-04-tk1.md) — FEATURE Wave 1: cache freeze + stages.yml + frontmatter rollout + challenger hook; GO; 7 WIs in 3 file-scope stories, 0 defects
+- [archive/run-2026-05-09-tk4.md](archive/run-2026-05-09-tk4.md) — FEATURE Wave 3: 7 stories/35 ACs/0 defects; 7 over-budget files cleared; 6 carry-forwards discharged; paradigm pattern shipped; INITIATIVE COMPLETE 5/5
+- [archive/run-2026-05-05-tk3.md](archive/run-2026-05-05-tk3.md) — FEATURE caveman-lite: Tier-A 500/500 held via mid-impl extraction; cache re-freeze (ADR-tk3-001); producer-validator + stale-sweep lessons
+- [archive/run-2026-05-05-tk2.md](archive/run-2026-05-05-tk2.md) — FEATURE Wave 2: doctrine extract + contracts/patterns + model split; 8 WIs in 5 stories
 ## Initiative Retros
-- [initiative-retros/skill-token-economy-meta-retro-2026-05-09.md] — delivery-team token-economy: 4/5 waves SHIPPED, Wave 3 deferred
+- [initiative-retros/skill-token-economy-meta-retro-2026-05-09.md] — delivery-team token-economy: INITIATIVE COMPLETE 2026-05-09 (5/5 waves; amended post-Wave-3)

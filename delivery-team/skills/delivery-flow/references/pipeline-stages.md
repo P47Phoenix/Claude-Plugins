@@ -615,6 +615,20 @@ Execute user acceptance testing, prepare release artifacts, and get final approv
 - Development stage complete (all stories pass DoD)
 - `06-dev-notes.md` exists
 
+### Entry Step: Stale-Artifact Sweep (DEFECT-006 systemic fix, W3-17)
+
+Before any Stage 7 sub-flow runs, the orchestrator MUST sweep for stale Wave-N-1 carry-overs in the `07-uat/` namespace. Architect picked **Option A — banner each stale file** at `architecture-tk4-wave-3.md` §Open questions #3 (less destructive, easier to dogfood).
+
+```bash
+python3 scripts/sweep_stale_artifacts.py \
+    --pipeline-id <CURRENT_PIPELINE_ID> \
+    --stage .delivery/artifacts/07-uat
+```
+
+The helper scans `.delivery/artifacts/07-uat/**/*.md` for the `<!-- run: run-... -->` HTML-comment marker. Files whose marker does NOT match the current `pipeline_id` get a one-line `<!-- STALE-WAVE-N-1 (W3-17 banner): ... -->` prepended. The sweep is idempotent (already-bannered files are skipped). Use `--mode archive` instead to move stale files to `.delivery/artifacts/_archive/<orig-stage>/` if a destructive sweep is preferred.
+
+The sweep ALWAYS exits 0 — it is an entry-step warning, not a hard gate. The orchestrator announces the `stale=N | actioned=M` count line so downstream validators see the freshness state. DEFECT-006 closes upon orchestrator adoption of this entry-step.
+
 ### Sub-Flow
 1. **Invoke QA Engineer** [SEQUENTIAL] [required] (quality skill, task_type: test-plan)
    - SKILL: `delivery-team:quality`, TASK_TYPE: `test-plan`, ROLE: `qa`

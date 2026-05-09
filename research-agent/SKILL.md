@@ -1,6 +1,6 @@
 ---
 name: research-agent
-description: Production-grade research agent specializing in systematic, academically-grounded investigation. This skill should be used when users need to research technologies, investigate root causes, conduct literature reviews, evaluate options, compare alternatives, or synthesize multi-source findings. Auto-detects research type (Exploratory, Descriptive, Explanatory, Evaluative, Comparative) and routes to the appropriate pattern. Triggers on phrases like "research X", "investigate why", "compare options", "systematic review", "literature review", "evaluate impact", "root cause analysis", "how does X work", "what is known about X", "which should I choose".
+description: Production-grade research agent for systematic investigation. Auto-detects research type (Exploratory, Descriptive, Explanatory, Evaluative, Comparative) and dispatches to the matching sub-skill under skills/research-types/. Triggers on phrases like "research X", "investigate why", "compare options", "systematic review", "literature review", "evaluate impact", "root cause analysis", "how does X work", "what is known about X", "which should I choose".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-04-22
@@ -53,6 +53,20 @@ Before beginning any research, classify the research type using the following de
 If the type is ambiguous between two categories, state both options and ask the user which applies before proceeding.
 
 See `references/research-type-patterns.md` for worked routing examples and the full identification matrix.
+
+### Sub-Skill Dispatch (per ADR-tk4-002 paradigm pattern)
+
+After declaring the research type, dispatch to the matching paradigm sub-skill via the `Skill` tool with the names below. Sub-skills carry the `disable-model-invocation` flag (set to true) in their frontmatter; they are router-loaded only and not directly model-invocable.
+
+| Detected Type | Sub-Skill | Pattern Loaded |
+|---|---|---|
+| EXPLORATORY | `research-types-exploratory` (`skills/research-types/exploratory/SKILL.md`) | Pattern A: Discovery Report |
+| DESCRIPTIVE | `research-types-descriptive` (`skills/research-types/descriptive/SKILL.md`) | Pattern B: Landscape Map |
+| EXPLANATORY | `research-types-explanatory` (`skills/research-types/explanatory/SKILL.md`) | Pattern C: Causal Analysis |
+| EVALUATIVE | `research-types-evaluative` (`skills/research-types/evaluative/SKILL.md`) | Pattern D: Impact Assessment |
+| COMPARATIVE | `research-types-comparative` (`skills/research-types/comparative/SKILL.md`) | Pattern E: Decision Matrix |
+
+The sub-skill loads ONLY its own type-specific pattern + phase adaptations. The full pattern catalogue retained below in this parent SKILL.md is the canonical reference for human readers and pre-Story-4 backward compatibility.
 
 ---
 

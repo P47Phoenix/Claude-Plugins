@@ -37,6 +37,22 @@ state.
 - **Artifacts** — `.delivery/artifacts/NN-stage/role/*.md`, the only place
   domain outputs live.
 
+### Per-skill roster
+
+| Skill | Roles / Purpose |
+|-------|----------------|
+| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard. Primitives: shared `constraints.yml` (Refine + Architect), configurable Architecture Board, Transformation Planning sub-workflow |
+| `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
+| `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading) + foundational clean code standards |
+| `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) + foundational clean code standards |
+| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis. Paradigm sub-skills under `architect/paradigms/` (volatility, ddd) with router-based dispatch. Supports `transformation-planning` task type (AS-IS → TO-BE → Roadmap) for brownfield migrations |
+| `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
+| `operations/` | DevOps, Release Manager, Technical Writer |
+| `ui/` | UX Designer, UI Designer, Game UI Designer |
+| `user-feedback/` | Simulated persona-based testing (20+ built-in personas across gamers, web users, enterprise, demographics) |
+| `alias-creator/` | Creates personality-injected aliases from 13 built-in themes |
+| `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (Assemble, Content Gate, Draft, Compose, Review Gate, User Review). 9 types, 4 formats (structured-markdown, marp, paste-ready, pptx), narrative intelligence (4 editorial passes), light mode |
+
 ```mermaid
 flowchart TD
   User([User])

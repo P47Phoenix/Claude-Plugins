@@ -21,3 +21,9 @@ delivery-team Wave 3 SHIPPED (BACKLOG-104 marked DONE; Wave 3 entry in `.deliver
 - `.delivery/backlog/BACKLOG-104-skill-token-economy-delivery-team-wave-3.md` (the predecessor that must close first)
 - `.delivery/backlog/BACKLOG-100-skill-token-economy-delivery-team.md` (the Wave 0 template BACKLOG-105 will mirror)
 - User feedback: `feedback_route_through_po.md`, `feedback_team_autonomy.md`
+
+## Status update 2026-05-09 (post-Wave-3)
+- Trigger condition met: Wave 3 SHIPPED (run-2026-05-09-tk4) at this commit
+- Decision now CLOSED (defer expired); BACKLOG-105 mtg-commander Wave 0 is now ELIGIBLE to author
+- Recommended next action: dedicated session to author BACKLOG-105 + invoke delivery-flow per same binding-decisions-in-memory pattern (now validated:5 across delivery-team waves)
+- This run does NOT author BACKLOG-105 (out of Wave 3 scope; would conflate two initiatives)

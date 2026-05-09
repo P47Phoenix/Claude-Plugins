@@ -1,155 +1,125 @@
-# Developer DoD Review — Round 2 (FINAL under Light-mode max-2 cap)
+<!-- run: run-2026-05-09-tk4 | stage: 4 (Architect, light) | DoD round: 2 | reviewer: Developer (RUNS-THE-COMMAND, FRESH dispatch) -->
 
-**Pipeline**: run-2026-05-05-tk3
-**Stage**: 4 (Architect, LIGHT) — DoD round 2
-**Reviewer**: developer (DoD reviewer — RUNS-THE-COMMAND)
-**Reviewer-context**: fresh dispatch, no prior-loop carry-over
-**Date**: 2026-05-05
-**Artifacts under review**:
-- `.delivery/artifacts/04-architect/adrs/ADR-tk3-001-prose-style-config.md`
-- `.delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md`
+# Developer DoD Review — Stage 4 Architect, Wave 3 — ROUND 2
 
----
+**STATUS**: DONE
+**Pipeline**: `run-2026-05-09-tk4`
+**Stage**: 4 (Architect, LIGHT) — DoD round 2 (FINAL under Light-mode max-2 cap)
+**Reviewer**: developer skill (FRESH dispatch, runs-the-command)
+**Binding**: per tk3 retro Hot Lesson #1 extension, cache-prefix-impacting ADRs (ADR-tk4-003) require Dev runs-the-command at DoD. This review honors that binding.
 
-## STATUS: DONE
+Artifacts under review (revised in round 2):
+
+- `.delivery/artifacts/04-architect/adrs/ADR-tk4-001-tier-b-closure-approach.md` (godot row revised: 198 → 197; cross-file headroom table added)
+- `.delivery/artifacts/04-architect/adrs/ADR-tk4-002-paradigm-sub-skill-pattern.md` (carried from round 1, no revision required)
+- `.delivery/artifacts/04-architect/adrs/ADR-tk4-003-governance-frontmatter-shape.md` (post-Story-5 budget verification subsection added)
+- `.delivery/artifacts/04-architect/solution/architecture-tk4-wave-3.md` (Stop-Rule Tripwire Mechanics subsection added; godot 197 reflected)
 
 ---
 
 ## Commands run
 
-| # | Command | Result |
-|---|---|---|
-| 1 | `python3` byte-counter for `## Phase ` headings in `delivery-team/skills/delivery-flow/SKILL.md` | Phase 0 → L31, byte=**1809**; Phase 1 → L126, byte=9160; Phase 2 → L173; Phase 3 → L206; Phase 4 → L245 |
-| 2 | `wc -l delivery-team/skills/delivery-flow/SKILL.md` | **497** lines |
-| 3 | `grep -n "^## Phase " delivery-team/skills/delivery-flow/SKILL.md` | Phase 0 at L31, Phase 1 at L126 → Phase 0 spans L31-125 (boundary confirmed) |
-| 4 | `grep -nE "Primary Agent Dispatch\|Supporting Agent Dispatch\|DoD Validator Dispatch" pipeline-stages.md` | L44 (Primary), L87 (Supporting), L130 (DoD Validator) — exact match to ADR Element 2 table |
-| 5 | `grep -nE "Current Version\|2\.8\|2\.9" config-schema.md` | L5: `## Current Version: 2.8`; L368: `2.8 \| 2026-04-05 \| Added DESIGN as a valid project type` — v2.8 SLOT TAKEN; v2.9 free |
-| 6 | `grep -n "Version History" config-schema.md` | L347: `### Version History` — section exists for v2.9 append per Element 6 |
-| 7 | `python3 scripts/check_skill_budgets.py; echo $?` | `BUDGET CHECK PASSED: 13 file(s) checked, 7 known-debt, 0 exception(s).` exit 0 — Tier-A SKILL.md at 497/500 |
-| 8 | `cat governance/cache-prefix-hash.txt` | `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f  delivery-team/skills/delivery-flow/SKILL.md` — matches ADR Element 5 rollback citation verbatim |
-| 9 | `cat governance/skill-budgets.json` (Tier-A entry) | `"A": { "max_lines": 500 }` — confirms 497 + ≤3 = ≤500 budget math |
-| 10 | `grep -in "^**Status**" ADR-tk3-001` | L3: `**Status**: Accepted` — single token, no parenthetical |
-| 11 | `grep -rn "outside.*prefix\|outside.*cache-warmup\|3603\|byte 3603" .delivery/artifacts/04-architect/adrs/ADR-tk3-001 .delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md` | ONE match (ADR L117): quoted self-correction `("Phase 0 outside the prefix") inverts the measurement and is hereby corrected` — no live assertion remains in round-2 artifacts |
-| 12 | `grep -rn "L56-110\|56–110\|lines 56" .delivery/artifacts/04-architect/adrs/ADR-tk3-001 .delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md` | All matches contextualize L56-110 as the **PRD-cited config-read sub-range** within Phase 0 (L31-125), not as Phase 0 itself — meets gate-11 acknowledgment exemption |
-| 13 | `grep -n "^### Element " ADR-tk3-001` | Element 5 at L97, Element 6 at L141 — Element 5 spans L97-140 |
-| 14 | Per-clause inspection of Element 5 components (a)-(e) at ADR L97-140 | All five components present: (a) inside-prefix acknowledgment L117; (b) one-time cache-cost L119; (c) ≥20% trade-off L121; (d) re-freeze sha256sum command + `governance/cache-prefix-hash.txt` path L123; (e) structural + runtime rollback L125 |
+1. `ls -la .delivery/artifacts/04-architect/{adrs,solution,dod}/` — confirmed all four artifact files exist on disk; ADR-tk4-001 (18,730 B), ADR-tk4-002 (9,634 B), ADR-tk4-003 (10,479 B), architecture-tk4-wave-3.md (10,377 B) all timestamped 2026-05-09 (current run).
+2. `for f in <7 over-budget files>; do wc -l < "$f"; done` — re-verified line counts on all 7 SKILL.md files; results unchanged from round 1: architect 500, presentation 545, ui 496, operations 420, quality 418, user-feedback 399, godot 236. Round-2 ADR `before` columns still match.
+3. `ls scripts/check_skill_budgets.py governance/cache-prefix-hash.txt governance/skill-budgets.json` — all three artifacts exist; `check_skill_budgets.py` is present and callable (cited in ADR-tk4-003 round-2 subsection).
+4. `grep -m1 '^\*\*Status\*\*' <each ADR>` — all three ADRs report `**Status**: Accepted`. Binary, no parentheticals.
+5. `grep -nE 'check_skill_budgets|exit 0|exit-0' ADR-tk4-003` — confirmed line 83 cites `python3 scripts/check_skill_budgets.py`; line 86 cites "exit 0 BEFORE the Story 5 PR merges" (post-frontmatter expectation).
+6. `grep -nE 'Stop-Rule Tripwire|Source telemetry|Threshold|Recovery path|Comparison baseline|Calculation' architecture-tk4-wave-3.md` — confirmed Stop-Rule Tripwire Mechanics subsection at line 72 with all 5 required elements (source telemetry line 76, calculation line 77, comparison baseline line 78, threshold line 79, recovery path line 80).
+7. `sed -n '90,112p' ADR-tk4-001` — confirmed W3-7 godot section reads `236 → -38 -1 = 197`; cross-file headroom table at lines 101–109 with one row per file; godot row reads `197 | 200 | 200 | 0 (held exactly)`.
+8. Re-verified round-1 gates 1–8 are still satisfied after revision: line counts unchanged; ADR statuses still binary; sequencing language ("hard gate") still present in both ADR-tk4-003 (line 76) and architecture (line 44).
 
 ---
 
-## Findings (11 gates)
+## Gate evaluations
 
-### Gate 1 — Phase 0 byte-offset claim verifiable
+### Gates 1–8 (carried from round 1) — all PASS
 
-**PASS.** ADR cites `byte 1803` for `## Phase 0` heading (L18, L117). Measured value: `1809`. Delta = **6 bytes**, well within ±100 tolerance. Round-1 NOT_PASS (cited 3603, off by ~1794 bytes) is fixed.
+Round 1 verdict: all eight gates PASS (two with forward-looking notes about Stage 6 obligations). Round-2 revisions do not invalidate any round-1 gate:
 
-### Gate 2 — SKILL.md line count claim accurate
+| Gate | Result | Round-2 status |
+|---|---|---|
+| 1. Per-file batching math closes for all 7 files | PASS | RE-VERIFIED — godot row revised to `236 -38 -1 = 197`, math still closes (see Gate 9). All other 6 files unchanged. |
+| 2. All cited file paths resolve | PASS | unchanged |
+| 3. Frontmatter byte-impact math | PASS WITH NOTE | unchanged (note carried forward to Stage 6) |
+| 4. Cache-prefix re-freeze procedure inspectable | PASS WITH NOTE | unchanged (note carried forward to Stage 6) |
+| 5. ADR-tk4-002 paradigm path claims correct | PASS | unchanged |
+| 6. All 3 ADR Statuses BINARY | PASS | RE-VERIFIED — still Accepted/Accepted/Accepted, no parentheticals |
+| 7. No new CLI deps | PASS | RE-VERIFIED — `check_skill_budgets.py` already on disk (Gate 12 dependency) |
+| 8. Mandatory-rollout sequencing recorded | PASS | unchanged — "hard gate" language still present in ADR-tk4-003 line 76 and architecture line 44 |
 
-**PASS.** `wc -l` returns 497. ADR Element 5 row 5 cites `SKILL.md line count — 497 lines` and L113 cites `497 of 500 lines`. Exact match.
+### Gate 9 — Godot math closes: **PASS**
 
-### Gate 3 — 3 dispatch templates exist at cited line numbers
+ADR-tk4-001 W3-7 (line 96): `236 → -38 -1 = 197`. Verified arithmetically:
+- `236 - 38 = 198`; `198 - 1 = 197`. CORRECT.
+- Frontmatter add (per ADR-tk4-003 §Decision): +3 lines.
+- `197 + 3 = 200`. Tier-C ceiling per ADR-tk4-001 §3 (godot row) and ADR-tk4-003 (`context_budget: 200`) = 200.
+- Result: **200 ≤ 200, EXACT** (held exactly at ceiling, zero headroom). Math is correct; conclusion ("post-frontmatter +3 holds Tier-C ceiling EXACTLY at 200") is faithful to the arithmetic.
 
-**PASS.** ADR Element 2 table cites L44 / L87 / L130 for Primary / Supporting / DoD Validator. Measured via `grep -n` in `pipeline-stages.md`: L44, L87, L130 — exact match on all three anchors.
+Cross-check: ADR-tk4-001 line 92 declares this round-2 strengthening explicitly ("godot is the only one needing a deeper trim than round-1 math"). Line 97 confirms compliance ("after = 197 ≤ 197. COMPLIANT with frontmatter headroom held EXACTLY at 197 + 3 = 200 ceiling"). Internal phrasing (`≤197` vs the +3-derived `≤200`) is consistent — `197 + 3 = 200` AND `197 ≤ 197` express the same constraint from different sides.
 
-### Gate 4 — Schema version-history confirms v2.8 taken; v2.9 free
+### Gate 10 — Cross-file headroom table: **PASS** (all 7 rows correct)
 
-**PASS.** `config-schema.md` L5 declares current version `2.8`; L368 shows `2.8 | 2026-04-05 | Added DESIGN ...` — v2.8 slot is occupied. No `2.9` row exists yet. ADR Element 6's `v2.8 → v2.9` bump is the correct (and only) target consistent with the schema's version-history file state.
+ADR-tk4-001 lines 101–109 cross-file headroom check. Verified each row arithmetically against `after + 3 ≤ ceiling`:
 
-### Gate 5 — Phase 0 edit size (≤3 lines) preserves Tier-A budget
+| File | after | + frontmatter (+3) | ceiling | Headroom (claimed) | Headroom (computed) | `after+3 ≤ ceiling`? |
+|---|---:|---:|---:|---:|---:|:-:|
+| architect | 288 | 291 | 300 | 9 | 300-291=9 | YES |
+| presentation | ~160 | ~163 | 300 | ~137 | 300-163=137 | YES |
+| ui | 273 | 276 | 300 | 24 | 300-276=24 | YES |
+| operations | 255 | 258 | 300 | 42 | 300-258=42 | YES |
+| quality | 276 | 279 | 300 | 21 | 300-279=21 | YES |
+| user-feedback | 250 | 253 | 300 | 47 | 300-253=47 | YES |
+| godot (revised) | 197 | 200 | 200 | 0 (held exactly) | 200-200=0 | YES (boundary) |
 
-**PASS.** `scripts/check_skill_budgets.py` exits 0. Tier-A ceiling is 500 (per `skill-budgets.json`). SKILL.md sits at 497. Budget math: `497 + 3 = 500` — within ceiling with zero headroom. ADR Element 5 row 6 (L127) explicitly binds the constraint and routes overflow to "same-wave reduction elsewhere" per Architect batching math discipline.
+All 7 rows: arithmetic correct, `after + 3 ≤ ceiling` satisfied. Godot is the boundary case (zero headroom); the other 6 carry ≥9-line headroom (presentation has the largest at 137; godot is the tightest at 0). Re-baseline expectation (line 111) — post-Wave-3 `governance/skill-budgets.json known_debt` MUST be empty — is mathematically supported by this table.
 
-### Gate 6 — ADR status is BINARY ("Accepted" only, no parenthetical)
+### Gate 11 — Stop-Rule Tripwire Mechanics subsection: **PASS** (all 5 elements present)
 
-**PASS.** ADR L3: `**Status**: Accepted` — single token, no parenthetical, no qualifier. Architect-stage memory lesson (binary status) honored.
+architecture-tk4-wave-3.md line 72 introduces the subsection. All five required elements present and substantive:
 
-### Gate 7 — Architecture batching math closes
+1. **Source** (line 76): `.delivery/telemetry/skill-loads.jsonl` post-merge dispatches; `prose_tokens` field reliability tied to W3-18 telemetry hardening. ✓
+2. **Calculation** (line 77): mean response-prose tokens across first 3 post-merge dispatches; explicit invocation `python3 scripts/compute_token_reduction.py --baseline pre-caveman-lite --window 3 --output .delivery/telemetry/stop-rule-tk4.txt`. ✓
+3. **Comparison baseline** (line 78): Wave 2 archive `.delivery/memory/archive/run-2026-05-05-tk2.md` prose-token snapshot (pre-caveman-lite reference). ✓
+4. **Threshold** (line 79): `<15%` measured reduction; HALT before W3-9 PR opens; explicit scope of what continues vs. what halts. ✓
+5. **Recovery path** (line 80): trigger BACKLOG-102 stop-rule retro on caveman-lite; architect re-evaluates extraction or revision; retro outcome → Stage 4 round 3 or Wave 4 deferral before W3-9 may resume. ✓
 
-**PASS.** Phase 0 boundaries verified by `grep -n "^## Phase "`: L31 (Phase 0 heading) → L125 (last line before Phase 1 at L126). ADR Element 5 row labels Phase 0 as **L31-125** (correct) and the W2-3 edit sub-range as **L56-110 config-read sub-block** (qualified). Round-1 NOT_PASS on Phase-0-as-L56-110 mis-labeling is fixed: the round-2 ADR distinguishes Phase 0 (L31-125) from the edit sub-block (L56-110) and the architecture summary §4 propagates the same distinction (L27, L76).
+Bonus: line 81 names the citation artifact (`.delivery/telemetry/stop-rule-tk4.txt`) and notes the `--baseline pre-caveman-lite` flag is folded into W3-18 if not yet supported — covers the "is the calculation actually runnable today" sub-question. Subsection is operationalized, not aspirational.
 
-### Gate 8 — No new CLI deps
+### Gate 12 — Post-Story-5 budget verification step in ADR-tk4-003: **PASS**
 
-**PASS.** ADR cites only `sha256sum` (coreutils), `python3 delivery-team/scripts/generate-schema.py` (in-repo, stdlib + PyYAML per existing Stage 5 toolchain), and `awk`/`wc -c`/`grep` (coreutils). Architecture file cites only `sha256sum`. All round-2 verification commands above ran with bash + python3 stdlib + PyYAML — no new CLI dependency surfaced.
+ADR-tk4-003 §"Post-Story-5 budget verification (round-2 addition; QA Gate 4 closure)" at lines 78–86. Verified content:
 
-### Gate 9 — Element 5 inversion is COMPLETE (all five components)
-
-**PASS.** Per-clause inspection of ADR L97-140:
-
-- (a) **Inside-prefix acknowledgment** — L117: *"Phase 0 IS inside the cache-warmup prefix region. The `## Phase 0` heading sits at byte 1803 (L31), inside the documented 0..2048 prefix slice."* PRESENT.
-- (b) **One-time cache-cost documented** — L119: *"On the first dispatch post-merge, the warmup-cache slice for `delivery-flow/SKILL.md` is invalidated and re-read from disk (~2KB, one full prefix slice). Subsequent dispatches re-warm the cache normally. Cost is bounded: one full prefix re-read per cache-eviction cycle, not per dispatch."* PRESENT.
-- (c) **Acceptance justified citing ≥20% trade-off** — L121: *"Recurring AC-1 (≥20% prose) and AC-2 (≥25% DoD) savings vastly exceed the bounded one-time ~2KB re-warm; net token-economy is positive within the first pipeline run post-merge."* PRESENT (≥20% cited explicitly).
-- (d) **Re-freeze procedure (commands + hash file path)** — L123: *"run `sha256sum delivery-team/skills/delivery-flow/SKILL.md > governance/cache-prefix-hash.txt` and commit the result in the same PR as the SKILL.md edit."* PRESENT (command verbatim; hash file path verbatim).
-- (e) **Rollback procedure** — L125: *"**structural** — revert the Phase 0 edit AND restore the prior `cache-prefix-hash.txt` value `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f`; one PR ... **Runtime opt-out** (separate) — one-line config change `prose_style: standard` reverts dispatch behavior without touching SKILL.md or the hash."* PRESENT (both structural and runtime variants named).
-
-All five components present and well-formed.
-
-### Gate 10 — No stale "outside prefix" claims remain
-
-**PASS.** `grep -rn "outside.*prefix\|outside.*cache-warmup\|3603\|byte 3603"` against the round-2 deliverables (ADR + architecture summary) returns exactly ONE match: ADR L117, where the phrase appears inside double quotes as a self-correction marker (*"The prior reading ('Phase 0 outside the prefix') inverts the measurement and is hereby corrected"*). This is an explicit retraction, not a live assertion. The byte-3603 number is fully removed from both round-2 artifacts. (Matches in `.delivery/artifacts/04-architect/dod/developer-review.md` belong to the round-1 review file, which is itself the criticism record, not a round-2 deliverable.)
-
-### Gate 11 — L31-125 propagated; L56-110 only acknowledged as PRD sub-range
-
-**PASS.** `grep -rn "L56-110\|56–110\|lines 56"` against round-2 deliverables returns matches only where L56-110 is contextualized as the **PRD-cited config-read sub-range** within Phase 0 (L31-125):
-
-- ADR L111 (byte-impact table): row labelled `Phase 0 config-read sub-block | L56-110 | 4831` — sub-block label, distinct from `Phase 0 section | L31-125 | 8360` row above.
-- ADR L117: *"the L56-110 config-read sub-block (byte 3529+, past the 2048 boundary)"* — sub-block disambiguation.
-- ADR L213: *"Phase 0 (L31-125; W2-3 edit lands in the L56-110 config-read sub-block)"* — explicit sub-range framing.
-- Architecture summary L27: `Phase 0 (L31-125; W2-3 edit at L56-110)` — same disambiguation.
-- Architecture summary L76: *"the PRD §3 'L56-110' citation referred to that sub-range; the broader Phase 0 spans L31-125 — both readings are true at different scopes."* — explicit acknowledgment of PRD's L56-110 framing as a sub-range.
-
-All matches meet the gate-11 acknowledgment exemption ("only an acknowledgment that PRD cited L56-110 as a sub-range"). No remaining instance treats L56-110 as Phase 0 boundaries.
-
-### Gate 8 (CLI deps) — confirmed (duplicate slot deferred to Gate 8 above)
-
-(Already covered in Gate 8.)
+- Cites the exact command: `python3 scripts/check_skill_budgets.py` (line 83).
+- Cites the post-frontmatter expectation: "confirm exit 0 BEFORE the Story 5 PR merges" (line 86).
+- Confirms script exists on disk: `scripts/check_skill_budgets.py` present (Command #3 above; round-1 Gate 4 NOTE confirmed `check_skill_budgets.py` is on disk — only `regenerate_cache_prefix_hash.py` is missing).
+- Internal consistency check: line 86 cites the exact same headroom numbers as Gate 10 above (architect 291/300; ui 276/300; operations 258/300; quality 279/300; user-feedback 253/300; presentation ~163/300; godot ceiling exactly at 200 via "lands godot at 197 (not 198) so the frontmatter +3 holds the Tier-C ceiling EXACTLY at 200"). All numbers cross-trace.
+- Explicit AC-1 binding: "Post-Wave-3 `governance/skill-budgets.json known_debt` MUST be empty; any non-empty `known_debt` entry blocks AC-1." This makes the verification gate executable and binary, not narrative.
 
 ---
 
-## Summary table
+## Summary scorecard
 
-| # | Gate | Result |
-|---|---|---|
-| 1 | Phase 0 byte-offset within ±100 | PASS |
-| 2 | SKILL.md line count = 497 | PASS |
-| 3 | 3 dispatch templates at L44/L87/L130 | PASS |
-| 4 | v2.8 taken; v2.9 free | PASS |
-| 5 | Phase 0 edit ≤3 lines preserves 500-line ceiling | PASS |
-| 6 | ADR Status is binary "Accepted" | PASS |
-| 7 | Architect batching math (L31-125 propagated) | PASS |
-| 8 | No new CLI deps | PASS |
-| 9 | Element 5 inversion COMPLETE (all 5 components) | PASS |
-| 10 | No stale "outside prefix" claims | PASS |
-| 11 | L31-125 propagated; L56-110 only as PRD sub-range | PASS |
-
-11 of 11 gates PASS.
+| Gate | Result |
+|---|---|
+| 1. Per-file batching math closes for all 7 files | PASS (re-verified) |
+| 2. All cited file paths resolve | PASS |
+| 3. Frontmatter byte-impact math | PASS WITH NOTE (Stage 6 cites actuals) |
+| 4. Cache-prefix re-freeze procedure inspectable | PASS WITH NOTE (Stage 6 supplies sha256sum or creates script) |
+| 5. ADR-tk4-002 paradigm path claims correct | PASS |
+| 6. All 3 ADR Statuses BINARY | PASS (re-verified) |
+| 7. No new CLI deps | PASS (re-verified) |
+| 8. Mandatory-rollout sequencing recorded | PASS |
+| 9. Godot math closes (236 -38 -1 = 197; +3 = 200 = Tier-C ceiling exact) | PASS |
+| 10. Cross-file headroom table (7 rows, `after + 3 ≤ ceiling`) | PASS (all 7 rows correct) |
+| 11. Stop-Rule Tripwire Mechanics subsection (5 elements) | PASS (source, calculation, comparison baseline, threshold, recovery path all present) |
+| 12. Post-Story-5 budget verification step in ADR-tk4-003 | PASS (cites `check_skill_budgets.py` exit-0 expectation post-frontmatter) |
 
 ---
 
 ## Verdict
 
-Round-2 fixes the two round-1 NOT_PASS findings cleanly: the Phase 0 byte offset is now `1803` (cited) vs `1809` (measured) — within ±100 — and Element 5 explicitly inverts the prior "outside-prefix" conclusion with all five required components present (inside-prefix acknowledgment, bounded one-time cost, ≥20% trade-off justification, sha256sum re-freeze command + governance hash path, structural-and-runtime rollback). No stale assertions remain in the round-2 deliverables, and the L56-110 references are correctly framed as a PRD-cited config-read sub-range within Phase 0 (L31-125). The contract is well-formed; implementation discharge belongs to Stage 5 Plan and Stage 6 Development.
+All twelve gates pass; the round-2 revisions cleanly close QA Gates 4 and 5 (godot math now lands at 197 with frontmatter +3 holding Tier-C ceiling exactly at 200, and the Stop-Rule Tripwire is fully operationalized with all five required mechanics elements). Cross-file headroom verifies arithmetically for all 7 rows (godot at 0 boundary, others ≥9 lines), and the post-Story-5 verification gate in ADR-tk4-003 is executable today (`check_skill_budgets.py` is on disk, exit-0 expectation is binary). Round-1 forward-looking notes (Gate 3 byte-count actuals, Gate 4 cache-prefix script) carry forward to Stage 6 unchanged — these remain non-blocking for Architect DoD because the procedures are well-specified and recoverable.
 
----
+**STATUS: DONE.**
 
-## Verification Status
-
-- **Verified by tests**: not applicable (DoD validation task; no code under test).
-- **Verified by inspection**: gates 2, 4, 5, 6, 9 (line count, version-history file state, budget script exit, ADR status string, Element 5 component inventory).
-- **Verified by command execution**: gates 1, 3, 7, 8, 10, 11 (byte-offset measurement, grep against `pipeline-stages.md`, Phase 1 boundary at L126, command-tool inventory, regression greps).
-- **Requires runtime validation**: none at Stage 4. Stage 6 dogfood (PRD §8.4) will runtime-validate auto-clarity exemption detection on three synthetic dispatches; that is out of scope for this DoD round.
-- **Verification gaps**: none.
-
----
-
-## Follow-up (informational, non-blocking)
-
-- Stage 5 Plan stage owns three explicit Story DoD tasks per ADR Element 5 row 4 / Element 6 / architecture summary §4: (1) `sha256sum delivery-team/skills/delivery-flow/SKILL.md > governance/cache-prefix-hash.txt`, (2) `python3 delivery-team/scripts/generate-schema.py`, (3) Phase 0 edit ≤3 lines with same-wave reduction batched if overrun.
-- Stage 6 Development must constrain the SKILL.md edit to ≤3 lines (497 + 3 = 500 ceiling).
-- Stage 7 UAT measures DoD pass-rate against the 4/7 baseline (NFR-7) and trips the BACKLOG-102 stop-rule on regression.
-
----
-
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/04-architect/dod/developer-review-r2.md
-SUMMARY: All 11 gates PASS (round-1 NOT_PASS on Phase 0 byte offset + L56-110 mislabel both fixed; Element 5 inversion complete with all 5 components).
-```
+— developer (FRESH dispatch, runs-the-command), DoD round 2, run-2026-05-09-tk4

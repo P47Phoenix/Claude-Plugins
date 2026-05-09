@@ -1,0 +1,157 @@
+name: Skill Fitness Review Reminder
+
+on:
+  schedule:
+    # Weekly on Mondays at 14:00 UTC. Catches every fitness_review_due:
+    # date with at least 7 days of warning before expiry.
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan-due-dates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan SKILL.md frontmatter for upcoming fitness_review_due
+        id: scan
+        run: |
+          set -uo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          import datetime as dt
+          from pathlib import Path
+
+          today = dt.date.today()
+          warn_window_days = 30
+          overdue_p1_days = 180
+
+          due_soon = []
+          overdue = []
+
+          for skill_md in Path('.').rglob('SKILL.md'):
+              # Skip node_modules and any vendored copies under .git
+              parts = set(skill_md.parts)
+              if 'node_modules' in parts or '.git' in parts:
+                  continue
+              text = skill_md.read_text(errors='replace')
+              if not text.startswith('---'):
+                  continue
+              # Extract frontmatter block
+              end = text.find('\n---', 3)
+              if end == -1:
+                  continue
+              fm = text[3:end]
+              m = re.search(r'^\s*fitness_review_due:\s*(\S+)\s*$', fm, re.M)
+              if not m:
+                  continue
+              raw = m.group(1).strip().strip('"').strip("'")
+              try:
+                  due = dt.date.fromisoformat(raw)
+              except ValueError:
+                  print(f"WARN: unparseable fitness_review_due in {skill_md}: {raw}")
+                  continue
+              days = (due - today).days
+              row = (str(skill_md), raw, days)
+              if days < -overdue_p1_days:
+                  overdue.append(row)
+              elif days <= warn_window_days:
+                  due_soon.append(row)
+
+          due_soon.sort(key=lambda r: r[2])
+          overdue.sort(key=lambda r: r[2])
+
+          out_path = os.environ['GITHUB_OUTPUT']
+          with open(out_path, 'a') as fh:
+              fh.write(f"due_soon_count={len(due_soon)}\n")
+              fh.write(f"overdue_count={len(overdue)}\n")
+
+          # Emit a markdown report to the step summary
+          summary_path = os.environ.get('GITHUB_STEP_SUMMARY', '/dev/null')
+          with open(summary_path, 'a') as fh:
+              fh.write("# Skill Fitness Review Scan\n\n")
+              fh.write(f"Scan date: {today.isoformat()}\n\n")
+              if overdue:
+                  fh.write(f"## OVERDUE (>{overdue_p1_days} days past due) — P1\n\n")
+                  fh.write("| Skill | Due | Days overdue |\n")
+                  fh.write("|---|---|---|\n")
+                  for path, raw, days in overdue:
+                      fh.write(f"| `{path}` | {raw} | {-days} |\n")
+                  fh.write("\n")
+              if due_soon:
+                  fh.write(f"## Due within {warn_window_days} days\n\n")
+                  fh.write("| Skill | Due | Days remaining |\n")
+                  fh.write("|---|---|---|\n")
+                  for path, raw, days in due_soon:
+                      fh.write(f"| `{path}` | {raw} | {days} |\n")
+                  fh.write("\n")
+              if not due_soon and not overdue:
+                  fh.write("No skills due within the warning window. Nothing to do.\n")
+
+          # Persist a json artifact for downstream issue-open step
+          import json
+          Path('fitness-review-scan.json').write_text(json.dumps({
+              'scan_date': today.isoformat(),
+              'due_soon': [{'path': p, 'due': d, 'days_remaining': n} for p, d, n in due_soon],
+              'overdue': [{'path': p, 'due': d, 'days_overdue': -n} for p, d, n in overdue],
+          }, indent=2))
+          PY
+
+      - name: Open or update tracking issue
+        if: steps.scan.outputs.due_soon_count != '0' || steps.scan.outputs.overdue_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DUE_COUNT: ${{ steps.scan.outputs.due_soon_count }}
+          OVERDUE_COUNT: ${{ steps.scan.outputs.overdue_count }}
+        run: |
+          set -uo pipefail
+          # Build issue body from the scan json (no untrusted interpolation
+          # in this run: block — DUE_COUNT/OVERDUE_COUNT come from our own
+          # script output, and the body content is read from a checked-in
+          # file path).
+          BODY_FILE=$(mktemp)
+          {
+            echo "Automated fitness-review reminder."
+            echo ""
+            echo "- Skills due within 30 days: ${DUE_COUNT}"
+            echo "- Skills overdue >180 days (P1): ${OVERDUE_COUNT}"
+            echo ""
+            echo "See the workflow run summary for the full table:"
+            echo "  https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo ""
+            echo "Process: governance/fitness-review.md"
+            echo ""
+            echo "---"
+            echo ""
+            echo "Scan payload:"
+            echo ""
+            echo '```json'
+            cat fitness-review-scan.json
+            echo '```'
+          } > "$BODY_FILE"
+
+          TITLE="Skill fitness review reminder ($(date -u +%Y-%m-%d))"
+          if [ "${OVERDUE_COUNT}" != "0" ]; then
+            LABELS="fitness-review,priority:p1"
+          else
+            LABELS="fitness-review"
+          fi
+
+          # If gh is unavailable (local dispatch with no token), fall back
+          # to printing the report instead of failing the run.
+          if ! command -v gh >/dev/null; then
+            echo "gh CLI not available — printing report instead of opening issue."
+            cat "$BODY_FILE"
+            exit 0
+          fi
+
+          gh issue create \
+            --title "$TITLE" \
+            --body-file "$BODY_FILE" \
+            --label "$LABELS" \
+            || { echo "Failed to open issue (label may not exist yet)."; cat "$BODY_FILE"; exit 0; }

@@ -1,101 +1,117 @@
 ---
 artifact: .delivery/artifacts/02-refine/po/prd.md
-reviewer: solution-architect (DoD validator)
+reviewer: solution-architect (DoD validator, FRESH dispatch)
 stage: 02-refine
 depth: light
 round: 1
-pipeline_id: run-2026-05-05-tk3
+pipeline_id: run-2026-05-09-tk4
 prose_style: standard
+predecessor_overwrite: run-2026-05-05-tk3 (caveman-lite review — live DEFECT-006 instance, see PRD §3)
 ---
 
-# Architect DoD Review — Refine (LIGHT) Round 1
+# Architect DoD Review — Stage 2 (Refine, LIGHT) Round 1
 
 STATUS: DONE
 
 ## Summary
 
-PRD is well-formed for downstream Architect/Dev consumption. Cache-prefix scoping, schema-version honesty, ADR boundary, six-surface enumeration, and verbatim AC carry-through all pass on file:line evidence. One non-blocking observation noted under Gate 5 (count discrepancy in dispatch instructions, not in the PRD).
+PRD is well-formed for Stage 4 Architect consumption. All five Architect-lens blocking gates pass on file:line evidence with independent measurement. Cache-prefix invariant correctly engaged via W3-9 frontmatter rollout (frontmatter IS today's prefix because Phase 0 headers are absent across all 7 over-budget SKILL.md files), three Stage-4-reserved ADRs are properly deferred without contract pre-decision, all 7 cross-cutting surfaces and all 6 retro carry-forwards are explicitly named, and the 7 initiative ACs map 1:1 to BACKLOG-104 §Acceptance Criteria 1–7.
 
-## Gate Findings
+## Independent Measurement (Architect Examine First — refine memory lesson honored)
 
-### Gate 1 — Cache-prefix invariant correctly scoped
+Before judging gates, re-ran the load-bearing measurements:
 
-**PASS.**
+| Check | Method | Result | PRD claim | Match |
+|---|---|---|---|---|
+| Line counts (7 SKILLs + CLAUDE.md) | `wc -l` | 500 / 545 / 496 / 420 / 418 / 399 / 236 / 168 | PRD §3 table | exact |
+| Phase 0 header presence | `grep -cn '^## Phase 0'` on each of 7 | **0 hits across all 7** | "zero hits" (PRD §3 line 40) | exact |
+| Frontmatter delimiters | `grep -n '^---'` on each of 7 | line 1 (open), line 10 or 11 (close), secondary `---` blocks at 18–28+ | "lines 1, 10–11, 18–28" (PRD §3 line 40) | exact |
+| `governance/skill-budgets.json` known_debt | file read | 7 entries, all `target_wave: 3`, all delivery-team paths | "7 known-debt entries, all `target_wave: 3`" (PRD §3 line 48) | exact |
+| BACKLOG-104 ACs | file read | 10 ACs total in §Acceptance Criteria | PRD §6 cites AC-1..AC-7 verbatim | faithful (BACKLOG AC-8/9/10 absorbed into PRD NFR-5/NFR-6/§10, not silently dropped) |
 
-- PRD §3 lines 51–53 split the surfaces correctly:
-  - Phase 0 config-read = SKILL.md lines 56–89, INSIDE the prefix region.
-  - Step 4 dispatch construction = SKILL.md lines 329–345, OUTSIDE.
-  - Step 7 DoD orchestration = SKILL.md lines 377–402, OUTSIDE.
-- Verified against `delivery-team/skills/delivery-flow/SKILL.md:478`: Volatile marker explicitly declares "The prefix boundary sits at the end of Phase 3 (Stage Routing)." Phase 0 sits before Phase 3 (inside); Steps 4 and 7 sit in Phase 4 (outside).
-- ADR-tk3-001 is bound to ONLY the inside-prefix edit. PRD FR-3 line 110 states: "The Step 4 edit sits OUTSIDE the cache-prefix region (line 329+); the Phase 0 edit sits INSIDE (lines 56–89). ADR-tk3-001 (Stage 4 deliverable per idea-brief §6) governs the prefix re-freeze".
-- NFR-1 (PRD line 118) reinforces: "Any Phase 0 byte change is covered by ADR-tk3-001 + governance/cache-prefix-hash.txt update + CI hash-check pass."
-- `governance/cache-prefix-hash.txt` exists (verified by file read; SHA256 anchor present), satisfying the canonical anchor reference per dispatch context.
+PRD §3 discovery is empirically validated.
 
-The PRD does NOT treat the entire change as cache-impacting and does NOT pretend none of it is. Split is precise.
+## Gate Verdicts
 
-### Gate 2 — Schema version honesty
+### Gate 1 — Cache-prefix invariant correctly scoped: **PASS**
 
-**PASS.**
+PRD identifies W3-9 (governance frontmatter rollout) as the Wave 3 WI that touches the cache-prefix region of every delivery-team SKILL.md. The reasoning chain is intact and verifiable:
 
-- PRD §3 lines 49–50 record measured findings: `config-schema.md:5` reads `Current Version: 2.8`; `config-schema.md:15` default is `"2.8"`; `config-schema.md:368` Version History shows v2.8 already taken by DESIGN routing (2026-04-05).
-- Verified independently against `config-schema.md:5` (`## Current Version: 2.8`), `config-schema.md:15` (`config_version` row default `"2.8"`), and `config-schema.md:368` (v2.8 row, 2026-04-05, DESIGN routing).
-- PRD FR-3 lines 93, 103–104 correctly bumps to **v2.9** with verified-by-grep citation: "The v2.8 slot is already occupied by the DESIGN-routing entry (2026-04-05)."
-- This is the deviation-with-citation pattern the dispatch criteria require. BACKLOG-102 §W2-3 said v2.8 unverified; PRD verified, found collision, and corrected.
+- **Empirical premise**: zero `## Phase 0` headers exist in any of the 7 over-budget SKILL.md files (independent measurement confirms). Therefore frontmatter — sitting at byte 0 — IS today's byte-stable cache-prefix region.
+- **W3-9 mechanics**: adds `maintainer:` + `fitness_review_due:` + `context_budget:` to that frontmatter region across every delivery-team SKILL.md (~3 lines/file).
+- **Conclusion**: Ruling 1 (cache-prefix freeze) is engaged → ADR-tk4-001 cumulative re-freeze is mandatory.
+- **Ownership correctly named**: PRD FR-5.5 + NFR-2 + Idea Brief §5 align — single Wave-3-summary ADR, hash file updated **once at end of Story 5** (not per-file), Dev runs-the-command at Architect DoD binding (caveman-lite Hot Lesson #1 extension that caught the tk3 byte-offset INVERSION).
+- **Independent measurement satisfied**: PRD §3 lines 40 + 44 cite the exact byte boundary evidence.
 
-### Gate 3 — No ADR contract pre-decided
+The PRD does not pretend this is non-cache-impacting and does not over-claim Phase 0 headers it cannot find. Scoping is precise.
 
-**PASS.**
+### Gate 2 — No ADR contract pre-decided: **PASS**
 
-- Intent (where the block goes — post-ALIAS, pre-OUTPUT) is preserved from idea-brief §8 without algorithmic over-specification.
-- The PROSE STYLE block text quoted in PRD FR-1 lines 69–76 is a verbatim citation of BACKLOG-102 §W2-1 (the binding upstream backlog) — not an Architect contract pre-decision. Memory ruling 4 ("Agent prompts as markdown references") makes the block text a Refine-stage content artifact, not an Architect deliverable.
-- ADR-scope decisions are explicitly LEFT to Stage 4:
-  - Precedence resolution algorithm (project config vs role override vs dispatch override): NOT in PRD.
-  - Verdict-prose grammar (the formal compression rules): NOT in PRD; FR-2 line 86 only states "uses caveman-lite" without grammar specification.
-  - Cache-prefix re-freeze decision: PRD line 110 explicitly defers — "Refine does not pre-judge whether the Phase 0 edit will move prefix bytes; Architect does."
-- No precedence chain, no grammar table, no override resolution algorithm appears in the PRD. The boundary is held.
+The three Stage-4-reserved ADRs are named with intent + acceptance, not contract:
 
-### Gate 4 — Cross-cutting surfaces accounted for
-
-**PASS.** All six surfaces are named:
-
-| # | Surface | Cited in PRD at |
-|---|---|---|
-| 1 | SKILL.md Phase 0 (config-read, inside prefix) | PRD §3 line 51; FR-3 line 110, line 112 (Locus); W2-3-S7 line 174 |
-| 2 | SKILL.md Step 4 (dispatch prompt construction, outside prefix) | PRD §3 line 52; FR-1 line 80 (Locus); FR-3 lines 110, 112; W2-1-S3 line 150 |
-| 3 | pipeline-stages.md template — Primary Agent Dispatch (line 44) | PRD §3 line 47; FR-1 line 63; W2-1-S1 line 148 |
-| 4 | pipeline-stages.md template — Supporting Agent Dispatch (line 87) | PRD §3 line 47; FR-1 line 64; W2-1-S1 line 148 |
-| 5 | pipeline-stages.md template — DoD Validator Dispatch (line 130) | PRD §3 line 47; FR-1 line 65; W2-1-S1 line 148 |
-| 6 | quality-gates.md (verdict-prose template, lines 21–38) | PRD §3 row 3; FR-2 line 84, line 91; W2-2-S1/S2/S3 lines 158–160 |
-| 7 | config-schema.md (lines 5, 15, 207+, 347+) | PRD §3 row 4; FR-3 line 112; W2-3-S1..S5 lines 168–172 |
-| 8 | config-schema.json (regenerated artifact) | PRD §3 row 5; FR-3 line 108, line 112; W2-3-S6 line 173 |
-
-Note: the dispatch criterion enumerated SIX surfaces; the PRD names eight discrete loci because the three pipeline-stages.md templates are addressed individually. This satisfies the dispatch's "3 templates in pipeline-stages.md" requirement explicitly. Stage 1 round-2 PO correction carries through cleanly.
-
-### Gate 5 — Acceptance gates verbatim from BACKLOG-102
-
-**PASS.**
-
-Direct comparison of PRD §6.1 (lines 133–140) against `BACKLOG-102:114-121`:
-
-| AC | PRD text (line) | BACKLOG-102 text (line) | Match |
+| ADR | PRD location | What PRD states | What PRD reserves to Stage 4 |
 |---|---|---|---|
-| 1 | "Agent narrative-framing prose MEASURABLY shorter (≥20% reduction in response-prose tokens, telemetry-verified)." (PRD:135) | Identical (BACKLOG-102:116) | verbatim |
-| 2 | "DoD review files MEASURABLY smaller (≥25% reduction)." (PRD:136) | Identical (BACKLOG-102:117) | verbatim |
-| 3 | "NO regression in DoD pass rate (currently 4/7 first-try per memory/index.md)." (PRD:137) | Identical (BACKLOG-102:118) | verbatim |
-| 4 | "NO regression in artifact quality (PRDs/ADRs/release-notes still pass downstream agents' reads — verified by next pipeline run)." (PRD:138) | Identical (BACKLOG-102:119) | verbatim |
-| 5 | "Auto-clarity boundaries respected (security/destructive/multi-step prose remains standard)." (PRD:139) | Identical (BACKLOG-102:120) | verbatim |
-| 6 | "Opt-out via `prose_style: standard` works (one-line config change reverts behavior)." (PRD:140) | Identical (BACKLOG-102:121) | verbatim |
+| ADR-tk4-001 (Tier-B closure / cache-prefix re-freeze) | FR-5.5, NFR-2 | Owns cumulative re-freeze; hash updated once at Story-5 end | Specific bytes moved, exact re-warm cost calc, hash value |
+| ADR-tk4-002 (W3-1 partial-compliance ruling) | FR-1.2 | Documents residual + `target_wave: 4` re-baseline IF 200-line residual infeasible | Whether the residual triggers, exact deferral math, CI gate exception text |
+| ADR-tk4-003 (W3-8 paradigm sub-skill dispatch shape) | FR-4 header, FR-4.5 | Architect Stage 4 owns dispatch-shape | Which paradigm route per axis, frontmatter shape, router contract |
 
-All six gates carry through character-for-character. The PRD only added trailing periods where BACKLOG-102 omitted them (BACKLOG-102 lines 116–121 lack trailing periods on lines 116, 117, 118, 119, 120, 121); the wording itself is unchanged. Punctuation normalization is acceptable verbatim citation under standard editorial convention.
+Extraction-target lists at file/folder granularity (e.g., FR-2.1 "extract 9 type specs to `references/types/*.md`", FR-3.1 "extract 7 test strategies to `references/test-strategies/*.md`") are inherited from BACKLOG-104 WI extraction candidates — Idea Brief §2 binds: "All WI ACs, extraction candidates, and file lists live in BACKLOG-104 verbatim". PRD line 21 reaffirms: "This PRD CONSOLIDATES; it does not re-author. WI ACs and extraction candidates live in BACKLOG-104 verbatim." FR-1.1 explicitly conditions on "Extractions confirmed by Architect at Stage 4." This is faithful upstream consolidation, not Refine-stage contract pre-decision. Boundary held.
 
-**Observation (non-blocking, not in PRD):** the dispatch instructions said "5 initiative-level gates" — the actual BACKLOG-102 §Acceptance Criteria contains six gates (1–6). The PRD correctly lists all six, so this discrepancy is in the dispatch prompt, not the artifact under review. Flagging for orchestrator awareness only; does not affect this gate's verdict.
+### Gate 3 — All 7 cross-cutting surfaces accounted for: **PASS**
+
+Per `governance/skill-budgets.json` known_debt (verified) + BACKLOG-104 §Tiered scope, the 7 surfaces are: architect, presentation, ui, operations, quality, user-feedback, godot.
+
+| # | Surface | PRD coverage |
+|---|---|---|
+| 1 | architect (500→≤300, Tier-B) | §3 row 1; FR-1.1 (closure mechanics); FR-1.3 (router preserved) |
+| 2 | presentation (545→≤300, Tier-B) | §3 row 2; FR-2.1 (9 types + 4 formats extraction) |
+| 3 | ui (496→≤300, Tier-B) | §3 row 3; FR-2.2 (3 designer roles + game-UI patterns) |
+| 4 | operations (420→≤300, Tier-B) | §3 row 4; FR-2.3 (3 ops roles + deploy/release/docs patterns) |
+| 5 | quality (418→≤300, Tier-B) | §3 row 5; FR-3.1 (7 test strategies + metrics + automation) |
+| 6 | user-feedback (399→≤300, Tier-B) | §3 row 6; FR-3.2 (4 persona families via W3-8 paradigm vehicle) |
+| 7 | godot (236→≤200, Tier-C) | §3 row 7; FR-3.3 (language-choice + signal + scene patterns) |
+
+Plus CLAUDE.md (168→≤150) covered by FR-6.3. No surface dropped.
+
+### Gate 4 — 6 retro carry-forwards visible: **PASS**
+
+PRD §FR-7 enumerates all six in order:
+
+| WI | PRD FR | Origin retro | Coverage |
+|---|---|---|---|
+| W3-13 validator-prompt template | FR-7.1 | Wave 2 | "spec-vs-impl framing block + canonical-path block" |
+| W3-14 JSON↔Python KNOWN_DEBT lint | FR-7.2 | Wave 2 | new `.github/workflows/skill-budget-consistency.yml` |
+| W3-15 STATUS-format standardization | FR-7.3 | Wave 2 | "Architect picks at Stage 4 by cheapness" |
+| W3-16 pre-merge git hook | FR-7.4 | Waves 0+1 / Wave 2 | `governance/pre-commit-skill-budget.sh` + opt-in installer |
+| W3-17 Stage 7 entry sweep (DEFECT-006 systemic fix) | FR-7.5 | caveman-lite (tk3) | Option A banner OR Option B archive — Architect picks |
+| W3-18 telemetry placeholder hardening | FR-7.6 | caveman-lite (tk3) | fail-loud OR `placeholder=true`; W3-10 KPI excludes |
+
+Retro origins correctly attributed (4 Wave-2 + 2 caveman-lite = 6). Each WI has a runnable AC frame in §6 row AC-4/AC-5.
+
+**Bonus dogfood evidence**: PRD §3 line 50 documents a LIVE DEFECT-006 instance found at pipeline-start (this very file's predecessor was caveman-lite stale content from run-2026-05-05-tk3 — confirmed independently when overwriting). PRD correctly flags as the canonical regression test for W3-17 in §8 dogfood targets.
+
+### Gate 5 — Acceptance gates verbatim from BACKLOG-104: **PASS**
+
+Direct comparison of PRD §6 (AC-1..AC-7) against `BACKLOG-104:280-286`:
+
+| AC | PRD §6 source WI mapping | BACKLOG-104 line | Semantic match |
+|---|---|---|---|
+| AC-1 | W3-1..7 + W3-9; check `python3 scripts/check_skill_budgets.py` exits 0 / known_debt empty | line 280 ("All 7 remaining over-budget files… CLEARED") | verbatim intent + same canonical command |
+| AC-2 | W3-12; `wc -l CLAUDE.md` ≤150 | line 281 ("CLAUDE.md ≤150 lines") | verbatim |
+| AC-3 | W3-9; lint validates 3 frontmatter keys present | line 282 ("Governance frontmatter… present on all delivery-team SKILL.md files") | verbatim intent + adds runnable check |
+| AC-4 | W3-13..16; "all 4 carry-forwards DISCHARGED on main" | line 283 ("4 Wave 2 retro carry-forward actions… DISCHARGED") | verbatim |
+| AC-5 | W3-17 + W3-18; both greps return matches; DEFECT-006 closes | line 284 ("2 caveman-lite retro carry-forward actions… DISCHARGED. DEFECT-006 closes") | verbatim |
+| AC-6 | W3-8; ≥3 ADDITIONAL paradigm axes (research-agent + user-feedback minimum; presentation conditional) | line 285 ("Paradigm sub-skill pattern shipped on ≥3 axes… presentation if architecturally favored at Stage 4") | verbatim |
+| AC-7 | NFR-4; ≥50% cumulative reduction on first 5 Wave-3 dispatches | line 286 ("Telemetry-measured cumulative token reduction ≥50% on delivery-flow… vs pre-Wave-0 baseline") | verbatim |
+
+All 7 architectural ACs carry through with semantic fidelity. PRD adds value by attaching runnable command + Refine "well-formed?" + Stage-6 "applies?" columns (refine memory lesson #7 — prevents Stage-2-vs-Stage-6 framing collision that wasted a tk1 cycle). BACKLOG-104 ACs 8/9/10 (no DoD-pass-rate regression / defects-per-story ≤0.4 / fitness review operational) are absorbed into PRD NFR-5, NFR-6, and FR-6.2 + §10 stop-rule respectively — accounted for, not dropped.
 
 ## Verdict
 
-PRD is well-formed and ready for Stage 3 routing (DESIGN skip per idea-brief §7) and Stage 4 (Architect with ADR-tk3-001). All five blocking architect-lens gates pass on cited file:line evidence; the schema-version correction (v2.8 → v2.9) is the model deviation-with-citation behavior. Non-blocking dispatch-prompt count discrepancy noted above for orchestrator only.
+All five Architect-lens blocking gates PASS on independently measured file:line evidence. Cache-prefix invariant is correctly scoped to W3-9 with ADR-tk4-001 ownership of cumulative re-freeze; the three Stage-4-reserved ADRs (cache re-freeze, W3-1 partial-compliance, W3-8 paradigm dispatch shape) are properly deferred without contract pre-decision; all 7 cross-cutting surfaces and all 6 retro carry-forwards are explicitly named; and the 7 initiative ACs are faithful to BACKLOG-104. PRD is ready to proceed to Stage 4 (Stage 3 SKIP per idea-brief §6 DX-only routing); no Round 2 warranted.
 
 ```
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/02-refine/dod/architect-review.md
-SUMMARY: All 5 gates PASS. Cache-prefix split correct, schema bumped 2.8→2.9 with citation, ADR boundary held, 6 surfaces named, ACs verbatim.
+SUMMARY: All 5 gates PASS. Cache-prefix correctly scoped to W3-9 (frontmatter IS prefix; zero Phase 0 hits verified), 3 ADRs deferred to Stage 4, 7 surfaces + 6 carry-forwards named, 7 ACs match BACKLOG-104.
 ```

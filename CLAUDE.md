@@ -28,69 +28,22 @@ Each plugin should include an `ARCHITECTURE.md` with Mermaid diagrams documentin
 
 ## Available Plugins
 
-| Directory | Purpose |
-|-----------|---------|
-| `delivery-team/` | Full delivery team with 11 skills (see below) |
-| `agentic-flow-builder/` | Builds multi-agent workflows using ReAcTree hierarchical decomposition |
-| `prompt-engineer/` | Expert LLM prompt optimization |
-| `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence |
-| `research-agent/` | Research agent with 5 research types and academic frameworks |
-| `mtg-commander/` | MTG Commander deck builder: synergy-first multi-agent pipeline, Scryfall integration, configurable price goals + adversarial Challenger agents via `.mtg-commander.yml` |
-| `hardware-team/` | Hardware delivery pipeline over kicad-happy skills: 8 stages from Concept to Production Release (7 roles, 5 gates, 11 kicad-happy integrations) |
+| Directory | Purpose | Detail |
+|-----------|---------|--------|
+| `delivery-team/` | Full delivery team with 11 skills (orchestrator + 10 workers, 7 hooks) | `delivery-team/ARCHITECTURE.md` |
+| `hardware-team/` | Hardware delivery pipeline over kicad-happy: 8 stages, 7 roles, 6 hooks | `hardware-team/ARCHITECTURE.md` |
+| `agentic-flow-builder/` | Builds multi-agent workflows using ReAcTree hierarchical decomposition | `agentic-flow-builder/ARCHITECTURE.md` |
+| `prompt-engineer/` | Expert LLM prompt optimization | — |
+| `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence | — |
+| `research-agent/` | Research agent with 5 research types and academic frameworks | — |
+| `mtg-commander/` | MTG Commander deck builder: synergy-first multi-agent pipeline, Scryfall integration, configurable price goals + adversarial Challenger agents via `.mtg-commander.yml` | — |
 
-### delivery-team Plugin (11 skills)
-
-| Skill | Roles / Purpose |
-|-------|----------------|
-| `delivery-flow/` | Pipeline orchestrator: 7 stages, team DoD, self-correction, adversarial review, debate, consensus, self-learning memory, setup wizard. Primitives include shared `constraints.yml` (Refine + Architect), configurable Architecture Board, and Transformation Planning sub-workflow orchestration |
-| `product-delivery/` | Product Owner, Scrum Bag, Data Analyst |
-| `developer/` | 14 languages (Python, TypeScript, JavaScript, Go, Rust, C#, Java, SQL, Bash, R, F#, Elixir, Haskell, Scala) + OOP + FP + Frontend + Nx monorepo (paradigm-aware pattern loading from config) + foundational clean code standards (always-on, configurable guide) |
-| `godot/` | Godot 4.x game dev (GDScript, C#, scenes, signals, validation) + foundational clean code standards |
-| `architect/` | 11 roles: solution/enterprise/data/security/compliance/privacy/IR + 4 game architecture + 4 decomposition strategies + Prior Art Analysis. Paradigm sub-skills under `skills/paradigms/` (e.g., `volatility/`, `ddd/`) with router-based dispatch so only the selected paradigm loads. Supports `transformation-planning` task type (AS-IS behavioral/structural → TO-BE → Roadmap) for brownfield migrations |
-| `quality/` | QA engineering: test strategy, test cases, automation, quality metrics, empirical validation |
-| `operations/` | DevOps, Release Manager, Technical Writer |
-| `ui/` | UX Designer, UI Designer, Game UI Designer |
-| `user-feedback/` | Simulated persona-based testing (20+ built-in personas across gamers, web users, enterprise, demographics) |
-| `alias-creator/` | Creates personality-injected aliases from 13 built-in themes |
-| `presentation/` | Presentation Composer: team-collaborative presentations with 6-step flow (Assemble, Content Gate, Draft, Compose, Review Gate, User Review). 9 types (Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary), 4 formats (structured-markdown, marp, paste-ready, pptx), narrative intelligence (4 editorial passes), light mode |
-
-### delivery-team Hooks (7 hooks across 5 event types)
-
-| Hook | Event | Purpose |
-|------|-------|---------|
-| Config check | SessionStart | Validates `.delivery/config.yml` exists and is current |
-| Retrospective enforcement | Stop | Blocks session end if pipeline work occurred without retrospective |
-| Pipeline bypass detection | PreToolUse (Skill) | Warns when developer/godot invoked outside delivery-flow |
-| Agent prompt audit | PreToolUse (Agent) | Audits agent prompts for context isolation compliance |
-| GDScript validation | PostToolUse (Write/Edit) | Parse-validates `.gd` files via `godot --headless --check-only` |
-| Skill load verification | PostToolUse (Agent) | Verifies SKILL_LOADED signal in agent responses |
-| Empirical validation | SubagentStop (developer/godot) | Detects runtime-only acceptance criteria |
-
-### hardware-team Plugin (7 skills)
-
-| Skill | Roles / Purpose |
-|-------|----------------|
-| `hardware-flow/` | Pipeline orchestrator: 8 stages (Concept, Schematic, Layout, Prototype, DFM/DFA, Compliance, Pilot Run, Production Release), rework loops, gate validation, kicad-happy dispatch |
-| `hw-product-owner/` | Hardware Product Owner: requirements, constraints, feasibility analysis, make-vs-buy, BOM budgeting |
-| `electrical-engineer/` | Electrical Engineer: schematic design, component selection (4 distributor skills), SPICE simulation, firmware interface docs |
-| `pcb-layout-engineer/` | PCB Layout Engineer: physical layout, routing, stackup design, impedance control, DRC |
-| `manufacturing-engineer/` | Manufacturing Engineer: DFM/DFA review, panelization, test point coverage, fab-house integration (JLCPCB, PCBWay) |
-| `compliance-engineer/` | Compliance Engineer: EMC pre-compliance, safety standards (IEC 62368-1), environmental (RoHS/REACH/WEEE), market requirements (FCC/CE/UL) |
-| `test-engineer/` | Test Engineer: test strategy, fixture design, production test, validation planning |
-
-### hardware-team Hooks (6 hooks across 3 event types)
-
-| Hook | Event | Purpose |
-|------|-------|---------|
-| Session validation | SessionStart | Validates `.hardware/config.yml` exists and is current, checks paused pipeline staleness |
-| kicad-happy check | SessionStart | Verifies all 11 kicad-happy skills are available, reports missing dependencies |
-| Pipeline bypass detection | PreToolUse (Skill) | Warns when hardware roles invoked outside hardware-flow |
-| KiCad file notification | PostToolUse (Write/Edit) | Notifies when KiCad project files are modified |
-| Schematic DRC | PostToolUse (Write/Edit) | Auto-runs basic DRC validation on `.kicad_sch` modifications, reports findings as warnings |
-| BOM drift detection | PostToolUse (Write/Edit) | Detects when schematic changes invalidate the current BOM, warns about inconsistencies |
+For per-skill rosters, hook tables, and pipeline internals, follow the `Detail` column. Plugin-level docs are the source of truth; this file stays a one-screen index.
 
 **CI regression guards** (under `.github/workflows/`):
 - `workflow-injection-lint.yml` — fails PRs that interpolate `${{ github.event.* }}` directly inside workflow `run:` blocks (DEFECT-004 regression guard).
+- `skill-line-budget.yml` — enforces SKILL.md line budgets (`scripts/check_skill_budgets.py`, `governance/skill-budgets.json`).
+- `fitness-review.yml` — weekly scan of `fitness_review_due:` frontmatter; opens reminder issues per `governance/fitness-review.md`.
 
 ## Running Scripts
 
@@ -117,37 +70,22 @@ No build step, linting config, or test runner is configured.
 2. SKILL.md (loaded when skill triggers) — main instructions
 3. Resources (loaded on demand) — scripts, references, assets
 
-**Delivery-flow pipeline architecture**:
+**Delivery-flow pipeline (summary)**:
 - 7 stages: Idea → Refine → Design → Architect → Plan → Development → UAT
-- Auto-detect project type (GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV, SPIKE, DOCS_ONLY) with stage routing (DESIGN terminates after Architect for design-only engagements)
-- Team DoD validation (ALL validators must say DONE)
-- 6 collaboration patterns: evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus
-- Self-learning memory in `.delivery/memory/` (tiered chunked retrieval)
-- Config-driven via `.delivery/config.yml` with versioned schema (currently v2.7)
-- Project type is **detected per run** (Phase 1 always runs). Config no longer pins it; `routing.force_type` is an opt-in override
-- Setup wizard with 9 questions (auto-detect + smart options). The former Project Type question was removed in v2.7 since the type is a runtime routing decision
-- Defect tracking with plugin self-improvement PR triggers
-- Feature Knowledge System: Feature Knowledge Cards (FKCs), Impact Analysis Gate, decision trail for cross-cutting change tracking
-- Session keepalive: cross-platform companion process for long-running sessions
-- Pipeline state persistence and resume across sessions
-- Git/GitHub integration: branching strategies, conventional commits, automated issue/PR creation
-- 13 alias themes with personality injection (via alias-creator skill) and theme surfacing in orchestrator output (stage announcements, checkpoint summaries, transitions)
-- Config validation toolchain: JSON Schema generation + validation scripts
-- Pipeline analytics dashboard for delivery metrics
-- Constraints primitive: shared `constraints.yml` schema (entities, state_variables, actions, invariants, forbidden_vocabulary, etc.) used across Refine + Architect stages; see `delivery-flow/references/constraints-model-guide.md` and `constraints-schema.json`; validated via `delivery-flow/references/scripts/validate_constraints.py`
-- Architecture Board: configurable multi-persona review pattern (Volatility / DDD / Risk / Chief Architect personas) with MAR iteration-2 cross-persona routing; personas defined in `delivery-flow/references/architecture-board-personas.md`
-- Transformation Planning: AS-IS → TO-BE → Roadmap sub-workflow for brownfield migration planning (PO + Architect paired); reuses the Architecture Board for Phase 1A review. See `architect/references/transformation-planning.md` and the four phase docs (`transformation-phase-1a-behavioral.md`, `transformation-phase-1b-structural.md`, `transformation-phase-2-to-be.md`, `transformation-phase-3-roadmap.md`)
-- Design Sprint sub-workflow: PO + Architect paired flow for decomposition decisions, routes to the appropriate paradigm skill (volatility, DDD, etc.); see `delivery-flow/references/design-sprint.md`
+- Auto-detect project type per run (GREENFIELD, FEATURE, BUG_FIX, DESIGN, GAME_DEV, SPIKE, DOCS_ONLY); `routing.force_type` is the opt-in pin
+- Team DoD validation, 6 collaboration patterns (evaluator-optimizer, adversarial review, review board, decision ownership, debate, consensus), self-learning memory in `.delivery/memory/`
+- Config-driven via `.delivery/config.yml` with versioned schema (currently v2.7); setup wizard with 9 questions
+- Sub-workflows: Transformation Planning (AS-IS → TO-BE → Roadmap), Design Sprint (paradigm decomposition), Architecture Board (multi-persona review), Constraints primitive (shared `constraints.yml`)
 
-**Agentic flow core components** (shared pattern between `agentic-flow-builder/` and `prd-quality-gate-flow/`):
+For full pipeline internals (defect tracking, Feature Knowledge System, session keepalive, paradigm sub-skills, alias themes, analytics dashboard) see `delivery-team/ARCHITECTURE.md` and `delivery-team/skills/delivery-flow/references/`.
+
+**Agentic flow core components** (shared between `agentic-flow-builder/` and `prd-quality-gate-flow/`):
 - `database.py` — SQLite schema, DAL, execution tracking, audit logs
 - `business_rules_engine.py` — Deterministic gate evaluation (AND/OR/NOT logic, no AI variance)
 - `flow_orchestrator.py` — Hierarchical execution with episodic + working memory
 - `agent_registry.py` — Dynamic agent discovery, assignment, and performance tracking
 
 **Business Rules Engine** is intentionally deterministic — gate decisions must be rule-based, not AI-inferred, to ensure consistent and auditable workflow outcomes.
-
-Detailed flow documents in `delivery-team/architecture/` cover adversarial triggers, deterministic gating, hook timeline, DoD self-correction, empirical lifecycle, sub-agent dispatch.
 
 ## Key Conventions
 
@@ -158,7 +96,11 @@ Detailed flow documents in `delivery-team/architecture/` cover adversarial trigg
 - After creating a skill → use `plugin-dev:skill-reviewer` to review it
 - After creating a plugin → use `plugin-dev:plugin-validator` to validate it
 
-**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-flow/references/config-schema.md` (currently v2.7). When adding new config keys, follow the extension protocol documented there. Note: `project_type` was removed in v2.7 — Phase 1 project type detection now runs on every pipeline invocation. Use `routing.force_type` for an opt-in intentional pin.
+**Config schema**: The single source of truth for `.delivery/config.yml` format is `delivery-team/skills/delivery-flow/references/config-schema.md` (currently v2.7). When adding new config keys, follow the extension protocol documented there.
+
+**SKILL.md line budgets**: Enforced by `scripts/check_skill_budgets.py` against `governance/skill-budgets.json`. Tier A=500, Tier B=300, Tier C=200. Exceptions require a `Budget-Exception:` line in the PR body and a `known_debt[]` entry with `target_wave:`.
+
+**Skill fitness reviews**: Quarterly per `governance/fitness-review.md`; due dates live in each SKILL.md `fitness_review_due:` frontmatter.
 
 ## Permissions
 
@@ -166,3 +108,5 @@ Allowed operations are defined in `.claude/settings.local.json` (git-ignored):
 - WebFetch: github.com, raw.githubusercontent.com, arxiv.org, www.anthropic.com
 - Bash: curl, mkdir, git operations, chmod, cat, python, sqlite3
 - WebSearch: enabled
+
+**Local pre-commit hook** (W3-16, opt-in): `git config core.hooksPath .githooks` — runs SKILL.md budget + KNOWN_DEBT lint on each commit. See `governance/git-hooks-install.md`.

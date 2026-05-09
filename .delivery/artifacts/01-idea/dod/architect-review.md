@@ -1,25 +1,44 @@
-# Architect DoD Review — Caveman-Lite Idea-Brief (run-2026-05-05-tk3)
+<!-- run: run-2026-05-09-tk4 | stage: 1 (Idea, LIGHT) | dod-round: 1 | reviewer: solution-architect (FRESH dispatch) -->
 
-**Reviewer**: Solution Architect (DoD validator, Stage 1 round 1)
-**Date**: 2026-05-05
-**Pipeline**: run-2026-05-05-tk3
+# Architect DoD Review — Wave 3 Idea-Brief (run-2026-05-09-tk4)
+
+**Reviewer**: Solution Architect (DoD validator, Stage 1 round 1, FRESH dispatch)
+**Date**: 2026-05-09
+**Pipeline**: run-2026-05-09-tk4
 **Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Mode**: light (round 1 of max 2)
+**Mode**: light (round 1)
 
-## STATUS: NOT_DONE
+## STATUS: DONE
 
 ## Findings
 
-- **Criterion 1 — Plugin-dev:skill-development acknowledged: PASS.** §5 line 49 explicitly binds `plugin-dev:skill-development` pre-load at the Stage 6 developer dispatch and adds `plugin-dev:skill-reviewer` + `plugin-dev:plugin-validator` post-completion. Routing table §7 line 64 reinforces. Memory lesson honored.
+- **Criterion 1 — Brief acknowledges this work modifies SKILL files → Stage 6 Dev MUST load `plugin-dev:skill-development`: PASS.** §4 lines 42-43 binding-conventions block explicitly names `plugin-dev:skill-development` MUST be acknowledged at the developer dispatch, plus `plugin-dev:skill-reviewer` post-completion and `plugin-dev:plugin-validator` before PR. §6 Stage 6 routing row repeats: "`plugin-dev:skill-development` acknowledged". Memory lesson honored.
 
-- **Criterion 2 — Ruling 1 cache-prefix invariant + Stage 4 ADR routing: PASS.** §6 (lines 51-53) is a dedicated call-out naming `ADR-tk3-001` as owner of any re-freeze, requires byte enumeration if prefix bytes move, references `governance/cache-prefix-hash.txt`, and mandates CI hash-check. §7 line 62 routes Stage 4 as "light w/ **ADR-tk3-001**" — the light-with-ADR routing is visible.
+- **Criterion 2 — Ruling 1 cache-prefix invariant acknowledged; any SKILL.md Phase 0 edit identified: PASS.** §5 is a dedicated Cache-Prefix Invariant section. It identifies W3-9 governance frontmatter rollout as the Phase-0-touching surface ("MAY touch Phase 0"), assigns ownership to `ADR-tk4-001` for cumulative re-freeze, mandates `governance/cache-prefix-hash.txt` update at end of Story 5 (one-time, not per-story), and references the caveman-lite Hot Lesson #1 extension on Dev runs-the-command discipline at Architect DoD. Cross-reference confirmed against binding-decisions Ruling 1 (`topics/skill-token-economy.md:10-14`).
 
-- **Criterion 3 — Technical surface accurately identified: NOT_PASS.** §4 line 32 enumerates Phase 0 config-read, Step 4 prompt construction, `references/pipeline-stages.md`, `references/quality-gates.md`, and `references/config-schema.md` v2.7→v2.8 — five of the six required surfaces are present. The sixth, **`config-schema.json` regenerate**, is missing: §4 line 32 only names the `.md` schema bump, and §6 line 53 references only the `.md` artifact. Per the gate criterion ("If any of those surfaces are missing, NOT_DONE"), schema bumps in this repo require both the prose `config-schema.md` change AND a regenerated `config-schema.json` (validator toolchain artifact per CLAUDE.md "Config validation toolchain: JSON Schema generation + validation scripts"). Cite: `.delivery/artifacts/01-idea/po/idea-brief.md:32`. Also note: §4 names `pipeline-stages.md` but does not call out that **three** dispatch-template families live there (agent prompts, DoD validator prompts, and stage-summary prose) — naming the file is sufficient under criterion 3's surface-enumeration requirement, so this sub-point passes; the `.json` omission is what blocks.
+- **Criterion 3 — All 7 over-budget surfaces accurately identified per `governance/skill-budgets.json`: PASS.** Cross-checked the brief's §7 Story table against the known_debt array:
 
-- **Criterion 4 — Stop-rule preserves historical continuity: PASS.** §9 line 84 reproduces the canonical threshold verbatim: "defects/story rate >0.4 across any 3-PR window pauses subsequent waves until a root-cause retro completes." Matches Wave 0/1/2 stop-rule and the binding rule in `skill-token-economy.md` line 127. The engagement-local stop-rule on §9 lines 86 (telemetry <15% reduction or quality regression) is additive, not a substitute — both are armed (line 88), which is correct.
+  | Known-debt entry | Story assignment | Match |
+  |---|---|---|
+  | architect/SKILL.md (B, 500) | Story 1 (W3-1) | OK |
+  | presentation/SKILL.md (B, 545) | Story 2 (W3-2..4) | OK |
+  | ui/SKILL.md (B, 496) | Story 2 (W3-2..4) | OK |
+  | operations/SKILL.md (B, 420) | Story 2 (W3-2..4) | OK |
+  | quality/SKILL.md (B, 418) | Story 3 (W3-5..7) | OK |
+  | user-feedback/SKILL.md (B, 399) | Story 3 (W3-5..7) | OK |
+  | godot/SKILL.md (C, 236) | Story 3 (W3-5..7) | OK |
 
-- **Criterion 5 — Does not over-specify ADR-tk3-001 territory: PASS.** §6 line 53 explicitly hands "enumerate the bytes that move, justify, update the hash" to `ADR-tk3-001`, not the brief. §3 states intent (5 surfaces a–e) and §8 quotes BACKLOG-102 acceptance gates verbatim, but the brief does not pin (a) where in SKILL.md the PROSE STYLE block sits, (b) the precedence order for `prose_style:` resolution (project config vs role override vs dispatch-time override), or (c) the exact verdict-prose grammar. Intent + constraints, no contract pre-decided.
+  All 7 entries mapped 1:1, no misses, no extras. AC §8.1 cites the exact close criterion (`scripts/check_skill_budgets.py` exits 0 with empty `known_debt` array). §3 Goal sentence reproduces the count ("ALL 7 remaining over-budget SKILL.md files"). BACKLOG-104 known-debt list matches.
+
+- **Criterion 4 — Stop-rule continuity preserved (defects/story >0.4 across 3-PR window — same threshold): PASS.** §9 line 99 reproduces the canonical threshold verbatim: "defects/story rate >0.4 across any 3-PR window pauses subsequent waves." Matches `topics/skill-token-economy.md:129` and prior-wave continuity. Window arithmetic shown (tk2 = 0 defects, tk3 = 1 P1 non-blocking → 0.33 < 0.4, not triggered, Wave 3 may proceed). PO empowered to halt at any Story boundary if next defect lands. Engagement-local AC-13 telemetry stop-rule (§8 lines 93-95) is additive, not a substitute — orthogonal to prose discipline gating Story 5 only.
+
+- **Criterion 5 — Does not pre-decide ADR-tk4-001/002/003 contracts: PASS.** §6 lines 62 names all three ADRs by ID and intent only:
+  - ADR-tk4-001 = cumulative cache-prefix re-freeze (mandatory if Phase 0 touched)
+  - ADR-tk4-002 = W3-1 architect partial-compliance ruling (if 200-line residual infeasible)
+  - ADR-tk4-003 = W3-8 paradigm sub-skill dispatch shape (highest novelty)
+  
+  No contract shape, no extraction pattern, no exact frontmatter keys, no paradigm dispatch contract pre-specified. §10 explicitly defers three architectural choices to Stage 4 (W3-1 partial-compliance threshold, W3-8 paradigm dispatch shape per axis, W3-15 STATUS-format standardize-vs-helper). §7 Story 4 sequencing note ("After Story 1 ships ADR-pattern") signals dependency without specifying the pattern. §3 names the W3-9 frontmatter keys (`maintainer:` + `fitness_review_due:` + `context_budget:`) — but these are the BACKLOG-104 acceptance-gate keys carried verbatim from the source brief, NOT new architect decisions. Architect Stage 4 retains contract-shape authority.
 
 ## Verdict
 
-The brief is well-formed across four of five criteria — plugin-dev routing, cache-prefix invariant with ADR-tk3-001 ownership, stop-rule continuity, and Stage-4 architectural restraint are all explicit and well-cited. The single blocker is §4's omission of `config-schema.json` regeneration alongside the `config-schema.md` v2.7→v2.8 bump; this is a required surface in this repo's config-validation toolchain, not an implementation detail Stage 4 can recover. Recommended fix: add `config-schema.json` to §4 line 32's surface list and to §7 Stage 5 Plan (or Stage 6 Dev) routing notes — single-line edit, no scope change.
+The brief consolidates BACKLOG-104 faithfully without re-authoring, honors all five binding rulings (especially the cache-prefix invariant via the dedicated §5 ADR-tk4-001 ownership statement), correctly maps all 7 known-debt surfaces to Stories 1–3, and hands the three open architectural choices to Stage 4 rather than pre-deciding them. No blocking architect-lens concerns; vote DONE on round 1.

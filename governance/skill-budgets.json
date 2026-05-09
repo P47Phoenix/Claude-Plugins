@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
   "description": "Tier registry for SKILL.md line-budget governance (ADR-tk0e-002, ADR-tk0e-003)",
+  "last_baseline": "2026-05-09",
+  "last_baseline_run": "run-2026-05-09-tk4",
+  "last_baseline_note": "Wave 3 Story 5 (W3-9) cleared all known_debt; all 11 top-level delivery-team SKILL.md files compliant post-frontmatter rollout. Story 7 W3-14 will add JSON<->Python registry lint.",
   "tiers": {
     "A": {
       "max_lines": 500,
@@ -15,49 +18,5 @@
       "description": "Leaf and paradigm sub-skills — single role, narrow domain, or router-dispatched"
     }
   },
-  "known_debt": [
-    {
-      "path": "delivery-team/skills/architect/SKILL.md",
-      "tier": "B",
-      "current": 500,
-      "target_wave": 3,
-      "note": "Frontmatter tier is B (role multiplexer); current 500 is over Tier-B 300 by 200 lines (Tier-A 500 ceiling met as partial-compliance milestone). Wave 3 trims residual ≤300."
-    },
-    {
-      "path": "delivery-team/skills/presentation/SKILL.md",
-      "tier": "B",
-      "current": 545,
-      "target_wave": 3
-    },
-    {
-      "path": "delivery-team/skills/ui/SKILL.md",
-      "tier": "B",
-      "current": 496,
-      "target_wave": 3
-    },
-    {
-      "path": "delivery-team/skills/operations/SKILL.md",
-      "tier": "B",
-      "current": 420,
-      "target_wave": 3
-    },
-    {
-      "path": "delivery-team/skills/quality/SKILL.md",
-      "tier": "B",
-      "current": 418,
-      "target_wave": 3
-    },
-    {
-      "path": "delivery-team/skills/user-feedback/SKILL.md",
-      "tier": "B",
-      "current": 399,
-      "target_wave": 3
-    },
-    {
-      "path": "delivery-team/skills/godot/SKILL.md",
-      "tier": "C",
-      "current": 236,
-      "target_wave": 3
-    }
-  ]
+  "known_debt": []
 }

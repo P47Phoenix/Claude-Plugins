@@ -1,249 +1,202 @@
----
-title: "Caveman-Lite Prose Discipline — PRD"
-pipeline_id: run-2026-05-05-tk3
-wave: caveman-lite (Step 1 of 4)
-work_items: [W2-1, W2-2, W2-3]
-stage: 02-refine
-depth: light
-author: Product Owner (product-delivery skill)
-predecessor: run-2026-05-05-tk2 (commit c2e7d5a)
-source_brief: .delivery/artifacts/01-idea/po/idea-brief.md
-source_backlog: .delivery/backlog/BACKLOG-102-caveman-prose-discipline.md
-binding_memory: .delivery/memory/topics/skill-token-economy.md
-created: 2026-05-05
----
+<!-- run: run-2026-05-09-tk4 | stage: 2 (Refine, light) | role: PO (Gandalf the Grey) | predecessor: run-2026-05-05-tk3 (caveman-lite, merged) -->
 
-> "A wizard is never late, nor is he early; he arrives precisely when he means to."
-> — Gandalf the Grey, speaking as PO at Refine
+# PRD — Wave 3: delivery-team Skill Token-Economy Closure
 
-# Caveman-Lite Prose Discipline — Product Requirements
+*"All we have to decide is what to do with the lines that are given us."* — Gandalf, PO. Authored against BACKLOG-104, sharpened with discovery commands. The road is not re-debated; only the gates are tightened.
 
 ## 1. Engagement
 
-This PRD scopes the caveman-lite prose discipline wave for delivery-team agent dispatches and DoD validator outputs. The engagement is `run-2026-05-05-tk3`, a FEATURE-execution-of-pre-planned-waves run binding to BACKLOG-102. The full engagement framing — predecessor commit, theme, and stop-rule arming — is captured in the idea brief at `.delivery/artifacts/01-idea/po/idea-brief.md`; this PRD does not restate that framing. Three work items (W2-1, W2-2, W2-3) ship together as ONE consolidated story per the file-scope rule (idea-brief §4). Refine is light; ACs already exist in BACKLOG-102 §Acceptance Criteria, so this PRD's job is to ground each AC in measured TARGET-state file evidence and split each AC's framing between "well-formed?" (Refine concern) and "applies?" (Stage 6 concern).
+- **Pipeline**: `run-2026-05-09-tk4` — Wave 3, the final delivery-team token-economy wave
+- **Project type**: FEATURE — execution of pre-planned waves; binding-decisions-in-memory pattern (5th invocation in this initiative)
+- **Upstream brief**: `.delivery/artifacts/01-idea/po/idea-brief.md` (Aragorn's Stage 1)
+- **Predecessor on main**: caveman-lite `run-2026-05-05-tk3` (merged 2026-05-05; AC-13 telemetry close-out deferred to THIS run by design)
+- **Initiative state**: 4/5 waves SHIPPED; Wave 3 IS the close-out
 
 ## 2. Source
 
-- **Authoritative backlog**: `.delivery/backlog/BACKLOG-102-caveman-prose-discipline.md` (work items, tier scoping, exemptions, AC list, stop-rule).
-- **Binding decisions** (do not re-debate): `.delivery/memory/topics/skill-token-economy.md` (Rulings 1–5; the cache-prefix freeze in Ruling 1 governs every edit in W2-1 and W2-3).
-- **Idea brief** (engagement framing, routing, story consolidation): `.delivery/artifacts/01-idea/po/idea-brief.md`.
+- **Backlog**: `.delivery/backlog/BACKLOG-104-skill-token-economy-delivery-team-wave-3.md` (18 WIs, 7 file-scope stories per PO recommendation §4)
+- **Binding memory**: `.delivery/memory/topics/skill-token-economy.md` (5 conflict rulings; tier budgets; per-skill model map)
+- **Refine memory**: `.delivery/memory/stages/refine.md` (8 lessons applied below)
 
-This PRD does not duplicate those documents. Where this PRD adds value is the discovery-grounded mapping of each work item to a precise TARGET file:line surface and the explicit Validator-Framing split.
+This PRD CONSOLIDATES; it does not re-author. WI ACs and extraction candidates live in BACKLOG-104 verbatim. The team executes against BACKLOG-104; this PRD sharpens exit gates.
 
-## 3. Discovery (TARGET-state file evidence)
+## 3. Discovery (line counts re-verified at Refine, runs the command)
 
-All values below were measured during this Refine pass. Stage 6 developer DoD validators will re-run identical commands; if the values drift between Refine and Dev, that is a defect signal.
+Per refine memory lesson #6 (binding): PRD must run `wc -l` during Refine, not trust upstream narrative. Verified `wc -l` outputs from repo root, 2026-05-09:
 
-| Surface | Path | Lines | Measured |
-|---|---|---|---|
-| Tier-A orchestrator | `delivery-team/skills/delivery-flow/SKILL.md` | 497 | `wc -l` |
-| Stage + dispatch templates | `delivery-team/skills/delivery-flow/references/pipeline-stages.md` | 682 | `wc -l` |
-| DoD validator template | `delivery-team/skills/delivery-flow/references/quality-gates.md` | 288 | `wc -l` |
-| Config schema | `delivery-team/skills/delivery-flow/references/config-schema.md` | 369 | `wc -l` |
-| Generated JSON schema | `delivery-team/skills/delivery-flow/references/config-schema.json` | exists | `head -3` |
+| File | Verified `wc -l` | Tier | Target | Delta |
+|---|---:|:-:|---:|---:|
+| `delivery-team/skills/architect/SKILL.md` | **500** | B | ≤300 | -200 |
+| `delivery-team/skills/presentation/SKILL.md` | **545** | B | ≤300 | -245 |
+| `delivery-team/skills/ui/SKILL.md` | **496** | B | ≤300 | -196 |
+| `delivery-team/skills/operations/SKILL.md` | **420** | B | ≤300 | -120 |
+| `delivery-team/skills/quality/SKILL.md` | **418** | B | ≤300 | -118 |
+| `delivery-team/skills/user-feedback/SKILL.md` | **399** | B | ≤300 | -99 |
+| `delivery-team/skills/godot/SKILL.md` | **236** | C | ≤200 | -36 |
+| `CLAUDE.md` | **168** | n/a | ≤150 | -18 |
 
-Additional discovery facts:
+All values match BACKLOG-104 §Tiered scope; no upstream drift detected.
 
-- `pipeline-stages.md` contains **3 dispatch templates** at lines 44 (Primary), 87 (Supporting), 130 (DoD Validator) — all three must receive the PROSE STYLE block.
-- `pipeline-stages.md` has **10 top-level (`^## `) sections** (`grep -nc`).
-- `config-schema.md` `Current Version: 2.8` (line 5); the row at line 15 already declares `config_version: "2.8"`.
-- The Version History (lines 347–369) shows the v2.8 slot is **already taken** by the DESIGN routing addition (entry dated 2026-04-05). Therefore W2-3 MUST bump to **v2.9**, not v2.8 as the BACKLOG-102 work item draft suggests. This is the only material deviation from BACKLOG-102 wording, and is forced by surface evidence — the BACKLOG was authored before v2.8 landed. FR-3 below records the corrected target.
-- SKILL.md Phase 0 config-read lives at lines 56–89; the Volatile marker sits at line 475, so Phase 0 IS inside the cache-prefix region (bytes 0..2048; boundary documented at line 478). Edits that change Phase 0 byte content are cache-prefix-affecting and require ADR-tk3-001 (already scoped to Stage 4 per idea-brief §6).
-- SKILL.md Step 4 dispatch construction lives at lines 329–345; this is past the cache-prefix boundary, so the W2-1 PROSE STYLE block addition there does NOT require an ADR.
-- Step 7 DoD validation orchestration lives at lines 377–402; also past the prefix boundary.
+**Phase 0 scan** (`grep -n "^## Phase 0"` on each of the 7 SKILL.md files): **zero hits**. None of the 7 currently has a `## Phase 0` header. The byte-stable cache-prefix region today is the frontmatter block (`^---` delimiters at lines 1, 10–11, 18–28 across the 7 files). W3-9 frontmatter rollout (adds `maintainer:` + `fitness_review_due:` + `context_budget:`) DOES touch this region on every file → **Ruling 1 (cache-prefix freeze) is engaged → ADR-tk4-001 cumulative re-freeze is mandatory**.
 
-## 4. Functional Requirements
+**Paradigm precedent for W3-8**: actual path is `delivery-team/skills/architect/paradigms/{volatility,ddd}/SKILL.md` (2 sub-skills exist). Note: CLAUDE.md currently documents this path as `architect/skills/paradigms/` — that is stale; W3-12 CLAUDE.md refactor or W3-9 frontmatter pass should correct in a one-line edit. Out-of-scope to fix here.
 
-Each FR cites a single Work Item; each FR has a target file:line locus.
+**research-agent location**: top-level repo `/research-agent/` (not under `delivery-team/skills/`). W3-8 paradigm pattern targets the top-level plugin; this is consistent with BACKLOG-104 §W3-8 and Ruling 2.
 
-### FR-1 (W2-1): PROSE STYLE block in agent dispatch templates
+**Presentation §-count**: 9 `^## ` sections (Design Principle, Type Detection, 6-Step Flow, Output Format, Slide N template, Error Handling, User Commands, References, Config Integration). The 9 presentation TYPES (Sprint Review, Feature Pitch, etc.) live INSIDE the Type Detection block — W3-2's "9 references" claim refers to extracted type-spec files, not these top-level sections. No conflict.
 
-**MUST** add a PROSE STYLE directive block to all three dispatch templates in `delivery-team/skills/delivery-flow/references/pipeline-stages.md`:
+**`governance/skill-budgets.json`**: 7 known-debt entries, all `target_wave: 3`, all `delivery-team/skills/*/SKILL.md`. Empty `known_debt` post-Wave-3 = AC-1 closure signal.
 
-- Primary Agent Dispatch Template (line 44+)
-- Supporting Agent Dispatch Template (line 87+)
-- DoD Validator Dispatch Template (line 130+) — NOTE: FR-2 governs the *output* style of validator review files; FR-1 governs the *dispatch prompt* itself, which is the same PROSE STYLE block.
+**Live DEFECT-006 instance found**: `.delivery/artifacts/02-refine/po/prd.md` at pipeline-start contained the predecessor caveman-lite PRD, not a fresh-run sentinel — a textbook stale Wave-N-1 carry-over in the new run's namespace. THIS PRD now overwrites; W3-17 Stage 7 entry-sweep would have caught it had it been live. Use as a dogfood data point in Stage 7.
 
-Block content (verbatim from BACKLOG-102 §W2-1):
+## 4. Functional Requirements (grouped by Story per BACKLOG-104 §Story consolidation)
 
-```
-PROSE STYLE: caveman-lite for narrative-framing prose ONLY (the prose between
-signal block and response end, plus signal block SUMMARY field). Drop articles/
-filler/pleasantries/hedging; fragments OK; short synonyms; preserve technical
-terms exact and code/error-string verbatim. Artifact body uses standard prose.
-Auto-clarity exemptions apply: standard prose for security warnings,
-irreversible-op confirmations, multi-step sequences, user clarifications.
-```
+Each FR maps one Story → one or more WIs. Each AC is framed as a Refine-stage **"well-formed?"** check (PRD validation), with the Stage-6 **"applies?"** check noted in §6.
 
-The block is conditionally injected by SKILL.md Phase 0 based on the `prose_style` config key (FR-3); see FR-3 for the wiring.
+### FR-1 — Story 1: architect Tier-B closure (W3-1)
 
-**Locus**: `pipeline-stages.md` lines 44–176 (the three template blocks); `SKILL.md` Step 4 (lines 329–345) for the injection-point reference.
+**Owner**: 1 WI closes 1 gate (refine memory lesson #5).
 
-### FR-2 (W2-2): caveman-lite verdict prose in DoD validator review files
+- FR-1.1: `delivery-team/skills/architect/SKILL.md` MUST land at ≤300 lines via extraction to `delivery-team/skills/architect/references/{roles,decomposition}/*.md` and/or `references/quality-attributes.md`. Extractions confirmed by Architect at Stage 4.
+- FR-1.2: If 200-line residual is infeasible in one wave, **honest partial-compliance pattern** (Wave 2 precedent) applies: ADR-tk4-002 documents residual + `target_wave: 4` re-baseline; CI gate accepts via `Budget-Exception: ADR-tk4-002` with explicit math (cited line count + remainder + reasoned-deferral).
+- FR-1.3: Phase 1 router still picks the correct architect role across all 11 dogfood inputs (Solution / Enterprise / Data / Security / Compliance / Privacy / IR + 4 game roles).
 
-**MUST** update the DoD Validator Prompt Template at `delivery-team/skills/delivery-flow/references/quality-gates.md` lines 21–38 to emit caveman-lite verdict prose in produced review files. Specifically:
+### FR-2 — Story 2: presentation + ui + operations Tier-B trims (W3-2 + W3-3 + W3-4)
 
-- The freeform verdict prose surrounding gate-result tables and findings bullets uses caveman-lite.
-- The `STATUS:` line (DONE / NOT_DONE / CODE_COMPLETE) remains verbatim — value semantics MUST NOT change.
-- Each FINDING still names file/line/criterion (BACKLOG-102 §W2-2 AC).
-- Tabular gate-result blocks remain in current Markdown table format (already terse; no further compression).
+Mechanically independent; parallel-safe.
 
-**Locus**: `quality-gates.md` lines 21–53 (template block + parallel-validator clarification); also referenced from `SKILL.md` Step 7 (lines 377–402).
+- FR-2.1 (W3-2): `presentation/SKILL.md` 545→≤300. Extract 9 type specs to `references/types/*.md` and 4 format specs to `references/formats/*.md`. Phase 1 router: 9/9 type detection + 4/4 format detection on dogfood inputs; sub-agent loads ONLY matched type+format pair.
+- FR-2.2 (W3-3): `ui/SKILL.md` 496→≤300. Extract 3 designer roles to `references/roles/*.md` + design-system + game-UI patterns. Game-UI patterns load ONLY when Game UI Designer detected (cache-cost discipline).
+- FR-2.3 (W3-4): `operations/SKILL.md` 420→≤300. Extract 3 ops roles + deployment-strategies + release-management + documentation-patterns. Sub-agent loads matched role + matched task-specific reference only.
 
-### FR-3 (W2-3): `prose_style:` config key + schema bump v2.8 → v2.9
+### FR-3 — Story 3: quality + user-feedback + godot trims (W3-5 + W3-6 + W3-7)
 
-**MUST** add a top-level `prose_style` key to the config schema:
+Parallel-safe. W3-6 coordinates with W3-8 (persona-family extraction is the line-count vehicle).
 
-- Key: `prose_style`
-- Type: string
-- Required: no
-- Default: `caveman-lite`
-- Valid values: `caveman-lite`, `standard`
-- Consumed by: `delivery-flow` Phase 0 (conditional injection of FR-1 block); `delivery-flow` Step 7 (conditional caveman-lite framing of FR-2 validator output).
+- FR-3.1 (W3-5): `quality/SKILL.md` 418→≤300. Extract 7 test strategies to `references/test-strategies/*.md` + quality-metrics + automation-strategy. Phase 1 picks correct strategy 7/7 dogfood inputs.
+- FR-3.2 (W3-6): `user-feedback/SKILL.md` 399→≤300. The 4 persona families (gamers / web-app / enterprise / demographic) become paradigm sub-skills under W3-8 — that extraction IS the line-count vehicle. Joint-AC with FR-4.
+- FR-3.3 (W3-7): `godot/SKILL.md` 236→≤200 (Tier-C). Extract language-choice + signal-patterns + scene-patterns to `references/`. GDScript / C# / scene / signal task-types still route correctly.
 
-**Schema version**: Bump `Current Version` (config-schema.md line 5) and `config_version` row default (line 15) from `2.8` to **`2.9`**. The v2.8 slot is already occupied by the DESIGN-routing entry (2026-04-05). The Version History table (line 347+) gains a v2.9 row with date and change description. The Config File Template at line 207+ gains the `prose_style:` line.
+### FR-4 — Story 4: paradigm sub-skill pattern (W3-8)
 
-**Migration**: Existing v2.8-or-earlier configs auto-migrate. If `prose_style` is absent on load, default to `caveman-lite` and surface the standard "Config upgraded from v[old] to v2.9" banner per SKILL.md Phase 0 lines 60–64. Existing v2.7→v2.8 migration paths are preserved (lines 65–71).
+Highest architectural novelty in the wave. Architect Stage 4 owns dispatch-shape ADR-tk4-003.
 
-**JSON schema regeneration**: After editing `config-schema.md`, run `delivery-team/scripts/generate-schema.py` to regenerate `references/config-schema.json` (per Step 6.5 of the schema extension protocol; idea-brief §7 Stage 5 also makes this an explicit Plan-stage Story DoD task).
+- FR-4.1: `research-agent/skills/research-types/<type>/SKILL.md` exists for each of the 5 research types with `disable-model-invocation: true` frontmatter. Parent `research-agent/SKILL.md` becomes the router.
+- FR-4.2: `delivery-team/skills/user-feedback/skills/personas/<family>/SKILL.md` exists for the 4 persona families with `disable-model-invocation: true`. Parent is router.
+- FR-4.3 (conditional): `delivery-team/skills/presentation/skills/types/<type>/SKILL.md` for 9 types IF Architect Stage 4 picks paradigm-sub-skill route over references-only for W3-2. Default = references-only (lower-risk; W3-2 already meets ≤300 without paradigm move).
+- FR-4.4: Marketplace auto-discovery NOT broken. CI lint validates Ruling 2 invariant: `disable-model-invocation: true` ONLY on paradigm sub-skills under `<plugin>/skills/<axis>/<variant>/SKILL.md` paths; never on top-level plugin SKILL.md.
+- FR-4.5: Existing precedent honored: `delivery-team/skills/architect/paradigms/{volatility,ddd}/SKILL.md` shape is the canonical reference (read by Architect at Stage 4 before drafting ADR-tk4-003).
 
-**SKILL.md Phase 0 wiring**: Add a single conditional line in Phase 0 (lines 56–89) that reads `config.prose_style` and stores it in the loaded-config struct. Step 4 dispatch construction reads the value and either includes the FR-1 PROSE STYLE block (when `caveman-lite`) or omits it (when `standard`). The Step 4 edit sits OUTSIDE the cache-prefix region (line 329+); the Phase 0 edit sits INSIDE (lines 56–89). ADR-tk3-001 (Stage 4 deliverable per idea-brief §6) governs the prefix re-freeze — Refine does not pre-judge whether the Phase 0 edit will move prefix bytes; Architect does.
+### FR-5 — Story 5: governance frontmatter rollout (W3-9)
 
-**Locus**: `config-schema.md` lines 5, 15, 207+, 347+; `SKILL.md` lines 56–89 (Phase 0) and 329–345 (Step 4); `references/config-schema.json` (regenerated artifact).
+**SEQUENCING GATE**: this WI MUST NOT begin until W3-1..W3-8 (Stories 1–4) have shipped to the working tree (Wave 0 mandatory-rollout-side-effects lesson — frontmatter adds ~3 lines/file).
+
+- FR-5.1: Every delivery-team SKILL.md gets three new frontmatter keys: `maintainer:` + `fitness_review_due: YYYY-MM-DD` + `context_budget: <max_lines>` (matches `tier:` value).
+- FR-5.2: CI lint validates the three keys are present + well-formed on every delivery-team SKILL.md.
+- FR-5.3: Post-rollout, NO SKILL.md exceeds its `context_budget:` (chained gate to FR-1..FR-3 final line counts).
+- FR-5.4: `fitness_review_due:` dates default to 90 days from rollout date; staggering acceptable per maintainer-team's choice (avoid synchronized renewal storm).
+- FR-5.5: **Cache-prefix re-freeze owned here**: ADR-tk4-001 (architect-authored Stage 4) documents cumulative cache-prefix changes across W3-1..W3-7 + W3-9 frontmatter rollout; `governance/cache-prefix-hash.txt` updated **ONCE at end of Story 5** (not per-file). Dev runs-the-command at Architect DoD per caveman-lite Hot Lesson #1 extension (caught a byte-offset INVERSION in tk3).
+
+### FR-6 — Story 6: retro KPI + fitness review process + CLAUDE.md refactor (W3-10 + W3-11 + W3-12)
+
+Parallel with Story 5.
+
+- FR-6.1 (W3-10): Retrospective template gains `context_tokens_per_pipeline_run` 5-run rolling-mean KPI sourced from W0-1 telemetry; trend annotation Δ vs prior 5-run window.
+- FR-6.2 (W3-11): `governance/fitness-review.md` authored (cadence, owner, inputs, outputs, kill-criteria); `.github/workflows/fitness-review-reminder.yml` opens an issue 7 days before each `fitness_review_due:` date. Workflow injection-lint guard from `.github/workflows/workflow-injection-lint.yml` MUST pass for the new workflow (DEFECT-004 regression guard).
+- FR-6.3 (W3-12): `CLAUDE.md` 168→≤150. Plugin-detail tables (delivery-team 11-skill, hardware-team 7-skill, both hooks tables) extracted to per-plugin `ARCHITECTURE.md` or new `governance/plugin-catalog.md`. Detail discoverable via one-hop link from CLAUDE.md. CI lint validates ≤150.
+
+### FR-7 — Story 7 (admin): retro carry-forwards + tooling hardening (W3-13..18)
+
+Parallel with anything; trivial individually.
+
+- FR-7.1 (W3-13): `delivery-team/skills/delivery-flow/references/validator-prompt-template.md` codifies spec-vs-impl framing block + canonical-path block. All current validator dispatches reference it.
+- FR-7.2 (W3-14): `.github/workflows/skill-budget-consistency.yml` validates `governance/skill-budgets.json` known_debt array vs any hard-coded debt list in `scripts/check_skill_budgets.py`. Workflow injection-lint passes.
+- FR-7.3 (W3-15): DoD STATUS-format standardized OR flexible-grep helper provided. Architect picks at Stage 4 by cheapness. STATUS values stay verbatim (DONE / NOT_DONE / CODE_COMPLETE / PASS_WITH_NOTES).
+- FR-7.4 (W3-16): Pre-merge git hook companion to CI gate. `governance/pre-commit-skill-budget.sh` + `governance/install-pre-commit.sh`; opt-in install. Hook fails commit when SKILL.md exceeds budget without `Budget-Exception:` in commit message.
+- FR-7.5 (W3-17): Stage 7 entry-step in `delivery-team/skills/delivery-flow/SKILL.md` sweeps stale Wave-N-1 carry-overs (Option A banner OR Option B archive — Architect picks). DEFECT-006 closes upon merge.
+- FR-7.6 (W3-18): W0-1 telemetry hook fails-loud OR marks zero-token rows `placeholder=true`. W3-10 retro KPI excludes placeholder rows. Test: synthesize missing-measurement; behavior holds.
+- FR-7.7 (housekeeping): `governance/skill-budgets.json` `known_debt` re-baselined post-Wave-3 (empty array OR only justified non-delivery-team Wave-4 entries).
 
 ## 5. Non-Functional Requirements
 
-| ID | NFR | Source | Verification |
-|---|---|---|---|
-| NFR-1 | Cache-prefix freeze preserved (Ruling 1). Any Phase 0 byte change is covered by ADR-tk3-001 + `governance/cache-prefix-hash.txt` update + CI hash-check pass. | skill-token-economy.md Ruling 1; idea-brief §6 | Architect Stage 4 (ADR + hash diff); CI hash-check |
-| NFR-2 | Telemetry-measurable. Pre/post token counts come from the existing W0-1 hook at `.delivery/telemetry/skill-loads.jsonl`. No new telemetry surface. | BACKLOG-102 §Source bullet 3; idea-brief §3 | Stage 6/7 dogfood (§7 below) |
-| NFR-3 | Opt-out path. `prose_style: standard` reverts behavior to current; verified by 3-dispatch dogfood. | BACKLOG-102 §W2-3 AC; AC-6 | Stage 6 dogfood |
-| NFR-4 | Auto-clarity exemptions enforced. Security / irreversible-op / multi-step / user-clarification dispatches use standard prose even when `prose_style: caveman-lite`. The PROSE STYLE block text in FR-1 declares the exemptions; the developer at Stage 6 MUST add at least one negative test (synthetic security-warning dispatch) to demonstrate exemption. | BACKLOG-102 §Auto-clarity boundaries; idea-brief §8 AC-5 | Stage 6 dogfood (§7 below) |
-| NFR-5 | No new CLI dependencies in Developer-DoD commands. Every AC check below uses bash + python (stdlib + PyYAML). NO `yq`, `xq`, `jq` etc. Verified by reading `.claude/settings.local.json` allowlist, which currently permits only `WebSearch`, `Bash(flatpak list:*)`, `Read(//usr/bin/**)`, `Read(//var/usrlocal/bin/**)`, `Bash(git add:*)` — no general bash CLI tools beyond `git add`. The repo's standing dogfood prereq is bash + python3 + PyYAML; ACs below conform. | Memory lesson 3 (PRD instructions); `.claude/settings.local.json` content | Stage 6 grep audit on AC commands |
-| NFR-6 | Validator-prompt path canonicality. Every validator dispatch in Stage 6/7 cites `.delivery/artifacts/<NN>-<stage>/` paths so the validator reads the canonical file. | Wave 2 retro carry-forward; idea-brief §8 footer | UAT spot-check on dogfood dispatch |
-| NFR-7 | DoD pass-rate baseline preserved (4/7 first-try per memory/index.md). Caveman-lite verdict prose MUST NOT cause validators to miss findings (stop-rule trigger). | BACKLOG-102 AC-3, §Stop-rule; idea-brief §9 | UAT measurement vs baseline |
-| NFR-8 | Light = reduced depth, NOT skipped. Refine ran every discovery command cited in §3 above. The Developer DoD validator MUST also run them — no copy-paste of cited values without re-measurement. | Memory lesson 5 | Stage 6 DoD validator |
+- **NFR-1 — Tier ceilings preserved**: post-Wave-3, every delivery-team SKILL.md MUST satisfy its declared tier (A ≤500, B ≤300, C ≤200) per Ruling 3. CI gate enforces; FR-5.3 chains to this.
+- **NFR-2 — Cache-prefix invariant** (Ruling 1): W3-9 frontmatter rollout touches the byte-stable cache-prefix region of every delivery-team SKILL.md (verified via §3 frontmatter-line scan; no Phase 0 headers exist, so frontmatter IS today's prefix). ADR-tk4-001 owns the re-freeze; one-time ~2KB-class re-warm cost accepted; `governance/cache-prefix-hash.txt` updated once at Story-5 end. Dev runs-the-command at Architect DoD is binding.
+- **NFR-3 — No new CLI deps in DoD commands** (refine memory lesson #4): all DoD commands use `bash` + `python3` stdlib + `PyYAML` only. No `yq`, no `jq` unless already present and listed in dogfood-prereqs. Validator MUST reject DoD commands that introduce new deps.
+- **NFR-4 — Telemetry-measurable cumulative reduction** (closes caveman-lite AC-13): cumulative token reduction ≥50% on `delivery-team:delivery-flow` invocations vs pre-Wave-0 baseline (compounding W0+W1+W2+caveman-lite+W3). Measured from `.delivery/telemetry/skill-loads.jsonl` over Wave-3's first 5 dispatches.
+- **NFR-5 — No regression in first-try DoD pass rate**: currently 60–90% across stages per `memory/index.md`; Wave 3 must not degrade.
+- **NFR-6 — Defects/story rate ≤0.4** (BACKLOG-100 stop-rule): rolling 3-PR window. Current = 0.33 (tk2 + tk3); PO empowered to halt at any Story boundary if a third defect lands.
+- **NFR-7 — Marketplace discoverability invariant** (Ruling 2): top-level plugin SKILL.md files MUST stay marketplace-discoverable. `disable-model-invocation: true` ONLY on paradigm sub-skills. CI lint chains to FR-4.4.
+- **NFR-8 — Stop-rule tripwire armed** (BACKLOG-102 carry-forward): if Wave-3's first 3 dispatches show <15% prose-token reduction vs pre-caveman-lite baseline, **halt before Story 5 (W3-9) begins**. Stories 1–4 content trims may continue (orthogonal to prose discipline); only W3-9 mandatory rollout holds, pending root-cause retro.
 
 ## 6. Acceptance Criteria
 
-### 6.1 Initiative-level AC (verbatim from BACKLOG-102 §Acceptance Criteria)
+Initiative-level AC-1..AC-7 carried verbatim from BACKLOG-104 §Acceptance Criteria, with WI tags + target file/line ranges + runnable check + expected outcome at TARGET state. Each AC framed as Refine "well-formed?" (PRD-stage gate) and Stage-6 "applies?" (Dev-stage gate).
 
-These six are the binding initiative gates. Each is tagged with the closing WI.
-
-| AC | Verbatim text | Closes WI |
-|---|---|---|
-| AC-1 | Agent narrative-framing prose MEASURABLY shorter (≥20% reduction in response-prose tokens, telemetry-verified). | W2-1 |
-| AC-2 | DoD review files MEASURABLY smaller (≥25% reduction). | W2-2 |
-| AC-3 | NO regression in DoD pass rate (currently 4/7 first-try per memory/index.md). | W2-1 + W2-2 (joint) |
-| AC-4 | NO regression in artifact quality (PRDs/ADRs/release-notes still pass downstream agents' reads — verified by next pipeline run). | W2-1 + W2-2 (joint) |
-| AC-5 | Auto-clarity boundaries respected (security/destructive/multi-step prose remains standard). | W2-1 |
-| AC-6 | Opt-out via `prose_style: standard` works (one-line config change reverts behavior). | W2-3 |
-
-### 6.2 Per-WI structural ACs (Refine-grounded, "well-formed?" framing)
-
-#### W2-1 PROSE STYLE block (closes AC-1, AC-5)
-
-| AC ID | Target file:line | Runnable check (bash + python3) | Expected at TARGET state | Frame |
+| AC | Source WI | Check (runnable) | Refine well-formed? | Stage-6 applies? (TARGET state) |
 |---|---|---|---|---|
-| W2-1-S1 | `references/pipeline-stages.md` lines 44, 87, 130 | `grep -c "^PROSE STYLE: caveman-lite for narrative-framing prose ONLY" delivery-team/skills/delivery-flow/references/pipeline-stages.md` | `3` | well-formed? |
-| W2-1-S2 | `references/pipeline-stages.md` (each block) | `grep -c "Auto-clarity exemptions apply" delivery-team/skills/delivery-flow/references/pipeline-stages.md` | `3` | well-formed? |
-| W2-1-S3 | `SKILL.md` Step 4 (lines 329–345) | `grep -n "PROSE STYLE\|prose_style" delivery-team/skills/delivery-flow/SKILL.md \| head -5` returns non-empty match within Step 4 region | match present | well-formed? |
-| W2-1-A1 | telemetry log | python3 reads `.delivery/telemetry/skill-loads.jsonl`, computes mean response-prose tokens for last 5 pre-merge dispatches vs first 5 post-merge dispatches; reduction ≥ 20% | reduction ≥ 20% (AC-1) | applies? |
-| W2-1-A2 | synthetic dispatches | 3 dogfood dispatches (security warning / `git revert` confirmation / 4-step migration) inspected; each shows standard prose, no PROSE STYLE compression | 3/3 standard prose (AC-5) | applies? |
+| AC-1 | W3-1..7 + W3-9 | `python3 scripts/check_skill_budgets.py` | command exists + parses + exits non-zero today on 7 entries | exits 0 OR known_debt empty for delivery-team scope |
+| AC-2 | W3-12 | `wc -l CLAUDE.md` | command runnable; today=168 | output ≤150 |
+| AC-3 | W3-9 | `python3 scripts/lint_skill_frontmatter.py` (new in W3-9) | check well-formed for the 3 keys; today: lint absent | all delivery-team SKILL.md have `maintainer:` + `fitness_review_due:` + `context_budget:` |
+| AC-4 | W3-13..16 | manual + CI: validator-prompt template exists; JSON↔Python lint workflow live; STATUS-format chosen; pre-merge hook script exists | each WI has well-formed AC in §4 FR-7 | all 4 carry-forwards DISCHARGED on main |
+| AC-5 | W3-17 + W3-18 | `grep -n "Stage 7 entry sweep" delivery-team/skills/delivery-flow/SKILL.md`; `grep -n "placeholder" delivery-team/hooks/<telemetry>` | greps runnable; today: zero hits expected | both greps return matches; **DEFECT-006 closes** |
+| AC-6 | W3-8 | `find . -path "*/skills/*" -name SKILL.md \| xargs grep -l "disable-model-invocation: true"` | find runnable; today: 2 (volatility, ddd) | ≥3 ADDITIONAL paradigm axes (research-agent + user-feedback minimum; presentation conditional) |
+| AC-7 | NFR-4 | `python3 scripts/compute_token_reduction.py --baseline pre-W0 --window 5` (telemetry post-processor) | command path well-formed; baseline data exists in `.delivery/telemetry/skill-loads.jsonl` | ≥50% cumulative reduction on first 5 Wave-3 dispatches |
 
-#### W2-2 caveman-lite verdict prose in DoD validator template (closes AC-2)
+**Per-WI AC pointers**: BACKLOG-104 §W3-1..W3-18 ACs are authoritative; this PRD does not duplicate them. Each FR-x.y above traces to the canonical WI AC list.
 
-| AC ID | Target file:line | Runnable check (bash + python3) | Expected at TARGET state | Frame |
-|---|---|---|---|---|
-| W2-2-S1 | `references/quality-gates.md` lines 21–38 (validator template block) | `grep -n "STATUS: DONE \| NOT_DONE \| CODE_COMPLETE" delivery-team/skills/delivery-flow/references/quality-gates.md` returns line within template block; STATUS values UNCHANGED | unchanged | well-formed? |
-| W2-2-S2 | `references/quality-gates.md` template body | `grep -c "caveman-lite" delivery-team/skills/delivery-flow/references/quality-gates.md` ≥ 1 (template instructs validator to use caveman-lite for verdict prose) | `≥ 1` | well-formed? |
-| W2-2-S3 | structural — findings format | `grep -nE "file/line/criterion\|name file" delivery-team/skills/delivery-flow/references/quality-gates.md` matches the existing finding-format directive (preserved verbatim) | preserved | well-formed? |
-| W2-2-A1 | DoD review file size delta | python3 averages byte-length of `.delivery/artifacts/*/dod/*-review.md` for last 5 pre-merge stage runs vs first 5 post-merge stage runs; reduction ≥ 25% | reduction ≥ 25% (AC-2) | applies? |
-| W2-2-A2 | DoD pass-rate | python3 counts first-try DONE rate over 5-run window post-merge vs the 4/7 baseline in `memory/index.md`; no regression | ≥ 4/7 first-try (AC-3) | applies? |
+## 7. Validator Framing (refine memory lesson #7 — binding)
 
-#### W2-3 `prose_style:` config key + schema bump (closes AC-6)
+DoD validator dispatch prompt MUST state:
 
-| AC ID | Target file:line | Runnable check (bash + python3) | Expected at TARGET state | Frame |
-|---|---|---|---|---|
-| W2-3-S1 | `references/config-schema.md` line 5 | `grep -n "^## Current Version: 2.9" delivery-team/skills/delivery-flow/references/config-schema.md` | match on line 5 | well-formed? |
-| W2-3-S2 | `references/config-schema.md` line 15 | `grep -n '^| \`config_version\` .*"2.9"' delivery-team/skills/delivery-flow/references/config-schema.md` | match | well-formed? |
-| W2-3-S3 | `references/config-schema.md` schema table | `grep -n '^| \`prose_style\`' delivery-team/skills/delivery-flow/references/config-schema.md` | match (key present, type string, default `caveman-lite`, valid values `caveman-lite, standard`) | well-formed? |
-| W2-3-S4 | `references/config-schema.md` Version History (lines 347+) | `grep -n '^| 2.9 ' delivery-team/skills/delivery-flow/references/config-schema.md` | match (one v2.9 row) | well-formed? |
-| W2-3-S5 | `references/config-schema.md` Config File Template (lines 207+) | `grep -nA1 "^prose_style:" delivery-team/skills/delivery-flow/references/config-schema.md` | match within template block | well-formed? |
-| W2-3-S6 | `references/config-schema.json` | `python3 -c "import json; d=json.load(open('delivery-team/skills/delivery-flow/references/config-schema.json')); assert 'prose_style' in d.get('properties', {}); assert d['properties']['config_version'].get('default')=='2.9'"` | exit 0 | well-formed? |
-| W2-3-S7 | `SKILL.md` Phase 0 (lines 56–89) | `grep -nE "prose_style" delivery-team/skills/delivery-flow/SKILL.md \| head -3` returns ≥ 1 match within line range 56..89 | match | well-formed? |
-| W2-3-A1 | runtime opt-out | 3 synthetic dispatches with `.delivery/config.yml` set to `prose_style: standard`; PROSE STYLE block absent from each dispatch prompt; baseline-style prose returns | 3/3 absent (AC-6) | applies? |
+> "This is a Stage-2 Refine PRD. Verify each AC is **well-formed and runnable** — i.e., the command parses, the file path is valid, the expected-output column is unambiguous. **Do NOT verify whether the AC passes today** — it should not; the work hasn't been done. Stage 6 owns the 'applies?' gate."
 
-## 7. Validator Framing (Wave 1 retro lesson, made surface)
+Conflating well-formed vs applies wasted a Stage-2 R1 in run-tk1 (refine memory lesson #7). Wave 3 must not repeat. Each AC in §6 is annotated with both columns to make the framing impossible to miss.
 
-Each AC above carries a Frame column tagged either **well-formed?** or **applies?**. This split is binding for validator dispatch:
+## 8. Stage 6 Dogfood Plan (AC-13 close-out for caveman-lite)
 
-- **Refine DoD validators (Stage 2)** evaluate ONLY the **well-formed?** ACs. They check the directive itself: is the PRD self-consistent, is the schema bump well-targeted, do the cited file:line loci exist, does the AC list cover all six initiative ACs? They do NOT measure runtime telemetry — the change has not landed yet.
-- **Stage 6 Developer DoD validators** evaluate BOTH **well-formed?** (re-running the Refine commands to detect drift) AND **applies?** (running the post-merge measurement protocol of §7 below).
-- **Stage 7 UAT validators** focus on **applies?** ACs against the dogfood evidence pack and validate NFR-6 path-canonicality on the produced artifact set.
+Per BACKLOG-104 §Sequencing relative to caveman-lite: **Wave 3's first dispatches ARE the empirical AC-13 telemetry measurement window**. Caveman-lite deferred AC-13 by design; this run measures it.
 
-This split eliminates the Wave 1 retro defect where Refine validators tried to measure runtime telemetry on un-merged code.
+**Cumulative reduction calculation** (NFR-4 + AC-7):
 
-## 8. Stage 6 Dogfood Plan (the empirical measurement protocol)
+1. **Baseline**: `.delivery/telemetry/skill-loads.jsonl` rows from pre-Wave-0 era (run-2026-05-02 and earlier) — total context tokens per `delivery-flow` dispatch, mean + p50 + p95.
+2. **Wave-3 sample**: first 5 `delivery-flow` dispatches in this pipeline (Stages 1–5 of run-tk4 itself qualify; Stage 6+ adds more).
+3. **Compute**: `(baseline_mean - wave3_mean) / baseline_mean * 100`. Target ≥50%.
+4. **Stop-rule tripwire** (NFR-8): if first 3 dispatches show prose-token reduction <15% vs pre-caveman-lite baseline, **halt before W3-9** (Story 5). Stories 1–4 (W3-1..W3-8) and Story 7 admin proceed; only W3-9 + downstream W3-10..12 hold pending caveman-lite root-cause retro. PO + Architect jointly call the halt at Stage 6 mid-flight if the tripwire fires.
+5. **Telemetry hardening dependency**: W3-18 (FR-7.6) hardens the W0-1 hook before W3-10 KPI compute. If W3-18 ships placeholder-row filtering mid-Wave-3, retro KPI compute uses post-W3-18 data only; pre-W3-18 placeholder rows excluded.
 
-Stage 6 owns AC-1, AC-2, AC-5, AC-6. Stage 7 confirms AC-3 and AC-4 (no-regression rolling).
-
-### 8.1 Pre-merge baseline (already collected)
-
-Pre-merge baseline = the last 5 dispatches in `.delivery/telemetry/skill-loads.jsonl` from runs predecessor-tk2 and earlier. Wave 2 telemetry per BACKLOG-102 §W2-1 AC bullet 2 already covers this. The developer reads the file with `python3 -c "import json; ..."` and computes mean response-prose tokens. The exact dispatch IDs entering the baseline are recorded in the `w2-1-implementation.md` report.
-
-### 8.2 Post-merge sample (Stage 6, full depth)
-
-After the consolidated Story 1 lands (W2-1 + W2-2 + W2-3 in one developer dispatch per idea-brief §4), the developer triggers 5 dispatches against routine pipeline work to populate fresh telemetry rows. For each row: response-prose token count is logged by the W0-1 hook. Compute mean. Required: **≥ 20% reduction vs pre-merge baseline** (AC-1 / W2-1-A1). If <15%, the BACKLOG-102 stop-rule fires (idea-brief §9): pause, retro, do not proceed to Tier 2 deferral targets.
-
-### 8.3 DoD review file size delta (AC-2 / W2-2-A1)
-
-Compute mean byte-length of all `.delivery/artifacts/*/dod/*-review.md` files produced in the 5 post-merge dispatches; compare to the same metric across the 5 pre-merge baseline dispatches. Required: **≥ 25% reduction**. If under, same stop-rule fires.
-
-### 8.4 Auto-clarity exemption check (AC-5 / W2-1-A2)
-
-3 synthetic dogfood dispatches:
-
-1. **Security warning**: a dispatched prompt where the agent's narrative MUST include a security warning (e.g., "the credentials file is world-readable"). Inspect dispatch transcript: PROSE STYLE block is sent, but the agent's emitted security-warning prose remains in standard form per the auto-clarity exemption embedded in FR-1.
-2. **Irreversible op**: a dispatch involving `git revert` or `rm -rf` confirmation prose. Same expectation.
-3. **Multi-step sequence**: a 4-step migration / rollback sequence in the agent's narrative. Same expectation.
-
-Each transcript is captured to `.delivery/artifacts/06-development/dogfood/auto-clarity-<n>.md` and inspected by the Stage 6 QA validator.
-
-### 8.5 Opt-out check (AC-6 / W2-3-A1)
-
-1 dogfood dispatch with `.delivery/config.yml` patched to `prose_style: standard`. Verify the PROSE STYLE block is NOT injected into the dispatch prompt (transcript inspection) and the agent's emitted prose matches the pre-merge baseline style (no caveman-lite compression artifacts). Restore `prose_style: caveman-lite` after the test.
-
-### 8.6 Path-canonicality spot-check (NFR-6)
-
-The Stage 6 validator dispatches MUST cite `.delivery/artifacts/06-development/` paths (not in-prompt content). UAT spot-checks one dispatch transcript to confirm.
+**Dogfood targets within Wave 3**:
+- W3-13 validator template: dogfooded by Stage 6 first validator dispatch (use the new template; verify framing improves first-try DoD pass rate or at minimum doesn't regress).
+- W3-17 Stage 7 entry sweep: dogfooded by THIS pipeline's Stage 7 — the live DEFECT-006 instance from §3 (caveman-lite PRD found at `02-refine/po/prd.md` at run-start) becomes the canonical regression case.
+- W3-18 telemetry hardening: dogfooded by W3-10 retro KPI compute on the same run.
 
 ## 9. Out of Scope
 
-Per BACKLOG-102 §Out of scope and §Tiered scope, the following are explicitly NOT in this engagement:
-
-- **Tier 2 surfaces** — retrospective body prose; sprint plan body prose. Both deferred to BACKLOG-103 A/B.
-- **Tier 3 surfaces** — PRD body, ADR body, release notes / user-guide, memory topic chunks, run archive files. Standard prose required.
-- **CLAUDE.md** — handled by Wave 3 refactor.
-- **Code, commit messages, PR bodies** — already excluded by caveman's own boundary rule.
-- **caveman `full` / `ultra` modes** — out of scope; revisit only if Tier 1 + Tier 2 measure clean.
-- **Wenyan modes** — no business case.
-- **Marketplace caveman plugin install** — this engagement implements caveman-lite *patterns* directly; no external dependency added.
+- **Other plugins' Tier-B/C debt** (mtg-commander, hardware-team, agentic-flow-builder, prd-quality-gate-flow, prompt-engineer, research-agent's own top-level SKILL.md beyond the paradigm pattern in W3-8) — deferred to BACKLOG-105+ per user direction "one plugin at a time after delivery-team".
+- **delivery-team paradigm sub-skill pattern beyond the 3 cited** (research-agent + presentation + user-feedback). Other axes (developer 14-language, architect 11-role) deferred to BACKLOG-106+.
+- **External-plugin governance frontmatter rollout** beyond delivery-team — Architect at Stage 4 may include if ROI clean; otherwise BACKLOG-105+.
+- **Caveman-lite Tier 2 A/B test** (retrospective body prose + sprint plan body prose) — separate sub-wave.
+- **Caveman `full` or `ultra` mode adoption**, **wenyan / non-English prose modes**, **code/commit/PR-body compression** — all out per existing boundaries.
+- **Fix to stale CLAUDE.md path** for architect paradigms (`architect/skills/paradigms/` → `architect/paradigms/`): noted in §3 discovery; one-line edit; piggy-backs on W3-12 CLAUDE.md refactor opportunistically; not a separate WI.
 
 ## 10. Stop-rule (verbatim from idea-brief §9)
 
-**From skill-token-economy.md**: defects/story rate >0.4 across any 3-PR window pauses subsequent waves until a root-cause retro completes.
+**Initiative-level (BACKLOG-100 carry-forward)**: defects/story rate >0.4 across any 3-PR window pauses subsequent waves. Current rolling 3-PR window: tk2 (0 defects) + tk3 (1 defect, P1 non-blocking) = **0.33 < 0.4 — NOT triggered, Wave 3 may proceed**. Wave 3 must hold the rate; PO empowered to halt at any Story boundary if a third defect lands and pushes the window past threshold.
 
-**From BACKLOG-102 §Stop-rule** (engagement-local): if Tier-1 measurement shows <15% prose-token reduction (low ROI) OR if any DoD validator misses a finding due to over-compression (quality regression), pause Tier-2 A/B (deferred to BACKLOG-103+) and run a root-cause retro before proceeding.
-
-Both stop-rules are armed for this run.
+**Caveman-lite carry-forward (BACKLOG-102)**: see NFR-8 + §8 step 4 — <15% prose-token reduction on first dispatches halts W3-9 only.
 
 ## 11. References
 
 - Idea brief: `.delivery/artifacts/01-idea/po/idea-brief.md`
-- Source backlog: `.delivery/backlog/BACKLOG-102-caveman-prose-discipline.md`
-- Binding decisions: `.delivery/memory/topics/skill-token-economy.md`
+- Source backlog: `.delivery/backlog/BACKLOG-104-skill-token-economy-delivery-team-wave-3.md`
+- Binding memory: `.delivery/memory/topics/skill-token-economy.md`
+- Refine memory: `.delivery/memory/stages/refine.md` (8 lessons applied)
+- Project-type memory: `.delivery/memory/topics/project-types.md`
+- Predecessor retros: `.delivery/memory/archive/run-2026-05-05-tk3.md` (caveman-lite) + `run-2026-05-05-tk2.md` (Wave 2)
 - Cache-prefix hash: `governance/cache-prefix-hash.txt`
+- Known-debt registry: `governance/skill-budgets.json` (7 entries; all `target_wave: 3`)
 - Telemetry: `.delivery/telemetry/skill-loads.jsonl`
-- Predecessor archive: `.delivery/memory/archive/run-2026-05-05-tk2.md`
-- Schema generator: `delivery-team/scripts/generate-schema.py`
+- Paradigm precedent: `delivery-team/skills/architect/paradigms/{volatility,ddd}/SKILL.md`
+
+---
+
+— Gandalf the Grey, PO, run-2026-05-09-tk4. *"The wise speak only of what they know."* The lines are counted; the gates are sharp; the fellowship may ride.

@@ -1,11 +1,14 @@
 ---
 name: quality
-description: QA Engineer agent for test planning, test case design, automation strategy, and quality metrics. This skill should be used when users need test strategies, test cases, test plans, regression plans, test data design, exploratory testing guidance, quality metrics, or automation strategies. Auto-detects the testing task type and spawns a scoped sub-agent so only the relevant test reference is loaded into context. Triggers on phrases like "test cases", "test plan", "test strategy", "regression", "test data", "exploratory testing", "quality metrics", "automation strategy", "QA", "test coverage", "smoke test", "sanity test", "boundary testing", "edge cases".
+description: QA Engineer agent for test planning, test case design, automation strategy, and quality metrics. Auto-detects the testing task type and spawns a scoped sub-agent so only the relevant reference loads. Triggers on phrases like "test strategy", "test cases", "test plan", "regression", "test data", "exploratory testing", "quality metrics", "automation strategy", "QA", "test coverage", "smoke test", "boundary testing", "edge cases". Output contracts in references/contracts/.
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: B
+maintainer: delivery-team-leads
+fitness_review_due: 2026-08-09
+context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
@@ -108,151 +111,18 @@ If the task requires working with existing test files, use the Read, Edit, Write
 
 ## Output Contracts
 
-### test-strategy
+Each task type emits a structured markdown contract. Load the contract file from `references/contracts/` matching the routed task type and embed the template literally in the sub-agent prompt; sub-agent fills in `[BRACKETED]` placeholders.
 
-```
-## Test Strategy: [FEATURE/SYSTEM NAME]
-
-### Scope
-[What is being tested and what is explicitly out of scope]
-
-### Test Types
-| Type | Purpose | Level | Tools/Approach |
-|---|---|---|---|
-
-### Risk Assessment
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-
-### Entry Criteria
-- [List of conditions that must be met before testing begins]
-
-### Exit Criteria
-- [List of conditions that must be met before testing is complete]
-
-### Environment Requirements
-- [Test environments needed, data requirements, access]
-
-### Approach
-[Narrative description of the testing approach: what gets tested first, how risk drives prioritization, shift-left opportunities]
-```
-
-### test-cases
-
-```
-## Test Cases: [FEATURE/SCENARIO NAME]
-
-### Test Case Table
-| ID | Title | Type | Priority | Preconditions | Steps | Expected Result |
-|---|---|---|---|---|---|---|
-
-### Boundary Values
-| Input | Lower Bound | Upper Bound | On-Boundary | Off-Boundary |
-|---|---|---|---|---|
-
-### Negative Test Cases
-| ID | Title | Invalid Input | Expected Error |
-|---|---|---|---|
-
-### Coverage Notes
-[Which equivalence classes are covered, what remains untested, known gaps]
-```
-
-### test-plan
-
-```
-## Test Plan: [RELEASE/FEATURE NAME]
-
-### Objective
-[What this test plan validates]
-
-### Scope
-[In scope / out of scope]
-
-### Strategy Summary
-[Test types, levels, approach -- reference the test strategy]
-
-### Test Schedule
-| Phase | Activities | Duration | Dependencies |
-|---|---|---|---|
-
-### Test Cases
-[Reference or embed the test case table]
-
-### Entry / Exit Criteria
-[Clear, measurable criteria]
-
-### Risks and Mitigations
-| Risk | Mitigation |
+| Task Type | Contract File |
 |---|---|
+| `test-strategy` | `references/contracts/test-strategy.md` |
+| `test-cases` | `references/contracts/test-cases.md` |
+| `test-plan` | `references/contracts/test-plan.md` |
+| `test-data` | `references/contracts/test-data.md` |
+| `quality-metrics` | `references/contracts/quality-metrics.md` |
+| `automation-strategy` | `references/contracts/automation-strategy.md` |
 
-### Sign-Off
-[Who approves, what evidence is required]
-```
-
-### test-data
-
-```
-## Test Data Specification: [FEATURE/SCENARIO NAME]
-
-### Data Requirements
-| Entity | Fields | Valid Values | Invalid Values | Edge Cases |
-|---|---|---|---|---|
-
-### Data Sets
-| Set Name | Purpose | Record Count | Notes |
-|---|---|---|---|
-
-### Setup / Teardown
-[How data is created, loaded, and cleaned up]
-
-### Data Dependencies
-[Relationships between entities, ordering constraints]
-```
-
-### quality-metrics
-
-```
-## Quality Metrics Dashboard: [PROJECT/RELEASE NAME]
-
-### Summary Metrics
-| Metric | Current | Target | Trend |
-|---|---|---|---|
-
-### Defect Analysis
-| Category | Count | Severity Distribution | Escape Rate |
-|---|---|---|---|
-
-### Coverage
-| Coverage Type | Percentage | Gap Areas |
-|---|---|---|
-
-### Recommendations
-- [Actionable improvements based on the data]
-```
-
-### automation-strategy
-
-```
-## Automation Strategy: [PROJECT/SYSTEM NAME]
-
-### Automation Scope
-| Level | What to Automate | What to Keep Manual | Rationale |
-|---|---|---|---|
-
-### Framework Recommendation
-| Criterion | Recommendation | Alternatives |
-|---|---|---|
-
-### CI/CD Integration
-[When tests run, pipeline stages, parallelization, gating]
-
-### Maintenance Plan
-[How flaky tests are handled, review cadence, ownership]
-
-### ROI Estimate
-[Which tests save the most manual effort, break-even timeline]
-```
+For `regression-plan` and `exploratory-testing`, combine `test-strategy.md` + `test-cases.md` contracts.
 
 ---
 
@@ -416,3 +286,4 @@ The sub-agent returns structured markdown matching the Output Contract for the t
 - `references/exploratory-testing.md` -- Session-based exploratory testing: SBET charters, HICCUPPS heuristics, tour-based exploration, cross-story regression detection, game-specific patterns
 - `references/milestone-testing.md` -- Milestone validation protocols by project type: Web/React, API/Backend, Enterprise/B2B, Mobile, CLI with role-specific checklists and critical path testing
 - `references/security-scanning.md` -- Inline security scanning: secrets detection, injection patterns, XSS, path traversal, language-specific patterns
+- `references/contracts/<task-type>.md` -- 6 output-contract templates: test-strategy, test-cases, test-plan, test-data, quality-metrics, automation-strategy

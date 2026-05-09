@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# pre-commit hook (W3-16) — local SKILL.md line-budget check before each commit.
+# Mirrors .github/workflows/skill-line-budget.yml so violations are caught
+# before push. Also runs the W3-14 KNOWN_DEBT consistency lint.
+#
+# INSTALL (one-time, per clone):
+#   git config core.hooksPath .githooks
+#
+# BYPASS (intentional, per ADR-tk0e-002 escape hatch):
+#   git commit --no-verify   # skips this hook entirely
+#   OR put `Budget-Exception: known-debt-tk0e` in the PR body for the CI gate.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-commit: python3 not found in PATH; skipping budget check" >&2
+  exit 0
+fi
+
+if [ ! -f scripts/check_skill_budgets.py ]; then
+  echo "pre-commit: scripts/check_skill_budgets.py missing; skipping" >&2
+  exit 0
+fi
+
+echo "pre-commit: SKILL.md line-budget check..."
+if ! python3 scripts/check_skill_budgets.py; then
+  echo "" >&2
+  echo "pre-commit: BUDGET VIOLATION — commit blocked." >&2
+  echo "Fix: trim the SKILL.md, OR add a known_debt entry in" >&2
+  echo "     governance/skill-budgets.json + scripts/check_skill_budgets.py KNOWN_DEBT," >&2
+  echo "     OR commit with --no-verify and include 'Budget-Exception: known-debt-tk0e' in the PR body." >&2
+  exit 1
+fi
+
+if [ -f scripts/lint_known_debt.py ]; then
+  echo "pre-commit: KNOWN_DEBT JSON-Python consistency lint (W3-14)..."
+  if ! python3 scripts/lint_known_debt.py; then
+    echo "" >&2
+    echo "pre-commit: KNOWN_DEBT DRIFT — commit blocked." >&2
+    echo "Fix: sync governance/skill-budgets.json and scripts/check_skill_budgets.py KNOWN_DEBT." >&2
+    exit 1
+  fi
+fi
+
+echo "pre-commit: budget + lint OK."
+exit 0

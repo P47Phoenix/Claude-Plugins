@@ -6,6 +6,9 @@ model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: C
+maintainer: delivery-team-leads
+fitness_review_due: 2026-08-09
+context_budget: 200
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
 
@@ -150,40 +153,7 @@ Follow the official GDScript style guide and all conventions in the reference ma
 
 ## Common Task Patterns
 
-### New Game Entity (e.g., enemy, item, NPC)
-
-References: `gdscript.md` (or `csharp-godot.md`) + `scenes-nodes.md` + `signals-architecture.md`
-
-The sub-agent will:
-1. Propose a scene hierarchy (root node type, child components)
-2. Identify signals the entity should emit
-3. Write the script(s) with typed variables, `@export` parameters, and `@onready` node refs
-4. Wire signals in `_ready()`
-
-### Player Controller
-
-References: `gdscript.md` + `scenes-nodes.md` + `signals-architecture.md`
-
-The sub-agent will apply the **component pattern**: separate HealthComponent, MovementComponent, InputComponent, AnimationComponent — each with its own script.
-
-### UI System
-
-References: `scenes-nodes.md` + `signals-architecture.md`
-
-UI lives on a `CanvasLayer`. The sub-agent will connect UI nodes to EventBus signals rather than to gameplay nodes directly.
-
-### State Machine
-
-References: `signals-architecture.md` + `gdscript.md`
-
-For simple behavior: enum-based state machine with `_enter_state` / `_exit_state` / `_process_state`.
-For complex behavior: node-based state machine where each state is a child node with `enter()`, `exit()`, `update(delta)`.
-
-### Autoload / Global System
-
-References: `signals-architecture.md` + `scenes-nodes.md`
-
-The sub-agent will keep autoloads infrastructure-only: `GameManager`, `AudioManager`, `SaveManager`, `EventBus`, `SceneLoader`. No gameplay logic in autoloads.
+See `references/task-patterns.md` for 5 patterns: New Game Entity, Player Controller, UI System, State Machine, Autoload / Global System. Each lists the references to load and the canonical scaffolding steps.
 
 ---
 
@@ -194,15 +164,13 @@ The sub-agent must enforce these in every output:
 - **No hardcoded absolute paths** — use `@export` node references or `@onready`
 - **No `get_parent()` for data** — use signals or exported references
 - **No business logic in autoloads** — autoloads are infrastructure only
-- **`queue_free()` not `free()`** — never call `free()` during frame processing
-- **Deferred tree modifications** — use `call_deferred()` / `set_deferred()` inside `_physics_process` and signal handlers
+- **Frame-safe tree mutations** — use `queue_free()` not `free()`; use `call_deferred()` / `set_deferred()` for tree changes inside `_physics_process` and signal handlers
 - **Self-contained scenes** — scenes must work regardless of where they are placed in the tree
 - **Type everything** — all variables, parameters, and return types must be typed in GDScript
 - **No @onready access before tree entry** — never call methods that use @onready variables on a node that hasn't been added to the scene tree yet. Use `call_deferred()` or add the node first, then configure.
 - **Never use `:=` type inference** — always use explicit types (`var x: int = 5`). The `:=` operator causes silent failures in the editor that headless validation doesn't catch.
-- **Run GdUnit4 tests when available** — if `addons/gdUnit4/` exists in the project and test files exist in `res://tests/`, run `godot --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests` after implementation.
 - **Array sizes must match enum sizes** — every array indexed by an enum must have the same number of elements. Validate at runtime or in tests.
-- **Validate after implementation** — if `godot` is available on PATH, run `godot --headless --path <project> --quit` after every `write` or `fix` task on `.gd` or `.tscn` files and report any new errors. If `godot` is not available, note that headless validation was skipped and recommend manual validation
+- **Validate after implementation** — if `godot` is on PATH, run `godot --headless --path <project> --quit` after every `write`/`fix` on `.gd` or `.tscn`; if `addons/gdUnit4/` exists with tests in `res://tests/`, also run `godot --headless -s addons/gdUnit4/bin/GdUnitCmdTool.gd --run-tests`. If `godot` is unavailable, note that headless validation was skipped and recommend manual validation.
 - **Run defect prevention checklist** — before marking any story as complete, run through `references/defect-prevention.md` checklist items relevant to the story's changes
 
 ---
@@ -223,11 +191,7 @@ The sub-agent must enforce these in every output:
 
 ## Cross-Skill References
 
-| File | Owner Skill | Purpose |
-|------|-------------|---------|
-| `delivery-team/skills/developer/references/clean-code.md` | developer | Foundational clean code standards. Loaded on every godot task unless overridden by `tech_stack.clean_code_guide` in `.delivery/config.yml`. |
-
-> Path stability: these paths are contracts. Renaming the owner skill's directory is a breaking change.
+`delivery-team/skills/developer/references/clean-code.md` (owner: developer) — foundational clean code standards loaded on every godot task unless overridden by `tech_stack.clean_code_guide` in `.delivery/config.yml`. Path is a contract; renaming the owner skill's directory is a breaking change.
 
 ---
 

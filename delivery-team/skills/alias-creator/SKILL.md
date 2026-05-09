@@ -6,6 +6,9 @@ model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: C
+maintainer: delivery-team-leads
+fitness_review_due: 2026-08-09
+context_budget: 200
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
 
@@ -183,8 +186,6 @@ When validating a theme (built-in or custom):
 - [ ] Theme name is kebab-case
 - [ ] `user-feedback` note about facilitator-only applies
 
----
-
 ## Cross-Skill References
 
 | File | Owner Skill | Purpose |
@@ -192,8 +193,6 @@ When validating a theme (built-in or custom):
 | `delivery-team/skills/delivery-flow/references/aliases/*.yml` | delivery-flow | Built-in alias theme definitions. 13 themes (lotr, star-wars, marvel, etc.). Read-only from alias-creator's perspective. |
 
 > Path stability: these paths are contracts. Renaming the owner skill's directory is a breaking change.
-
----
 
 ## References
 

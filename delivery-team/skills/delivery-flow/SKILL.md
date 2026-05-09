@@ -8,6 +8,9 @@ extended_thinking: false
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: A
+maintainer: delivery-team-leads
+fitness_review_due: 2026-08-09
+context_budget: 500
 ---
 
 # Delivery Flow Orchestrator
@@ -457,8 +460,6 @@ Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 > **Anti-Patterns catalogue** (8 patterns): `delivery-team/references/shared/orchestrator-doctrine.md` § Common Orchestrator Anti-Patterns.
 > **User Commands** (18): `references/commands.md`. **References manifest** (22 files): `references/manifest.yml`.
 
----
-
 ## Cross-Stage Artifact Flow
 
 | Stage | Receives From Upstream |
@@ -472,8 +473,6 @@ Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 | UAT | All prior artifacts |
 
 Exact artifact file paths for each stage are defined in `references/pipeline-stages.md`.
-
----
 
 ## Volatile
 

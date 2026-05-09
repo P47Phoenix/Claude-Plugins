@@ -1,11 +1,14 @@
-<!-- run: run-2026-05-05-tk3 | stage: 07-uat | depth: light | author: Tech-Writer (Bilbo Baggins) | role: technical-writer | task: go-no-go-input -->
+<!-- run: run-2026-05-09-tk4 | stage: 07-uat | depth: light | author: Tech-Writer (Bilbo Baggins) | role: technical-writer | task: go-no-go-input | wave: 3 (final) -->
 
-Tech-Writer Recommendation: GO_WITH_NOTES (cross-doc consistency clean across all 9 canonical values within tk3 artifacts; 1 P1 + 1 P3 carry-forward drifts identified, both stale-Wave-2-artifact issues, neither blocking)
+Tech-Writer Recommendation: GO_WITH_NOTES
 
-Rationale: All nine canonical values (Tier-A=500, SKILL.md=500, schema v2.9, hash f997ec25 / 9d4011d1, Phase 0 byte 1803, PROSE STYLE block count=3, 6 initiative ACs, ADR-tk3-001, run-2026-05-05-tk3) are consistent across every tk3-provenance artifact; release-notes + user-guide + cross-doc-consistency-report + go-no-go-input written and self-consistent.
+Rationale: All 10 Wave 3 canonical values consistent across tk4-provenance artifacts (5/5 final wave, 7 stories + 5 first-try, godot=200 exact, cache 9d40→4306, 11 SKILL.md frontmatter, 9 paradigm sub-skills, known_debt empty, 3 ADRs Accepted, pipeline-id run-2026-05-09-tk4); release-notes + user-guide + cross-doc-consistency-report written and self-consistent against disk evidence; cross-doc disk-header-first discipline applied preemptively per caveman-lite tk3 Hot Lesson — zero self-drift this round.
 
-Risks: 2 (P1 — six Wave-2 UAT files share the `07-uat/` directory without archive demarcation; risk is reader confusion, not numeric drift; recommended fix one banner line per file or move to `_archive-tk2/`. P3 — QA `go-no-go-input.md` line 9 cites stale Wave-2 `test-plan.md` as evidence; retarget to `dogfood-report.md`.)
+Risks: 2
 
-Evidence: `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `user-guide.md`, `cross-doc-consistency-report.md` (load-bearing UAT gate per memory lesson stages/uat.md).
+- P3 cosmetic — CLAUDE.md live `wc -l` returns 112; dev stage-summary:32 and task spec claim 110. Direction (substantial reduction from 168) holds; non-blocking. Recommended fix: amend stage-summary OR trim 2 lines in same PR.
+- P2 directory hygiene — 13 stale tk3 UAT carry-overs remain in `07-uat/` (qa, devops, dod subdirectories). W3-17 (Stage-7 stale-sweep) is itself a Wave 3 deliverable; chicken-and-egg. Other Stage 7 roles regenerate their artifacts during this Wave 3 run.
 
-Carry-forwards: 1 (P1 — initiative AC-1 telemetry-measured ≥20% response-prose token reduction confirmed on next full pipeline run; <15% triggers BACKLOG-102 stop-rule retro).
+Carry-forwards: 1 (P1 — caveman-lite AC-13 telemetry-measured ≥20% prose-token reduction; W3-18 telemetry hardening ships in this release, so first effective baseline measurement lands on next pipeline run; <15% triggers BACKLOG-102 stop-rule retro).
+
+Evidence: `.delivery/artifacts/07-uat/tech-writer/release-notes.md`, `user-guide.md`, `cross-doc-consistency-report.md` (load-bearing UAT gate per memory lesson stages/uat.md applied preemptively).

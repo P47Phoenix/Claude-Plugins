@@ -6,6 +6,9 @@ model_awareness: opus-4-7
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: B
+maintainer: delivery-team-leads
+fitness_review_due: 2026-08-09
+context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
@@ -286,8 +289,6 @@ Apply these checks to every artifact before output:
 |---------|--------|
 | `dashboard` | Design a dashboard specification |
 | `experiment` | Create an A/B test plan |
-
----
 
 ## References
 

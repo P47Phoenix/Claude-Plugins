@@ -2,7 +2,7 @@
 stage: 2
 stage_name: refine
 depth: light
-pipeline_id: run-2026-05-05-tk3
+pipeline_id: run-2026-05-09-tk4
 status: DONE
 dod_rounds: 1
 dod_validators: [developer, architect]
@@ -11,19 +11,14 @@ artifacts:
   dod:
     developer: .delivery/artifacts/02-refine/dod/developer-review.md
     architect: .delivery/artifacts/02-refine/dod/architect-review.md
-notable_findings:
-  - "v2.8 schema slot already taken (config-schema.md L5/L368 — DESIGN routing 2026-04-05); PRD correctly bumps to v2.9 with grep citation. Wave 2 retro `runs-the-command` discipline caught this."
-  - "Cache-prefix split verified at SKILL.md L478 (end Phase 3): Phase 0 INSIDE prefix, Step 4 + templates + quality-gates OUTSIDE. ADR-tk3-001 scoped to Phase 0 edits only — minimal re-freeze surface."
-  - "Three dispatch templates confirmed in pipeline-stages.md: Primary L44, Supporting L87, DoD Validator L130. PRD W2-1-S1 binds all three."
-  - "20 commands executed by Dev validator; 0 regex/path/type bugs found (compare Wave 0 = 3 bugs caught)."
-  - "BACKLOG-102 has 6 initiative-level ACs (not 5 as orchestrator dispatch summary read); PRD lists all 6 — non-blocking off-by-one in dispatch prompt."
+notable:
+  - "Both validators independently found stale Wave-N-1 review files from tk3 in this stage's dod/ namespace — live W3-17 Stage-7-stale-sweep dogfood evidence; overwritten by FRESH validator dispatches"
+  - "PO line counts verified by Dev runs-the-command: architect=500, presentation=545, ui=496, ops=420, quality=418, user-feedback=399, godot=236, CLAUDE.md=168 (matches BACKLOG-104 §3)"
+  - "Cache-prefix scoping: zero `^## Phase 0` hits across all 7 over-budget files; W3-9 frontmatter add IS the prefix-impacting WI (frontmatter sits at byte 0 — ABOVE Phase 0). ADR-tk4-001 will own re-freeze procedure."
+  - "BACKLOG-104 has 10 initiative ACs; PRD covers 7 verbatim + absorbs 3 into NFR-5/6 + FR-6.2 (Architect verified no silent loss)"
+  - "Non-blocking nit: PRD AC-6 baseline says 'today: 2' but actual count is 0; well-formedness gate unaffected; Story 4 implementation will correct"
 ---
 
 # Stage 2 Summary — Refine (light)
 
-PO Gandalf authored a 249-line PRD validated by Developer (runs-the-command, 20 commands executed) and Architect (cache-prefix integrity). Both DONE first-try.
-
-The PRD corrected BACKLOG-102's v2.8 schema bump to v2.9 — discovery showed v2.8 slot already taken. This is the canonical "PRDs from audit prose MUST run discovery commands during Refine" lesson paying off across waves: Wave 0 caught 3 path/type bugs, Wave 2 caught 11 SKILL.md vs 13 actual count, Wave caveman caught v2.8 slot collision.
-
-Lessons emitted for stage chunk:
-- Schema version-collision detection at Refine: when a brief cites a version number, validator must grep the version-history table to confirm the slot is free; otherwise the PRD must record the deviation.
+Gandalf authored 202-line PRD validated by Dev (24 commands run, 8/8 PASS) + Architect (5/5 PASS) first-try. Live W3-17 dogfood evidence captured: stale Wave-N-1 review files were in 02-refine/dod/ namespace at start of run; both FRESH validator dispatches overwrote them. This is real-world confirmation of the Stage-7-stale-sweep gap.

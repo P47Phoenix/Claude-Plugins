@@ -1,33 +1,32 @@
-<!-- run: run-2026-05-05-tk3 | reviewer: Aragorn (PO DoD validator) | role: product-delivery | round: 1 of 2 (light) -->
+<!-- run: run-2026-05-09-tk4 | stage: 1 (Idea, LIGHT) | dod-round: 1 | reviewer: product-owner (FRESH dispatch) | artifact-under-review: .delivery/artifacts/01-idea/po/idea-brief.md -->
 
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/01-idea/po/idea-brief.md
-PIPELINE_ID: run-2026-05-05-tk3
-WAVE: caveman-lite (Step 1 of 4-step Skill Token-Economy completion plan)
-ROUND: 1 of 2 (light-mode max)
-TIMESTAMP: 2026-05-05
+# Stage 1 (Idea) DoD Review — PO Lens
 
----
+**STATUS: DONE**
 
-# DoD Validation: Caveman-Lite Idea-Brief (Stage 1, Light)
+**Artifact under review:** `.delivery/artifacts/01-idea/po/idea-brief.md` (117 lines)
+**Reviewer:** Product Owner (FRESH dispatch — producer-validator separation per caveman-lite carry-forward)
+**Lens:** Light, blocking-only. Validates brief well-formedness (TARGET), not Wave 3 implementation completeness (CURRENT).
 
-## Findings (per gate criterion)
+## Gate Criteria — 8 PASS / NOT_PASS
 
-- **Criterion 1 — Engagement named, brief, unambiguous**: PASS. §1 (`idea-brief.md:9-15`) names pipeline `run-2026-05-05-tk3`, FEATURE project type, caveman-lite wave, lotr theme, and predecessor `run-2026-05-05-tk2` (c2e7d5a). Format is bullets rather than a strict prose paragraph, but the content is six tight key-value lines well under the ≤5-sentence intent and is unambiguous; light-mode grace applies. No NOT_PASS.
-- **Criterion 2 — Source cited by path, not duplicated inline**: PASS. §2 (`idea-brief.md:19`) cites `.delivery/backlog/BACKLOG-102-caveman-prose-discipline.md` and explicitly states "this idea brief CONSOLIDATES — it does not re-author. All tier scoping, work-item ACs, and exemption rules live in BACKLOG-102 verbatim". No inline duplication of work-item ACs found.
-- **Criterion 3 — Goal measurable, cites the 5 gates by reference**: PASS. §3 (`idea-brief.md:28`) names the measurable thresholds (≥20% prose-token reduction, ≥25% DoD-file reduction, no DoD pass-rate regression, auto-clarity exemptions honored) and §8 (`idea-brief.md:69-80`) carries the full 5 gates verbatim with explicit "verbatim from BACKLOG-102 §Acceptance Criteria" attribution. The §3 synopsis is brief enough to function as a goal statement rather than a re-explanation; §8 is the authoritative reference.
-- **Criterion 4 — Constraints name (a) 5 rulings, (b) plugin-dev:skill-development for Dev, (c) FEATURE-execution + binding-decisions-in-memory, (d) cache-prefix invariant from Ruling 1**: PASS on all four sub-points. (a) §5 (`idea-brief.md:36-42`) enumerates all 5 rulings from `skill-token-economy.md`. (b) `idea-brief.md:49` binds `plugin-dev:skill-development` for the Stage-6 developer dispatch (plus skill-reviewer + plugin-validator post-completion). (c) `idea-brief.md:45` names "FEATURE-execution-of-pre-planned-waves with binding-decisions-in-memory" verbatim. (d) §6 (`idea-brief.md:51-53`) is a dedicated cache-prefix-invariant call-out tying back to Ruling 1 and naming `ADR-tk3-001` as the re-freeze owner.
-- **Criterion 5 — Routing decision with stage-by-stage depth AND Stage-3 SKIP rationale**: PASS. §7 (`idea-brief.md:57-65`) provides the per-stage depth table (light/light/SKIP/light+ADR/light/full/full). `idea-brief.md:67` carries the explicit DX-only SKIP rationale ("BACKLOG-102 changes prompt-template strings and a config key. There is no user-facing UI surface…") and cites the validated precedent run `run-2026-04-22-4x7e`, plus the explicit anti-fusion guard ("not silently fused").
-- **Criterion 6 — Story consolidation visible (1 story, Effort S, 3 WIs, file-scope rationale)**: PASS. §4 (`idea-brief.md:30-32`) explicitly: "collapse to ONE Story 1 (Effort S)", names the 3 WIs (W2-1 dispatch templates, W2-2 validator templates, W2-3 `prose_style:` config key), and cites the file-scope rationale ("all 3 touch overlapping prompt-template surfaces in `delivery-team/skills/delivery-flow/`") with the controlling memory pattern (`topics/project-types.md` "Story consolidation by file scope").
-- **Criterion 7 — Stop-rule recorded (defects/story >0.4 across 3-PR window)**: PASS. §9 (`idea-brief.md:82-88`) carries the canonical rule from `skill-token-economy.md` verbatim and adds a second engagement-local stop-rule (<15% prose-token reduction OR over-compression quality regression). Both are explicitly "armed for this run" (line 88).
-- **Criterion 8 — Length 80-150 lines**: PASS. File is 102 lines (`idea-brief.md:1-102`), comfortably inside the light-mode envelope and well clear of both floor and ceiling.
+| # | Criterion | Result | Evidence (file:line) |
+|---|-----------|--------|----------------------|
+| 1 | Engagement named, brief opener ≤5 sentences | **PASS** | Engagement named at `idea-brief.md:3` ("Wave 3: delivery-team Skill Token-Economy Closure"); opener at `idea-brief.md:7` is a single quoted sentence (well under the 5-sentence cap). |
+| 2 | BACKLOG-104 cited by path, NOT duplicated | **PASS** | Path cited at `idea-brief.md:20` (`.delivery/backlog/BACKLOG-104-skill-token-economy-delivery-team-wave-3.md`); same line explicitly disclaims authorship: "this idea brief CONSOLIDATES — it does not re-author. All WI ACs, extraction candidates, and file lists live in BACKLOG-104 verbatim." Re-cited in §11 at `idea-brief.md:107`. |
+| 3 | Goal measurable; 7 BACKLOG-104 ACs referenced | **PASS** | Goal sentence at `idea-brief.md:24` is fully measurable (`exits 0` / `≤150 lines` / `≥3 axes` / `168→≤150` / `DEFECT-006 closed`). Seven ACs reproduced in §8 at `idea-brief.md:85-91` verbatim from BACKLOG-104, with AC-13 close-out called out at `idea-brief.md:93`. |
+| 4 | Constraints name 5 binding rulings + plugin-dev:skill-development + FEATURE-execution/binding-decisions + Ruling 1 cache-prefix invariant + Wave 2 & tk3 carry-forwards | **PASS** | Five rulings enumerated at `idea-brief.md:30-34` (cache-prefix freeze, `disable-model-invocation` boundary, line budgets, prompts as markdown, `allowed-tools` whitelist); FEATURE-execution-of-pre-planned-waves with binding-decisions-in-memory at `idea-brief.md:37`; `plugin-dev:skill-development` binding routing at `idea-brief.md:42`; Ruling 1 cache-prefix invariant given dedicated §5 at `idea-brief.md:51-53`; tk3 caveman-lite carry-forwards at `idea-brief.md:44-48`; Wave 2 carry-forwards at `idea-brief.md:49`. |
+| 5 | Routing decision recorded (1L · 2L · 3SKIP · 4L · 5L · 6F · 7F) | **PASS** | Routing table at `idea-brief.md:57-65` records exact pattern: Stage 1 light (`:59`), Stage 2 light (`:60`), Stage 3 SKIP with non-conflation note (`:61`), Stage 4 light w/ 3 ADRs (`:62`), Stage 5 light (`:63`), Stage 6 full (`:64`), Stage 7 full (`:65`). |
+| 6 | Story consolidation visible (7 stories from 18 WIs; mandatory-rollout-side-effect rule for W3-9) | **PASS** | "18 WIs → 7 file-scope stories" declared at `idea-brief.md:69` with ~61% dispatch reduction quantification. Seven-row story table at `idea-brief.md:71-79` enumerates the consolidation. Mandatory-rollout-side-effect rule for W3-9 (Story 5) called out explicitly at `idea-brief.md:77`: "AFTER Stories 1–4 content trims (mandatory-rollout-side-effect lesson — frontmatter adds ~3 lines/file; running before trims means targeting fictional ≤297/≤197 instead of canonical ≤300/≤200)". |
+| 7 | Stop-rule recorded (defects/story >0.4 across 3-PR window) | **PASS** | Stop-rule recorded at `idea-brief.md:99`: "defects/story rate >0.4 across any 3-PR window pauses subsequent waves." Current 3-PR window calculation given (tk2: 0, tk3: 1 → 0.33 < 0.4 → not triggered); PO halt authority at any Story boundary preserved. AC-7 stop-rule tripwire (BACKLOG-102 carry-forward) additionally recorded at `idea-brief.md:95`. |
+| 8 | Length 80-150 lines | **PASS** | File is 117 lines total (last content line `idea-brief.md:116`); comfortably within the 80–150 envelope. |
 
 ## Verdict
 
-The brief holds the line: it consolidates BACKLOG-102 without re-authoring, surfaces every binding ruling the downstream stages must honor, and frames the SKIP/ADR/story-consolidation decisions as directives rather than open questions. The cache-prefix invariant call-out (§6) and the Stage-7 validator-prompt-path carry-forward (§8) both honor the Wave 2 retro lessons — TARGET framing is correct (the brief directs downstream stages; it does not pre-grade implementation). Pass downstream to Refine.
+All 8 criteria PASS on round 1. The brief consolidates BACKLOG-104 without re-authoring, names every binding ruling the executing team must honor without re-debate, and surfaces routing/story/stop-rule decisions as directives rather than open questions. TARGET framing is correct — this validation graded brief well-formedness, not Wave 3 implementation completeness. Cleared to proceed to Refine.
 
 ```
 STATUS: DONE
 ARTIFACT: .delivery/artifacts/01-idea/dod/po-review.md
-SUMMARY: All 8 PO gates pass on round 1. 102 lines, BACKLOG-102 cited (not duplicated), 5 rulings + plugin-dev binding + cache-prefix invariant explicit, Stage-3 SKIP rationale recorded, 1-story consolidation + stop-rule armed. Proceed to Refine.
+SUMMARY: 8/8 PASS on r1 — engagement named, BACKLOG-104 referenced (not duplicated), measurable goal+7 ACs, all binding constraints+Ruling-1+carry-forwards present, routing 1L·2L·3SKIP·4L·5L·6F·7F, 18→7 consolidation w/ W3-9 mandatory-side-effect rule, stop-rule armed, 117 lines.
 ```

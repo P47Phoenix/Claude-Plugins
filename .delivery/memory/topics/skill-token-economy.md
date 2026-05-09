@@ -1,6 +1,6 @@
 # Skill Token-Economy — Binding Decisions
 
-**Last updated**: 2026-05-03
+**Last updated**: 2026-05-09
 **Scope**: All plugins in this marketplace
 **Source**: 6-expert audit synthesized via debate moderator + PO ranking (`.delivery/artifacts/research/skill-token-audit-experts.md`)
 **Status**: Decisions binding across all future skill work until superseded by ADR
@@ -119,10 +119,18 @@ For axes with ≥3 mutually-exclusive variants (research types, paradigm choices
 - **Wave 1** SHIPPED (run-2026-05-04-tk1) — Cache-prefix freeze, stage YAML, Haiku routing, allowed-tools+description prune, challenger-tier rule, Sonnet orchestrators+Python hooks
 - **Wave 2** SHIPPED (run-2026-05-05-tk2) — Doctrine externalization, architect/developer extractions, config/commands tables, product-delivery patterns split, architect model split
 - **caveman-lite** SHIPPED (run-2026-05-05-tk3) — Status: GO; AC-13 telemetry deferred to next run; Tier-A 500/500 ceiling held via mid-implementation extraction; cache-prefix re-freeze (one-time ~2KB re-warm) accepted per ADR-tk3-001.
-- **Wave 3** PLANNED + DEFERRED — BACKLOG-104 authored 2026-05-05 (345 lines, 18 WIs, 7 file-scope stories per PO recommendation, runs-the-command-verified line counts). Execution deferred from this session per user redirect (3->4); ready for fresh-session re-invocation. Initiative is at a clean handoff point: 4/5 waves SHIPPED, no in-flight ambiguity.
-- **Initiative status (as of 2026-05-09)**: 4/5 milestones SHIPPED (80% complete); Wave 3 PLANNED-AND-DEFERRED; meta-retrospective at `.delivery/memory/initiative-retros/skill-token-economy-meta-retro-2026-05-09.md`. Next-plugin migration (mtg-commander Wave 0 or hardware-team Wave 0) ON HOLD until Wave 3 closes per user direction "one plugin at a time".
+- **Wave 3** SHIPPED 2026-05-09 (run-2026-05-09-tk4) — 7 stories / 35 ACs / 7 over-budget SKILL.md files cleared (architect 500→291, presentation 545→182, ui 496→219, operations 420→216, quality 418→286, user-feedback 399→269, godot 236→197 EXACT) / 6 retro carry-forwards discharged in Story 7 / paradigm sub-skill pattern shipped on research-agent + user-feedback (9 paradigm sub-skills) / governance frontmatter rolled out to 11 SKILL.md / CLAUDE.md 168→112 / 0 defects this run / 71% first-try Stage-6 story rate. DEFECT-006 CLOSED at this merge via W3-17 (Stage-7 stale-sweep). Cache-prefix re-frozen (Wave 3 hash 4306) per documented ADR procedure.
+- **Initiative status (as of 2026-05-09)**: 5/5 milestones SHIPPED — **INITIATIVE COMPLETE 2026-05-09**; meta-retrospective at `.delivery/memory/initiative-retros/skill-token-economy-meta-retro-2026-05-09.md` (amended post-Wave-3); next-plugin migration (mtg-commander Wave 0 — BACKLOG-105) now ELIGIBLE per "one plugin at a time" binding.
 
-After delivery-team Wave 0+1 lands and proves out: hardware-team, then mtg-commander, then remaining plugins.
+### Initiative Outcome (delivery-team skill token-economy)
+
+- **Cumulative structural reduction**: 5807 → 3090 lines = **46.79%** across all SKILL.md (4 percentage points shy of 50% AC-6 target; non-blocking — line-count metric understates dispatch-time savings from frontmatter-only loading)
+- **Per-dispatch token reduction**: TBD — first effective baseline starts next post-merge pipeline (W3-18 telemetry hardening cannot measure the run that produces it; same structural deferral shape as tk3 AC-13)
+- **Binding rulings**: 5/5 still binding through all 5 waves; zero superseding ADRs required
+- **Cumulative defects**: 1 across the initiative (DEFECT-006, P1 non-blocking, CLOSED at Wave 3 merge); rolling 3-PR defect/story rate = 0.111 (well under 0.4 stop-rule)
+- **Next-plugin migration**: mtg-commander Wave 0 (BACKLOG-105) ELIGIBLE per "one plugin at a time" — initiative cleanly closed at this commit
+
+After delivery-team initiative complete: mtg-commander Wave 0 next, then hardware-team, then remaining plugins.
 
 ## Stop-rule
 

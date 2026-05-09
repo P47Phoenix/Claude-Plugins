@@ -1,102 +1,31 @@
----
-reviewer: Legolas (quality agent)
-story: 2
-phase: Wave 2 (W2-2 + W2-6)
-date: 2026-05-03
----
+<!-- run: run-2026-05-09-tk4 | stage: 6 (Development) | story: 2 of 7 | wi: W3-2 + W3-3 + W3-4 | author: QA Engineer (Pippin Took, FRESH) | round: 1 -->
 
-# Story 2 QA DoD Review — Output Contracts Split + Model Split
+# Story 2 QA DoD Review (round 1) — presentation + ui + operations Tier-B trims
 
-## Gate 1: AC Coverage W2-2 + W2-6 (Dogfood Verified)
+**STATUS**: DONE
 
-**Status**: PASS ✓
+## Gate Criteria Results (5)
 
-**W2-2 (Output Contracts Split)**
-- 5 contract files created under `delivery-team/skills/architect/references/output-contracts/`
-- Files: `design.md` (39 lines), `adr.md` (24 lines), `game.md` (41 lines), `review.md` (29 lines), `evaluation.md` (25 lines)
-- Routing table in SKILL.md maps task_type → contract file; sub-agent loads matched contract only
-- Dogfood evidence: story-2-architect-evidence.md lines 14–36 ✓
+| # | Gate Criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | All 5 Story 2 ACs traced to TC-2 + verified | **PASS** | All 5 ACs (stories.md lines 99-103) map to TC-2 (test-strategy.md line 52); each AC verified in AC Trace below |
+| 2 | TC-2 commands execute correctly | **PASS** | `wc -l`: 182 / 219 / 216 — all ≤297. `python3 scripts/check_skill_budgets.py` exits 0 ("BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s)"). YAML safe-load of all three frontmatter blocks succeeds; description char counts 493/453/450 all ≤500 |
+| 3 | Reference files contain content (not empty stubs) | **PASS** | 34 ref files created (presentation 19, ui 8, operations 7 — matches plan). Spot-checks: sprint-review.md=12L, compose.md=101L, marp.md=11L, ux-designer.md=45L, cross-role-tasks.md=20L, devops.md=45L, release-manager-output.md=34L. All non-empty with detection-keyword headers + substantive content |
+| 4 | Implementation report self-DoD complete | **PASS** | `story-2-implementation.md` lines 136-144 enumerate all 5 ACs with PASS/CODE_COMPLETE verdicts and per-AC evidence; STATUS: DONE declared at line 6 |
+| 5 | plugin-dev pre-load confirmed | **PASS** | `story-2-implementation.md` lines 146-148 + line 155 confirm `plugin-dev:skill-development` pre-loaded via Skill tool at dispatch entry; one-shot acknowledgement covers all 3 files per stories.md serialized-dispatch rule |
 
-**W2-6 (Model Split)**
-- Phase 1 declaration: `Role | Task | Model | References` (Classification→sonnet, Synthesis→opus, Checklist/Policy→sonnet)
-- Sub-Agent Output Contract JSON: `"recommended_model": "sonnet | opus"` field added
-- Paradigm frontmatter: `paradigms/ddd/SKILL.md` and `paradigms/volatility/SKILL.md` both declare `model: sonnet`
-- Dogfood evidence: story-2-architect-evidence.md lines 37–66 ✓
+## AC Trace (TC-2 detail)
 
-## Gate 2: Contract File Substantiveness (>20 Lines Each)
+| Story 2 AC | TC | Verification | Result |
+|---|---|---|---|
+| AC-1 (W3-2 wc) — all three SKILL.md ≤300 | TC-2 | `wc -l`: 182, 219, 216 — all ≤297 (post-frontmatter ≤300) | PASS |
+| AC-2 (W3-2 router) — presentation 9/9 type + 4/4 format | TC-2 | 9 type files present in `references/types/`; 4 format files in `references/formats/`; SKILL.md contains 26 ref pointers covering types/flow/formats; routing tables intact | PASS (structural); router-replay is downstream orchestrator dogfood per Story 1 precedent |
+| AC-3 (W3-3 router) — ui 3/3 designer-role | TC-2 | 3 role manifests present (`ux-designer.md`, `ui-designer.md`, `game-ui-designer.md`); SKILL.md contains 14 references/* pointers; Game-UI-only patterns isolated to `references/roles/game-ui-designer.md` | PASS (structural) |
+| AC-4 (W3-4 router) — operations 3/3 ops-role | TC-2 | 3 role manifests present (`devops.md`, `release-manager.md`, `technical-writer.md`); SKILL.md contains 13 references/* pointers; per-role contracts under `references/contracts/` | PASS (structural) |
+| AC-5 (budget) — `check_skill_budgets.py` exits 0 for all three | TC-2 | Script exits 0; "BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s)"; large headroom on all three (115/78/81 lines post-frontmatter) | PASS |
 
-**Status**: PASS ✓
+## Verdict
 
-| File | Lines | Substantive |
-|------|-------|-------------|
-| design.md | 39 | Yes (template + constraints) |
-| adr.md | 24 | Yes (structure + examples) |
-| game.md | 41 | Yes (systems + interactions) |
-| review.md | 29 | Yes (criteria + attributes) |
-| evaluation.md | 25 | Yes (options + tradeoffs) |
+Three Tier-B SKILL.md files cleanly extracted (1461→617 lines, -844 across the three files); 34 new ref files non-empty and routed; budget script PASSES with zero known-debt; descriptions all ≤500 chars (Story 1 round-2 lesson applied preemptively); plugin-dev pre-load confirmed. Story 2 advances with no QA blockers.
 
-All 5 contracts exceed 20-line threshold with substantive content (templates, examples, guidance).
-
-## Gate 3: Model Split Rule Documented
-
-**Status**: PASS ✓
-
-Documentation verified in architect SKILL.md:
-- **Classification** → `sonnet` (Prior Art Analysis, paradigm pick, decomposition pick, review, game-review, etc.)
-- **Synthesis** → `opus` (design, document, transformation-planning, evaluate, security-design, strategic, integration)
-- **Checklist/Policy** → `sonnet` (compliance-checklist, audit-preparation, risk-assessment, policy-document, analyze-quality, model)
-
-Paradigm sub-skills: both DDD + Volatility declare `model: sonnet` frontmatter. Rule applied consistently.
-
-## Gate 4: Architect Tier-B Debt Explicitly Registered (Wave 3 Target)
-
-**Status**: PASS ✓
-
-governance/skill-budgets.json entry (line 34–39):
-```json
-{
-  "path": "delivery-team/skills/architect/SKILL.md",
-  "tier": "B",
-  "current": 673,
-  "target_wave": 2,
-  "note": "post-W2 planning target ~498 lines (partial-compliance); 198-line Tier-B residual debt target_wave=3"
-}
-```
-
-**Residual debt placeholder** (line 41–46):
-```json
-{
-  "path": "delivery-team/skills/architect/SKILL.md#tier-b-residual",
-  "tier": "B",
-  "current": 0,
-  "target_wave": 3,
-  "note": "placeholder: 198-line Tier-B debt remaining post-W2 partial-compliance; update current when W2 lands"
-}
-```
-
-Post-W2 actual: architect SKILL.md 673→500 lines (−173 net, −26%). Tier-A met (≤500). 198-line Tier-B debt explicitly flagged for Wave 3. ✓
-
-## Gate 5: No Regression in Architect 11 Roles + 22 Task Types
-
-**Status**: PASS ✓
-
-**Software Roles** (7):
-- Solution Architect, Enterprise Architect, Data Architect, Security Architect, Compliance Officer, Privacy Engineer, Incident Responder
-
-**Game Roles** (4):
-- Game Systems Architect, Level/World Architect, Network/Multiplayer Architect, Graphics/Rendering Architect
-
-**Total: 11 roles** ✓
-
-**Task Types** (23 rows in routing table):
-- Core: design, review, document, evaluate, decompose, model, analyze-quality, data-design, security-design, strategic, integration, transformation-planning
-- Compliance: compliance-checklist, security-requirements, incident-response-plan, privacy-assessment, audit-preparation, risk-assessment, policy-document
-- Game: game-systems, level-design, netcode, render-pipeline, game-review, game-design-doc
-
-**Total: 23 task types** (22 + cross-role game-review). All present; no removals. Routing table complete. ✓
-
----
-
-**GATES SUMMARY**: 5/5 PASS — Architect SKILL.md Tier-A compliance met; debt registered; no role/task regression.
-
-**Signature**: SKILL_LOADED: quality | STATUS: DONE
+— Pippin Took, QA Engineer (FRESH), Stage 6 Story 2 round 1.

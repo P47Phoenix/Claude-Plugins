@@ -1,11 +1,14 @@
 ---
 name: user-feedback
-description: Simulated end-user feedback agent that spawns persona-based sub-agents to review product artifacts from real user perspectives. Built-in persona library covers gamers (casual, hardcore, speedrunner, completionist, social, accessible, mobile), web/app users (power user, average, first-time, non-technical, accessible), enterprise/B2B (admin, end user, manager, IT/security), and demographic overlays (Gen Z, Millennial, Gen X, Boomer). Supports custom persona definition. Triggers on phrases like "user feedback", "persona feedback", "simulated user", "playtest", "user testing", "audience feedback", "focus group", "persona review", "target audience", "user perspective", "gamer feedback", "what would users think", "would users like this", "accessibility review from user", "run a focus group".
+description: Simulated end-user feedback agent. Spawns persona-based sub-agents to review product artifacts. 4 persona families (gamers, web/app, enterprise, demographic) dispatched as router-only sub-skills under skills/personas/. Custom personas supported. Triggers on phrases like "user feedback", "persona feedback", "playtest", "user testing", "focus group", "persona review", "target audience", "what would users think", "run a focus group".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 tier: B
+maintainer: delivery-team-leads
+fitness_review_due: 2026-08-09
+context_budget: 300
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---
 
@@ -90,68 +93,18 @@ Determine what each persona receives based on the pipeline stage. Personas recei
 
 ## Phase 3: Persona Agent Invocation
 
-**For every feedback task, follow these steps exactly — do not skip:**
+Load `references/persona-invocation.md` for the full Phase 3 procedure: invocation steps, the persona-agent prompt template, and demographic overlay handling. Embed the prompt template literally in each persona sub-agent invocation.
 
-1. Select personas (Phase 1)
-2. Prepare the artifact for persona consumption (Phase 2)
-3. Read the persona's full profile from `references/persona-library.md` (or use custom definition)
-4. Read the stage-specific protocol from `references/feedback-protocols.md`
-5. For each persona, spawn a sub-agent using the `Agent` tool with the prompt template below
-6. Collect all persona responses, then proceed to aggregation (Phase 4)
+Persona families are dispatched as paradigm sub-skills under `skills/personas/<family>/SKILL.md` (router-only, not directly model-invoked):
 
-**Do not run personas in sequence that can see each other's output.** Each persona sub-agent must be an independent invocation.
+| Project Type Trigger | Family Sub-Skill | Personas |
+|---|---|---|
+| GAME_DEV | `skills/personas/gamers/SKILL.md` | Casual Casey, Hardcore Hank, Speedrunner Sam, Completionist Cora, Social Sophie, Accessible Alex, Mobile Morgan |
+| GREENFIELD / FEATURE / WEB_APP | `skills/personas/web-app/SKILL.md` | Power User Pat, Average User Avery, First-Timer Fran, Non-Technical Nancy, Accessible User Ash |
+| ENTERPRISE / B2B | `skills/personas/enterprise/SKILL.md` | Admin Alice, End User Eddie, Manager Maya, IT/Security Ivan |
+| Any (overlay) | `skills/personas/demographic/SKILL.md` | Gen Z Zara, Millennial Mike, Gen X Grace, Boomer Bob |
 
-### Persona Agent Prompt Template
-
-```
-You are [PERSONA NAME], [DEMOGRAPHICS].
-
-Your profile:
-- Age: [age], [location/background]
-- Tech literacy: [level]
-- Goals: [goals list]
-- Frustrations: [frustrations list]
-- Behaviors: [behaviors list]
-- Accessibility needs: [needs or "none"]
-- Devices: [devices list]
-- Personality: [personality note]
-
-You are reviewing [ARTIFACT TYPE] for [PRODUCT NAME].
-
-[STAGE-SPECIFIC PROMPT from feedback-protocols.md]
-
-Review from YOUR perspective — not as a designer or developer, but as a real user who would actually use this product. Be honest, specific, and personal. Stay in character.
-
-For each issue or observation:
-1. What you noticed (quote specific part if possible)
-2. How it makes you feel (confused, frustrated, delighted, indifferent)
-3. What you would expect instead
-4. Severity from your perspective (deal-breaker, annoying, minor, nice-to-have)
-
-Also note:
-- What you like (positive feedback matters too)
-- What is missing that you would want
-- Whether you would recommend this to someone like you
-- Satisfaction rating (1-5)
-
-Artifact to review:
----
-[ARTIFACT CONTENT]
----
-```
-
-### Overlay Handling
-
-When a demographic overlay is applied to a persona:
-- Append the overlay's modifiers (communication style, cultural reference points, platform expectations) to the base persona profile
-- The overlay adjusts tone and expectations but does not replace the persona's core goals, frustrations, or accessibility needs
-- Example: "Casual Casey as Gen Z" uses Casey's gaming habits but adds Gen Z communication style and platform expectations
-
-Overlay effects by demographic:
-- **Gen Z Zara**: Expects mobile-first, short-form content, social sharing, dark mode. References TikTok, Discord, and peer recommendations.
-- **Millennial Mia**: Values efficiency, customization, cross-device sync. References established platforms and subscription fatigue.
-- **Gen X Xavier**: Prioritizes reliability, clear documentation, desktop workflows. Skeptical of change for change's sake.
-- **Boomer Barbara**: Needs clear labels, larger text defaults, phone support expectations. Values simplicity over feature density.
+**Do not run personas in sequence that can see each other's output.** Each persona sub-agent must be an independent invocation per the procedure in `references/persona-invocation.md`.
 
 ---
 
@@ -276,90 +229,7 @@ After artifact revision following an escalation:
 
 ## Sub-Agent Interface (Agentic Flow Integration)
 
-For orchestration with other delivery-team skills, the user-feedback skill accepts and produces structured contracts.
-
-### Input Contract
-
-```json
-{
-  "stage": "refine | design | dev | uat",
-  "artifact_type": "prd | wireframe | feature | product",
-  "artifact": "string (markdown)",
-  "personas": ["list of persona names or 'auto'"],
-  "project_type": "GREENFIELD | FEATURE | GAME_DEV | ENTERPRISE | B2B | WEB_APP",
-  "custom_personas": [
-    {
-      "name": "string",
-      "age": "number",
-      "background": "string",
-      "tech_literacy": "low | medium | high",
-      "goals": ["array"],
-      "frustrations": ["array"],
-      "behaviors": ["array"],
-      "accessibility_needs": "string or null",
-      "devices": ["array"],
-      "personality": "string"
-    }
-  ],
-  "overlays": {"persona_name": "demographic_overlay_name"},
-  "persona_count": "number (3-7, optional)"
-}
-```
-
-### Output Contract
-
-```json
-{
-  "stage": "string",
-  "personas_consulted": ["list of persona names"],
-  "avg_satisfaction": 3.8,
-  "consensus_issues": [
-    {
-      "issue": "string",
-      "priority": "CRITICAL | HIGH | MEDIUM | LOW",
-      "personas": ["list of names"],
-      "recommendation": "string"
-    }
-  ],
-  "design_tensions": [
-    {
-      "element": "string",
-      "perspectives": [
-        {"persona": "name", "position": "string"},
-        {"persona": "name", "position": "string"}
-      ],
-      "recommendation": "string"
-    }
-  ],
-  "per_persona": [
-    {
-      "name": "string",
-      "category": "string",
-      "satisfaction": 4,
-      "likes": ["array"],
-      "issues": [
-        {
-          "description": "string",
-          "feeling": "string",
-          "expectation": "string",
-          "severity": "deal-breaker | annoying | minor | nice-to-have"
-        }
-      ],
-      "missing": ["array"],
-      "would_recommend": "yes | no | maybe"
-    }
-  ],
-  "recommendations": [
-    {
-      "priority": "CRITICAL | HIGH | MEDIUM | LOW",
-      "description": "string"
-    }
-  ],
-  "preserve": ["array — things not to break"],
-  "escalation_needed": false,
-  "escalation_reasons": ["array (empty if no escalation)"]
-}
-```
+For orchestration with other delivery-team skills, the user-feedback skill accepts and produces structured JSON contracts. Load `references/sub-agent-interface.md` for the full input + output contract definitions.
 
 ---
 
@@ -397,3 +267,6 @@ The skill must enforce these in every feedback session:
 | `references/feedback-protocols.md` | Stage-specific review protocols and prompts for Stages 2, 3, 6, 7 |
 | `references/custom-personas.md` | How to define custom personas in config or inline |
 | `references/aggregation-patterns.md` | Consensus detection, conflict resolution, weighting, report generation |
+| `references/persona-invocation.md` | Phase 3 detail: invocation steps, agent prompt template, overlay handling |
+| `references/sub-agent-interface.md` | JSON input + output contracts for agentic-flow orchestration |
+| `skills/personas/<family>/SKILL.md` | Persona-family paradigm sub-skills (gamers / web-app / enterprise / demographic), router-dispatched only |

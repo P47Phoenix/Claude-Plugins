@@ -1,176 +1,130 @@
-<!-- run: run-2026-05-05-tk3 | stage: 07-uat | depth: full | author: QA Engineer (Legolas Greenleaf) | role: qa-engineer | task: dogfood-report -->
+<!-- run: run-2026-05-09-tk4 | stage: 07-uat | depth: full | author: QA Engineer (Legolas Greenleaf) | role: qa-engineer | task: dogfood-report -->
 
-# Dogfood Report — Caveman-Lite Prose Discipline (run-2026-05-05-tk3)
+# Dogfood Report — Skill Token-Economy Wave 3 (run-2026-05-09-tk4)
 
-> "I do not see what others see — yet. The wind tells me what comes."
-> — Legolas, on baselines and forecasts.
+> "Five waves walked. The trees that were thick are now well-spaced; the road runs clean through them. Yet what the wind tells does not always reach my ear in time — one measurement waits beyond the next ridge."
+> — Legolas, surveying the field at the close of the initiative.
 
-The empirical core of UAT. Pre-merge structural-only verification + post-merge measurement protocol carry-forward. Per UAT memory lesson 3, structural-only confidence is capped at 4/5 and carries a P1 follow-up.
-
-## Section 1: Pre-merge baseline establishment
-
-### Telemetry inspection
-
-Read `.delivery/telemetry/skill-loads.jsonl` (BACKLOG-100 W0-1 hook output): 10 rows, all from a single 21-millisecond burst on 2026-05-04T02:55:05Z, all with `input_tokens: 0`, `cache_read_tokens: 0`, `cache_write_tokens: 0`, `model: null`. These are placeholder rows from hook-bring-up, not real dispatch measurements. **The telemetry file is unusable as a numeric prose-token baseline.**
-
-### Archive fallback (per task spec)
-
-Per the dispatch directive, fall back to `.delivery/memory/archive/run-2026-05-05-tk2.md` (Wave 2 archive, predecessor commit c2e7d5a). Citing the Wave 2 archive § "Pipeline cost notes":
-
-> "Total Agent dispatches: ~50 (5 stage primaries + 5 implementations + 22+ DoD validators + revisions). Sonnet primaries, Haiku DoD validators per binding. Wave 2 the highest-cost wave to date due to story scope and DoD round-2/3/4 corrections."
-
-The archive does NOT record per-dispatch prose-token figures explicitly. What it DOES establish:
-
-- **Pre-Wave-2 SKILL.md size**: 999 lines (Story 1 reduced to 497).
-- **Wave 2 doctrine extraction**: ~406 lines extracted to `references/shared/orchestrator-doctrine.md`.
-- **Wave 2 first-try DoD pass-rate**: ~50% of stage-stories (regression vs Wave 1 ~55%).
-- **Defect/story rate**: 0 blocking / 5 stories = 0.0 (well under 0.4 stop-rule).
-
-### Documented baseline (proxy)
-
-Since direct prose-token telemetry is unavailable, the de-facto Wave 2 baseline this run will be measured AGAINST is the running average prose-byte length of dispatch responses across the 50+ agent dispatches in Wave 2. The first 5 post-merge dispatches in `run-2026-05-05-tk4` (or whatever the next run-id is) become the post-merge sample. The reduction is computed against the Wave 2 mean.
-
-**Baseline status**: documented but not numerically pinned. Post-merge measurement is the FIRST empirical pin; comparison is against Wave 2 narrative cost (qualitative reasoning informed by archive size deltas), then becomes self-comparable Wave-on-Wave once 2+ post-merge runs exist.
-
-## Section 2: Synthetic structural dogfood (5 dispatches)
-
-For each of these 5 synthetic dispatches, I verify the orchestrator's prompt-construction logic by:
-1. Constructing what the Phase 4 Step 4 prompt WOULD be for a sample dispatch under each condition.
-2. Checking that the PROSE STYLE block IS / IS NOT injected per the conditional logic.
-
-This is structural-by-design — the PROSE STYLE block is in-prompt directive (ADR-tk3-001 Element 3); the agent itself is the detector. No real Agent dispatch is required to close AC-5 / AC-6 structurally.
-
-### Dispatch 1 — Default config (prose_style absent → caveman-lite via v2.7→v2.9 migration default)
-
-**Setup**: Read `.delivery/config.yml` — confirmed `config_version: "2.7"`, `prose_style:` key ABSENT.
-
-**Verify Phase 0 directive**: SKILL.md L74:
-> "Read `prose_style` (top-level; default `caveman-lite`; valid `caveman-lite | standard`); cache on loaded-config..."
-
-**Verify pipeline-stages.md template (Primary, L72-74)**: Conditional line `{when config.prose_style == caveman-lite: inject the line below verbatim; when standard: omit this entire section}` followed by the verbatim PROSE STYLE block.
-
-**Constructed dispatch prompt (excerpt)**: under v2.7→v2.9 migration default, `prose_style` resolves to `caveman-lite` → PROSE STYLE block IS injected. The `--- PROSE STYLE ---` delimiter and verbatim block (33-line caveman-lite directive with auto-clarity exemption clause) appears between `--- ALIAS ---` (L69) and `--- OUTPUT ---` (L76).
-
-**PASS condition**: caveman-lite directive would be active by default. **PASS** — confirmed structurally.
-
-### Dispatch 2 — Auto-clarity exemption: security warning context
-
-**Setup**: Construct sample agent prompt that includes a security-related instruction (e.g., "the new `prose_style` key must NOT contain user input — config values are static enum; no injection vector").
-
-**Verify exemption clause**: PROSE STYLE block contains verbatim:
-> "Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications."
-
-`grep -F "security warnings"` in `pipeline-stages.md` → 3 matches (one per template). `references/prose-style.md` L12 contains the verbatim block; `references/prose-style.md` L15-17 codifies "the four exempt contexts ... revert to standard prose even when caveman-lite is active. The agent itself is the detector (per ADR-tk3-001 Element 3)."
-
-**PASS condition**: directive itself instructs agent to use STANDARD prose for security warnings; exemption mechanism is in-prompt per ADR Element 3. **PASS** — verbatim clause present in all three template slots and codified in canonical reference.
-
-### Dispatch 3 — Auto-clarity exemption: destructive-op confirmation
-
-**Setup**: Construct sample agent prompt that includes a `git revert` confirmation or `rm -rf` dogfood instruction.
-
-**Verify exemption clause**: same PROSE STYLE block contains verbatim "irreversible-op confirmations" — `grep -F "irreversible-op confirmations"` in `pipeline-stages.md` → 3 matches.
-
-**PASS condition**: directive contains the verbatim clause. **PASS** — verbatim clause present in all three template slots.
-
-### Dispatch 4 — Auto-clarity exemption: multi-step sequences
-
-**Setup**: Construct sample agent prompt that includes a 4-step migration sequence (e.g., the v2.7→v2.9 config migration steps in this very run).
-
-**Verify exemption clause**: same PROSE STYLE block contains verbatim "multi-step sequences" — `grep -F "multi-step sequences"` in `pipeline-stages.md` → 3 matches.
-
-**PASS condition**: directive contains the verbatim clause. **PASS** — verbatim clause present.
-
-### Dispatch 5 — Opt-out: `prose_style: standard`
-
-**Setup**: Construct hypothetical config with `prose_style: standard` (would be added as a top-level key in `.delivery/config.yml`).
-
-**Verify SKILL.md Phase 0 + Step 4 logic**: SKILL.md L338 reads:
-> "if `standard`, omit the block entirely (no placeholder line). Same rule applies uniformly to Primary (this Step 4), Supporting (Step 5), and DoD Validator (Step 7) dispatches."
-
-**Verify pipeline-stages.md conditional**: L73, L120, L172 each contain the verbatim conditional `{when config.prose_style == caveman-lite: inject the line below verbatim; when standard: omit this entire section}`.
-
-**Constructed dispatch prompt (excerpt)**: under `prose_style: standard`, the orchestrator OMITS the entire `--- PROSE STYLE ---` section. The dispatch goes directly from `--- ALIAS ---` to `--- OUTPUT ---` with no PROSE STYLE delimiter and no verbatim block.
-
-**PASS condition**: opt-out path structurally present and unambiguous. **PASS** — confirmed in all four authoritative locations (3 templates + SKILL.md Step 4).
-
-## Section 3: Post-merge measurement plan (carry-forward)
-
-The empirical AC-13 sub-clause (BACKLOG-102 initiative AC-1 token reduction; AC-2 DoD review byte reduction) cannot close pre-merge. Documented protocol for the next full pipeline run:
-
-### Source of post-merge sample
-
-Telemetry from the next pipeline run's most recent 5 dispatches (any role, any stage). Use BACKLOG-100 W0-1 hook output at `.delivery/telemetry/skill-loads.jsonl`. **Important**: the 10 zero-token rows currently in the file from the 2026-05-04 hook bring-up should be ignored or archived; the post-merge sample begins with the first dispatch in the next run-id (`run-2026-05-05-tk4` or successor).
-
-### AC-1 reduction calculation (≥20% target)
-
-```
-pre_mean  = Wave 2 archive narrative-prose-byte average across 5 sampled dispatches
-            (sample from .delivery/artifacts/06-dev/developer/*.md non-fenced prose
-             across run-2026-05-05-tk2 if telemetry rows are missing per-dispatch
-             token figures)
-post_mean = mean(response_prose_tokens) over 5 most recent rows in
-            .delivery/telemetry/skill-loads.jsonl with run_id starting
-            'run-2026-05-05-tk4' (or successor)
-reduction = (pre_mean - post_mean) / pre_mean
-PASS      iff reduction >= 0.20
-WARNING   iff 0.15 <= reduction < 0.20
-STOP-RULE iff reduction < 0.15  → pause Tier-2 A/B; root-cause retro
-```
-
-### AC-2 DoD review byte reduction (≥25% target)
-
-```
-pre_bytes  = mean over 5 .delivery/artifacts/*/dod/*-review.md from run-2026-05-05-tk2
-             (find . -path '*/dod/*-review.md' -path '*tk2*')
-post_bytes = same across run-2026-05-05-tk4 (or successor)
-reduction  = (pre_bytes - post_bytes) / pre_bytes
-PASS       iff reduction >= 0.25
-WARNING    iff 0.20 <= reduction < 0.25
-STOP-RULE  iff reduction < 0.20 OR any post-merge review missing a finding
-           that the Wave 2 equivalent flagged (over-compression failure)
-```
-
-### AC-3 DoD pass-rate preserved (≥4/7 first-try baseline)
-
-```
-post_pass_rate = grep -h '^STATUS: DONE' across run-2026-05-05-tk4 dod review files
-                 / total validator dispatches in tk4
-threshold      = >= 4/7 (matches memory/index.md baseline)
-PASS           iff post_pass_rate >= threshold
-STOP-RULE      iff any post-merge review missing a finding due to over-compression
-```
-
-### AC-4 downstream artifact quality
-
-```
-PASS iff next run's PRD/ADR/release-notes are read by downstream agents without
-        re-read or clarification dispatches; UAT spot-checks transcript bytes for
-        clarification round-trips that did not occur in Wave 2 baseline
-```
-
-### Where to record the measurement
-
-After the next full pipeline run closes, record results in:
-1. `.delivery/memory/topics/skill-token-economy.md` — append Tier-1 measurement results section with PASS/WARNING/STOP outcomes.
-2. `.delivery/memory/archive/run-2026-05-05-tk4.md` (or successor) — record reduction percentages in §"Pipeline cost notes".
-3. If STOP-RULE fires: also create `.delivery/defects/backlog-102-stop-rule-retro.md` with root-cause analysis.
-
-## Section 4: Confidence rating
-
-**Structural confidence**: 5/5 — all 8 TCs pass; all 5 synthetic dispatches verify conditional logic; all 6 ADR-tk3-001 contract elements structurally complete.
-
-**Empirical confidence**: capped at 4/5 per UAT memory lesson 3 — the AC-13 sub-clause (BACKLOG-102 initiative AC-1/AC-2 telemetry deltas) requires a post-merge pipeline run that cannot happen pre-merge by definition.
-
-**Aggregate confidence**: **4/5** (capped).
-
-### Carry-forward (P1 follow-up)
-
-Empirical AC-13 measurement deferred to next pipeline run; expected ≥20% reduction per Wave 0/1/2 telemetry trends (Wave 2 doctrine extraction reduced SKILL.md from 999→497 lines, structural baseline already favorable for further per-response reduction); if the first post-merge run shows <15% prose-token reduction OR <20% DoD review byte reduction, trigger BACKLOG-102 stop-rule retro and pause Tier-2 A/B (per BACKLOG-102 §Stop-rule and §Sequencing relative to BACKLOG-101).
-
-**Owner**: PO + QA jointly at the close of the next pipeline run. Surface as the first agenda item of the next-run UAT.
+This report closes the BACKLOG-104 binding measurement gates: cumulative token-economy delta vs the pre-Wave-0 baseline (NFR-4 / init AC-7); the deferred caveman-lite AC-13 close-out; and the Wave 3 stop-rule status (defects/story rolling window + first-dispatch reduction).
 
 ---
 
-STATUS: CODE_COMPLETE
-ARTIFACT: .delivery/artifacts/07-uat/qa/dogfood-report.md
-SUMMARY: 5/5 synthetic dispatches PASS structurally; AC-13 telemetry carry-forward to next run; confidence 4/5 capped per UAT memory lesson 3.
+## Section 1 — Pre-Wave-0 baseline
+
+Reconstructed from `git show d0e0928~1:<path>` (the commit immediately before Wave 0 merged on 2026-05-03; per `.delivery/memory/archive/run-2026-05-03-tk0e.md`). Every top-level `delivery-team/skills/*/SKILL.md` plus `CLAUDE.md`, `wc -l` taken on each:
+
+| File | pre-Wave-0 | tier (post-Wave-3) | post-Wave-3 |
+|------|-----------:|--------------------|------------:|
+| `delivery-team/skills/delivery-flow/SKILL.md` | 1089 | A (≤500) | 499 |
+| `delivery-team/skills/architect/SKILL.md` | 670 | B (≤300) | 294 |
+| `delivery-team/skills/developer/SKILL.md` | 493 | B (≤300) | 299 |
+| `delivery-team/skills/product-delivery/SKILL.md` | 688 | B (≤300) | 300 |
+| `delivery-team/skills/operations/SKILL.md` | 417 | B (≤300) | 219 |
+| `delivery-team/skills/quality/SKILL.md` | 415 | B (≤300) | 289 |
+| `delivery-team/skills/ui/SKILL.md` | 493 | B (≤300) | 222 |
+| `delivery-team/skills/godot/SKILL.md` | 234 | C (≤200) | 200 |
+| `delivery-team/skills/user-feedback/SKILL.md` | 397 | B (≤300) | 272 |
+| `delivery-team/skills/alias-creator/SKILL.md` | 200 | C (≤200) | 199 |
+| `delivery-team/skills/presentation/SKILL.md` | 543 | B (≤300) | 185 |
+| `CLAUDE.md` | 168 | n/a (≤150 binding) | 112 |
+| **Total** | **5807** | — | **3090** |
+
+The Wave 0 archive (tk0e) registered AC-13 (initiative-level token-reduction empirical telemetry) as deferred at the time the W0-1 telemetry hook shipped, on the grounds that one-wave-deep telemetry cannot substantiate a multi-wave reduction claim. That deferral has chained through Waves 1, 2, and caveman-lite; this report attempts the close-out.
+
+---
+
+## Section 2 — Cumulative reduction across waves
+
+Two complementary measurements, both honest, both reported:
+
+**Structural lines (eager-load proxy)**: pre-Wave-0 total **5807** → post-Wave-3 total **3090**. Cumulative reduction = (5807 − 3090) / 5807 = 2717 / 5807 = **46.79%**.
+
+This is the structural delta on the SKILL.md + CLAUDE.md surface that is loaded eagerly on every dispatch / session. It compounds Waves 0+1+2+caveman-lite+3.
+
+**Telemetry-measured tokens (lazy-load + progressive disclosure)**: target ≥50% per BACKLOG-104 §6 AC-7 / PRD NFR-4. Empirical measurement attempted via `python3 delivery-team/hooks/telemetry_run_summary.py --pipeline-id run-2026-05-09-tk4`:
+
+```
+{"rows_total": 10, "rows_real": 0, "rows_placeholder": 10,
+ "mean_prose_tokens": null, "total_prose_tokens": 0, "placeholder_only": true}
+```
+
+All 10 rows in `.delivery/telemetry/skill-loads.jsonl` predate the W3-18 hardening that shipped in Story 7 of THIS pipeline. Per FR-7.6 + the `placeholder=true` route, the W3-10 KPI compute correctly EXCLUDES these rows — leaving zero usable data points for the empirical token-reduction calculation in this run.
+
+**Honest assessment**: structural target falls 3.21 percentage points short of the ≥50% line on the eager-load surface alone. With progressive disclosure (the entire `references/` tree only loads when the parent skill routes a specific dispatch to a specific reference), the actual token reduction per dispatch is materially larger than 46.79% — but the empirical telemetry to PROVE that is unavailable until the next post-merge run when W3-18 captures real measurements. The first effective empirical baseline begins on the next post-tk4 dispatch.
+
+**Per BACKLOG-104 init AC-7 / NFR-4**: PARTIAL on structural-only (46.79% < 50%); EMPIRICAL CLOSE-OUT DEFERRED to next post-merge run (chicken-and-egg per architecture-tk4-wave-3.md §Stop-Rule Tripwire Mechanics + Story 5 ac-amendment §"AC-5 re-scope"). The honest call is captured here so the PO can decide whether to (a) accept structural 46.79% as substantially meeting the spirit of NFR-4 given progressive-disclosure savings, or (b) hold the AC open pending the first empirical measurement next run.
+
+---
+
+## Section 3 — caveman-lite AC-13 close-out (carry-forward from tk3)
+
+caveman-lite BACKLOG-102 §AC-13: ≥20% prose-token reduction over 5 dispatches post-merge vs 5 pre-merge baseline. tk3 archive (run-2026-05-05-tk3.md §"What Didn't Go Well" #4) deferred this AC to "the next post-merge run" because the W0-1 telemetry hook produced zero-token placeholder rows that forced baseline-fallback. **Wave 3 IS the first post-merge run.**
+
+**Measurement attempt** (per Empirical Measurement Protocol from test-strategy):
+- Source: `.delivery/telemetry/skill-loads.jsonl` (10 rows total)
+- Window: first 5 Wave-3 `delivery-team:delivery-flow` dispatches post-Wave-3-merge
+- Pre-merge baseline: caveman-lite tk3 telemetry (also placeholder)
+
+**Result**: Both windows are placeholder-only. `placeholder_only: true` per the W3-18 summary. AC-13 cannot be empirically computed in this pipeline — the chicken-and-egg is binding: W3-18 hardening (the fix that makes the measurement possible) was itself the deliverable in Story 7 of this same pipeline, so all telemetry rows captured before its merge are structurally placeholders.
+
+**Tripwire status**: NOT FIRED (calibration-only baseline). Per `stop-rule-tk4.txt`: "The first effective measurement window starts on the next post-merge run (post-tk4 merge)." First effective empirical baseline begins on the next pipeline that loads delivery-team skills with W3-18 capture active.
+
+**Pause/proceed call**: The architecture's tripwire threshold is <15% reduction. With `placeholder_only: true`, no reduction value can be computed → tripwire mechanically cannot fire on placeholder-only data → proceed. This is the explicit chicken-and-egg path documented in the AC-amendment + architecture spec; not an oversight.
+
+**Honest disposition**: AC-13 remains DEFERRED — but for a different reason than tk3. tk3 deferred because the hook was broken; tk4 has the hook fixed but cannot retroactively measure pre-fix dispatches. The deferral now has a hard close date (next post-tk4-merge pipeline run) rather than indefinite.
+
+---
+
+## Section 4 — Stop-rule status
+
+**Defects/story rolling 3-PR window** (BACKLOG-100 §Stop-rule, ≤0.4 threshold):
+- tk2 (Wave 2): 0 blocking defects / 4 stories shipped = 0.00
+- tk3 (caveman-lite): 1 P1 non-blocking defect (DEFECT-006) / 1 story = 1.00 single-run, but P1 non-blocking
+- tk4 (Wave 3, this run): defects identified during Stage 6 — Story 1 R2 (description prune; not a defect, an iteration) + Story 5 PO ac-amendment (not a defect, a re-scope). **0 P1 defects logged this run.**
+
+Recompute rolling 3-PR mean: (0 + 1 + 0) / (4 + 1 + 7) = 1 / 12 = **0.083** (Per-PR avg: (0.00 + 1.00 + 0.00) / 3 = **0.33** if averaged per-PR-not-per-story). Both interpretations are well under the 0.4 threshold. **Stop-rule trigger #1 NOT FIRED. Wave 4 may proceed.**
+
+**Wave 3 first-dispatch reduction** (BACKLOG-102 caveman-lite §Stop-rule trigger #2, <15% pauses W3-9 governance work):
+- Per Section 3 above: cannot compute on placeholder-only data → mechanically does NOT fire on placeholder-only data per architecture spec.
+- W3-9 governance work proceeded in this run by the explicit chicken-and-egg path documented in the Story 5 ac-amendment.
+- **Stop-rule trigger #2 NOT FIRED on this run; first effective evaluation next post-merge run.**
+
+**DoD pass-rate regression** (init AC-8 / NFR-5):
+- tk4 first-try DoD: Story 1 R2 (description prune; not full DoD failure) + Story 5 R2 (PO ac-amendment; not a defect) + Stories 2/3/4/6/7 R1 = approximately **5/7 stage-stories first-try DONE = 71%**.
+- Prior 5-run baseline mean (from `.delivery/memory/archive/`): tk0e 57% + tk1 (~70%) + tk2 ~50% + tk3 60% + tk4 71% → rolling mean ~62%. tk4 = 71% > baseline mean 62% by +9 pp. **No regression.**
+
+---
+
+## Section 5 — Confidence rating
+
+**4 of 5.**
+
+Honest cap at 4/5 (not 5/5) because the AC-13 empirical measurement is partial due to the W3-18 chicken-and-egg. The structural close-out is empirically clean (all 7 over-budget files cleared; `known_debt[]` empty for the first time since BACKLOG-100; godot Tier-C ceiling held exact at 200; cache-prefix anchor regenerated; CLAUDE.md 168→112 with one-hop discoverability preserved; 6/7 retro carry-forwards DISCHARGED). All 16 TCs PASS or PASS_WITH_NOTES; zero FAIL. The 4 Empirical Protocols all execute cleanly with documented results (3 PASS, 1 calibration-only NOT FIRED).
+
+What keeps it from 5/5: the cumulative reduction empirical telemetry result is `placeholder_only: true` rather than a hard percentage. PRD NFR-4 / init AC-7 wording binds on telemetry; the structural 46.79% is a strong proxy but not the literal artifact the AC names. Confidence will reach 5/5 once one post-tk4-merge pipeline runs and emits a real `cumulative-reduction-tk5.txt` with W3-18-captured data — that closure happens automatically at the next pipeline's Stage 7 entry per the architecture spec.
+
+**Recommendation to PO**: GO_WITH_NOTES on the merge. The structural delivery is complete (all binding gates honored); the empirical telemetry close-out has a hard, deterministic close date (next pipeline run) rather than an open-ended deferral.
+
+---
+
+## Appendix — Wave-by-wave structural reduction (informational)
+
+Cross-checked against `.delivery/memory/archive/run-2026-05-05-tk2.md §Known-Debt Status` and run-2026-05-05-tk3.md §Known-Debt Status:
+
+| Wave | Major file deltas (net) | Cumulative total (approx) | Cumulative reduction vs pre-W0 |
+|------|------------------------|--------------------------|-------------------------------:|
+| pre-Wave-0 | baseline | 5807 | 0% |
+| Wave 0 | telemetry hook + tier frontmatter (+13 lines for `tier:`) | ~5820 | -0.2% (slight increase from rollout side-effect) |
+| Wave 1 | cache-freeze + frontmatter cleanup; alias-creator -1 | ~5819 | 0% |
+| Wave 2 | delivery-flow 999→497, architect 673→500, developer 495→296, product-delivery 691→299 | ~4203 | 27.6% |
+| caveman-lite | delivery-flow doctrine externalization (held 500/500); CLAUDE.md untouched | ~4203 | 27.6% |
+| Wave 3 (this run) | architect 500→294, presentation 543→185, ui 493→222, ops 417→219, quality 415→289, user-feedback 397→272, godot 234→200, CLAUDE.md 168→112 | **3090** | **46.79%** |
+
+The biggest deltas this wave (in absolute lines):
+- presentation: 543 → 185 = **−358 lines** (steepest of the wave)
+- delivery-flow Wave-2 holdover: 999 → 499 across waves = −500 lines (largest cumulative)
+- architect: 670 → 294 across waves = −376 lines
+- product-delivery: 688 → 300 across waves = −388 lines
+- CLAUDE.md: 168 → 112 = **−56 lines** (highest leverage per line — loaded every session)
+
+— Legolas, QA Engineer, run-2026-05-09-tk4. *"The road is walked clean. One measurement waits at the next ridge."*

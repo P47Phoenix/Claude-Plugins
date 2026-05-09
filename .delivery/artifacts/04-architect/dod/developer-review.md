@@ -1,114 +1,137 @@
-# Developer DoD Review — Stage 4 Architect (LIGHT), Round 1
+<!-- run: run-2026-05-09-tk4 | stage: 4 (Architect, light) | DoD round: 1 | reviewer: Developer (RUNS-THE-COMMAND, FRESH dispatch) -->
 
-**Pipeline**: run-2026-05-05-tk3
-**Role**: developer (DoD reviewer — RUNS-THE-COMMAND)
-**Stage**: 4 (Architect, light)
-**Reviewer dispatch**: FRESH (no prior-loop context)
-**Artifacts under review**:
-- `.delivery/artifacts/04-architect/adrs/ADR-tk3-001-prose-style-config.md`
-- `.delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md`
-**Lens**: developer, light, blocking-only
-**Prose style**: standard
+# Developer DoD Review — Stage 4 Architect, Wave 3
 
----
+**STATUS**: DONE
+**Pipeline**: `run-2026-05-09-tk4`
+**Stage**: 4 (Architect, LIGHT) — DoD round 1
+**Reviewer**: developer skill (FRESH dispatch, runs-the-command)
+**Binding**: per tk3 retro Hot Lesson #1 extension, cache-prefix-impacting ADRs (ADR-tk4-003) require Dev runs-the-command at DoD. This review honors that binding.
 
-## STATUS
+Artifacts under review:
 
-**STATUS: NOT_DONE**
-
-Two blocking developer-lens findings: (1) ADR Element 5's Phase 0 byte-offset claim is factually wrong by ~1794 bytes and the resulting reconciliation conclusion ("Phase 0 sits outside the 2KB prefix region; cache-warmup unaffected") is the inverse of reality; (2) ADR repeatedly mislocates Phase 0 as "L56-110" when the section header is at L31 and the section spans L31-125. Both contaminate the central architectural justification.
+- `.delivery/artifacts/04-architect/adrs/ADR-tk4-001-tier-b-closure-approach.md`
+- `.delivery/artifacts/04-architect/adrs/ADR-tk4-002-paradigm-sub-skill-pattern.md`
+- `.delivery/artifacts/04-architect/adrs/ADR-tk4-003-governance-frontmatter-shape.md`
+- `.delivery/artifacts/04-architect/solution/architecture-tk4-wave-3.md`
 
 ---
 
-## Commands run (with stdout summary)
+## Commands run
 
-| # | Command | Stdout (summary) |
-|---|---|---|
-| 1 | `wc -l delivery-team/skills/delivery-flow/SKILL.md` | `497` (matches ADR's "497 of 500" Tier-A claim) |
-| 2 | `wc -l delivery-team/skills/delivery-flow/references/{pipeline-stages,quality-gates,config-schema}.md` | `682, 288, 369` |
-| 3 | `python3 -c "data=open('SKILL.md','rb').read(); print(data.find(b'## Phase 0'))"` | `1809` — `## Phase 0` heading lives at byte **1809**, NOT byte 3603 as ADR cites |
-| 4 | `python3 -c "lines=...; offset of L56"` | `3529` — ADR's "byte 3603" appears to be a mis-derived offset for L56 (mid-Phase-0 body), NOT for Phase 0 start |
-| 5 | `grep -n -E "(Primary\|Supporting\|DoD Validator) Dispatch Template" pipeline-stages.md` | L44, L87, L130 — all three anchors present at the exact lines cited in ADR Element 2 |
-| 6 | `grep -n "ALIAS\|OUTPUT" pipeline-stages.md` (template insertion points) | ALIAS ends at L70/L113/L161; OUTPUT starts at L72/L115/L163 — matches ADR table exactly |
-| 7 | `grep -nE "Current Version\|config_version\|Version History" config-schema.md` | L5 `## Current Version: 2.8`; L15 `Default: "2.8"`; L347 `### Version History`; v2.8 row present at L365; v2.9 absent — confirms ADR's v2.8-taken / v2.9-free claim |
-| 8 | `python3 scripts/check_skill_budgets.py 2>&1; echo $?` | exit `0`; `BUDGET CHECK PASSED: 13 file(s) checked, 7 known-debt, 0 exception(s)` — current state has no overage; SKILL.md at 497/500 |
-| 9 | `cat governance/cache-prefix-hash.txt` | `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f` — ADR cites this exact hex prefix in Element 5; whole-file SHA-256 |
-| 10 | `sha256sum delivery-team/skills/delivery-flow/SKILL.md` | `709808547fe9c28963355c7ce5c39a00eb59ccf4520399cec1bab2c3ad7a0d00` — does NOT match stored hash; pre-existing drift, NOT introduced by this ADR (out of this gate's scope per memory binary-status rule + TARGET vs CURRENT framing) |
-| 11 | `python3` cumulative-byte math: L1-110 sum | `8360` bytes — exactly matches ADR Element 5 table cell "L1-110 cumulative: 8360" |
-| 12 | `python3` L56-110 byte sum | `4831` bytes — exactly matches ADR Element 5 table cell "Phase 0 section L56-110: 4831" (sub-range math holds, but the SECTION LABEL is wrong — see Finding 2) |
-| 13 | `grep -nE "^# \|^## " SKILL.md` | Phase 0 heading at L31, Phase 1 at L126; **Phase 0 actually spans L31-125**, not L56-110 |
-| 14 | `grep -n "Volatile\|prefix\|2048" SKILL.md` | L478: "the prefix boundary sits at the end of Phase 3 (Stage Routing)" — semantic boundary is "end of Phase 3", not just bytes 0..2048. Phase 0 is *inside* this region by both interpretations |
-| 15 | `python3 -c "print(1809 < 2048)"` | `True` — Phase 0 heading byte 1809 is **INSIDE** the documented 2KB prefix region |
-| 16 | Math closure `497 + 3 = 500 ≤ 500` | True — Tier-A budget closes at TARGET state |
-| 17 | `cat .claude/settings.local.json` for CLI deps | Only `WebSearch`, `flatpak list`, `git add` allowed; no `yq`/`xq`. ADR cites only `sha256sum`, `wc`, `grep`, `python3`, `awk` — all stdlib/coreutils. PASS |
-| 18 | `grep` ADR Status line | `**Status**: Accepted` — exactly the binary token, no parenthetical |
-| 19 | Cross-check `.delivery/memory/stages/architect.md` lesson on binary status | "ADR status must be binary (Proposed \| Accepted \| Deprecated)..." — memory rule honored by Status line |
-| 20 | `grep -n "v2.8\|v2.9" config-schema.md Version History` | v2.8 row at L365 (DESIGN routing, dated 2026-04-05); v2.9 not yet present — ADR's "v2.8 taken; bump to v2.9" is correct |
+1. `ls -la .delivery/artifacts/04-architect/{adrs,solution,dod}/` — confirmed all four artifact files exist on disk with timestamps from the current run.
+2. `ls -la governance/ scripts/` — confirmed `governance/cache-prefix-hash.txt` and `governance/skill-budgets.json` exist; `scripts/check_skill_budgets.py` exists; `scripts/regenerate_cache_prefix_hash.py` does NOT exist.
+3. `for f in <7 over-budget files>; do wc -l < "$f"; done` — verified line counts on all 7 SKILL.md files. Results match ADR-tk4-001 `before` column EXACTLY: architect 500, presentation 545, ui 496, operations 420, quality 418, user-feedback 399, godot 236.
+4. `head -15` + `head -c 200 | od -c` on architect, presentation, godot SKILL.md — confirmed frontmatter sits at byte 0 (file begins with `---\nname:`).
+5. `printf '<3 new keys>\n' | wc -c` and `wc -l` — exact byte cost of 3 frontmatter keys = **83 bytes / 3 lines** (ADR claimed ~50 bytes; ADR underestimates by ~33 bytes/file but conclusion intact).
+6. `cat governance/cache-prefix-hash.txt` — current hash file is sha256sum format, scoped to `delivery-team/skills/delivery-flow/SKILL.md` only. Matches ADR-tk4-003 §"this wave expands the hash file's scope" claim.
+7. `sha256sum delivery-team/skills/delivery-flow/SKILL.md` — confirmed current hash matches the recorded hash byte-for-byte. Re-freeze procedure is trivially achievable via `sha256sum <files> > governance/cache-prefix-hash.txt`.
+8. `find . -maxdepth 4 -name "research-agent" -type d` + `ls research-agent/SKILL.md` — research-agent path resolves at top-level repo (`./research-agent/SKILL.md`), no `skills/` subtree yet (matches ADR-tk4-002).
+9. `ls delivery-team/skills/{presentation,user-feedback,architect/paradigms}/` — presentation and user-feedback skill dirs exist; `architect/paradigms/{volatility,ddd}/` precedent exists (matches ADR-tk4-002 grandfathering claim).
+10. `grep -m1 '^\*\*Status\*\*' <each ADR>` — all three ADRs report `**Status**: Accepted`. Binary, no parentheticals.
+11. `grep -nE -i "(MUST|hard gate|sequenc|after.*W3-1|before.*W3-9|stories 1-4|story 5)" ADR-tk4-003 + architecture-tk4-wave-3.md` — sequencing recorded explicitly in BOTH artifacts (ADR lines 25, 61, 74, 76; architecture lines 25, 44, 47-58).
+12. `sed -n` spot-checks on architect and godot — line-range citations in ADR-tk4-001 resolve precisely (`## Architecture Style and Decomposition from Config` at line 132, `## Software Architecture Roles` at line 231, `## Common Task Patterns` at godot line 151, `## Architecture Guardrails` at godot line 190).
+13. `grep -nE '^\s*(```|    )?(python3?|sha256sum|grep|find|wc|...)\b' <ADRs>` — audited cited verification commands; all standard CLI tools (python3, grep, find, sha256sum, wc) already in environment.
+14. `grep -n "skills/paradigms\|architect/paradigms" CLAUDE.md` — confirmed CLAUDE.md line 49 says `skills/paradigms/` while actual path is `paradigms/`; ADR-tk4-002's stale-doc claim is accurate.
 
 ---
 
-## Findings (8 gate criteria)
+## Gate evaluations
 
-### G1 — Phase 0 byte-offset claim verifiable — **NOT_PASS** (BLOCKING)
+### Gate 1 — Per-file batching math closes for ALL 7 files: **PASS**
 
-ADR Element 5 row 1 of byte-impact table: *"Phase 0 starts at byte 3603, after the prefix boundary"*. Architecture summary §4 repeats: *"Phase 0 (L56-110, bytes 3603-7625) sits outside the 2KB prefix region"*.
+Verified `before` against ADR §3 table:
 
-**Measured**: `## Phase 0: Setup Wizard` heading is at byte **1809** (L31). Delta from cited 3603 is **1794 bytes** — far outside ±100 tolerance. The mis-attribution appears to come from measuring L56 (the start of the *config-read implementation block*, byte 3529) and labeling it as "Phase 0 start". The downstream conclusion is inverted: byte 1809 IS inside the documented 0..2048 prefix region.
+| File | ADR before | wc -l | match | ADR after | tier ceiling | within? |
+|---|---:|---:|:-:|---:|---:|:-:|
+| architect | 500 | 500 | YES | 288 | 300 (B) | YES |
+| presentation | 545 | 545 | YES | ≈160 | 300 (B) | YES (broad margin) |
+| ui | 496 | 496 | YES | 273 | 300 (B) | YES |
+| operations | 420 | 420 | YES | 255 | 300 (B) | YES |
+| quality | 418 | 418 | YES | 276 | 300 (B) | YES |
+| user-feedback | 399 | 399 | YES | 250 | 300 (B) | YES |
+| godot | 236 | 236 | YES | 198 | 200 (C) | YES (margin = 2) |
 
-**Why blocking, not stylistic**: this isn't a typo — the byte number is the load-bearing premise of Element 5's reconciliation. Once corrected, the ADR's central conclusion ("cache-warmup behavior is preserved... mechanically satisfied without further action") flips. Either (a) the ADR must reframe Phase 0 as INSIDE the prefix region and treat the edit as a real cache-cost event with corresponding mitigation, or (b) the ADR must redefine the prefix region using the L478 SKILL.md comment's *semantic* anchor ("the end of Phase 3") and acknowledge bytes 0..2048 is documentation drift inside SKILL.md itself.
+Per-file Δ arithmetic in ADR-tk4-001 §W3-1..W3-7 sums correctly in every case (e.g., architect: -76 -56 -30 -23 -27 = -212; 500-212 = 288). Godot's tight 2-line margin is acknowledged with a stated fallback (additional 5-line trim from `## Architecture Guardrails`).
 
-### G2 — SKILL.md line count claim accurate — **PASS**
+### Gate 2 — All cited file paths resolve for 7 over-budget files: **PASS**
 
-`wc -l` returns 497. ADR cites "497 of 500 lines". Δ = 0, within ±2. PASS.
+All 7 paths exist on disk with current line counts matching ADR claims (Gate 1 table). No path drift.
 
-### G3 — 3 dispatch templates exist at cited line numbers — **PASS**
+### Gate 3 — Frontmatter byte-impact math (ADR-tk4-003): **PASS WITH NOTE**
 
-`grep -n` finds:
-- `### Primary Agent Dispatch Template` at L44 (ADR cites L44; Δ=0)
-- `### Supporting Agent Dispatch Template` at L87 (ADR cites L87; Δ=0)
-- `### DoD Validator Dispatch Template` at L130 (ADR cites L130; Δ=0)
+Sampled 3 SKILL.md files (architect, presentation, godot):
 
-ALIAS/OUTPUT delimiter pairs at L70/L72, L113/L115, L161/L163 also match the ADR Element 2 insertion-point table exactly. PASS.
+- All begin with `---\nname:` at byte 0; frontmatter is unambiguously at the cache-prefix region.
+- Existing frontmatter blocks span ~10 lines; adding 3 keys is a clean append.
+- **Exact** byte cost of the 3 cited keys (`maintainer: delivery-team-leads\nfitness_review_due: 2026-08-09\ncontext_budget: 300\n`) = **83 bytes**, not the ADR's stated ~50 bytes. ADR uses ~17 bytes/line average; actual is closer to ~28 bytes/line for these specific keys.
+- Cumulative impact at 13 files: actual ≈ **1,080 bytes**, not 650 bytes. Still well within the 2,048-byte cache-prefix region; conclusion (one-time re-warm, scoped, justified) is intact.
 
-### G4 — Schema version-history confirms v2.8 taken; v2.9 free — **PASS**
+NOTE: Stage 6 DoD must cite ACTUAL byte counts after rollout (the ADR itself mandates this in §"Procedure" item 3 — "MUST cite the regenerated hash file's actual byte counts, NOT the +650-byte projection"). The architect's projection is OPTIMISTIC but the binding is correct.
 
-`config-schema.md` L5 currently reads `## Current Version: 2.8`. L15 row defaults `config_version` to `"2.8"`. The Version History at L347 contains a v2.8 entry (DESIGN routing, dated 2026-04-05) and no v2.9 entry. ADR's W2-3 ratification ("schema MUST bump to v2.9, not v2.8") is exactly consistent with the file's current state. PASS.
+### Gate 4 — Cache-prefix re-freeze procedure inspectable: **PASS WITH NOTE**
 
-### G5 — Phase 0 edit size (≤3 lines) preserves Tier-A budget — **PASS**
+- `governance/cache-prefix-hash.txt` exists, contents inspectable, currently 1 line covering `delivery-team/skills/delivery-flow/SKILL.md` only — matches ADR's "expands the hash file's scope" claim.
+- Hash format = sha256sum (verified by `sha256sum delivery-team/skills/delivery-flow/SKILL.md` matching the file's recorded hash byte-for-byte).
+- Regeneration is trivially achievable: `sha256sum delivery-team/skills/*/SKILL.md delivery-team/skills/architect/paradigms/*/SKILL.md > governance/cache-prefix-hash.txt`.
 
-`python3 scripts/check_skill_budgets.py` exits 0 at HEAD (no current overage; SKILL.md at 497/500). TARGET-state math: 497 + ≤3 = ≤500, equality `497 + 3 = 500` closes. Budget ceiling met at the worst case. PASS. (Note: this is "is the math correct?" — pre-validating the actual edit is Stage 6's gate per the dispatch contract.)
+NOTE: ADR-tk4-003 §Procedure cites `python3 scripts/regenerate_cache_prefix_hash.py --target ... --files ...` but this script does **NOT** exist in `scripts/` (only `check_skill_budgets.py` is present). The ADR's parenthetical fallback ("Or the equivalent enumeration of all 13 SKILL.md files") covers this — Stage 6 must either create the script OR record the actual `sha256sum` invocation used. Procedure is recoverable without architectural change. Not a blocker for Architect DoD because the procedure intent and target file are both well-specified; the script reference is a forward-looking placeholder.
 
-### G6 — ADR status is BINARY — **PASS**
+### Gate 5 — ADR-tk4-002 paradigm pattern locations correct: **PASS**
 
-Status line at ADR L3 reads exactly `**Status**: Accepted` with no parenthetical, no "contingent on...", no qualifier. Memory `architect.md` lesson ("status must be binary; readers grepping for `Status: Accepted` will stop reading") is honored. PASS.
+- `research-agent/SKILL.md` resolves at top-level repo (`./research-agent/SKILL.md`, 17,746 bytes); no `skills/` subtree yet — matches ADR's "verified path: top-level repo `/research-agent/SKILL.md`, no `skills/` subtree yet".
+- `delivery-team/skills/presentation/` resolves; SKILL.md present.
+- `delivery-team/skills/user-feedback/` resolves; SKILL.md present.
+- `delivery-team/skills/architect/paradigms/{volatility,ddd}/` resolve as the grandfathered precedent.
+- CLAUDE.md line 49 says `skills/paradigms/` (stale per ADR's claim); actual path is `paradigms/`. ADR's stale-doc note is accurate; W3-12 fix scope correctly cited.
 
-### G7 — Architecture batching math discipline — **PARTIAL FAIL** (BLOCKING)
+### Gate 6 — All 3 ADR Statuses BINARY: **PASS**
 
-Sub-range math closes:
-- L1-110 cumulative: ADR says 8360, measured 8360. PASS.
-- L56-110: ADR says 4831, measured 4831. PASS.
-- Tier-A budget: 497 + 3 = 500. PASS.
+| ADR | Status |
+|---|---|
+| ADR-tk4-001 | Accepted |
+| ADR-tk4-002 | Accepted |
+| ADR-tk4-003 | Accepted |
 
-But the **labels** for those sub-ranges are wrong. The ADR Element 5 table row labels L56-110 as "Phase 0 section" — but Phase 0 is L31-125. The arithmetic is correct on the cited line numbers; the **section identity** mapped to those line numbers is wrong. This propagates to architecture.md §4 ("Phase 0 (L56-110, bytes 3603-7625)") where both the line range and the byte range are mis-labeled.
+No parentheticals. No "Accepted (pending …)" anti-pattern. Binary in all three.
 
-**Per Wave 1 retro batching discipline**: math discipline isn't only equality closure — it's also that the labels on the table cells match what the prose claims. NOT_DONE.
+### Gate 7 — No new CLI deps in cited verification commands: **PASS**
 
-### G8 — No new CLI deps — **PASS**
+All cited tools (`python3`, `grep`, `find`, `wc`, `sha256sum`) are standard and present in the environment. The single non-standard reference (`scripts/regenerate_cache_prefix_hash.py`) is a procedure forward-reference and does not introduce a new CLI dependency — it relies on `python3` plus a script that does not yet exist (see Gate 4 NOTE).
 
-Verification commands cited in ADR (`sha256sum`, `wc -c`, `python3 delivery-team/scripts/generate-schema.py`) and architecture.md (`sha256sum > governance/cache-prefix-hash.txt`) all run with bash + coreutils + python3 stdlib. No `yq`, no `xq`, no fresh `jq`. `.claude/settings.local.json` allow-list confirmed: no MCP-only or unfamiliar binaries introduced. PASS.
+### Gate 8 — Mandatory-rollout sequencing recorded: **PASS**
+
+Sequencing is recorded EXPLICITLY in both required artifacts:
+
+- ADR-tk4-003 line 25: "W3-9 MUST run AFTER W3-1..W3-7 content trims, because adding ~3 lines to a file already AT-budget pushes it over."
+- ADR-tk4-003 line 76: "W3-9 MUST NOT begin until W3-1..W3-8 have landed in the working tree. … This sequencing is a **hard gate** — NOT a soft preference."
+- ADR-tk4-003 §"Mandatory-rollout sequencing (binding Wave 0 lesson)" is a dedicated subsection.
+- architecture-tk4-wave-3.md line 44: ASCII boundary diagram explicitly labels "HARD GATE — Stories 1-4 must land in working tree first" between content trims and Story 5 (W3-9).
+- ADR-tk4-001 §"Sequencing with ADR-tk4-003" reciprocates the gate from the trim-side.
+
+Sequencing is recorded in three places, with consistent language ("hard gate"), and traces back to the Wave 0 mandatory-rollout-side-effect lesson.
 
 ---
 
-## Verdict (≤3 sentences)
+## Summary scorecard
 
-The ADR's contract surface is structurally sound — six elements are well-bounded, the dispatch templates exist where claimed, schema bump aligns with file state, status is binary, line-count and budget math close, and no new CLI deps are smuggled in. But Element 5's Phase 0 byte-offset claim (3603) is wrong by ~1794 bytes, which inverts the central reconciliation conclusion (Phase 0 is *inside* the documented 2KB prefix region, not outside), and the Phase-0-as-L56-110 mis-labeling propagates into the architecture summary. Stage 4 round 1 is **NOT_DONE**: ADR Element 5 needs a rewrite that either accepts Phase 0 IS in the prefix region (and adds explicit cache-cost mitigation) or redefines the prefix boundary using the SKILL.md L478 semantic anchor; architecture.md §4 needs the corresponding correction.
+| Gate | Result |
+|---|---|
+| 1. Per-file batching math closes for all 7 files | PASS |
+| 2. All cited file paths resolve | PASS |
+| 3. Frontmatter byte-impact math | PASS WITH NOTE (ADR projection optimistic by ~430 bytes total; conclusion intact) |
+| 4. Cache-prefix re-freeze procedure inspectable | PASS WITH NOTE (cited python script doesn't exist; sha256sum fallback is trivial) |
+| 5. ADR-tk4-002 paradigm path claims correct | PASS |
+| 6. All 3 ADR Statuses BINARY | PASS |
+| 7. No new CLI deps | PASS |
+| 8. Mandatory-rollout sequencing recorded | PASS |
 
 ---
 
-## STATUS
+## Verdict
 
-```
-STATUS: NOT_DONE
-ARTIFACT: .delivery/artifacts/04-architect/dod/developer-review.md
-SUMMARY: Element 5 Phase 0 byte offset wrong (3603→actual 1809); Phase 0 is INSIDE the 2KB prefix region, inverting Element 5's reconciliation. Other 7 criteria mostly pass; section labels mislocate Phase 0 as L56-110.
-```
+All eight gates pass; two carry forward-looking notes that Stage 6 must honor (cite actual byte counts after rollout, and either create or substitute the `regenerate_cache_prefix_hash.py` script with an equivalent `sha256sum` enumeration). The contracts in all three ADRs and the architecture summary are well-formed and runs-the-command verifiable, with line counts, paths, and sequencing all confirmed empirically against the working tree.
+
+**STATUS: DONE.**
+
+— developer (FRESH dispatch, runs-the-command), DoD round 1, run-2026-05-09-tk4

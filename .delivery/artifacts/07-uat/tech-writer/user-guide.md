@@ -1,80 +1,82 @@
+<!-- run: run-2026-05-09-tk4 | stage: 07-uat | depth: full | author: Tech-Writer (Bilbo Baggins) | role: technical-writer | task: user-guide | wave: 3 (final) -->
+
 ---
-title: "Contributor Guide — `prose_style` config key (run-2026-05-05-tk3)"
+title: "Contributor Guide — Wave 3 Governance Frontmatter and Workflows (run-2026-05-09-tk4)"
 stage: 07-uat
 author: Bilbo Baggins (operations skill, tech-writer role)
-created: 2026-05-05
-pipeline_id: run-2026-05-05-tk3
-audience: future delivery-team contributors and project maintainers
-prerequisite_knowledge: familiarity with `.delivery/config.yml` and the delivery-flow pipeline
-supersedes: prior tk2 user-guide (2026-05-03)
+created: 2026-05-09
+pipeline_id: run-2026-05-09-tk4
+audience: future delivery-team contributors and skill maintainers
+prerequisite_knowledge: familiarity with `delivery-team/skills/<name>/SKILL.md` frontmatter, `governance/` registry files, and the delivery-flow pipeline
+supersedes: prior tk3 user-guide (2026-05-05)
 ---
 
-# Contributor Guide: `prose_style` config key
+# Contributor Guide — Wave 3 Governance Frontmatter and Workflows
 
-## Where the key lives
+## New SKILL.md frontmatter keys
 
-`.delivery/config.yml` — top-level, not nested under `pipeline:`. Top-level matches consumption scope: read at delivery-flow Phase 0, before pipeline-loop keys, and influences dispatch construction across all seven stages. `wizard_completed` is the precedent.
+Every top-level delivery-team SKILL.md (11 files) now carries three governance keys appended to the existing frontmatter:
 
-```yaml
-config_version: "2.9"
-prose_style: caveman-lite
-pipeline:
-  # …
+| Key | Type | Purpose | Example |
+|---|---|---|---|
+| `maintainer:` | string (github-handle or team-id) | Names the owning party accountable for fitness review and budget compliance. | `delivery-team-leads` |
+| `fitness_review_due:` | ISO-8601 date (YYYY-MM-DD) | Schedules the next quarterly fitness review for this skill. | `2026-08-09` |
+| `context_budget:` | integer (line cap) | Explicit line cap, redundant with `tier:` but lint-friendly. Must match tier (A=500, B=300, C=200). | `300` |
+
+The keys land in frontmatter immediately after `tier:`. Edit them in place when you change ownership, advance a review cycle, or correct a tier mismatch. The CI lint workflow (PR-time) blocks merge on any missing key, malformed date, or context_budget-vs-tier mismatch.
+
+## Pre-commit hook (opt-in)
+
+A pre-commit hook at `.githooks/pre-commit` runs the same checks as the PR-time CI gate, but locally before the commit ever leaves the working tree. One command installs:
+
+```bash
+git config core.hooksPath .githooks
 ```
 
-## Valid values
+The hook runs `python3 scripts/check_skill_budgets.py` and `python3 scripts/lint_known_debt.py`. Either non-zero exit blocks the commit. Bypass intentionally with `git commit --no-verify` — use sparingly; the CI gate still fires on PR. For a legitimate budget exception, also include `Budget-Exception: known-debt-tk0e` in the PR body per ADR-tk0e-002.
 
-| Value | Effect |
-|---|---|
-| `caveman-lite` (default) | Inject the PROSE STYLE directive block into every agent dispatch and every DoD validator dispatch. |
-| `standard` | Omit the block entirely. Dispatches return to the pre-merge baseline prose style. |
+Uninstall the hook with `git config --unset core.hooksPath`. Full instructions and verification steps live at `governance/git-hooks-install.md`.
 
-Any other value is a config-validation error at Phase 0. The schema enum lives in `delivery-team/skills/delivery-flow/references/config-schema.json` and is documented in `references/config-schema.md`.
+## Fitness-review workflow
 
-## Opt out per project
+The quarterly fitness review process is the operational answer to the `fitness_review_due:` date in each SKILL.md. The cron-driven `.github/workflows/fitness-review.yml` workflow opens a tracking issue 7 days before each due date. The full process is documented at `governance/fitness-review.md`; the short version:
 
-Add a single top-level line to that project's `.delivery/config.yml`:
+1. Reviewer is assigned from the skill's `maintainer:` group, rotated to avoid the most recent committer (no author-reviews-own-work).
+2. Reviewer runs `python3 scripts/check_skill_budgets.py` (must exit 0 or have a justified `known_debt[]` entry).
+3. Reviewer inspects frontmatter (`tier:` matches `context_budget:`; `maintainer:` is a real owning group; trigger phrases in `description:` still match recent telemetry).
+4. Reviewer spot-checks `references/` freshness and per-run KPI contribution (`context_tokens_per_pipeline_run`).
+5. Outcome (PASS / PASS_WITH_NOTES / FAIL) appended to `governance/fitness-review-log.md`. PASS advances `fitness_review_due:` by 90 days in the same PR.
 
-```yaml
-prose_style: standard
-```
+Two consecutive FAIL outcomes escalate: the maintainer group is paged, the Architect role evaluates restructure / merge / deprecate, and a CLEANUP backlog item lands the recommended treatment. A skill >180 days past its due date escalates immediately as a P1 issue.
 
-Reverts dispatch behavior on the next pipeline invocation. No SKILL.md edit, no hash regeneration. AC-6 of BACKLOG-102 satisfied by this construction.
+## Validator prompt template
 
-If `.delivery/config.yml` is at v2.7 or v2.8 and `prose_style:` is absent, Phase 0 auto-migrates to v2.9 with `prose_style: caveman-lite` as default and surfaces the standard upgrade banner. v2.6-or-earlier configs follow the existing strip-and-default migration path; the `prose_style` default is layered on top.
+A canonical validator prompt template lives at `delivery-team/skills/delivery-flow/references/validator-prompt-template.md`. Story-7 W3-13 created it; subsequent FRESH-dispatch DoD validator prompts MUST reference this template rather than reconstructing prompt scaffolding inline. The template encodes the producer-validator separation rule, the FRESH-dispatch context isolation contract, and the standard verdict-line format (STATUS / ARTIFACT / SUMMARY).
 
-## How auto-clarity works
+When you author a new validator gate, point your dispatch at the template by file:line; do not duplicate the scaffolding text. The template is single-source-of-truth; edits ripple to every gate that references it.
 
-The PROSE STYLE block embedded in every dispatch prompt names four exempt contexts:
+## Canonical PROSE STYLE directive
 
-1. Security warnings (e.g., world-readable credentials, exposed secrets, vulnerable dependency).
-2. Irreversible or destructive operation confirmations (e.g., `git revert`, `rm -rf`, `git push --force`, schema migrations dropping data).
-3. Multi-step sequences where fragment ordering or omitted conjunctions would risk misread.
-4. User clarification responses.
+The caveman-lite PROSE STYLE block remains at `delivery-team/skills/delivery-flow/references/prose-style.md` — single source of truth carried over from Wave caveman-lite (predecessor `run-2026-05-05-tk3`). Wave 3 did not modify the directive itself; the three dispatch templates in `references/pipeline-stages.md` (Primary, Supporting, DoD Validator) continue to inject the verbatim block under the `--- PROSE STYLE ---` delimiter. ADR-tk3-001 owns the contract.
 
-The agent itself is the detector. There is no orchestrator-side classifier, no per-dispatch flag. The directive instructs the agent to revert to standard prose during generation when one of the four contexts applies. ADR-tk3-001 Element 3 records this choice and the rejected alternatives.
-
-## Canonical PROSE STYLE block location
-
-The verbatim block text lives at `delivery-team/skills/delivery-flow/references/prose-style.md` — the single source of truth. The orchestrator's Step 4 dispatch construction reads this fixture and injects it between the `--- ALIAS ---` and `--- OUTPUT ---` delimiters of the dispatch template, with delimiter `--- PROSE STYLE ---`. The three dispatch templates in `references/pipeline-stages.md` (Primary L44, Supporting L87, DoD Validator L130) each carry the verbatim block as the canonical fixture.
-
-If the block text needs to change, edit `prose-style.md` only. Do not edit inlined copies elsewhere.
-
-## Per-dispatch override
-
-Per-dispatch override is **not supported in v1**. `prose_style` applies uniformly across every role at every stage of a given pipeline invocation. Per ADR-tk3-001 Element 2, this is intentional scope: there is no Wave 4 telemetry yet to identify a role for which caveman-lite degrades signal quality, so `prose_style.overrides: { <role>: standard }` is deferred to BACKLOG-103+ and revisited only if telemetry shows a problem role.
+If the block text needs to change in a future wave, edit `prose-style.md` only. Do not edit inlined copies elsewhere; there are none by design.
 
 ## Where to look when something behaves oddly
 
 | Symptom | First place to look |
 |---|---|
-| Dispatch prompts look unchanged after merge | `grep "^prose_style:" .delivery/config.yml` — likely set to `standard` |
-| Cache hash mismatch warning at Phase 0 | `governance/cache-prefix-hash.txt` vs `sha256sum delivery-team/skills/delivery-flow/SKILL.md` |
-| DoD validator missing findings | Verdict prose may be over-compressing; `.delivery/artifacts/<NN>-<stage>/dod/<role>-review.md` is the evidence; if missing, BACKLOG-102 stop-rule fires |
-| Schema validation failure on `prose_style` | Value not one of `caveman-lite, standard`; check `config-schema.json` enum |
+| CI lint fails on missing frontmatter key | `grep -L "fitness_review_due:" delivery-team/skills/*/SKILL.md` — names the file missing the key |
+| Pre-commit hook blocks but CI passes | `python3 scripts/check_skill_budgets.py` locally — verify same Python version + working-tree-clean state as CI |
+| Cache-prefix hash mismatch warning | `governance/cache-prefix-hash.txt` vs `sha256sum delivery-team/skills/delivery-flow/SKILL.md`; regenerate via `python3 scripts/regenerate_cache_prefix_hash.py` if a content edit landed without re-freeze |
+| Fitness-review issue did not open on schedule | `.github/workflows/fitness-review.yml` cron schedule + recent run logs; `fitness_review_due:` date arithmetic |
+| Paradigm sub-skill not discovered by router | Confirm sub-skill SKILL.md has `disable-model-invocation: true` (mandatory per ADR-tk4-002) and parent skill's Phase 1 router knows the variant |
+| `known_debt[]` non-empty after a clean wave | `python3 scripts/lint_known_debt.py` — surfaces JSON-Python registry drift; usually a `governance/skill-budgets.json` edit that did not propagate to the lint script |
 
 ## Related authoritative documents
 
-- ADR-tk3-001 — full contract for all six elements (config key, block, auto-clarity, validator treatment, re-freeze, schema bump).
-- BACKLOG-102 — initiative-level ACs and stop-rule. PRD — discovery-grounded file:line evidence; validator-framing split.
-- `plugin-dev:skill-development` — authoring conventions for `delivery-flow/SKILL.md` edits.
+- ADR-tk4-001 — Tier-B/C closure approach (per-file extraction strategy + partial-compliance reserve).
+- ADR-tk4-002 — Paradigm sub-skill pattern contract (canonical directory shape + frontmatter contract for sub-skills).
+- ADR-tk4-003 — Governance frontmatter + cumulative cache-prefix re-freeze (the contract this guide operationalizes).
+- BACKLOG-104 — Wave 3 initiative-level ACs and stop-rule.
+- `plugin-dev:skill-development` — authoring conventions for any SKILL.md edit.
+- `plugin-dev:skill-reviewer` — post-edit review pattern (load before opening PR).

@@ -1,0 +1,35 @@
+name: KNOWN_DEBT consistency lint (W3-14)
+
+on:
+  pull_request:
+    paths:
+      - 'governance/skill-budgets.json'
+      - 'scripts/check_skill_budgets.py'
+      - 'scripts/lint_known_debt.py'
+      - 'delivery-team/skills/**/SKILL.md'
+  push:
+    branches: [main]
+    paths:
+      - 'governance/skill-budgets.json'
+      - 'scripts/check_skill_budgets.py'
+      - 'scripts/lint_known_debt.py'
+      - 'delivery-team/skills/**/SKILL.md'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Lint JSON-Python KNOWN_DEBT consistency + frontmatter rollout
+        run: |
+          set -uo pipefail
+          python3 scripts/lint_known_debt.py

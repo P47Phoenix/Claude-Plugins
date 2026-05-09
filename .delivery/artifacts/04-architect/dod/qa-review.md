@@ -1,110 +1,155 @@
 # QA DoD Review — Stage 4 (Architect, light), Round 1
 
-**Pipeline**: run-2026-05-05-tk3
-**Reviewer**: QA Engineer (DoD validator)
-**Lens**: testability + AC coverage (LIGHT, blocking only)
-**Date**: 2026-05-05
+**Pipeline**: run-2026-05-09-tk4
+**Reviewer**: QA Engineer (DoD validator, FRESH dispatch)
+**Lens**: testability + AC traceability (LIGHT, blocking only)
+**Date**: 2026-05-09
 
 **Artifacts validated**:
-- ADR-tk3-001 — `.delivery/artifacts/04-architect/adrs/ADR-tk3-001-prose-style-config.md`
-- Architecture summary — `.delivery/artifacts/04-architect/solution/architecture-tk3-caveman-lite.md`
+- ADR-tk4-001 — `.delivery/artifacts/04-architect/adrs/ADR-tk4-001-tier-b-closure-approach.md`
+- ADR-tk4-002 — `.delivery/artifacts/04-architect/adrs/ADR-tk4-002-paradigm-sub-skill-pattern.md`
+- ADR-tk4-003 — `.delivery/artifacts/04-architect/adrs/ADR-tk4-003-governance-frontmatter-shape.md`
+- Architecture summary — `.delivery/artifacts/04-architect/solution/architecture-tk4-wave-3.md`
 
-**Reference**:
-- BACKLOG-102 — `.delivery/backlog/BACKLOG-102-caveman-prose-discipline.md` (6 initiative-level ACs, lines 116-121)
-- PRD — `.delivery/artifacts/02-refine/po/prd.md`
-
----
-
-## STATUS
-
-**STATUS: DONE**
+**Upstream traced**:
+- PRD — `.delivery/artifacts/02-refine/po/prd.md` (§6 AC-1..AC-7)
+- BACKLOG-104 — `.delivery/backlog/BACKLOG-104-skill-token-economy-delivery-team-wave-3.md` (§"Acceptance Criteria (initiative-level)" 1..10; PRD §6 collapses these into AC-1..AC-7)
 
 ---
 
-## Gate Findings
+## STATUS: NOT_DONE
 
-### Gate 1 — Every ADR Decision element is TESTABLE
-
-**PASS.** All 6 contract elements imply concrete verifiable checks.
-
-| Element | Test path identified |
-|---|---|
-| 1 — `prose_style` config key (ADR §Decision Element 1) | Verifiable by loading `.delivery/config.yml` and asserting key shape: top-level scalar, type string, valid values `caveman-lite \| standard`, default `caveman-lite`. ADR specifies the YAML grammar (`prose_style: caveman-lite`); top-level placement matches `wizard_completed` precedent. |
-| 2 — PROSE STYLE block contract (ADR §Decision Element 2) | Verifiable by reading rendered prompt at the three loci named in the ADR table (`pipeline-stages.md` after L70 / L113 / L161, before `--- OUTPUT ---`) and grepping for the verbatim block. ADR Element 2 step 3 also names the inverse check: with `prose_style: standard`, zero block bytes appear (omission test). |
-| 3 — Auto-clarity exemptions (ADR §Decision Element 3) | Verifiable two ways per Gate 2 below; ADR explicitly identifies "Validation surface" as Stage 6 dogfood inspecting 3 synthetic dispatches (security warning / `git revert` / 4-step migration) for standard-prose verdict. |
-| 4 — DoD validator verdict-prose treatment (ADR §Decision Element 4) | Verifiable by reading any post-merge DoD review file and asserting per-section style: `STATUS:` literal-token grep (downstream parsers are the test harness), `FINDINGS:` standard prose preserved, verdict prose ≤3 sentences in caveman-lite. ADR §Element 4 table gives a row-by-row rule. AC-2 (≥25% reduction) is the quantitative target via W0-1 telemetry. |
-| 5 — Cache-prefix re-freeze procedure (ADR §Decision Element 5) | Verifiable per Gate 3 below; ADR specifies command, expected change, and rollback path. |
-| 6 — Schema bump v2.9 (ADR §Decision Element 6) | Verifiable per Gate 4 below; ADR names exact loci (L5, L15, schema table, template, history), default-application path, and migration-banner string. |
-
-No element is purely declarative. AC-1 (≥20% prose reduction) and AC-2 (≥25% DoD reduction) are explicitly bound to W0-1 telemetry (`.delivery/telemetry/skill-loads.jsonl`), giving every quantitative claim a measurable test surface. Architecture summary §2 (system boundary diagram) and §4 (cache-prefix impact summary) reinforce inspection points for Elements 1, 2, 3, 4, 5.
+Two of five blocking gate criteria fail. Both are remediable inside Stage 4 with surgical additions to the existing ADRs (no re-architecture). Gates 1, 2, 3 PASS.
 
 ---
 
-### Gate 2 — Auto-clarity exemption mechanism is INSPECTABLE
+## Gate-by-gate verdict
 
-**PASS.** ADR §Decision Element 3 chose "in-prompt directive enforcement by the agent" as the v1 mechanism. Both inspection paths from the gate criterion are identifiable:
+### Gate 1 — Every Decision element in each ADR is TESTABLE: **PASS**
 
-- **Path (a) — read agent output and grep**: Stage 6 dogfood per ADR §Element 3 "Validation surface" specifies three synthetic dispatches (security warning, `git revert` confirmation, 4-step migration). Inspector reads each agent response and asserts the verdict prose is standard (articles preserved, no fragment compression of the four exempt contexts). Failure on any of three trips the BACKLOG-102 stop-rule.
-- **Path (b) — read dispatch prompt and verify directive**: ADR §Element 2 names the verbatim block content including the directive line `Auto-clarity exemptions apply: standard prose for security warnings, irreversible-op confirmations, multi-step sequences, user clarifications.` Inspector renders any Phase 4 Step 4 dispatch with `prose_style: caveman-lite` and greps the prompt body for that exact substring at the `--- PROSE STYLE ---` insertion point.
-
-Both paths are documented; either suffices for gate satisfaction.
-
----
-
-### Gate 3 — Cache-prefix re-freeze procedure has a verification step
-
-**PASS.** ADR §Decision Element 5 specifies all three required components:
-
-| Required | Provided in ADR |
-|---|---|
-| Command X to regenerate hash | `sha256sum delivery-team/skills/delivery-flow/SKILL.md > governance/cache-prefix-hash.txt` (verbatim, in code block, ADR L121-125) |
-| Expected change Y | "the whole-file SHA-256 in `governance/cache-prefix-hash.txt` will flip the moment Phase 0 changes" — current value `9d4011d11e5b83321526c41ff79dd25c9186f4c659a745feb0c13f686205926f` will change post-edit; flip is observable as a single-line diff in `governance/cache-prefix-hash.txt`. Byte-impact math table (ADR L106-114) projects +50-120 bytes Δ. |
-| Rollback path Z | §Reversibility "Schema-level rollback": revert v2.9 schema bump and Phase 0 edit; `cache-prefix-hash.txt` regenerates back to current `9d4011d…`. No data migration. |
-
-Procedure is also locked into Stage 5 Plan as an explicit Story DoD task per ADR §Element 5 point 2 and architecture-tk3-caveman-lite.md §4. The two-interpretation reconciliation (documented 2KB prefix vs whole-file SHA) explicitly resolves which surface produces a hash flip and which does not. Not hand-wavy: command, file, expected delta direction, and rollback are all named.
-
----
-
-### Gate 4 — Schema bump procedure has migration safety check
-
-**PASS.** ADR §Decision Element 6 specifies both required guarantees:
-
-| Required | Provided in ADR |
-|---|---|
-| Existing v2.7 configs continue to load | "Existing v2.7-or-earlier configs auto-migrate (Phase 0 lines 60-64 of SKILL.md). If `prose_style` is absent on load, the orchestrator applies the default `caveman-lite` and surfaces the standard upgrade banner: `> Config upgraded from v2.7 to v2.9. New settings applied with defaults: prose_style=caveman-lite`." Existing v2.6→v2.7 strip-and-default path (SKILL.md L65-71) preserved untouched. |
-| Default `caveman-lite` applies on missing key | Same passage; default named, banner string named, regression-safe path preserved. |
-
-Verifiable post-merge by loading any existing `.delivery/config.yml` (none currently set `prose_style`), running Phase 0, and asserting (a) no parse error, (b) `config.prose_style == "caveman-lite"` in the loaded struct, (c) the upgrade banner is emitted. v2.8 → v2.9 collision avoidance (DESIGN routing already at v2.8 per PRD §3) is also addressed: "v2.9 advances past the v2.8 DESIGN-routing slot rather than colliding with it." JSON regeneration is bound to a Stage 5 Plan task: `python3 delivery-team/scripts/generate-schema.py`.
-
----
-
-### Gate 5 — All 6 BACKLOG-102 acceptance criteria map to a Decision element OR Stage 6 dogfood
-
-**PASS.** All 6 initiative-level ACs (BACKLOG-102 lines 116-121) trace to ADR contract elements and/or Stage 6 dogfood activities. Criterion correctly counted as 6 (not 5) per the lesson honored.
-
-#### Traceability matrix (6 ACs → contract elements / dogfood)
-
-| AC # | BACKLOG-102 text (abridged) | Maps to | Verification surface |
+| ADR | Decision elements | Testable check (cited from ADR text) | Verdict |
 |---|---|---|---|
-| AC-1 | Agent narrative-framing prose MEASURABLY shorter (≥20% reduction in response-prose tokens, telemetry-verified) | ADR §Element 1 + §Element 2 | W0-1 telemetry hook (`.delivery/telemetry/skill-loads.jsonl`); 5 dispatches post vs 5 pre-baseline (PRD §FR-1); ADR §Consequences Positive bullet 1 |
-| AC-2 | DoD review files MEASURABLY smaller (≥25% reduction) | ADR §Element 4 | Post-merge DoD file size measurement vs run-2026-05-03-tk0e baseline; ADR §Consequences Positive bullet 1; Element 4 table row "Free-form verdict prose" |
-| AC-3 | NO regression in DoD pass rate (currently 4/7 first-try) | ADR §Element 4 + §Negative/risks row "Validator over-compression masks findings" | Stage 7 UAT measures pass-rate vs 4/7 baseline; FINDINGS bullets stay standard-prose (Element 4 table); stop-rule armed (NFR-7) |
-| AC-4 | NO regression in artifact quality (PRDs/ADRs/release-notes still pass downstream agents' reads) | ADR §Element 4 (artifact body uses standard prose; Tier 3 unchanged) + §Element 2 block content ("Artifact body uses standard prose") | Verified by next pipeline run reading post-change DoD/PRD/ADR artifacts (downstream-agent integration test) |
-| AC-5 | Auto-clarity boundaries respected (security/destructive/multi-step/clarification prose remains standard) | ADR §Element 3 + Stage 6 dogfood "Validation surface" | Stage 6 dogfood: 3 synthetic dispatches inspected; failure on any of three trips stop-rule (PRD §8.4) |
-| AC-6 | Opt-out via `prose_style: standard` works (one-line config change reverts behavior) | ADR §Element 1 + §Element 6 + §Reversibility "Config-level reversal" | 3-dispatch dogfood with `prose_style: standard` verifies zero PROSE STYLE block bytes emitted (named in ADR §Element 2 step 3) |
+| tk4-001 | 7 per-file extractions (W3-1..W3-7) with explicit batching math (`before → -Δ + router-overhead-Δ = after`) and named target ceiling | `wc -l <file> ≤ ceiling` per file (300 for Tier-B; 200 for Tier-C); per-file dogfood router regression set (~42 inputs total) cited in §"Stage 6 dogfood checklist" | PASS |
+| tk4-002 | Canonical directory shape `<plugin>/skills/<axis>/<variant>/SKILL.md` + 7-key frontmatter contract + parent router contract + marketplace invariant | §"Marketplace discoverability invariant" cites the explicit lint: `grep -l "disable-model-invocation: true" $(find . -name SKILL.md)` regex-matched against `.*/skills/[^/]+/[^/]+/SKILL.md` or grandfathered legacy path; sub-skill `disable-model-invocation: true` verifiable via `grep -l` per file | PASS |
+| tk4-003 | 3 new frontmatter keys + per-file +50-byte impact + sequencing gate + hash regeneration command | §"Frontmatter contract" CI lint validates presence + well-formedness + `context_budget` matches tier + `fitness_review_due` parses as ISO-8601; verifiable per-file via `grep -l "^maintainer:"`, `grep -l "^fitness_review_due:"`, `grep -l "^context_budget:"` | PASS |
 
-Every AC has at least one ADR contract element traceable; ACs 1, 5, and 6 additionally name explicit Stage 6 dogfood activities. No AC is unmapped.
+Every Decision element across the three ADRs has either an explicit runnable verification command or a verifiable artifact-level invariant. No narrative-only decisions detected.
 
 ---
 
-## Verdict
+### Gate 2 — Cache-prefix re-freeze verification step exists in ADR-tk4-003: **PASS**
 
-ADR-tk3-001 and the architecture summary collectively define a testable, AC-traceable contract for caveman-lite prose discipline. Every contract element implies a verifiable check (config-shape grammar, prompt-prefix grep, telemetry deltas, hash regeneration, migration banner), the auto-clarity mechanism is inspectable from both prompt-side and output-side, and the re-freeze and schema-bump procedures both have explicit verification steps. All 6 BACKLOG-102 ACs trace to either contract elements or Stage 6 dogfood — no orphaned criteria.
+ADR-tk4-003 §"Cumulative cache-prefix re-freeze procedure" specifies:
+
+- **Step 2 (regeneration command)**: `python3 scripts/regenerate_cache_prefix_hash.py --target governance/cache-prefix-hash.txt --files delivery-team/skills/*/SKILL.md delivery-team/skills/*/paradigms/*/SKILL.md` — explicit, runnable.
+- **Step 3 (verification)**: "Stage 6 DoD validator MUST cite the regenerated hash file's actual byte counts, NOT the +650-byte projection. Caveman-lite caught a byte-offset INVERSION in tk3 because the architect cited a position from the wrong file; this DoD gate is binding."
+- **Step 4 (gate)**: hash file updated ONCE at end of Story 5 (not per-file, not per-Story-1..4 trim).
+
+The verification step is concrete: re-run the regeneration, diff against the prior hash, cite actual byte counts. PASS.
 
 ---
 
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/04-architect/dod/qa-review.md
-SUMMARY: 5/5 QA gates pass. 6/6 ACs traceable to ADR elements or Stage 6 dogfood. Contract testable; cache-prefix and schema migrations have explicit verification.
-```
+### Gate 3 — All 7 PRD AC-1..AC-7 (= BACKLOG-104 init ACs) map to ADR contract elements OR Stage 6/7 dogfood: **PASS**
+
+Traceability matrix (PRD §6 numbering used; BACKLOG-104 1..10 collapsed into PRD's 7 per Refine):
+
+| PRD AC | BACKLOG-104 AC(s) | Source WI | Mapped to | Specific element |
+|---|---|---|---|---|
+| AC-1 | 1 | W3-1..7 + W3-9 budgets clear (`check_skill_budgets.py` exits 0) | **ADR-tk4-001** + **ADR-tk4-003** | tk4-001 §Decision per-file math (W3-1..W3-7); tk4-003 §"Mandatory-rollout sequencing" gates frontmatter on trims-first; **see Gate 4 NOT_PASS for residual concern** |
+| AC-2 | 2 | W3-12 CLAUDE.md ≤150 lines | **Stage 6 dogfood** (mechanical) | BACKLOG-104 §Story 6; not architecturally novel; arch summary §"Open questions" omits but acceptable per gate-3 criterion |
+| AC-3 | 3 | W3-9 governance frontmatter on all delivery-team SKILL.md | **ADR-tk4-003** | §"Frontmatter contract" + §"CI lint" |
+| AC-4 | 4 | W3-13..16 (4 Wave 2 carry-forwards) | **Architecture summary** §"Open questions" #2 (W3-15 standardize ruling) + **Stage 6 dogfood** (W3-13, W3-14, W3-16 mechanical) | Standardize ruling for W3-15 explicitly cited; remainder Story 7 admin |
+| AC-5 | 5 | W3-17 + W3-18 + DEFECT-006 close | **Architecture summary** §"Open questions" #3 (W3-17 Option A ruling) + **Stage 6 dogfood** (W3-18 telemetry) | Option A (banner each stale file) explicitly chosen; W3-18 mechanical |
+| AC-6 | 6 | W3-8 paradigm sub-skill ≥3 axes | **ADR-tk4-002** | §"Canonical directory shape" Wave-3 table: research-agent (5), user-feedback (4), presentation (9 conditional) |
+| AC-7 | 7 + 10 | NFR-4 ≥50% telemetry-measured cumulative reduction + W3-11 fitness review process operational | **Architecture summary** §"Cache-prefix impact summary" §"Justification" + **Stage 6 dogfood** (telemetry) | ~13,200-token reduction math cited; W3-11 fitness review keys land in tk4-003 frontmatter; full telemetry measurement is Stage 6 |
+
+BACKLOG-104 init ACs 8 (no first-try DoD pass-rate regression) and 9 (defects/story ≤0.4) are pipeline-runtime KPIs, not architect-stage testable contracts; correctly omitted from PRD §6 collapse and not flagged here.
+
+All 7 PRD ACs map to either an ADR contract element or a Stage 6/7 dogfood/admin task. PASS.
+
+---
+
+### Gate 4 — Mandatory-rollout sequencing has a verification step: **NOT_PASS**
+
+**Required**: After Story 5 (W3-9 frontmatter), `check_skill_budgets.py` must still exit 0 (no file pushed over budget by added frontmatter lines).
+
+**Found in ADRs**:
+
+- ADR-tk4-001 §"Sequencing with ADR-tk4-003" correctly states: "frontmatter rollout adds ~3 lines per file. If W3-9 ran first, files already AT-budget after this ADR's trims would land 3 lines OVER budget."
+- ADR-tk4-001 §W3-7 godot identifies the tightest case: "after = 198 ≤ 200. COMPLIANT. (Margin = 2 lines; Stage 6 Dev runs the command and confirms; if buffer is tighter than the math suggests, fold a second 5-line trim from `## Architecture Guardrails`.)"
+- ADR-tk4-003 §"Mandatory-rollout sequencing" repeats the gating rationale.
+
+**What is missing**: An EXPLICIT post-Story-5 verification step in ADR-tk4-003 stating: "After Story 5 frontmatter rollout lands in the working tree, Stage 6 Dev runs `python3 scripts/check_skill_budgets.py` and confirms exit 0. If godot lands at 201 (post-frontmatter +3 from 198), the §W3-7 escape hatch (fold a 5-line `## Architecture Guardrails` trim) is invoked before merge."
+
+**Empirical evidence the gap matters**: Per-file post-frontmatter projections from ADR-tk4-001 math + tk4-003 +3 lines/file:
+
+| File | tk4-001 after | + frontmatter | Tier ceiling | Status |
+|---|---:|---:|---:|---|
+| architect | 288 | 291 | 300 | OK (margin 9) |
+| presentation | ~160 | ~163 | 300 | OK (margin ~137) |
+| ui | 273 | 276 | 300 | OK (margin 24) |
+| operations | 255 | 258 | 300 | OK (margin 42) |
+| quality | 276 | 279 | 300 | OK (margin 21) |
+| user-feedback | 250 | 253 | 300 | OK (margin 47) |
+| **godot** | **198** | **201** | **200** | **OVER by 1 — escape hatch must trigger** |
+
+Six files clear with margin; godot is +1 over Tier-C without invoking the §W3-7 escape hatch. The escape hatch IS in tk4-001, but neither ADR ties it to an explicit post-Story-5 `check_skill_budgets.py` exit-0 verification. Stage 6 Dev could plausibly read tk4-001 §W3-7 as conditional ("if buffer is tighter than the math suggests") and skip the trim, then the post-frontmatter command exits non-zero, blocking AC-1.
+
+**Remediation (≤5 lines into ADR-tk4-003)**: Add a §"Post-Story-5 budget verification" subsection: "After frontmatter rollout lands, Stage 6 Dev MUST run `python3 scripts/check_skill_budgets.py` and confirm exit 0. Godot is the only file with <3-line margin per tk4-001 math; the §W3-7 escape hatch (fold a 5-line `## Architecture Guardrails` trim) is MANDATORY (not conditional) before Story 5 PR merges. Other 6 files are projected to clear with margin ≥9."
+
+NOT_PASS.
+
+---
+
+### Gate 5 — Stop-rule tripwire is testable (ADR or architecture must specify HOW to detect <15% prose-token reduction at first dispatches): **NOT_PASS**
+
+**Required**: ADR or architecture must specify HOW to detect <15% prose-token reduction at first dispatches (per BACKLOG-104 §Stop-rule trigger #2 carried from caveman-lite/BACKLOG-102).
+
+**Found in artifacts**:
+- BACKLOG-104 §Stop-rule trigger #2: "first post-Wave-3 dispatches showing <15% prose-token reduction vs pre-caveman-lite baseline triggers stop-rule retro on caveman-lite BEFORE Wave 3 W3-9 governance work proceeds. W3-1..W3-8 content trims may continue under this trigger; only W3-9 (and downstream W3-10..12 that depend on frontmatter rollout) holds."
+- ADR-tk4-001/002/003: NO mention of `<15% prose-token reduction` or how to detect it.
+- Architecture-tk4-wave-3.md: NO stop-rule tripwire section.
+- PRD §6 AC-7: cites `python3 scripts/compute_token_reduction.py --baseline pre-W0 --window 5` for the cumulative ≥50% NFR-4 measurement, but this is a different metric (cumulative cross-wave vs caveman-lite-only post-W3 prose tripwire).
+
+**Why this matters**: BACKLOG-104 makes W3-9 (and the entire ADR-tk4-003 frontmatter rollout) GATED on this tripwire. If the architect does not specify HOW Stage 6 detects the <15% condition, Stage 6 cannot test the gate before kicking off Story 5. The gate becomes narrative-only.
+
+**Remediation (≤5 lines into architecture-tk4-wave-3.md or as new ADR-tk4-003 subsection)**: Add: "Stop-rule tripwire detection (BACKLOG-104 §Stop-rule #2): before Story 5 (W3-9) PR opens, Stage 6 runs `python3 scripts/compute_token_reduction.py --baseline pre-caveman-lite --window <N>` over the first N post-Wave-3 dispatches (N ≥ 3). If reduction < 15%, Story 5 holds; Stories 1–4 + Story 7 admin proceed. Tripwire output is logged to `.delivery/telemetry/stop-rule-tk4.txt` for Stage 6 DoD citation." (If `compute_token_reduction.py` does not yet support `--baseline pre-caveman-lite`, that flag addition is a Stage 6 W3-18 telemetry-hardening sub-task.)
+
+NOT_PASS.
+
+---
+
+## Summary scoreboard
+
+| Gate | Verdict | Blocking? |
+|---|---|---|
+| 1. Decision elements TESTABLE across all 3 ADRs | PASS | — |
+| 2. Cache-prefix re-freeze verification step in ADR-tk4-003 | PASS | — |
+| 3. PRD AC-1..AC-7 traceability to ADR / Stage 6 dogfood | PASS | — |
+| 4. Post-Story-5 `check_skill_budgets.py` exit-0 verification step | NOT_PASS | YES |
+| 5. <15% prose-token reduction stop-rule tripwire detection mechanism | NOT_PASS | YES |
+
+**Overall STATUS: NOT_DONE.** Two NOT_PASS gates, both blocking.
+
+---
+
+## TARGET vs CURRENT discipline check
+
+The ADRs correctly distinguish TARGET (post-extraction line counts) from CURRENT (verified `wc -l` snapshot from PRD §3). ADR-tk4-001 math uses verified CURRENT (500/545/496/420/418/399/236) and projects TARGET (288/~160/273/255/276/250/198). No conflation detected. PRD §3 is cited as the source of CURRENT. Lesson honored.
+
+---
+
+## Recommended next round (round 2)
+
+Architect spawns FRESH dispatch with two surgical edits:
+
+1. **ADR-tk4-003 § new "Post-Story-5 budget verification"**: ~5 lines mandating post-frontmatter `check_skill_budgets.py` exit-0 + godot escape hatch as MANDATORY (not conditional).
+2. **architecture-tk4-wave-3.md § new "Stop-rule tripwire detection" OR ADR-tk4-003 §new subsection**: ~5 lines specifying the runnable command + threshold for the <15% prose-token reduction tripwire, gated before Story 5 opens.
+
+No re-architecture needed; both are testability additions to existing decisions. Round 2 estimated cost: <100 lines of architect output.
+
+---
+
+**Verdict (≤3 sentences)**: Three ADRs and the architecture summary land sound architectural decisions with verified math and clean cache-prefix discipline, and Gates 1–3 (testability, re-freeze procedure, AC traceability) all PASS. Gates 4 and 5 fail because two BLOCKING-style verifications — post-Story-5 budget exit-0 (godot is +1 over Tier-C without the §W3-7 escape hatch firing) and the <15%-prose-reduction stop-rule tripwire detection mechanism — are present in ADR rationale prose but missing from the explicit verification-step contract a Stage 6 Dev would run. Both gaps are surgically remediable in round 2 with two ≤5-line ADR additions and require no re-design.
+
+— QA Engineer (DoD validator, FRESH dispatch), run-2026-05-09-tk4, Stage 4 (Architect, LIGHT) round 1.

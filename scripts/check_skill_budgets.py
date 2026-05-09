@@ -30,60 +30,18 @@ from pathlib import Path
 TIER_LIMITS = {"A": 500, "B": 300, "C": 200}
 
 # ---------------------------------------------------------------------------
-# Known-debt pre-registration (ADR-tk0e-003 full audit — 11 entries)
-# These files are over-budget by audit baseline; they pass CI without a
-# Budget-Exception PR-body token.  Each known-debt removal requires a
-# deliberate Wave refactor PR.
+# Known-debt pre-registration — synchronized with governance/skill-budgets.json
+# (single source of truth verified by scripts/lint_known_debt.py — W3-14).
+#
+# Wave 3 Story 5 (W3-9) cleared the final 7 Wave-2 entries:
+#   architect (500→294), presentation (545→185), ui (496→222),
+#   operations (420→219), quality (418→289), user-feedback (399→272),
+#   godot (236→200).
+# All 11 top-level delivery-team SKILL.md are now compliant; known_debt[]
+# baselines empty for the first time since BACKLOG-100 (Wave 0). Re-additions
+# require an entry in BOTH this list AND governance/skill-budgets.json.
 # ---------------------------------------------------------------------------
-KNOWN_DEBT = [
-    # W2-1 post-Wave-2 sync (2026-05-03): delivery-flow (497, Tier-A ✓) + product-delivery (299, Tier-B ✓)
-    # REMOVED — now compliant. developer REMOVED (296, Tier-B ✓, cleared Story 3).
-    # alias-creator REMOVED — cleared to ≤200 in Wave 1 (W1-7).
-    # architect: frontmatter tier=B (role multiplexer); 500 lines is partial Wave-2 progress (Tier-A 500 ceiling met); Tier-B 200-line residual deferred to Wave 3.
-    {
-        "path": "delivery-team/skills/architect/SKILL.md",
-        "tier": "B",
-        "current": 500,  # post-W2 actual; Tier-A 500 ceiling met as milestone; Tier-B 300 deferred → W3
-        "target_wave": 3,
-    },
-    {
-        "path": "delivery-team/skills/presentation/SKILL.md",
-        "tier": "B",
-        "current": 545,  # actual post-W1
-        "target_wave": 3,
-    },
-    {
-        "path": "delivery-team/skills/ui/SKILL.md",
-        "tier": "B",
-        "current": 496,  # actual post-W1
-        "target_wave": 3,
-    },
-    {
-        "path": "delivery-team/skills/operations/SKILL.md",
-        "tier": "B",
-        "current": 420,  # actual post-W1
-        "target_wave": 3,
-    },
-    {
-        "path": "delivery-team/skills/quality/SKILL.md",
-        "tier": "B",
-        "current": 418,  # actual post-W1
-        "target_wave": 3,
-    },
-    {
-        "path": "delivery-team/skills/user-feedback/SKILL.md",
-        "tier": "B",
-        "current": 399,  # actual post-W1
-        "target_wave": 3,
-    },
-    {
-        "path": "delivery-team/skills/godot/SKILL.md",
-        "tier": "C",
-        "current": 236,  # actual post-W1
-        "target_wave": 3,
-    },
-    # paradigm sub-skills remain well under limit — NOT in known-debt
-]
+KNOWN_DEBT: list[dict] = []
 
 # ---------------------------------------------------------------------------
 # Budget-Exception token (ADR-tk0e-002 Ruling 3 escape hatch)

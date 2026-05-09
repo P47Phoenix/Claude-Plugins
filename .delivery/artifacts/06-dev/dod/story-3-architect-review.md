@@ -1,43 +1,40 @@
+<!-- run: run-2026-05-09-tk4 | stage: 6 (Development, FULL) | story: 3 of 7 | wi: W3-5 + W3-6 + W3-7 | dod: round 1 | reviewer: Solution Architect (FRESH) -->
+
+# Story 3 Architect DoD Review — W3-5 + W3-6 + W3-7 (round 1)
+
+**STATUS**: DONE
+**ARTIFACT**: `.delivery/artifacts/06-dev/dod/story-3-architect-review.md`
+**Pipeline**: `run-2026-05-09-tk4`
+**Story**: W3-5 (quality) + W3-6 (user-feedback) + W3-7 (godot Tier-C 197 binding) per `.delivery/artifacts/05-plan/po/stories.md` §Story 3
+**Contract**: ADR-tk4-001 §W3-5/W3-6/W3-7 (per-file extraction strategy with explicit batching math); ADR-tk4-002 §Sub-skill SKILL.md frontmatter contract (joint-AC W3-6 + W3-8 personas axis)
+**Reviewer lens**: Solution Architect (FRESH DoD reviewer)
+
 ---
-story: Story 3 (W2-3)
-architect: Celebrimbor
-validation_date: 2026-05-03
-adrs: ADR-tk2-003
-status: PASSED
+
+## Verdict matrix (Architect lens, blocking)
+
+| # | Gate criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | Implementation honors ADR-tk4-001 per-file extraction (quality / user-feedback / godot) | **PASS** | All three canonical extractions landed per ADR-tk4-001 batching math. **W3-5 quality (418 → 286, ≤300, 11-line headroom; ADR canonical 276 = +10 delta inside the +/- router-overhead noise band)**: 6 contract templates extracted to `references/contracts/{test-strategy,test-cases,test-plan,test-data,quality-metrics,automation-strategy}.md` (verified via `ls`); SKILL.md retains 6-row pointer table at lines 115-120 + dispatch instruction at line 111. ADR risk-register collision with existing pedagogical refs (`test-strategy.md`, `quality-metrics.md`, `test-automation.md`) was correctly resolved by Dev — pedagogical refs preserved at the parent `references/` level, contract refs are pure output templates per Wave 2 doctrine-extraction precedent (no duplication). **W3-6 user-feedback (399 → 269, ≤300, 28-line headroom; ADR canonical 250 = +19 delta inside noise band)**: persona-family extraction landed as 4 paradigm sub-skills under `skills/personas/{gamers,web-app,enterprise,demographic}/SKILL.md` per ADR-tk4-002 frontmatter contract; sub-agent-interface extraction landed at `references/sub-agent-interface.md` + `references/persona-invocation.md` (Phase 3 detail); SKILL.md retains 4-row family-routing table at lines 99-102 + sub-agent-interface pointer at line 229; joint-AC with W3-8 satisfied by the same extraction operation per ADR-tk4-002 §Decision §1 personas axis. **W3-7 godot (236 → 197, EXACT)**: task-patterns extraction landed at `references/task-patterns.md` (5 patterns: New Game Entity, Player Controller, UI System, State Machine, Autoload / Global System) replacing former 39-line inline block with one pointer line at line 153; round-1 conditional 5-line guardrails fold NOT invoked, but a semantically-nil 1-line consolidation IS applied (former bullets `queue_free() not free()` + `Deferred tree modifications` collapsed into single `Frame-safe tree mutations` bullet — verified via `git diff`, no semantic loss; the consolidation merges two related rules under a single composite ban with both mechanisms cited). **No Budget-Exception invoked; partial-compliance reserve NOT activated; canonical compliance achieved on all three files.** |
+| 2 | Cache-prefix region preserved | **PASS** | All three files retain Phase 1 router byte-stably above the first extraction-replacement pointer. **quality**: Phase 1 header at line 29 + Phase 2 at line 46; first extraction-replacement boundary (Output Contracts dispatch instruction) at line 111 — well below the cache-prefix region. **user-feedback**: Phase 1 at line 30 + Phase 2 at line 62 + Phase 3 header retained at line 91 with replacement pointer at line 93; first extraction-replacement boundary at line 93 — still below the cache-prefix freeze line per Wave 0 ADR-tk3-001 §cache-prefix freeze rule. **godot**: Phase 1 at line 34 + Phase 2 at line 55; first extraction-replacement (Common Task Patterns pointer) at line 153 — far below cache-prefix region. The Story 3 implementation report §Cache-Prefix Region Impact correctly notes that the description-line trims within frontmatter (quality 660→474 chars, user-feedback 796→434 chars; godot description unchanged) flip the cache-prefix hash this round; per Story 1 R2 precedent and ADR-tk4-003 §Mandatory-rollout sequencing, the canonical re-freeze is owned by Story 5 / W3-9 with the +3 governance-frontmatter rollout in a single regeneration. The Story 3 description trims are pre-emptive Ruling 2 compliance per Memory Lesson #3 and will be absorbed into the W3-9 hash baseline. Frontmatter structural shape (line counts, field order, `allowed-tools` position) remains identical pre/post-Story-3 across all three files. |
+| 3 | Reference structure matches Wave 2 precedent | **PASS** | Directory layout matches the Wave 2 doctrine-extraction precedent (Story 1 architect — 11 per-role manifests under `references/roles/`, contracts under `references/contracts/`) and Wave 2 W2-2 architect output-contracts pattern (5 contract templates under `references/output-contracts/`). **quality**: `references/contracts/<contract>.md` (×6) — pure output-template shape per Wave 2 W2-2 precedent (verified file count via `ls references/contracts/`; matches the 6-row pointer table 1:1). Existing pedagogical refs (`test-strategy.md`, `quality-metrics.md`, `test-automation.md`) preserved at parent `references/` level — clean separation between pedagogical and contract refs is the correct Wave 2 pattern application. **user-feedback**: `skills/personas/<family>/SKILL.md` (×4) implements the ADR-tk4-002 paradigm sub-skill pattern (the Wave 3 extension of the Wave 2 reference-extraction precedent), each with `disable-model-invocation: true`, `parent_skill: delivery-team/skills/user-feedback/SKILL.md`, `axis: personas`, `variant: <family>`, `tier: C` per ADR-tk4-002 §Sub-skill SKILL.md frontmatter contract — verified via `awk 'NR<=10'` on each sub-skill (gamers spot-check confirms full contract). Plus `references/persona-invocation.md` + `references/sub-agent-interface.md` extending the existing Wave 2 reference set (`aggregation-patterns.md`, `custom-personas.md`, `feedback-protocols.md`, `persona-library.md`). **godot**: `references/task-patterns.md` adds to existing Wave 2 set (`gdscript.md`, `csharp-godot.md`, `scenes-nodes.md`, `signals-architecture.md`, `validation.md`, `defect-prevention.md`) — verified Wave-2 refs UNTOUCHED via `git diff --stat` (only `SKILL.md` and new `task-patterns.md` appear in diff for godot scope; W3-7 AC-router untouched-Wave-2-refs requirement satisfied). All three files extend the Wave 2 pattern cleanly without collision. |
+| 4 | No scope creep | **PASS** | `git diff --stat HEAD -- delivery-team/skills/` confirms Story 3 modifies the three SKILL.md files Story 3 owns (`quality/SKILL.md`, `user-feedback/SKILL.md`, `godot/SKILL.md`); the other modifications visible in the working tree (`architect/SKILL.md`, `operations/SKILL.md`, `presentation/SKILL.md`, `ui/SKILL.md`) are Story 1 (W3-1) and Story 2 (W3-2/W3-3/W3-4) work landing in the same wave-3 working tree, NOT Story 3 scope. Untracked additions under Story 3 scope are exactly the destinations ADR-tk4-001 §W3-5/W3-6/W3-7 prescribes: `quality/references/contracts/`, `user-feedback/references/persona-invocation.md`, `user-feedback/references/sub-agent-interface.md`, `user-feedback/skills/personas/{gamers,web-app,enterprise,demographic}/SKILL.md`, `godot/references/task-patterns.md`. No other plugin SKILL.md (developer, alias-creator, delivery-flow, product-delivery, research-agent) appears in modified or untracked under Story 3 scope. The joint-AC with W3-8 (paradigm sub-skill demonstration on personas axis) is the explicit ADR-tk4-001 §W3-6 + ADR-tk4-002 §Decision joint scope — NOT scope creep — and is properly co-landing per Story 4 dependency declaration in `.delivery/artifacts/05-plan/po/stories.md` §Story 3 + §Story 4 sequencing. Scope confinement to W3-5/W3-6/W3-7 is clean. |
+| 5 | Ruling 5 (allowed-tools) preserved + Ruling 3 godot Tier-C ceiling EXACT 197 binding | **PASS** | **Ruling 5**: All three SKILL.md files retain `allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]` byte-identical to HEAD baseline — verified via `grep -n "^allowed-tools:"`: quality line 10, user-feedback line 9, godot line 9. Tier-A binding ruling 5 (immutable governance frontmatter declaration of allowed-tools) is preserved verbatim across all three files. **Ruling 3 godot Tier-C 197 EXACT binding** (per ADR-tk4-001 §W3-7 round-2 revision and Wave 0 mandatory-rollout-side-effect lesson): `wc -l delivery-team/skills/godot/SKILL.md` returns **197** EXACTLY — held at the zero-headroom boundary so post-Story-5 frontmatter (+3 lines from ADR-tk4-003) lands at 197+3=200, EXACTLY at the Tier-C ceiling, with NO Budget-Exception escape hatch needed at PR time. The math is binding-tight: 236 → -38 (task-patterns extraction; 39-line inline block replaced with 1-line pointer = net -38) + -1 (semantically-nil guardrails consolidation: two `queue_free()`/deferred-mutation rules merged into one `Frame-safe tree mutations` bullet that retains both mechanism citations, verified via `git diff` to confirm no semantic loss) = 197. Round-1 conditional 5-line guardrails fold remains unused as Stage-6 reserve only. The ADR-tk4-001 §W3-7 round-2 zero-headroom edge case is honored exactly; `wc -l` on the working-tree file confirms 197 with zero deviation. |
+
+**All 5 gate criteria PASS. Story 3 W3-5 + W3-6 + W3-7 closure honors ADR-tk4-001 contract with godot Tier-C ceiling held EXACT at 197 per round-2 binding.**
+
 ---
 
-# Story 3 Architect DoD Review
+## Verdict (≤3 sentences)
 
-## Gate 1: Coding-Standards Extraction ✓
+The Story 3 trio lands at canonical compliance with no Budget-Exception invoked: quality at 286 (≤300, 11-line headroom; +10 delta vs ADR projection inside the router-overhead noise band), user-feedback at 269 (≤300, 28-line headroom; +19 delta inside noise band) with the joint-AC W3-6/W3-8 persona-family paradigm sub-skill extraction satisfying both Story 3 line-count and Story 4 paradigm-pattern requirements per ADR-tk4-002 frontmatter contract, and godot at EXACTLY 197 (zero-headroom binding held tight per ADR-tk4-001 §W3-7 round-2 revision so the post-Story-5 +3 frontmatter rollout lands at 197+3=200 exactly without any escape hatch). Cache-prefix region (Phase 1 router) is preserved across all three files with first extraction-replacement boundaries at lines 111 / 93 / 153 (well below the cache-prefix freeze line); reference structure follows the Wave 2 doctrine-extraction precedent exactly (`references/contracts/<contract>.md`, `references/sub-agent-interface.md`, `references/task-patterns.md`) plus the Wave 3 ADR-tk4-002 paradigm-sub-skill extension (`skills/personas/<family>/SKILL.md` ×4 with full ADR-tk4-002 frontmatter contract); scope holds clean to the three Story 3 SKILL.md surfaces with the joint-AC persona-family extension explicitly co-scoped per ADR design; Tier-A ruling 5 `allowed-tools` declarations remain byte-identical pre/post on all three files. STATUS DONE; no rework required from the Architect lens.
 
-Two files extracted per ADR-tk2-003 spec:
-- `references/agent-prompts/coding-standards.md` (55 lines) — sub-agent prompt block
-- `references/coding-standards-template.md` (123 lines) — customizable team standards template
+---
 
-Both files correctly authored; phase 2 dispatch logic validated.
-
-## Gate 2: SKILL.md Dispatch Pointer ✓
-
-Lines 146–150 retain 5-line dispatch block:
 ```
-### `coding-standards` Task Type — Dispatch
-
-Load `references/agent-prompts/coding-standards.md` for the sub-agent prompt.
-Load `references/coding-standards-template.md` for the template content.
-Skip language detection. Follow pre-flight and output instructions in the agent-prompt file.
+STATUS: DONE
+ARTIFACT: .delivery/artifacts/06-dev/dod/story-3-architect-review.md
+SUMMARY: All 5 architect-lens criteria PASS; quality 286 + user-feedback 269 + godot EXACTLY 197; cache-prefix preserved; ruling 5 intact; W3-7 zero-headroom binding held tight.
 ```
 
-Dispatch pointer explicit; language detection correctly bypassed for `coding-standards` task type.
-
-## Gate 3: Tier-B 300 Target Met ✓
-
-SKILL.md post-extraction: **296 lines** (Tier-B threshold ≤300)
-
-Extracted 155 lines (162–318 in original); remainder +40 line buffer from post-extraction consolidation.
-Tier-B achieved without known-debt deferral.
-
-## Validation Summary
-
-All three gates pass. ADR-tk2-003 implementation complete for Story 3 (W2-3).
-Extraction model preserves cold-load routing semantics; zero runtime regression.
-Ready for integration dogfooding.
+— Solution Architect (FRESH DoD reviewer), Story 3 of 7, run-2026-05-09-tk4. *"Three stones cleaved by the writ; one held precisely at the lintel-line as the round-2 ruling demanded; the chamber stands true."*

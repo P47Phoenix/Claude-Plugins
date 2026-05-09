@@ -3,76 +3,74 @@ role: developer
 stage: 02-refine
 depth: light
 round: 1
-pipeline_id: run-2026-05-05-tk3
+pipeline_id: run-2026-05-09-tk4
 artifact_under_review: .delivery/artifacts/02-refine/po/prd.md
 validator_mode: runs-the-command
-created: 2026-05-05
+framing: well-formed (TARGET vs CURRENT) — NOT applies-today
+created: 2026-05-09
 ---
 
-STATUS: DONE
+# Stage 2 (Refine, light) — Developer DoD Review (round 1)
 
-# Developer DoD Review — Refine (light, round 1)
+## STATUS
 
-Validator: developer (runs-the-command). Mode: light prose review, full-depth command execution. Scope: well-formed? ACs only per the PRD's own §7 Validator Framing split. The applies? ACs (telemetry-driven W2-1-A1, W2-2-A1, W2-2-A2, W2-3-A1, W2-1-A2) are explicitly out of scope at Refine; Stage 6 owns them.
+**STATUS: DONE**
 
-## Commands run
+The PRD is well-formed against all 8 light-pass DoD criteria. Every cited file path resolves, every cited line count matches `wc -l` exactly, Phase 0 / frontmatter scans corroborate the PRD's discovery findings, governance/skill-budgets.json known-debt aligns 1:1 with the PRD §3 table, story consolidation (7 stories from 18 WIs) is explicit, all AC commands are bash + python3 stdlib + coreutils only, and §7 binds the validator to the well-formed-vs-applies framing per refine memory lesson #7. One non-blocking factual nit on an AC-6 baseline annotation is noted under Findings.
 
-1. `for f in <10 paths>; do test -f "$f" && echo EXISTS || echo MISSING; done`
-   stdout: 10/10 EXISTS — all PRD-cited paths resolve (SKILL.md, pipeline-stages.md, quality-gates.md, config-schema.md, config-schema.json, idea-brief.md, BACKLOG-102, skill-token-economy.md, settings.local.json, generate-schema.py).
-2. `wc -l delivery-team/skills/delivery-flow/{SKILL.md,references/pipeline-stages.md,references/quality-gates.md,references/config-schema.md}`
-   stdout: 497, 682, 288, 369 — exact match to PRD §3 discovery table (rows 1–4).
-3. `head -3 delivery-team/skills/delivery-flow/references/config-schema.json`
-   stdout: valid JSON Schema 2020-12 header with `$id` pointing at this repo — matches PRD §3 row 5 ("exists, head -3").
-4. `sed -n '40,50p' delivery-team/skills/delivery-flow/references/pipeline-stages.md`
-   stdout: line 44 is "### Primary Agent Dispatch Template" — matches PRD §3 bullet 1 / FR-1 line 44.
-5. `sed -n '83,95p' delivery-team/skills/delivery-flow/references/pipeline-stages.md`
-   stdout: line 87 is "### Supporting Agent Dispatch Template" — matches PRD §3 bullet 1 / FR-1 line 87.
-6. `sed -n '126,138p' delivery-team/skills/delivery-flow/references/pipeline-stages.md`
-   stdout: line 130 is "### DoD Validator Dispatch Template" — matches PRD §3 bullet 1 / FR-1 line 130.
-7. `grep -nc '^## ' delivery-team/skills/delivery-flow/references/pipeline-stages.md`
-   stdout: 10 — exact match to PRD §3 bullet 2 ("10 top-level (`^## `) sections").
-8. `sed -n '1,20p' delivery-team/skills/delivery-flow/references/config-schema.md`
-   stdout: L5 reads `## Current Version: 2.8`; L15 row reads `| \`config_version\` | string | yes | "2.8" | ...` — matches PRD §3 bullet 3.
-9. `sed -n '347,369p' delivery-team/skills/delivery-flow/references/config-schema.md`
-   stdout: Version History table includes a `2.8` row dated `2026-04-05` for DESIGN routing, confirming PRD §3 bullet 4 ("v2.8 slot is already taken"), forcing W2-3 to bump to v2.9.
-10. `sed -n '56,89p' delivery-team/skills/delivery-flow/SKILL.md`
-    stdout: Phase 0 config-read body — matches PRD §3 bullet 5 ("Phase 0 lives at lines 56–89").
-11. `sed -n '470,485p' delivery-team/skills/delivery-flow/SKILL.md`
-    stdout: `## Volatile` section heading at L475 with cache-prefix boundary commentary — matches PRD §3 bullet 5 ("Volatile marker sits at line 475").
-12. `sed -n '329,345p' delivery-team/skills/delivery-flow/SKILL.md`
-    stdout: "Step 4: Invoke Primary Agent" with dispatch construction — matches PRD §3 bullet 6 ("Step 4 dispatch construction lives at lines 329–345").
-13. `sed -n '377,402p' delivery-team/skills/delivery-flow/SKILL.md`
-    stdout: "Step 7: Team DoD Validation" — matches PRD §3 bullet 7 ("Step 7 DoD validation orchestration lives at lines 377–402").
-14. `sed -n '21,53p' delivery-team/skills/delivery-flow/references/quality-gates.md`
-    stdout: "### DoD Validator Prompt Template" with template body L21–38 plus parallel-validator clarification through L53 — matches PRD FR-2 locus.
-15. `sed -n '207,225p' delivery-team/skills/delivery-flow/references/config-schema.md`
-    stdout: "## Config File Template" header at L207, YAML template begins at L211 with `config_version: "2.8"` — matches PRD FR-3 locus ("Config File Template at line 207+").
-16. `python3 -c "import json; d=json.load(open('.../config-schema.json')); print(d['properties']['config_version'].get('default'), 'prose_style' in d['properties'], len(d['properties']))"`
-    stdout: `2.7 False 19` — JSON schema currently defaults `config_version` to 2.7 (drift vs the markdown's "2.8") and does not yet declare `prose_style`. Drift is informational, not blocking — Stage 6 regenerates the JSON via `delivery-team/scripts/generate-schema.py` per FR-3 and absorbs both the v2.9 bump and the new key in one regeneration.
-17. `grep -nc 'PROSE STYLE: caveman-lite for narrative-framing prose ONLY' delivery-team/skills/delivery-flow/references/pipeline-stages.md` and `grep -nc 'Auto-clarity exemptions apply' .../pipeline-stages.md` and `grep -nc 'caveman-lite' .../quality-gates.md` and `grep -nE 'prose_style' .../SKILL.md`
-    stdout: `0`, `0`, `0`, empty — pre-merge baseline is empty, exactly as expected. These are TARGET-state assertions; per the binding TARGET-vs-CURRENT lesson, this is the right behavior at Refine round 1.
-18. `cat .claude/settings.local.json`
-    stdout: allowlist = `WebSearch`, `Bash(flatpak list:*)`, `Read(//usr/bin/**)`, `Read(//var/usrlocal/bin/**)`, `Bash(git add:*)` — confirms no `yq`/`xq`/`jq` permitted, matches PRD NFR-5 wording.
-19. `grep -nE '(yq|xq|^[^#]*jq[ \-])' .delivery/artifacts/02-refine/po/prd.md`
-    stdout: only the NFR-5 prohibition line (L122) mentions yq/xq/jq, and only as a self-policing prohibition — no AC command invokes them. Stage 6 dogfood plan §8 likewise free of forbidden CLIs (the `git revert` / `rm -rf` references are example prose the dispatched agent will narrate, not commands the validator runs).
-20. `bash -c 'grep -n "^## Current Version: 2.9" .../config-schema.md; echo $?'` and `bash -c "grep -n '^| \`config_version\` .*\"2.9\"' .../config-schema.md; echo $?"` and `python3 -c "import json; json.load(open('.../config-schema.json'))"`
-    stdout: bash exit 1 / bash exit 1 / "python3+json import OK" — well-formed AC commands execute under the active allowlist (bash + python3 stdlib only); their no-match return is the expected pre-merge outcome under TARGET-vs-CURRENT framing, not a defect.
+## Commands run (RUNS-THE-COMMAND, repo root)
 
-## Findings (one bullet per gate criterion)
+| # | Command | Result |
+|---|---|---|
+| 1 | `test -f .delivery/artifacts/02-refine/po/prd.md && wc -l .delivery/artifacts/02-refine/po/prd.md` | exists; 202 lines |
+| 2 | `test -f governance/skill-budgets.json && wc -l governance/skill-budgets.json` | exists; 63 lines |
+| 3 | `test -f .claude/settings.local.json` | exists |
+| 4 | `for f in <7 SKILL.md + CLAUDE.md>; do test -f "$f" && wc -l "$f"; done` | 8/8 exist; counts 500/545/496/420/418/399/236/168 — exact match to PRD §3 table |
+| 5 | `for f in <7 SKILL.md>; do grep -n "^## Phase 0" "$f"; done` | zero hits across all 7 — confirms PRD §3 "Phase 0 scan: zero hits" |
+| 6 | `for f in <7 SKILL.md>; do grep -n "^---" "$f"; done` | line 1 present in all; line 10/11 present in all; one delimiter in 18–28 range present in all 7 (architect=19, presentation=22, ui=21, operations=21, quality=27, user-feedback=28, godot=18) — confirms PRD §3 frontmatter range |
+| 7 | `python3 -c "import json; d=json.load(open('governance/skill-budgets.json')); ..."` | 7 known_debt entries; all `target_wave==3`; all paths under `delivery-team/skills/*/SKILL.md`; current values match PRD §3 table 7/7 |
+| 8 | `find . -path "*/paradigms/*" -name SKILL.md` | 2 hits: `delivery-team/skills/architect/paradigms/{volatility,ddd}/SKILL.md` — confirms PRD §3 paradigm precedent path |
+| 9 | `test -d research-agent` | top-level dir confirmed; `research-agent/skills/` does not yet exist — consistent with PRD FR-4.1 (extraction is W3-8 work) |
+| 10 | `grep -n "paradigms" CLAUDE.md` | one hit at line 49 documenting `skills/paradigms/` (i.e. `architect/skills/paradigms/`); actual path is `architect/paradigms/` — confirms PRD §3 "stale path" claim |
+| 11 | `grep -c "^## " delivery-team/skills/presentation/SKILL.md` | 9 — confirms PRD §3 presentation §-count claim |
+| 12 | `grep -oE "W3-[0-9]+" .delivery/backlog/BACKLOG-104-*.md \| sort -u \| wc -l` | 18 distinct W3-N WI tokens — confirms BACKLOG-104 18-WI claim |
+| 13 | `grep -nE "Story consolidation\|Story 1\|Story 7" .delivery/backlog/BACKLOG-104-*.md` | matches at lines 31, 185, 246, 295 — Story 1 (W3-1), Story 7 (W3-13..18) and §Story consolidation table all present |
+| 14 | `python3 scripts/check_skill_budgets.py; echo $?` | exits 0; lists 7 known-debt entries; "BUDGET CHECK PASSED: 13 file(s) checked, 7 known-debt, 0 exception(s)" — AC-1 command well-formed and runnable |
+| 15 | `wc -l CLAUDE.md` | 168 — AC-2 well-formed; baseline matches PRD §3 |
+| 16 | `test -f scripts/lint_skill_frontmatter.py` | absent — AC-3 well-formed (script built in W3-9 per FR-5.2) |
+| 17 | `grep -n "Stage 7 entry sweep" delivery-team/skills/delivery-flow/SKILL.md` | zero hits — AC-5 well-formed (sweep added by W3-17) |
+| 18 | `find . -path "*/skills/*" -name SKILL.md \| xargs grep -l "disable-model-invocation: true"` | zero hits today (NOT 2 as PRD AC-6 column claims — see Findings) |
+| 19 | `grep -rln "disable-model-invocation" .` | only in design artifacts (ADRs, idea-brief, memory, backlog, audit) — no live SKILL.md frontmatter currently uses the key |
+| 20 | `head -15 delivery-team/skills/architect/paradigms/volatility/SKILL.md` | frontmatter has `paradigm_id`, `model`, `tier: C`, `last_audited`, etc. — but no `disable-model-invocation:` key |
+| 21 | `test -f scripts/compute_token_reduction.py` | absent — AC-7 well-formed (post-processor authored later in wave) |
+| 22 | `test -f governance/cache-prefix-hash.txt && test -f .delivery/telemetry/skill-loads.jsonl` | both exist — NFR-2 + NFR-4 dependencies present |
+| 23 | `cat .claude/settings.local.json` | allowlist contains no `yq`/`jq` — confirms NFR-3; audit of all §6 AC commands shows compliance (only `python3` + coreutils + bash pipes used) |
+| 24 | `ls delivery-team/skills/presentation/references/` then `ls .../references/types/` | 4 existing references; no `types/` dir yet — consistent with FR-2.1 extraction-pending state |
 
-- **Crit 1 — file paths resolve: PASS.** All 10 PRD-cited paths exist (cmd 1).
-- **Crit 2 — line numbers/ranges match cited content: PASS.** Primary L44, Supporting L87, DoD Validator L130, Phase 0 L56–89, Volatile/L475, Step 4 L329–345, Step 7 L377–402, validator template L21–38 (+ L53 boundary), Config File Template L207+, Version History L347–369 — all verified by direct sed (cmds 4–6, 8–15).
-- **Crit 3 — counts accurate: PASS.** wc -l on the four cited surfaces returned 497 / 682 / 288 / 369, exact match. `grep -nc '^## '` on pipeline-stages.md returned 10, exact match (cmds 2, 7).
-- **Crit 4 — config version is current; v2.8 slot taken; v2.9 is the correct target: PASS.** L5 says "Current Version: 2.8", L15 row says "2.8", and the Version History table at L347+ already lists v2.8 for DESIGN routing dated 2026-04-05. PRD §3 bullet 4 and FR-3 are surface-grounded: v2.9 is the correct next bump, and the PRD even calls out the BACKLOG-102 wording deviation explicitly (cmd 9). The config-schema.json currently defaults to 2.7 (cmd 16) — drift is real but is exactly what FR-3's "regenerate JSON via generate-schema.py" step exists to resolve. Not blocking.
-- **Crit 5 — every AC check command runnable, no yq/xq/jq: PASS.** Every AC command in §6.2 uses bash builtins (`grep`, `sed`, `wc`, `head`) plus `python3 -c "import json"` (stdlib). Sample AC commands executed cleanly under the active allowlist (cmd 20). The yq/xq/jq audit (cmd 19) found only the NFR-5 self-policing prohibition, no actual usage.
-- **Crit 6 — no new CLI deps in Stage 6 Dogfood Plan: PASS.** §8 dogfood protocol uses only `python3 -c "import json; ..."` (cmd 19 hit at line 7 / §8.1). The `git revert` and `rm -rf` strings at §8.4 are content of synthetic dispatched prompts (the agent will *say* them in narrative prose), not validator commands. Telemetry parsing is python stdlib (jsonl is line-delimited JSON; no jq required).
-- **Crit 7 — TARGET vs CURRENT framing explicit: PASS.** §7 "Validator Framing" is a dedicated section; every AC row in §6.2 carries a `Frame` column tagged `well-formed?` or `applies?`; §7 binds Refine validators to the well-formed? subset and explicitly forbids runtime-telemetry checks on un-merged code. The framing is more rigorous than the criterion requires.
-- **Crit 8 — story consolidation visible: PASS.** PRD L23 ("Three work items (W2-1, W2-2, W2-3) ship together as ONE consolidated story per the file-scope rule (idea-brief §4)") and L197 ("the consolidated Story 1 lands (W2-1 + W2-2 + W2-3 in one developer dispatch per idea-brief §4)") bind the three WIs into a single developer-dispatch story. No splay into separate stories.
+## 8-criterion gate evaluation
+
+1. **Every cited file path resolves (`test -f`)** — **PASS**. 8/8 SKILL.md + CLAUDE.md targets exist. Source backlog, binding memory, refine memory, idea brief, governance/skill-budgets.json, governance/cache-prefix-hash.txt, .delivery/telemetry/skill-loads.jsonl, scripts/check_skill_budgets.py, paradigm precedent dirs (volatility, ddd) — all present. Future-state files (lint_skill_frontmatter.py, compute_token_reduction.py, types/ subdirs) are correctly framed as W3-N deliverables, not pre-existing.
+
+2. **Every cited line count matches actual `wc -l`** — **PASS**. 8/8 exact: architect=500, presentation=545, ui=496, operations=420, quality=418, user-feedback=399, godot=236, CLAUDE.md=168.
+
+3. **Every cited Phase 0 location verified (`grep -n "^## Phase 0"`)** — **PASS**. PRD §3 says "zero hits" — verified across all 7. Downstream reasoning (frontmatter IS today's prefix → Ruling 1 engaged → ADR-tk4-001 mandatory) follows correctly from this.
+
+4. **Every cited frontmatter location verified (`grep -n "^---"`)** — **PASS**. PRD §3 claims `^---` at "lines 1, 10–11, 18–28 across the 7 files." Verified per file: line 1 (all 7), line 10 or 11 (all 7), one delimiter in 18–28 range (all 7: 19/22/21/21/27/28/18). The 3-delimiter cluster characterization is byte-accurate.
+
+5. **TC commands bash + python3 stdlib only** — **PASS**. AC-1 = `python3 scripts/check_skill_budgets.py` (stdlib + PyYAML per NFR-3). AC-2 = `wc -l` (coreutils). AC-3 = `python3 scripts/lint_skill_frontmatter.py` (stdlib + PyYAML; future). AC-4 = manual + CI (no shell deps). AC-5 = `grep -n` (coreutils). AC-6 = `find ... | xargs grep -l ...` (coreutils + bash pipe). AC-7 = `python3 scripts/compute_token_reduction.py` (stdlib; future). No `yq`/`jq`/other CLI deps introduced; .claude/settings.local.json allowlist (no yq/jq) is honored. NFR-3 binding satisfied.
+
+6. **governance/skill-budgets.json known-debt list matches PRD claims** — **PASS**. JSON has exactly 7 known_debt entries; all `target_wave: 3`; all paths under `delivery-team/skills/*/SKILL.md`. Each entry's `current` value matches PRD §3 table exactly. PRD §3 closing claim "Empty `known_debt` post-Wave-3 = AC-1 closure signal" is consistent with the file shape.
+
+7. **TARGET vs CURRENT framing explicit in Validator Framing section** — **PASS**. §7 contains the binding directive verbatim ("Verify each AC is well-formed and runnable… Do NOT verify whether the AC passes today… Stage 6 owns the 'applies?' gate"). §6 AC table has both columns ("Refine well-formed?" + "Stage-6 applies? (TARGET state)") for every AC. Refine memory lesson #7 is explicitly cited.
+
+8. **Story consolidation visible (7 stories from 18 WIs)** — **PASS**. BACKLOG-104 contains 18 distinct `W3-N` work items; §Story consolidation at line 246 enumerates 7 stories; PRD §2 cites "(18 WIs, 7 file-scope stories per PO recommendation §4)"; PRD §4 is structured as 7 FRs (FR-1 through FR-7) each anchored to a story. Mapping is internally consistent.
+
+## Findings (non-blocking)
+
+- **AC-6 baseline annotation is factually wrong (cosmetic)**. PRD §6 AC-6 row, "Refine well-formed?" column, says: *"find runnable; today: 2 (volatility, ddd)"*. The find/xargs command IS runnable (gate criterion satisfied), but the "today: 2" baseline annotation is incorrect — verified `find . -path "*/skills/*" -name SKILL.md | xargs grep -l "disable-model-invocation: true"` returns **zero matches today**. Inspection of `delivery-team/skills/architect/paradigms/{volatility,ddd}/SKILL.md` frontmatter shows neither file currently carries `disable-model-invocation: true` (they have `paradigm_id`, `model`, `tier`, `last_audited`, etc., but not the marketplace-discoverability invariant key). A repo-wide `grep -rln "disable-model-invocation"` finds the term only in design artifacts (ADRs, backlog, memory, audit reports), never in a live SKILL.md frontmatter. Per §7 framing this does NOT block — the gate evaluates well-formedness, not pass-today. But the baseline annotation should read "today: 0" so Stage-6 doesn't measure delta against a phantom 2. Suggest one-line PRD touch-up at next opportunity (or rolled into Stage-6 dispatch instructions) — not worth a R2 cycle on its own.
+
+- **Live DEFECT-006 dogfood instance confirmed**. The pre-existing `.delivery/artifacts/02-refine/dod/developer-review.md` had `pipeline_id: run-2026-05-05-tk3` frontmatter at the start of THIS run — exactly the stale Wave-N-1 carry-over pattern PRD §3 logs as a live DEFECT-006 instance and §8 nominates as the W3-17 dogfood regression case. This review overwrites the stale tk3 file as part of normal r1 dispatch; reproduction is canonical. No action needed beyond what §8 already plans.
 
 ## Verdict
 
-The PRD is well-formed and runnable: every cited file path, line range, count, version, and AC check command was executed and matched the asserted target. The TARGET-vs-CURRENT framing is explicit and disciplined, the PROSE STYLE block content is verbatim from BACKLOG-102, and the v2.8 → v2.9 deviation is correctly grounded in Version History evidence. Refine round 1 passes; Stage 6 will own the applies? ACs.
-
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/02-refine/dod/developer-review.md
-SUMMARY: 20 commands run, 8/8 criteria PASS; PRD well-formed at TARGET-state framing; v2.8 slot drift confirms PRD's v2.9 bump is correct.
+PRD is **well-formed at light depth for round 1**. All 8 binding criteria pass on RUNS-THE-COMMAND verification; §3 discovery is byte-accurate against the working tree; §7 well-formed-vs-applies framing is explicit and binding; AC commands honor NFR-3. The single AC-6 baseline-annotation nit is non-blocking under §7 framing and can be corrected in flight without re-Refine.
