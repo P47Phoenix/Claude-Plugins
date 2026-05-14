@@ -1,3 +1,4 @@
+<!-- STALE-WAVE-N-1 (W3-17 banner): this artifact carries marker `run-2026-05-09-tk4` but the current pipeline is `run-2026-05-13-tk5`. Producer/validator: confirm relevance before re-using. -->
 <!-- run: run-2026-05-09-tk4 | stage: 07-uat | depth: full | author: Tech-Writer (Bilbo Baggins) | role: technical-writer | task: user-guide | wave: 3 (final) -->
 
 ---

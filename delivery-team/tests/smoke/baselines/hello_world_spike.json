@@ -1,0 +1,24 @@
+{
+  "_header_comment": "Stub baseline. Stage-7 UAT (run-2026-05-13-tk5) deferred live --init-baseline because the single $2-budget probe surfaced D-tk5-04: workspace.py overrides HOME, breaking Claude Code auth (cred lookup under ~/.claude/.credentials.json). Live subprocess exited within 0.57s with subprocess-exit-1 before emitting any stream events. Fix path: keep HOME unchanged + isolate via cwd + XDG_*, OR symlink ~/.claude/.credentials.json into tmpdir HOME at setup, OR pass ANTHROPIC_API_KEY if available. See .delivery/defects/sprint-tk5.md#D-tk5-04. After D-tk5-04 lands, run: python3 delivery-team/tests/smoke/run_smoke.py --init-baseline to populate the real 5-sample mean+stddev.",
+  "schema_version": "1",
+  "scenario": "hello_world_spike",
+  "sample_status": "deferred",
+  "n_samples": 0,
+  "last_captured_utc": null,
+  "last_captured_git_sha": null,
+  "last_captured_cli_version": null,
+  "metrics": {
+    "wall_clock_seconds": {"mean": null, "stddev": null, "n": 0, "classification": "hard", "hard_max": 1800.0},
+    "cost_usd": {"mean": null, "stddev": null, "n": 0, "classification": "hard", "hard_max": 3.0},
+    "tokens.input": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
+    "tokens.output": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
+    "tokens.cache_creation": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
+    "tokens.cache_read": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
+    "pipeline.stages_completed": {"mean": null, "stddev": null, "n": 0, "classification": "hard"},
+    "pipeline.stories_completed": {"mean": null, "stddev": null, "n": 0, "classification": "hard"},
+    "pipeline.dispatch_count": {"mean": null, "stddev": null, "n": 0, "classification": "hard"},
+    "skill_loads.count": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
+    "skill_loads.unique_skills": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"}
+  },
+  "deferred_reason": "D-tk5-04 (HOME-isolation breaks Claude auth). One $2 live probe exited in 0.57s with subprocess-exit-1; no stream events emitted. Defer 5-sample init to follow-up after fix lands."
+}

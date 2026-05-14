@@ -1,0 +1,51 @@
+# .delivery/artifacts/02-refine/po/constraints.yml
+# Problem-scoped constraints for BACKLOG-106 (delivery-team plugin smoke test)
+# Run: run-2026-05-13-tk5
+
+problem_scope: smoke-test runner for delivery-team plugin
+
+binding_constraints:
+  - id: BC-01
+    rule: NO .github/workflows/smoke-*.yml — claude CLI not available in CI runners
+    source: /home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md
+    bypass_allowed: false
+  - id: BC-02
+    rule: Aggregator reads existing telemetry hooks output directly; no re-implementation
+    source: BACKLOG-106 reuse mandate (idea-brief Constraints section)
+    references:
+      - delivery-team/hooks/telemetry.py
+      - delivery-team/hooks/telemetry_run_summary.py
+      - governance/skill-budgets.json  # shape pattern for baseline JSON
+      - scripts/check_skill_budgets.py  # exit-code convention
+      - scripts/lint_known_debt.py      # exit-code convention
+  - id: BC-03
+    rule: Meta-test fault-injection fixtures and lib/metrics.py + lib/baseline.py authored by SEPARATE Stage-6 Dev dispatches
+    source: producer-validator separation (binding from past waves; validated:5)
+    applies_to:
+      producer:
+        - delivery-team/tests/smoke/lib/metrics.py
+        - delivery-team/tests/smoke/lib/baseline.py
+      validator:
+        - delivery-team/tests/smoke/tests/test_meta.py
+        - delivery-team/tests/smoke/tests/fixtures/
+  - id: BC-04
+    rule: Full scope (runner + metrics + baseline + regression diff + meta-tests) in one initiative; not staged across separate commits
+    source: idea-brief PO directive — route through delivery-flow
+
+cost_limits:
+  per_run_usd: 3.00              # hard --cost-cap on single smoke run
+  baseline_capture_usd_envelope: 15.00  # 5 runs x $3 cap for --init-baseline
+  wall_clock_seconds: 1800       # 30 min hard ceiling per run
+  concurrency: 1                 # baseline capture enforces sequential
+
+regression_thresholds:
+  hard_fail:
+    - outcome.success == false
+    - cost_usd > hard_max
+    - wall_clock_seconds > hard_max
+    - pipeline.stories_completed mismatch vs baseline
+    - pipeline.dispatch_count > hard_max
+  advisory_warn:
+    - tokens.* outside mean +/- 2 * stddev
+    - skill_loads.* outside mean +/- 2 * stddev
+  tightening_policy: advisory-only on tokens/skill_loads for first month; tighten after 20+ accumulated production runs

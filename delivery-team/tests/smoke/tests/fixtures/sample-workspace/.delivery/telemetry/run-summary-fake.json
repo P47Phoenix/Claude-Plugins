@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "run_id": "fake-fixture-run",
+  "overall": {
+    "rows_real": 5,
+    "rows_placeholder": 0
+  },
+  "stages": {
+    "01-idea": {"status": "completed"},
+    "02-refine": {"status": "completed"},
+    "03-design": {"status": "completed"},
+    "04-architect": {"status": "completed"},
+    "05-plan": {"status": "completed"},
+    "06-development": {"status": "completed"},
+    "07-uat": {"status": "completed"}
+  }
+}

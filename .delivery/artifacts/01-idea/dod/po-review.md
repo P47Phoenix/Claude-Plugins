@@ -1,32 +1,80 @@
-<!-- run: run-2026-05-09-tk4 | stage: 1 (Idea, LIGHT) | dod-round: 1 | reviewer: product-owner (FRESH dispatch) | artifact-under-review: .delivery/artifacts/01-idea/po/idea-brief.md -->
+<!-- run: run-2026-05-13-tk5 -->
+# PO DoD Review — Stage 1 Idea
 
-# Stage 1 (Idea) DoD Review — PO Lens
+**Reviewer**: Gandalf (PO)
+**Pipeline**: run-2026-05-13-tk5
+**Artifact under review**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Date**: 2026-05-13
 
-**STATUS: DONE**
+> *"A product owner is never late, nor early. They prioritize precisely when they mean to."*
 
-**Artifact under review:** `.delivery/artifacts/01-idea/po/idea-brief.md` (117 lines)
-**Reviewer:** Product Owner (FRESH dispatch — producer-validator separation per caveman-lite carry-forward)
-**Lens:** Light, blocking-only. Validates brief well-formedness (TARGET), not Wave 3 implementation completeness (CURRENT).
+Counsel layered. Surface simple — brief passes gate. Beneath — every claim verified by `grep`, not by trust. Memory lessons honored: ran commands, did not read commands.
 
-## Gate Criteria — 8 PASS / NOT_PASS
+---
 
-| # | Criterion | Result | Evidence (file:line) |
-|---|-----------|--------|----------------------|
-| 1 | Engagement named, brief opener ≤5 sentences | **PASS** | Engagement named at `idea-brief.md:3` ("Wave 3: delivery-team Skill Token-Economy Closure"); opener at `idea-brief.md:7` is a single quoted sentence (well under the 5-sentence cap). |
-| 2 | BACKLOG-104 cited by path, NOT duplicated | **PASS** | Path cited at `idea-brief.md:20` (`.delivery/backlog/BACKLOG-104-skill-token-economy-delivery-team-wave-3.md`); same line explicitly disclaims authorship: "this idea brief CONSOLIDATES — it does not re-author. All WI ACs, extraction candidates, and file lists live in BACKLOG-104 verbatim." Re-cited in §11 at `idea-brief.md:107`. |
-| 3 | Goal measurable; 7 BACKLOG-104 ACs referenced | **PASS** | Goal sentence at `idea-brief.md:24` is fully measurable (`exits 0` / `≤150 lines` / `≥3 axes` / `168→≤150` / `DEFECT-006 closed`). Seven ACs reproduced in §8 at `idea-brief.md:85-91` verbatim from BACKLOG-104, with AC-13 close-out called out at `idea-brief.md:93`. |
-| 4 | Constraints name 5 binding rulings + plugin-dev:skill-development + FEATURE-execution/binding-decisions + Ruling 1 cache-prefix invariant + Wave 2 & tk3 carry-forwards | **PASS** | Five rulings enumerated at `idea-brief.md:30-34` (cache-prefix freeze, `disable-model-invocation` boundary, line budgets, prompts as markdown, `allowed-tools` whitelist); FEATURE-execution-of-pre-planned-waves with binding-decisions-in-memory at `idea-brief.md:37`; `plugin-dev:skill-development` binding routing at `idea-brief.md:42`; Ruling 1 cache-prefix invariant given dedicated §5 at `idea-brief.md:51-53`; tk3 caveman-lite carry-forwards at `idea-brief.md:44-48`; Wave 2 carry-forwards at `idea-brief.md:49`. |
-| 5 | Routing decision recorded (1L · 2L · 3SKIP · 4L · 5L · 6F · 7F) | **PASS** | Routing table at `idea-brief.md:57-65` records exact pattern: Stage 1 light (`:59`), Stage 2 light (`:60`), Stage 3 SKIP with non-conflation note (`:61`), Stage 4 light w/ 3 ADRs (`:62`), Stage 5 light (`:63`), Stage 6 full (`:64`), Stage 7 full (`:65`). |
-| 6 | Story consolidation visible (7 stories from 18 WIs; mandatory-rollout-side-effect rule for W3-9) | **PASS** | "18 WIs → 7 file-scope stories" declared at `idea-brief.md:69` with ~61% dispatch reduction quantification. Seven-row story table at `idea-brief.md:71-79` enumerates the consolidation. Mandatory-rollout-side-effect rule for W3-9 (Story 5) called out explicitly at `idea-brief.md:77`: "AFTER Stories 1–4 content trims (mandatory-rollout-side-effect lesson — frontmatter adds ~3 lines/file; running before trims means targeting fictional ≤297/≤197 instead of canonical ≤300/≤200)". |
-| 7 | Stop-rule recorded (defects/story >0.4 across 3-PR window) | **PASS** | Stop-rule recorded at `idea-brief.md:99`: "defects/story rate >0.4 across any 3-PR window pauses subsequent waves." Current 3-PR window calculation given (tk2: 0, tk3: 1 → 0.33 < 0.4 → not triggered); PO halt authority at any Story boundary preserved. AC-7 stop-rule tripwire (BACKLOG-102 carry-forward) additionally recorded at `idea-brief.md:95`. |
-| 8 | Length 80-150 lines | **PASS** | File is 117 lines total (last content line `idea-brief.md:116`); comfortably within the 80–150 envelope. |
+## Verification Method
 
-## Verdict
+Four grep probes run against the brief; results below feed criterion judgments. No claim trusted on face.
 
-All 8 criteria PASS on round 1. The brief consolidates BACKLOG-104 without re-authoring, names every binding ruling the executing team must honor without re-debate, and surfaces routing/story/stop-rule decisions as directives rather than open questions. TARGET framing is correct — this validation graded brief well-formedness, not Wave 3 implementation completeness. Cleared to proceed to Refine.
+| Probe | Target | Result |
+|-------|--------|--------|
+| `grep -n "feedback_claude_code_local_only"` | memory file cite | hit on line 26 (full absolute path) |
+| `grep -n "LOCAL-ONLY\|local-only\|local only"` | binding directive presence | hits on lines 23, 26, 41 |
+| `grep -n "\.github/workflows/smoke"` | workflow scope framing | hits on lines 23, 45 — both negative ("does not exist" / "banned") |
+| `grep -nE "Problem Statement\|Target Users\|Goals\|Constraints\|Initial Scope\|Out of Scope\|Success Signal"` | section coverage | all 7 section headers present |
 
-```
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/01-idea/dod/po-review.md
-SUMMARY: 8/8 PASS on r1 — engagement named, BACKLOG-104 referenced (not duplicated), measurable goal+7 ACs, all binding constraints+Ruling-1+carry-forwards present, routing 1L·2L·3SKIP·4L·5L·6F·7F, 18→7 consolidation w/ W3-9 mandatory-side-effect rule, stop-rule armed, 117 lines.
-```
+---
+
+## Criterion Results
+
+### 1. Problem Statement present and specific — **PASS**
+Lines 13–14. Names specific gap: 5/5 waves of skill-token-economy shipped with no end-to-end empirical regression probe; W3-18 telemetry only fires when pipeline runs; this initiative builds the missing probe so token-economy/model-routing/prompt-template regressions surface locally before merge. Concrete, scoped, non-generic.
+
+### 2. Target Users named (≥ 2) — **PASS**
+Lines 17–18. Two distinct personas: **plugin maintainer (developer)** with merge-gate need, and **future contributors** with post-edit "team still works" check. Both have stated motivations.
+
+### 3. Goals measurable — **PASS**
+Lines 20–23. Three goals, each with numbers/units/testable outcomes:
+- G1: `< 30 min wall-clock`, `--cost-cap 3.00`, concurrency-of-1.
+- G2: `≥ 6 metric groups` enumerated by name; `5-sample baseline` with mean+stddev at named file path.
+- G3: `0 GitHub Actions workflows invoke claude`; constraint cite recorded at named architecture path.
+
+No vague intent. Every goal independently testable.
+
+### 4. Constraints captured, local-only explicit, cite memory path — **PASS**
+Line 26 carries binding directive verbatim: `LOCAL-ONLY (binding)` with full absolute memory file path `/home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md` and operational rule "Tooling that shells out to `claude` MUST NOT live in `.github/workflows/`. No bypass-with-ADR." Reinforced by line 23 (G3) and line 41 (cross-cutting architecture cite). Verified by `grep`, not by claim.
+
+Additional constraints captured: cost+time caps (line 27), reuse existing telemetry (line 28), producer-validator separation (line 29), route-through-delivery-flow (line 30).
+
+### 5. Initial Scope and Out of Scope both present — **PASS**
+Lines 32–41 enumerate eight work items W6-1..W6-8 with surfaces and T-shirt sizes, plus cross-cutting architecture doc. Lines 43–46 enumerate three out-of-scope items (other-plugin smoke tests, CI workflow, cost dashboards). Both sections non-empty.
+
+### 6. Success Signal verifiable end state — **PASS**
+Lines 48–49. Verifiable command: `python3 delivery-team/tests/smoke/run_smoke.py`. Verifiable output: JSON+Markdown report at `delivery-team/tests/smoke/artifacts/<utc-timestamp>/` diffed against 5-sample baseline. Verifiable failure modes named with thresholds: HARD-FAIL on outcome.success=false / cost > hard_max / wall_clock > hard_max / stories_completed mismatch / dispatch_count > hard_max. Verifiable ADVISORY-WARN on tokens.* and skill_loads.* outside mean ± 2·stddev. Verifiable meta-test pass condition without Claude calls. Maintainer can execute and assert end state mechanically.
+
+### 7. No authoring of `.github/workflows/smoke-*.yml` as in-scope — **PASS**
+Grep returns two hits on substring, both negative-framed:
+- Line 23 (Goal 3): "0 GitHub Actions workflows invoke `claude` (`.github/workflows/smoke-*.yml` does not exist)" — asserts non-existence as success criterion.
+- Line 45 (Out of Scope): "CI workflow (banned by memory directive — no `.github/workflows/smoke-*.yml`)" — explicitly out of scope.
+
+Initial Scope section (lines 32–41) contains zero references to `.github/workflows/`. Memory directive on line 7 of `feedback_claude_code_local_only.md` honored.
+
+---
+
+## Summary
+
+| # | Criterion | Verdict |
+|---|-----------|---------|
+| 1 | Problem Statement specific | PASS |
+| 2 | Target Users ≥ 2 | PASS |
+| 3 | Measurable Goals | PASS |
+| 4 | Constraints + local-only + memory cite | PASS |
+| 5 | Initial Scope + Out of Scope | PASS |
+| 6 | Success Signal verifiable | PASS |
+| 7 | No `.github/workflows/smoke-*.yml` in-scope | PASS |
+
+**Overall**: **PASS** — 7/7 criteria met. Brief gate-ready. Pass downstream to Architect.
+
+Honest marker beats uniform marker. This one earned its pass — grep agrees.
+
+— Gandalf, PO, run-2026-05-13-tk5. *All we have to decide is what to build with the time that is given to us.*

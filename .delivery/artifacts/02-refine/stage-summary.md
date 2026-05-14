@@ -2,23 +2,27 @@
 stage: 2
 stage_name: refine
 depth: light
-pipeline_id: run-2026-05-09-tk4
+pipeline_id: run-2026-05-13-tk5
 status: DONE
 dod_rounds: 1
-dod_validators: [developer, architect]
+dod_validators: [po, architect, qa]
 artifacts:
   primary: .delivery/artifacts/02-refine/po/prd.md
+  backlog: .delivery/backlog/BACKLOG-106-delivery-team-smoke-test.md
+  constraints: .delivery/artifacts/02-refine/po/constraints.yml
   dod:
-    developer: .delivery/artifacts/02-refine/dod/developer-review.md
+    po: .delivery/artifacts/02-refine/dod/po-review.md
     architect: .delivery/artifacts/02-refine/dod/architect-review.md
+    qa: .delivery/artifacts/02-refine/dod/qa-review.md
 notable:
-  - "Both validators independently found stale Wave-N-1 review files from tk3 in this stage's dod/ namespace — live W3-17 Stage-7-stale-sweep dogfood evidence; overwritten by FRESH validator dispatches"
-  - "PO line counts verified by Dev runs-the-command: architect=500, presentation=545, ui=496, ops=420, quality=418, user-feedback=399, godot=236, CLAUDE.md=168 (matches BACKLOG-104 §3)"
-  - "Cache-prefix scoping: zero `^## Phase 0` hits across all 7 over-budget files; W3-9 frontmatter add IS the prefix-impacting WI (frontmatter sits at byte 0 — ABOVE Phase 0). ADR-tk4-001 will own re-freeze procedure."
-  - "BACKLOG-104 has 10 initiative ACs; PRD covers 7 verbatim + absorbs 3 into NFR-5/6 + FR-6.2 (Architect verified no silent loss)"
-  - "Non-blocking nit: PRD AC-6 baseline says 'today: 2' but actual count is 0; well-formedness gate unaffected; Story 4 implementation will correct"
+  - "BACKLOG-106 lands 202 lines (within 200-300 budget)"
+  - "All 8 user-seed ACs preserved verbatim with AC-NN IDs; QA confirmed 8==8"
+  - "constraints.yml BC-01 cites memory file feedback_claude_code_local_only.md verbatim"
+  - "Producer-validator separation rule explicitly stated in PRD + BACKLOG (5 enforcement points)"
+  - "Stage 5 story-decomposition target encoded: 8 WIs → 3 stories (L+M+M)"
+  - "Stale tk4 PRD at 02-refine/po/prd.md overwritten cleanly (live W3-17 dogfood evidence)"
 ---
 
-# Stage 2 Summary — Refine (light)
+# Stage 2 Summary — Refine (light) — run-2026-05-13-tk5
 
-Gandalf authored 202-line PRD validated by Dev (24 commands run, 8/8 PASS) + Architect (5/5 PASS) first-try. Live W3-17 dogfood evidence captured: stale Wave-N-1 review files were in 02-refine/dod/ namespace at start of run; both FRESH validator dispatches overwrote them. This is real-world confirmation of the Stage-7-stale-sweep gap.
+Gandalf produced PRD + BACKLOG-106 (202 lines) + constraints.yml first-try. PO 8/8, Architect 7/7, QA 7/7 PASS (1 soft warning on Gate 5 line count — non-blocking). Producer-validator separation locked for Stage 6 dispatch planning.

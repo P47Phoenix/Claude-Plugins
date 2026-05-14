@@ -2,22 +2,31 @@
 stage: 7
 stage_name: uat
 depth: full
-pipeline_id: run-2026-05-09-tk4
-status: GO
+pipeline_id: run-2026-05-13-tk5
+status: GO_WITH_NOTES
 dod_rounds: 1
-dod_validators: [qa, devops, po, tech-writer]
-po_decision: GO (initiative complete)
+dod_validators: [qa, po, devops]
+po_decision: GO_WITH_NOTES (PARTIAL_READY merge; BACKLOG-107 follow-up)
+artifacts:
+  uat_report: .delivery/artifacts/07-uat/qa/uat-report.md
+  release_plan: .delivery/artifacts/07-uat/devops/release-plan.md
+  baseline: delivery-team/tests/smoke/baselines/hello_world_spike.json
+  defects: .delivery/defects/sprint-tk5.md
+  dod:
+    qa: .delivery/artifacts/07-uat/dod/qa-review.md
+    po: .delivery/artifacts/07-uat/dod/po-review.md
+    devops: .delivery/artifacts/07-uat/dod/devops-review.md
 notable:
-  - "16/16 TCs PASS; cumulative structural reduction 46.79% (5807→3090 lines across all SKILL.md)"
-  - "AC-13 telemetry deferred 1-pipeline (W3-18 chicken-and-egg) — first effective baseline next post-merge run"
-  - "All 7 over-budget files COMPLIANT; 0 known_debt; godot=200 exact; CLAUDE.md=112 (≤150)"
-  - "PO DECISION = GO; Wave 3 ships; delivery-team initiative COMPLETE (5/5 waves)"
-  - "Cross-doc P3 drift flagged (CLAUDE.md actual 112 vs implementation report claim 110); same-PR fix"
-  - "Cache-prefix hash flipped 9d40 → f997 (caveman) → 4306 (Wave 3) per ADR-tk4-003"
+  - "6/8 acceptance gates GREEN (G2/G3/G5/G6/G7/G8); 2 DEFERRED (G1+G4 — auth-isolation in workspace.py)"
+  - "Live Claude probe exited 1 in 0.57s with empty stream — confirmed predicted HOME-isolation auth failure (D-tk5-04 HIGH, fix path documented: keep HOME, isolate via cwd + XDG_*)"
+  - "G8 cost-cap synthetic injection works end-to-end: exit=2, outcome.reason=cost-cap-exceeded, cost_usd=3.25"
+  - "G3 meta-tests: 3 passed in 0.02s (30x under 5s budget)"
+  - "Stop-rule headroom 0.067 (worst-case 0.333 vs 0.4 threshold) — proceed"
+  - "All 3 DoD reviewers endorsed PASS_WITH_NOTES (QA 8/8, PO 8/8, DevOps 5/5 live-rerun)"
+  - "Honest-readiness-marker pattern (Wave-2 lineage) applied to baseline.json: n_samples=0, sample_status=deferred, BACKLOG-107 named"
+  - "Stale-sweep banner-marked 15 tk4/tk3 files at Stage 7 entry (W3-17 dogfood evidence)"
 ---
 
-# Stage 7 Summary — UAT (full) — Wave 3 final
+# Stage 7 Summary — UAT (full) — run-2026-05-13-tk5
 
-Legolas + Boromir + Bilbo all GO_WITH_NOTES; Aragorn (PO) DECISION = GO. Wave 3 SHIPS. delivery-team skill token-economy initiative COMPLETE (5/5 waves SHIPPED including this Wave 3).
-
-10/10 BACKLOG-104 init ACs: 9 PASS + 1 DEFERRED (AC-7 telemetry — W3-18 chicken-and-egg). 35/35 Story-1..7 ACs resolved. Defects/story rolling 3-PR mean 0.083 ≪ 0.4 threshold. 0 BLOCKING findings.
+PASS_WITH_NOTES. Dogfooding caught the auth-isolation flaw before the team spent $10 on 5 broken live runs — exactly the failure mode the smoke-test framework is designed to catch in future plugin changes. Six gates GREEN live (meta-tests, no-CI, memory-cite, budgets, lint, cost-cap, malformed-stream exploratory). Two DEFERRED with concrete fix path in BACKLOG-107. 4 defects logged (1 HIGH, 3 LOW); rolling defect rate stays under stop-rule threshold.

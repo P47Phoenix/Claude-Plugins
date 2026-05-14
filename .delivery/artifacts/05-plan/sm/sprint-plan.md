@@ -1,81 +1,129 @@
-<!-- run: run-2026-05-09-tk4 | stage: 05-plan | depth: light | author: Scrum Master (Samwise Gamgee) | sources: stories.md, prd.md, ADR-tk4-{001,002,003} | wave: 3 — closure -->
+<!-- run: run-2026-05-13-tk5 -->
+<!-- author: Aragorn (Scrum Bag, Stage 5 light, step 4) -->
+<!-- backlog: BACKLOG-106 -->
+<!-- inputs: stories.md (PO), prd.md (PO), ADR-tk5-001 (Architect), user-seed.md, config.yml -->
+# Sprint Plan — run-2026-05-13-tk5 (BACKLOG-106 Smoke Test)
 
-# Sprint Plan — Wave 3 Closure (run-2026-05-09-tk4)
+> *"I do not know what strength is in my backlog, but I swear to you I will not let the sprint fall."* — Aragorn
 
-> "It's the job that's never started as takes longest to finish. So let's start it, and watch the road, and call out the rocks before we trip on 'em."
-> — Sam, plainly
+Me Aragorn. Me rally fellowship. One wave. One commit. Three stories bind the eight. Me lead from front.
 
-## Sprint Goal
+---
 
-Close out Wave 3 by landing all 7 over-budget delivery-team SKILL.md files at-or-under their tier ceilings (with frontmatter headroom held), shipping the paradigm sub-skill pattern on its three named axes, rolling governance frontmatter across 13 files in the correct order, and discharging six carry-forwards on the same wave that produced them — so `governance/skill-budgets.json known_debt[]` baselines empty for the first time since BACKLOG-100.
+## 1. Sprint Goal
 
-## Sprint Capacity (verbatim from stories.md §Capacity Declaration)
+Ship the smoke-test runner + 5-sample baseline + meta-tests in one wave; no CI workflow per local-only memory directive.
 
-- **Velocity baseline (rolling 5-pipeline mean)**: ~7 file-scope-stories-equivalent per FEATURE-execution wave (Waves 1/2/caveman-lite landed 5–8 each; this wave is the upper end as the close-out).
-- **80% ceiling**: 7 stories at sizes [M-L, L, M, L, M, M, S-M] sum to ~22 points; 28-point ceiling (5 × 7 minus 20% buffer); commitment **78.6% — under the 80% rule** (Plan memory lesson 1).
-- **Story count**: **7** (file-scope consolidation from 18 WIs; ~61% Stage-6 dispatch reduction).
-- **Effort calibration**: markdown-only edits estimated one tier below code-equivalent per Plan memory lesson 3 (validated 3×). All 7 stories are markdown + small Python + git plumbing — no compiled code.
-- **Capacity assumption**: single-developer Stage 6 dispatch per story (file-scope consolidation pattern, validated 3×).
-- **Test-coverage gate**: test cases MUST cover ALL 7 PRD FRs explicitly per Plan memory lesson 2; PO rejects any plan missing an FR.
+---
 
-## Story Sequence
+## 2. Capacity Matrix
 
-| # | Story | Effort | Sequencing | WIs | Parallel-with |
-|---|-------|--------|------------|-----|---------------|
-| 1 | architect Tier-B closure | M-L | First (sets ADR-pattern + partial-compliance precedent) | W3-1 | none |
-| 2 | presentation + ui + operations trims | L (3 files parallel-safe) | Cluster: dispatch in parallel **after Story 1 lands** | W3-2, W3-3, W3-4 | Story 3 |
-| 3 | quality + user-feedback + godot trims (godot to **197**) | M | Cluster: parallel with Story 2 (mechanically independent file scopes) | W3-5, W3-6, W3-7 | Story 2 |
-| 4 | paradigm sub-skill pattern (research-agent + user-feedback + presentation conditional) | L | Sequential after Stories 1–3 (paradigm pattern is structural; large; joint-AC with Story 3 W3-6 personas) | W3-8 | none |
-| 5 | governance frontmatter rollout (13 files +3 keys; cache-prefix re-freeze) | M | **HARD GATE — BINDING after Stories 1–4 land in working tree** (mandatory-rollout side-effect lesson; **tripwire HALT if <15% prose-token reduction** before this opens its PR) | W3-9 | Story 6 |
-| 6 | retro KPI + fitness review + CLAUDE.md ≤150 | M | Parallel with Story 5 (no cache-prefix or SKILL.md frontmatter dependency) | W3-10, W3-11, W3-12 | Story 5 |
-| 7 | admin / carry-forward pass (validator template, CI lints, STATUS standard, git hook, Stage-7 stale-sweep, telemetry hardening, skill-budgets.json re-baseline) | S-M | **Last** — sequenced terminal so W3-13 / W3-15 / W3-17 / W3-18 dogfood against the live Wave-3 dispatches that produced them | W3-13..W3-18 | none |
+Team size = 1 per `.delivery/config.yml` (`team.size: 1`, composition includes `developer`). Sprint window = 4 working days × 8h = 32h available per role. Ceremony overhead (planning, retro, refinement, Stop-hook minimal retro per BACKLOG-106 §Stop-hook risk) = 4h, subtracted from available. Net available = 28h. Producer dispatch (S1+S2) and validator dispatch (S3) are the SAME human team member but DIFFERENT Stage-6 Dev sub-agent contexts per BC-03 (validated:5) — capacity is a single pool.
 
-**Rationale, plainly**:
+| Role | Available hours | Allocated hours | Utilization % |
+|------|-----------------|-----------------|---------------|
+| Developer (sole team member; producer Dispatch A + validator Dispatch B) | 28h (32h − 4h ceremony) | 20h (S1: 9h L, S2: 6h M, S3: 5h M) | 71.4% |
 
-- **Story 1 first** because the architect closure is the highest-risk WI in the wave (Wave 2 already extracted the obvious targets, leaving residual content that's genuinely operational rather than reference-shaped) and sets the per-file extraction precedent + the partial-compliance ADR template the rest of the wave leans on. No upstream dependency; the rest of the wave waits on its ADR-pattern proof.
-- **Stories 2 and 3 cluster in parallel after Story 1 lands** — file scopes don't collide, `references/` subtrees are orthogonal, trims are mechanically independent per ADR-tk4-001 extraction-target catalog. Two dev dispatches running in parallel halve wall-clock without doubling collision risk.
-- **Story 4 follows sequentially after Stories 1–3** because the paradigm sub-skill pattern is structural (new directory shapes, frontmatter contract, marketplace-discoverability CI lint) and large enough that putting it next to the parallel cluster would tangle the PR review. Joint-AC with Story 3 W3-6 personas means the user-feedback persona-family extraction in Story 3 is the line-count vehicle and the paradigm sub-skill demonstration in one operation — Story 4 verifies the contract that Story 3 instantiates.
-- **Story 5 is binding-after-1–4** — that's the rule, not a preference; ADR-tk4-003 §Mandatory-rollout sequencing is binding because adding 3 frontmatter lines to a file already at-budget pushes it over. Skip the gate and the wave re-introduces the very `known_debt` entries it's supposed to clear. The tripwire arms here too: HALT before Story 5 PR opens if `.delivery/telemetry/stop-rule-tk4.txt` shows <15% prose reduction.
-- **Story 6 rides alongside Story 5** because nothing in Story 6's surface (retro KPI, fitness-review GitHub Action, CLAUDE.md trim) touches cache-prefix or SKILL.md frontmatter. Concurrent dispatch saves a dev cycle.
-- **Story 7 is last on purpose** — its validator template, STATUS-format, Stage-7 entry-step, and telemetry hardening are dogfood-co-landing artifacts; sequencing them terminal lets them feed off live Wave-3 dispatch data instead of synthetic input. DEFECT-006 closes at merge of W3-17 against the live PRD §3 stale-PRD instance found at run-start.
+Utilization = 71.4%. Under 80% WARN line. Under 100% BLOCKING line. Buffer of 8h (28.6%) absorbs interruption + the planned producer-to-validator context-switch tax between Dispatch A and Dispatch B (BC-03).
 
-## Daily Cadence
+**Capacity verdict**: HEALTHY. No BLOCKING. No WARN. Proceed.
 
-Multi-day execution; ~7 stories means daily check-ins matter. Cadence is:
+---
 
-- **Daily standup (15 min, time-boxed)**: each dev names the Story they're on, the next AC they're closing, and any boundary they're approaching (Story 4-to-5 hand-off, tripwire telemetry status, godot 197 line-count).
-- **Story-boundary gates (SM-held)**: SM verifies merge-log + AC-pass status at every Story → next-Story transition. The Story 4-to-5 boundary is the binding one; SM does not let Story 5 PR open until the merge log shows Stories 1–4 in.
-- **Tripwire poll (per Story boundary, before Story 5)**: SM checks `.delivery/telemetry/stop-rule-tk4.txt` for measured prose-reduction percentage; calls HALT plainly if <15%.
-- **DoD validation (5 validators in parallel per story)**: SM / QA / Dev / Architect / Tech-Writer; adversarial review fires if any validator says NOT_DONE.
+## 3. Coverage Matrix (FR -> Story -> Task)
 
-## Risks and Mitigations (called plainly)
+Every PRD FR maps to >= 1 story. Verified against `02-refine/po/prd.md` §Functional Requirements (FR-01 through FR-08). No orphans.
 
-| # | Risk | Severity | Mitigation |
-|---|------|----------|------------|
-| R1 | **godot Tier-C tightness — exactly 197+3=200 ceiling, zero headroom.** Any drift on extraction (an extra connective line, a missed guardrail consolidation) lands at 198 and the file is over-budget the moment Story 5 frontmatter rolls. | High | ADR-tk4-001 round-2 math is the binding target — Stage 6 Dev measures `wc -l` AFTER extraction, not BEFORE. The round-1 5-line guardrails fold is held in reserve as a Stage-6 escape hatch only if the actual count lands at 198–199. Story 3 AC-3 makes the 197-not-198 target a runnable check (`wc -l = 197`). Per-story DoD blocks the PR if the count drifts. |
-| R2 | **Cache-prefix re-freeze cost — one-time ~650-byte shift across 13 SKILL.md** invalidates the cache-warmup prefix on every one of those files. First Wave-3 dispatch after merge incurs ~26KB cold-cache read. | Medium | One-time, scoped, ADR-justified per ADR-tk4-003. Payback is on dispatch #1 because the cumulative ~13,200-token reduction from Stories 1–3 trims vastly exceeds the 26KB re-warm cost. Stage 6 Dev runs-the-command for hash regeneration (caveman-lite Hot Lesson #1 binding extension); DoD validator cites actual byte counts from the regenerated hash file, not the +650-byte projection. |
-| R3 | **Tripwire halt scenario — caveman-lite stop-rule fires before Story 5.** If the first 3 Stage-6 dispatches show <15% prose-token reduction vs pre-caveman-lite baseline, Story 5 (W3-9 frontmatter rollout) HALTS pending root-cause retro. | Medium | Halt path is documented and bounded: Stories 1–4 + Story 7 proceed; only W3-9 + W3-10..12 hold. Citation artifact is `.delivery/telemetry/stop-rule-tk4.txt` (no narrative claims allowed). PO empowered to halt at the Story boundary; the wave does not collapse on a tripwire — it pauses cleanly. SM tracks the telemetry file's existence and its measured percentage at every Story boundary, calls the stop plainly if it fires. |
-| R4 | **Mandatory-rollout side-effect — Story 5 ordering is binding, not preference.** If anyone (orchestrator, dev, reviewer) lets Story 5 PR open before Stories 1–4 merge, the frontmatter +3 lines push at-budget files OVER budget and re-introduce the very `known_debt` entries the wave is supposed to clear. | High | Story 5 AC-4 is a runnable sequencing gate: `git log --merges --oneline main..HEAD` must show Stories 1–4 merge commits BEFORE Story 5 commit timestamp. PRD §FR-5 + ADR-tk4-003 §Mandatory-rollout sequencing both cite the binding. SM holds the gate at the Story 4-to-5 boundary; no one moves until the merge log is clean. |
-| R5 | **Schema-JSON drift on `governance/skill-budgets.json` re-baseline.** Story 7 housekeeping clears `known_debt[]`; if the JSON enumeration drifts from the Python check script's hard-coded list, the lint silently passes a fictional empty state. | Medium | Story 7 W3-14 ships a JSON↔Python consistency CI lint specifically to catch this; Story 7 AC-2 fault-injects a deliberate drift to verify the lint fails. Also: Story 5 AC-2 separately verifies `check_skill_budgets.py` exits 0 with `known_debt` empty for delivery-team scope at end of Story 5. Two independent checkpoints, two stories apart. |
-| R6 | **Reference-file extraction discipline — each Story 1–3 must honor the mid-implementation extraction pattern from tk3 (caveman-lite Hot Lesson).** Stage 6 Dev finds a file landing within 10 lines of ceiling and must extract on the spot, not defer. Discipline slip = round-2 retro. | Medium | Per-story DoD (Stories 1, 2, 3) requires citation of ADR-tk4-001 batching math in PR body and SKILL_LOADED signal for `plugin-dev:skill-development` in the dev transcript. Stage 6 Dev runs the per-file Phase 1 router regression AFTER extraction; the regression set itself (~42 dogfood inputs total across the wave) catches the case where a deferred extraction left dead routing in SKILL.md. |
-| R7 | **Architect partial-compliance reserve might activate (Story 1).** If Cross-Role Tasks block (24 lines) is genuinely operational and won't extract cleanly, architect ships at 311 not 288 with `Budget-Exception: ADR-tk4-001`. That re-introduces a `known_debt` entry the wave is supposed to clear. | Low–Medium | Honest partial-compliance is the documented Wave 2 precedent and is preferable to manufacturing fictional compliance by trimming router prose. Story 1 AC-1 explicitly permits the exception path with explicit residual math + `target_wave: 4` logging. SM doesn't escalate this — the team decides at the Story 1 DoD boundary; if the exception fires, the wave still ships and W3-1-residual is the only Wave-4 carry. |
+| FR-ID | Story | Task (WI surface) | AC ref |
+|-------|-------|-------------------|--------|
+| FR-01 (isolated subprocess + `--plugin-dir` capability probe + mktemp HOME) | S1 | `lib/runner.py` subprocess + `lib/workspace.py` mktemp HOME; capability-probe `claude --help \| grep -q -- --plugin-dir` | AC-S1-03, AC-S1-04 |
+| FR-02 (stream-json -> Metrics; pure; malformed warns) | S1 | `lib/metrics.py` pure-function `parse_stream(events)` returning Metrics dataclass | AC-S1-06 |
+| FR-03 (aggregator reads telemetry hook outputs + state.md) | S1 | `lib/aggregator.py` reads `skill-loads.jsonl` + `run-summary-*.json` + `state.md`; fallback invokes `telemetry_run_summary.py` | AC-S1-07 |
+| FR-04 (report writer: report.json + summary.md + stream.jsonl under timestamped dir) | S1 | `lib/report.py` writes 3 artifacts under `artifacts/<utc-timestamp>/`; schema per architecture §5 | AC-S1-02, AC-S1-08 |
+| FR-05 (baseline detector: HARD/ADVISORY thresholds) | S2 | `lib/baseline.py:compare()` exit-code 0/1/2; HARD on outcome/cost/wall/dispatch/stories; ADVISORY on ±2σ tokens + skill_loads | AC-S2-03, AC-S2-04, AC-S2-05 |
+| FR-06 (`--init-baseline` 5x sequential + mean/stddev write) | S2 | `lib/baseline.py` 5-run loop, concurrency-of-1; writes `baselines/hello_world_spike.json` | AC-S2-01, AC-S2-02, AC-S2-08 |
+| FR-07 (pytest meta-tests in < 5s; no Claude calls) | S3 | `tests/test_meta.py` 3 tests: malformed-stream, baseline-compare demo, aggregator-fixture | AC-S3-01, AC-S3-02, AC-S3-03, AC-S3-04, AC-S3-08 |
+| FR-08 (README + `Makefile` smoke target) | S3 | `tests/smoke/README.md` (local-only cite + flag ref); root `Makefile` `smoke` target | AC-S3-05, AC-S3-06; supporting fixture AC-S2-07 |
 
-## Sprint Definition of Done (carried from stories.md per-story DoD pattern)
+Cross-check: 8 FRs mapped; 24 ACs covered; 8 WIs covered (per stories.md WI audit). **Zero unmapped FRs. No BLOCKING.**
 
-A story is Done when:
-- All 5 ACs PASS (or AC-1 via documented Budget-Exception path with explicit residual math, Story 1 only).
-- `plugin-dev:skill-development` SKILL_LOADED signal present in the dev transcript for every dispatch (mandatory pre-load — every story touches SKILL.md).
-- `plugin-dev:skill-reviewer` run post-completion per file.
-- `plugin-dev:plugin-validator` run BEFORE PR for stories touching CI lint chains (Stories 4, 5, 7).
-- PR body cites the relevant ADR section + actual measured values (byte counts, line counts, dogfood pass/fail), not narrative claims.
-- DoD validator review filed at `.delivery/artifacts/06-development/dod/W3-{N}-{slug}.md` with STATUS literal (DONE / NOT_DONE / CODE_COMPLETE / PASS_WITH_NOTES per W3-15 standardization).
-- For Story 5 specifically: Dev runs-the-command for `governance/cache-prefix-hash.txt` regeneration (ADR-tk4-003 binding); DoD cites actual byte counts.
-- For Story 7 specifically: DEFECT-006 closes upon merge; `known_debt[]` empty for delivery-team scope.
+---
 
-## Stop-Rule (verbatim from stories.md, sourced from idea-brief §9)
+## 4. Story Sequencing
 
-**Initiative-level (BACKLOG-100 carry-forward)**: defects/story rate >0.4 across any 3-PR window pauses subsequent waves. Current rolling 3-PR window: tk2 (0 defects) + tk3 (1 defect, P1 non-blocking) = **0.33 < 0.4 — NOT triggered, Wave 3 may proceed**. Wave 3 must hold the rate; PO empowered to halt at any Story boundary if a third defect lands and pushes the window past threshold.
+Architect's sequencing (encoded in ADR-tk5-001 §"Producer-Validator Separation" + stories.md §Cross-story matrix) proposes `S1 -> (S2 ∥ S3)`. PO directive in stories.md and BACKLOG-106 §Story Decomposition **overrides**: S3 sequential after S1+S2 to preserve validator-dispatch freshness (BC-03). Validator must NOT have read S1+S2 source while authoring fixtures.
 
-**Wave-level tripwire (per ADR-tk4-003 + architecture §Stop-Rule Tripwire Mechanics)**: if first 3 Stage-6 dispatches show <15% prose-token reduction vs pre-caveman-lite baseline, HALT before Story 5 (W3-9) PR opens. Stories 1–4 + Story 7 proceed; only W3-9 + W3-10..12 hold pending caveman-lite root-cause retro. Citation artifact: `.delivery/telemetry/stop-rule-tk4.txt`.
+Final sequence:
 
-— Samwise Gamgee, SM, run-2026-05-09-tk4. The road's plain. The rocks are named. We start with Story 1, watch the boundaries, call the gates, and don't let Story 5 jump the queue. That's the job.
+```
+S1 (Dispatch A producer, L=9h)
+  └─> S2 (Dispatch A producer, M=6h)        [same dispatch context as S1 per BACKLOG-106 §Story Decomposition]
+        └─> S3 (Dispatch B validator, M=5h) [DIFFERENT dispatch context; fresh; reads PRD/BACKLOG/architecture only]
+```
+
+Dispatch ordering:
+1. Dispatch A opens, authors S1 (`run_smoke.py`, `lib/{runner,workspace,metrics,aggregator,report}.py`), then S2 (`lib/baseline.py`, `baselines/hello_world_spike.json`, `prompts/hello_world_spike.txt`, `fixtures/delivery_config_minimal.yml`). Dispatch A closes.
+2. Dispatch B opens fresh. Reads PRD, BACKLOG-106, `delivery-team/architecture/smoke-test-architecture.md` ONLY. Does NOT read S1+S2 source. Authors S3 (`tests/test_meta.py`, `tests/fixtures/`, `README.md`, root `Makefile`).
+3. Stage-7 UAT verifies git log shows two distinct Dev commits (or two distinct authors within a squash).
+
+**Parallelism rejected**: `max_parallel_agents: 3` in config supports parallel dispatch, but BC-03 binding (validated:5 past waves) forbids it here — concurrent S3 would let validator peek at producer source via filesystem.
+
+---
+
+## 5. Risk Register
+
+Five risks pulled from PRD §Open Risks + user-seed §Open risks. Owners assigned per role-of-execution.
+
+| # | Risk | Severity | Mitigation | Owner |
+|---|------|----------|-----------|-------|
+| R-01 | **Prompt drift** — orchestrator dispatches more than hello-world spike requires; inflates `dispatch_count`. | HIGH | `hard_max` on `dispatch_count` in baseline JSON (AC-S2-04 strict-equality on `stories_completed` + hard-cap on `dispatch_count`); prompt explicitly requests "skip personas, skip UAT, minimal retrospective" (AC-S2-06 + TC-S2-08 grep guard). | PO (Gandalf) — prompt authoring sits with PO/Dev producer; PO owns prompt fidelity. |
+| R-02 | **Cost overrun** — single run exceeds $3 cap, or `--init-baseline` envelope exceeds $15. | HIGH | `--cost-cap 3.00` hard flag in runner (AC-S1-05); 30-min wall-clock SIGTERM (AC-S1-05); concurrency-of-1 on `--init-baseline` (AC-S2-01); $15 baseline envelope acknowledged in NFR-Cost. | Developer (Dispatch A) — owns runner enforcement. |
+| R-03 | **`--plugin-dir` semantics drift** — flag absent or renamed in installed `claude` CLI version. | MEDIUM | Capability-probe at startup (`claude --help \| grep -q -- --plugin-dir`) writes `plugin_load_strategy` to report.json; fallback copy-into-`<tmp>/.claude/plugins/delivery-team/` path (AC-S1-04 + TC-S1-04). | Architect (Celebrimbor) — owns dispatch-strategy contract per ADR-tk5-001 Decision-1. |
+| R-04 | **Stop hook blocks** — existing Stop hook enforces retro/memory completion; pipeline hangs mid-run. | MEDIUM | Prompt requests minimal retrospective so Stop hook has something to consume (AC-S2-06); runner captures stderr so blockage is visible in `report.json.hard_failures`; 30-min wall-clock SIGTERM is the backstop. | Developer (Dispatch A) — runner stderr capture; PO (Gandalf) — prompt minimal-retro language. |
+| R-05 | **Variance > stddev budget** — 5-sample n underestimates true variance; advisory band trips on noise. | LOW (first month) | NFR-Reproducibility: advisory-only for first month on `tokens.*` and `skill_loads.*`; 2σ band, no exit-code escalation (AC-S2-05); tighten to 1.5σ AFTER 20+ accumulated production runs (deferred BACKLOG, OOS this initiative). | PO (Gandalf) — owns band-tightening BACKLOG once enough samples accrue. |
+
+---
+
+## 6. Stop-Rule Reminder
+
+**Rule**: defects/story > 0.4 across any 3-PR window pauses subsequent work.
+
+**Current rolling rate**: 0.111 (per PRD §Stop-rule + user-seed §Stop-rule).
+
+**Headroom**: 0.400 − 0.111 = **0.289 defects/story remaining headroom before pause**. With 3 stories in this wave, that buys roughly 0.867 raw defects of room (3 × 0.289) before the rolling window crosses threshold. Wave will be re-measured after PR merge; rolling-window math runs against the most recent 3 PRs, not this initiative in isolation.
+
+If the wave's PR introduces > 0.867 defects, the next initiative pauses. Aragorn flag the gate; me no breach.
+
+---
+
+## 7. Definition of Done (Initiative-Level — Stage 7 UAT Acceptance Gates)
+
+Eight gates from `user-seed.md` §Acceptance criteria. Stage 7 UAT QA + DevOps + PO + Tech-Writer verify (per config `dod_validators.uat: [qa, devops, po, tech-writer]`). All eight must check before initiative closes.
+
+- [ ] **DoD-1**: `python3 delivery-team/tests/smoke/run_smoke.py` completes on developer's machine in < 30 min wall-clock. *(Maps PRD AC-01.)*
+- [ ] **DoD-2**: Output written to `delivery-team/tests/smoke/artifacts/<utc-timestamp>/{report.json, summary.md, stream.jsonl}`. *(Maps PRD AC-02 + AC-S1-02.)*
+- [ ] **DoD-3**: `report.json` contains all of: `outcome.success`, `wall_clock_seconds`, `cost_usd`, `tokens.{input,output,cache_creation,cache_read}`, `model_usage` (per-model dispatches+tokens), `pipeline.{stages_completed, stories_completed, dispatch_count, defects_logged}`, `skill_loads` (from `.delivery/telemetry/skill-loads.jsonl`), `git_sha`, `claude_cli_version`. *(Maps PRD AC-03 + AC-S1-08.)*
+- [ ] **DoD-4**: `--init-baseline` flag runs scenario 5x sequentially and writes `baselines/hello_world_spike.json` with mean+stddev per metric. *(Maps PRD AC-04 + AC-S2-01 + AC-S2-02.)*
+- [ ] **DoD-5**: Regression detector HARD-FAILS on `outcome.success=false`, `cost > hard_max`, `wall_clock > hard_max`, `stories_completed` mismatch, `dispatch_count > hard_max`. ADVISORY-WARNS on `tokens.*` and `skill_loads.*` outside mean ± 2·stddev. *(Maps PRD AC-05 + AC-S2-04 + AC-S2-05.)*
+- [ ] **DoD-6**: Meta-tests in `tests/test_meta.py` pass for malformed-stream fault injection, baseline-comparison demo, and aggregator-fixture parsing; no Claude calls; complete in < 5 sec. *(Maps PRD AC-06 + AC-S3-01 through AC-S3-04.)*
+- [ ] **DoD-7**: NO `.github/workflows/smoke-*.yml` exists in the repo. *(Maps PRD AC-07 + BC-01; verified by grep + dir-listing.)*
+- [ ] **DoD-8**: `delivery-team/architecture/smoke-test-architecture.md` records the local-only constraint with a pointer to the binding memory file (`/home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md`). *(Maps PRD AC-08 + ADR-tk5-001 §Local-Only Constraint; README cites same path per AC-S3-05.)*
+
+**Wave-level cadence**: one wave, one commit (per memory `feedback_no_skip_stages` + user-seed §Hard PO directives "full scope in one initiative; not staged"). All 8 gates verified before PR merge; no partial-merge.
+
+---
+
+## Open Questions
+
+None blocking. PRD §Open Questions states "None blocking" and all five open risks have mitigations encoded in ACs above.
+
+## Downstream Notes (for Stage 6 Development orchestrator)
+
+- Dispatch A handles S1+S2 in sequence (producer). Dispatch B handles S3 (validator) in a fresh context; do NOT pass S1+S2 source paths into Dispatch B's working set — pass only `prd.md`, `BACKLOG-106-*.md`, and `delivery-team/architecture/smoke-test-architecture.md`.
+- Capacity buffer is 8h (28.6%). If S1 overruns, S3 has slack; if S3 overruns, escalate to PO before pulling from buffer — keep validator dispatch context-clean.
+- Producer-validator git evidence: Stage-7 UAT will inspect commits. If wave squashes, ensure trailers attribute the two distinct dispatch authorships.
+- Stop-rule headroom is 0.289/story. Aragorn flag if any single story introduces > 0.4 defects in QA — that one story alone could trip rolling window after merge.
+
+---
+
+— Aragorn, Scrum Bag, run-2026-05-13-tk5. The fellowship marches at dawn. The smoke-test gate shall not fall.

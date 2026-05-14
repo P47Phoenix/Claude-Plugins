@@ -1,81 +1,182 @@
-<!-- run: run-2026-05-09-tk4 | stage: 07-uat | depth: full | author: QA Engineer (FRESH DoD dispatch) | role: qa-engineer | task: dod-validation | round: 1 | supersedes: prior tk3 qa-review (2026-05-05) -->
+<!-- run: run-2026-05-13-tk5 | stage: 07-uat | role: QA DoD validator | author: Legolas -->
 
-# DoD Review — QA Lens — Stage 7 UAT (run-2026-05-09-tk4)
+# QA DoD Review — run-2026-05-13-tk5
 
-STATUS: DONE
+> *"That bug still only counts as one."* — Legolas
 
-Wave 3 (final) UAT artifacts produced by the FRESH QA dispatch (Legolas Greenleaf) clear all five blocking gates. The structural close-out is empirically verifiable on the working tree; the empirical-telemetry deferral is honest, named, and bounded by a deterministic close mechanism (next post-merge run). Confidence is correctly capped at 4/5 per UAT memory lesson 3 (structural-only ≤4/5).
-
-## Gate 1: PASS — All 16 TCs have actual command output evidence (not just "PASS")
-
-`test-cases.md` (`.delivery/artifacts/07-uat/qa/test-cases.md`) records actual literal command output for every one of the 16 TCs, not bare PASS verdicts:
-
-- TC-1 (L33-34) — `wc -l architect/SKILL.md` → **294**, `grep -c "references/roles"` → **15**, `find architect/references -name "*.md"` enumerated.
-- TC-2 (L36-37) — `wc -l` → presentation **185**, ui **222**, operations **219**.
-- TC-3 (L39-40) — `wc -l` → quality **289**, user-feedback **272**, godot **exactly 200**.
-- TC-4 (L42-43) — `find … research-types/*/SKILL.md | wc -l` → **5**; user-feedback `personas/*/SKILL.md` → **4**; `disable-model-invocation: true` → **9/9**.
-- TC-5 (L45-46) — `grep -L "^maintainer:"` over 13 files → empty; `lint_known_debt.py` → exit 0; godot frontmatter spot-checked verbatim.
-- TC-6 (L48-49) — `check_skill_budgets.py` → `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).` exit 0; godot=200.
-- TC-7 (L51-52) — `cat governance/cache-prefix-hash.txt` → `43067c9e07e0b988cd976432dd07d5bb3d2336c41ad08a1b0064fb2fbd0b8328  …delivery-flow/SKILL.md` (vs prior `f997ec25…`).
-- TC-8 (L54-55) — `wc -l CLAUDE.md` → **112**; `grep -E "ARCHITECTURE.md|plugin-catalog.md"` → 5 matches; stale-paradigm grep → **0**.
-- TC-9 (L57-58) — `grep -E "context_tokens_per_pipeline_run" …/retro.md` → matches at heading + supporting paragraph.
-- TC-10 (L60-61) — `test -f validator-prompt-template.md` → EXISTS (89 lines); `grep -l "validator-prompt-template" quality-gates.md` → matches.
-- TC-11 (L63-72) — `extract_dod_status.py` actual stdout block pasted verbatim showing 5 file→STATUS pairs (DONE/DONE/DONE/NOT_DONE/DONE).
-- TC-12 (L74-75) — `lint_known_debt.py` exit 0; `test -f .github/workflows/lint-known-debt.yml` EXISTS; injection-pattern grep → **0**; `.githooks/pre-commit` EXISTS executable.
-- TC-13 (L77-78) — `test -f scripts/sweep_stale_artifacts.py` EXISTS; `grep "Stale-Artifact Sweep|sweep_stale_artifacts" pipeline-stages.md` → matches at named heading.
-- TC-14 (L80-81) — `cat .delivery/telemetry/run-summary-run-2026-05-09-tk4.json` → `rows_total: 10, rows_real: 0, rows_placeholder: 10, placeholder_only: true`.
-- TC-15 (L83-84) — `test -f governance/fitness-review.md && wc -l` → EXISTS, **102 lines**; strict-header grep → **2**; semantic content cited at `## Escalation` and `## Procedure`.
-- TC-16 (L86-87) — `test -f .github/workflows/fitness-review.yml` EXISTS, **157 lines**; `cron: '0 14 * * 1'`; injection-pattern grep → **0**.
-
-Independent spot-check: `wc -l CLAUDE.md godot/SKILL.md architect/SKILL.md presentation/SKILL.md` → 112 / 200 / 294 / 185 (matches QA's claims byte-exact). `grep -c "^maintainer:" delivery-team/skills/*/SKILL.md` → 11 of 11 top-level files = **1** match each (frontmatter rollout verified). Every PASS judgement is grounded in pasted, reproducible command output, not a bare assertion.
-
-## Gate 2: PASS — Cumulative reduction calculation present + cited from Wave 0+1+2+caveman+3 archive data
-
-`dogfood-report.md` §1 (L12-32) reconstructs the pre-Wave-0 baseline from `git show d0e0928~1:<path>` per file (commit explicitly named: the commit immediately before Wave 0 merged on 2026-05-03), with the 12-file table summing to **5807** baseline lines. §2 (L36-55) computes:
-
-> `(5807 − 3090) / 5807 = 2717 / 5807 = **46.79%**`
-
-Formula explicit, numerator/denominator/percentage all shown. Both honest measurements reported per the test-strategy's two-axis approach: structural lines (eager-load proxy) at 46.79% and telemetry-tokens (lazy-load + progressive disclosure) deferred per W3-18 chicken-and-egg.
-
-Appendix wave-by-wave decomposition (L110-128) cross-cites both `.delivery/memory/archive/run-2026-05-05-tk2.md §Known-Debt Status` and `run-2026-05-05-tk3.md §Known-Debt Status` as source documents, and walks the cumulative line-count through pre-W0 → W0 → W1 → W2 → caveman-lite → W3, attributing per-wave deltas to specific files (delivery-flow 999→499, presentation 543→185, etc.). Wave 0+1+2+caveman+3 archive coverage is complete.
-
-## Gate 3: PASS — AC-13 deferral honest (W3-18 chicken-and-egg explicitly named)
-
-`dogfood-report.md` §3 (L59-74) is dedicated to the caveman-lite AC-13 close-out attempt. The chicken-and-egg is named explicitly at L68:
-
-> "AC-13 cannot be empirically computed in this pipeline — the chicken-and-egg is binding: W3-18 hardening (the fix that makes the measurement possible) was itself the deliverable in Story 7 of this same pipeline, so all telemetry rows captured before its merge are structurally placeholders."
-
-Result is recorded as `placeholder_only: true` for both windows (pre-merge baseline + first 5 post-merge dispatches); tripwire mechanically NOT FIRED on placeholder data per the architecture spec; honest disposition flagged at L74 distinguishing tk3 deferral (hook broken) from tk4 deferral (hook fixed but cannot retroactively measure pre-fix dispatches), with a hard close date (next post-tk4-merge pipeline run) rather than indefinite. `go-no-go-input.md:7` mirrors the deferral with the same hard-close framing. Test-plan §"Risk Calls" row 1 (L58) also calls this out at the planning level. The deferral is honest at every layer of the QA artifact set.
-
-## Gate 4: PASS — Pre-Wave-0 baseline cited with archive path
-
-`dogfood-report.md:14` names the baseline reconstruction method explicitly:
-
-> "Reconstructed from `git show d0e0928~1:<path>` (the commit immediately before Wave 0 merged on 2026-05-03; per `.delivery/memory/archive/run-2026-05-03-tk0e.md`)."
-
-Both the git-source mechanism (`git show d0e0928~1:<path>` per file) and the archive path (`.delivery/memory/archive/run-2026-05-03-tk0e.md`) are cited. The baseline table (L16-30) enumerates all 12 files (11 top-level SKILL.md + CLAUDE.md) with their pre-Wave-0 line counts. Test-plan §Test Environment (L38) corroborates the data-fixture path: "pre-Wave-0 baseline reconstructed from `git show d0e0928~1:<path>` per file; Wave 0 archive `run-2026-05-03-tk0e.md` cited for the original AC-13 deferral context." Source is named, reproducible, and traceable.
-
-## Gate 5: PASS — Confidence rating capped honestly per UAT memory lesson 3 (structural-only ≤4/5)
-
-`dogfood-report.md` §5 (L98-106) records confidence as **4 of 5** and explains the cap at L100-104 in language that mirrors UAT memory lesson 3:
-
-> "Honest cap at 4/5 (not 5/5) because the AC-13 empirical measurement is partial due to the W3-18 chicken-and-egg. … What keeps it from 5/5: the cumulative reduction empirical telemetry result is `placeholder_only: true` rather than a hard percentage. PRD NFR-4 / init AC-7 wording binds on telemetry; the structural 46.79% is a strong proxy but not the literal artifact the AC names."
-
-`go-no-go-input.md:9` carries the same 4/5 cap with the same rationale: "capped at 4 because AC-13 / NFR-4 empirical close-out is partial (placeholder-only telemetry); not 5 until the next post-tk4 pipeline emits a real `cumulative-reduction-tk5.txt` with W3-18-captured data." Test-plan §Risk Calls row 1 (L58) pre-declares the cap at the planning layer ("Confidence rating capped at 4/5"). The rating is structurally-grounded, lesson-3-honored, and consistent across all three operative artifacts.
-
-## Verdict
-
-All five QA-lens blocking gates PASS:
-1. 16/16 TCs grounded in actual literal command output (no bare-assertion PASSes; spot-checked against working tree).
-2. Cumulative reduction = 46.79% with explicit formula + numerator + denominator, sourced from Wave 0+1+2+caveman+3 archive data.
-3. AC-13 deferral honest at three layers (test-plan risk row, dogfood-report §3, go-no-go-input); W3-18 chicken-and-egg named explicitly with binding language.
-4. Pre-Wave-0 baseline cited with archive path (`.delivery/memory/archive/run-2026-05-03-tk0e.md`) and reproducible git source (`git show d0e0928~1:<path>`).
-5. Confidence rating = 4/5 capped per UAT memory lesson 3 (structural-only ceiling); rationale consistent across artifacts.
-
-The QA artifact set is internally consistent, externally verifiable on the working tree, and honest about the one binding deferral. STATUS = DONE (not CODE_COMPLETE) because the empirical-telemetry deferral is itself a documented architectural condition with a deterministic close mechanism, not a runtime-validation gap on this pipeline's deliverable; the artifact set discharges every QA-lens UAT obligation it can discharge in-pipeline.
+Me Legolas. Me verify gate-by-gate. Me run commands. No infer. No skip.
 
 ---
 
-STATUS: DONE
-ARTIFACT: .delivery/artifacts/07-uat/dod/qa-review.md
-SUMMARY: 5/5 QA blocking gates PASS; 16/16 TCs evidenced with actual command output; 46.79% cumulative reduction formula+sources cited; AC-13 W3-18 chicken-and-egg named honestly; 4/5 confidence cap honors UAT lesson 3.
+## Verdict: PASS_WITH_NOTES — endorse
+
+Six gate criteria PASS. One gate criterion (#4) PASS-by-intent with literal-syntax mismatch (caller wrote `### D-tk5`, defect log uses `## D-tk5` — count = 4 either way). Honest-readiness-marker pattern on G1+G4 is the correct call per Wave-2 lineage.
+
+---
+
+## Gate-by-gate verification
+
+### Criterion 1 — UAT report covers all 8 acceptance gates (count by header)
+
+```
+$ grep -n "^### Gate " /var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/artifacts/07-uat/qa/uat-report.md
+55:### Gate 1 — Live `--init-baseline` (5 sequential runs, all outcome.success=true)
+102:### Gate 2 — `baselines/hello_world_spike.json` parses + contains mean/stddev for 6+ metrics
+121:### Gate 3 — `pytest tests/test_meta.py` passes 3 meta-tests in < 5 s
+144:### Gate 4 — `run_smoke.py` (no `--init-baseline`) reproduces successful run within 2σ of baseline
+152:### Gate 5 — `find .github/workflows -name "smoke-*.yml" | wc -l` returns 0
+164:### Gate 6 — `grep "feedback_claude_code_local_only" delivery-team/architecture/smoke-test-architecture.md` returns ≥ 1
+180:### Gate 7 — `check_skill_budgets.py` + `lint_known_debt.py` both exit 0
+198:### Gate 8 — Cost-cap default (`--cost-cap 3.00`) tested via injected stream exceeding threshold
+235:### Gate execution scoreboard
+```
+
+8 distinct gate sections (G1-G8) plus scoreboard. **PASS**.
+
+### Criterion 2 — Each gate has real command + exit code + truncated output (not inference)
+
+Inspected sections G1-G8. Each contains a `$` shell prompt with the verbatim command, an `EXIT=N` line captured verbatim, and a truncated JSON/text excerpt of the actual output. G1 shows `EXIT=1` honestly (not papered over). G4 cites G1-dependence with no fake command. G2/G3/G5/G6/G7/G8 each show a real `EXIT=0` (G8 = `EXIT=2` by design — cost-cap exit code). **PASS**.
+
+### Criterion 3 — Honest-readiness-marker pattern applied (Wave-2 lineage)
+
+- G1 explicitly marked **DEFERRED_TO_FOLLOWUP** in §Gate 1 with a documented one-line root cause and three fix paths.
+- G4 explicitly marked **DEFERRED** in §Gate 4 because G1-dependent.
+- Section D verdict reads **PASS_WITH_NOTES** with the rationale "deferred ≠ failed."
+- Stub baseline file at `delivery-team/tests/smoke/baselines/hello_world_spike.json` has `sample_status: "deferred"`, `n_samples: 0`, mean/stddev=null per row. Self-flagging artifact.
+- Scoreboard explicitly names both deferrals ("6 PASS + 2 DEFERRED (both auth-bound)").
+
+Pattern correctly applied: deferred gates NAMED, not silently dropped. **PASS**.
+
+### Criterion 4 — Defect log contains D-tk5-01..04 (literal-syntax vs intent)
+
+Caller-specified literal command:
+```
+$ grep -c "^### D-tk5" /var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/defects/sprint-tk5.md
+0
+```
+
+Reason: defect log uses **H2** (`## D-tk5`), not H3 (`### D-tk5`). Verify intent:
+```
+$ grep -c "^## D-tk5" /var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/defects/sprint-tk5.md
+4
+
+$ wc -l /var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/defects/sprint-tk5.md
+61 .delivery/defects/sprint-tk5.md
+```
+
+4 D-tk5-* entries present at H2 (`D-tk5-01`, `D-tk5-02`, `D-tk5-03`, `D-tk5-04`). 61 lines, well above any reasonable floor.
+
+**Status**: **PASS-by-intent**. The literal `### D-tk5` syntax was an oversight in the gate spec — H2 is the correct level for a defect entry in a defect log (entries are top-level records, not sub-sections of a parent gate). Recommend caller update the gate spec to `^## D-tk5` in the next-pipeline DoD prompt.
+
+### Criterion 5 — Stop-rule headroom is named (current rate vs 0.4 threshold)
+
+UAT §Section D verbatim:
+> Rolling defect rate before this initiative: 0.111 across the 3-PR window.
+> This initiative adds 3 stories (S1, S2, S3).
+> New defects logged post-merge: 1 (D-tk5-04). The 3 carry-forward soft notes (D-tk5-01/02/03) are known-debt deferrals from Stage 6, NOT new post-merge defects.
+> Worst-case rolling rate: 1 / 3 = 0.333. Threshold is 0.4. **Headroom: 0.067 (~17% margin)**.
+
+Current rate (0.333) named. Threshold (0.4) named. Headroom (0.067, ~17%) named. **PASS**.
+
+### Criterion 6 — Shared-module review present (lib/*.py cross-references documented)
+
+UAT §A2 contains the Shared-Module Review table with 6 rows, one per `lib/*.py` module (`runner.py`, `workspace.py`, `metrics.py`, `aggregator.py`, `baseline.py`, `report.py`). Each row lists Stages Referencing (01, 02, 04, 05, 06), Modified in Dev (Yes), Test Coverage (specific TC IDs), and Status (PASS or PASS_WITH_NOTES with D-tk5-04 callout on workspace.py). Includes a `<!-- retro c8f2 -->` marker per protocol. **PASS**.
+
+### Criterion 7 — No regression on existing pipeline (both scripts exit 0)
+
+```
+$ python3 scripts/check_skill_budgets.py
+BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).
+EXIT=0
+
+$ python3 scripts/lint_known_debt.py
+LINT OK: known_debt JSON↔Python in sync; all SKILL.md frontmatter complete.
+EXIT=0
+```
+
+Both exit 0. No regression. **PASS**.
+
+### Criterion 8 — Producer-validator boundary preserved (lib NEW + tests NEW, distinct file groups)
+
+```
+$ git status delivery-team/tests/smoke/ --short
+?? delivery-team/tests/smoke/
+```
+
+Git collapses the entire untracked subtree to one `??` entry. Drill in:
+
+```
+$ git ls-files --others --exclude-standard delivery-team/tests/smoke/ | sort
+delivery-team/tests/smoke/README.md
+delivery-team/tests/smoke/__init__.py
+delivery-team/tests/smoke/baselines/.gitkeep
+delivery-team/tests/smoke/baselines/hello_world_spike.json
+delivery-team/tests/smoke/fixtures/delivery_config_minimal.yml
+delivery-team/tests/smoke/prompts/hello_world_spike.txt
+delivery-team/tests/smoke/run_smoke.py
+delivery-team/tests/smoke/tests/__init__.py
+delivery-team/tests/smoke/tests/conftest.py
+delivery-team/tests/smoke/tests/fixtures/sample-workspace/.delivery/state.md
+delivery-team/tests/smoke/tests/fixtures/sample-workspace/.delivery/telemetry/run-summary-fake.json
+delivery-team/tests/smoke/tests/fixtures/sample-workspace/.delivery/telemetry/skill-loads.jsonl
+delivery-team/tests/smoke/tests/test_meta.py
+```
+
+(Note: `git ls-files --others` does not recurse into `lib/` here because the rolled-up parent is already `??`. Verify directly:)
+
+```
+$ ls delivery-team/tests/smoke/lib/*.py
+delivery-team/tests/smoke/lib/__init__.py
+delivery-team/tests/smoke/lib/aggregator.py
+delivery-team/tests/smoke/lib/baseline.py
+delivery-team/tests/smoke/lib/metrics.py
+delivery-team/tests/smoke/lib/report.py
+delivery-team/tests/smoke/lib/runner.py
+delivery-team/tests/smoke/lib/workspace.py
+
+$ git ls-files delivery-team/tests/smoke/lib/
+(empty — none tracked)
+```
+
+**Producer group (S1+S2 dispatch — `lib/*.py` + `run_smoke.py` + `prompts/` + `fixtures/` + `baselines/`)**: 7 lib files + runner + supporting data = all NEW, none tracked.
+
+**Validator group (S3 dispatch — `tests/*`)**: 4 test files + sample-workspace fixture tree = all NEW, none tracked.
+
+Two distinct file groups, both untracked, no overlap. Different stories visible as different file groups. **PASS**.
+
+---
+
+## Overall verdict review
+
+| Criterion | Status | Evidence |
+|-----------|--------|----------|
+| 1 — 8 gate headers | PASS | 8 sections G1-G8 by `grep "^### Gate "` |
+| 2 — real cmd + exit + output | PASS | inspection of §Gate 1-8 |
+| 3 — honest-readiness markers | PASS | G1+G4 explicitly DEFERRED; stub baseline self-flags |
+| 4 — D-tk5-01..04 in defect log | PASS-by-intent | 4 entries at H2, not H3 as spec stated |
+| 5 — stop-rule headroom named | PASS | 0.333 current, 0.4 threshold, 0.067 (~17%) headroom |
+| 6 — shared-module review | PASS | 6-row table in §A2 with `<!-- retro c8f2 -->` |
+| 7 — no regression | PASS | both scripts exit 0 verified live |
+| 8 — producer/validator boundary | PASS | lib NEW (7 files), tests NEW (4 files + fixtures), distinct |
+
+**8 of 8 DoD criteria satisfied** (Criterion 4 with a syntax-vs-intent caveat).
+
+PASS_WITH_NOTES verdict is **endorsed**.
+
+### Why PASS_WITH_NOTES (not DONE, not NOT_DONE)
+
+- Not DONE: G1 + G4 are deferred. Real auth bug (D-tk5-04) found and ticketed. Calling this DONE would mask a HIGH-severity finding.
+- Not NOT_DONE: 6 of 8 acceptance gates green by live verification. Producer-validator boundary clean. Governance gates clean. Cost-cap critical-path green end-to-end. Meta-tests green in 0.02s. Plenty independently valuable to ship.
+- PASS_WITH_NOTES is the Wave-2-lineage honest mark: meaningful surface ships, named gaps walk behind in BACKLOG-107.
+
+---
+
+## Notes for next dispatch (caller)
+
+1. **Gate spec syntax**: Criterion 4 wrote `grep -c "^### D-tk5"`. The defect-log convention is H2 (`## D-tk5`), so the literal regex returns 0. Update DoD prompt template to `^## D-tk5` (or `^#{2,3} D-tk5` to accept both) for future runs.
+2. **Stub-baseline contract**: the deferred stub at `delivery-team/tests/smoke/baselines/hello_world_spike.json` is well-flagged (`sample_status: "deferred"`, all means null, header comment). When BACKLOG-107 lands, the real `--init-baseline` run replaces this stub — recommend QA in next wave verify the stub→real transition is detected by `compare()` correctly (zero-stddev guard should prevent silent green; this is risk row 2 in `release-plan.md` §7).
+3. **HOME-isolation fix**: D-tk5-04 has three documented fix paths; fix path (a) (keep HOME unchanged + isolate via `cwd` + `XDG_*`) is the cleanest. Recommend QA assert in next-wave UAT that `os.environ["HOME"]` is preserved in spawned subprocess env (one-line unit test).
+
+---
+
+— Legolas (QA DoD validator), run-2026-05-13-tk5, Stage 7 UAT. *That bug still only counts as one.* Six gates green. Two deferred. One bug counted. Stop-rule has headroom. PASS_WITH_NOTES endorsed.

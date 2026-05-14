@@ -1,0 +1,5 @@
+{"skill": "delivery-team:delivery-flow", "prose_tokens": 1200, "timestamp_seconds": 100.0}
+{"skill": "delivery-team:developer", "prose_tokens": 800, "timestamp_seconds": 200.0}
+{"skill": "delivery-team:developer", "prose_tokens": 900, "timestamp_seconds": 300.0}
+{"skill": "delivery-team:quality", "prose_tokens": 700, "timestamp_seconds": 400.0}
+{"skill": "delivery-team:architect", "prose_tokens": 1100, "timestamp_seconds": 500.0}

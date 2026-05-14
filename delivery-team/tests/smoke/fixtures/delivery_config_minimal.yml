@@ -1,0 +1,35 @@
+schema_version: "2.7"
+
+project:
+  name: smoke-hello-world
+  type: FEATURE
+
+routing:
+  force_type: FEATURE
+
+pipeline:
+  checkpoints: []
+  collaboration_patterns: []
+  max_parallel_agents: 1
+
+aliases:
+  theme: business
+
+parallel_validators: true
+
+team:
+  size: 1
+  composition:
+    - po
+    - architect
+    - developer
+    - qa
+
+tech_stack:
+  paradigm: auto
+
+analytics:
+  enabled: false
+
+fitness_reviews:
+  enabled: false

@@ -2,26 +2,25 @@
 stage: 4
 stage_name: architect
 depth: light
-pipeline_id: run-2026-05-09-tk4
+pipeline_id: run-2026-05-13-tk5
 status: DONE
-dod_rounds: 2
-dod_validators: [developer, qa, architect]
+dod_rounds: 1
+dod_validators: [architect, qa]
 artifacts:
-  primary: .delivery/artifacts/04-architect/solution/architecture-tk4-wave-3.md
+  primary: delivery-team/architecture/smoke-test-architecture.md
   adrs:
-    - .delivery/artifacts/04-architect/adrs/ADR-tk4-001-tier-b-closure-approach.md
-    - .delivery/artifacts/04-architect/adrs/ADR-tk4-002-paradigm-sub-skill-pattern.md
-    - .delivery/artifacts/04-architect/adrs/ADR-tk4-003-governance-frontmatter-shape.md
+    - .delivery/artifacts/04-architect/adrs/ADR-tk5-001-smoke-test-runner-architecture.md
+  dod:
+    architect: .delivery/artifacts/04-architect/dod/architect-review.md
+    qa: .delivery/artifacts/04-architect/dod/qa-review.md
 notable:
-  - "QA caught godot Tier-C ceiling violation under mandatory-rollout (198+3=201) — caveman-lite tk3 lesson on mid-implementation budget compensation applied at Architect stage"
-  - "Round 2 fix: godot extraction deepened to 197 so frontmatter +3 holds Tier-C 200 exactly"
-  - "All 7 over-budget files now project COMPLIANT with frontmatter add (no partial-compliance ruling needed)"
-  - "Stop-Rule Tripwire Mechanics added to architecture summary (5 elements: source/calc/baseline/threshold/recovery)"
-  - "Cache-prefix re-freeze: ADR-tk4-003 documents +650B shift across 13 SKILL.md files (frontmatter sits at byte 0); Dev runs-the-command discipline binding from tk3 lesson honored"
+  - "Mermaid diagram validated by Architect reviewer; 6 lib/*.py modules mapped"
+  - "Local-only constraint cited verbatim (substring `feedback_claude_code_local_only`) in BOTH architecture doc + ADR — Stage 7 gate #6 pre-armed"
+  - "Plugin-loading: HOME-override + --plugin-dir primary; copy-into-fake-home fallback; capability-probe at startup"
+  - "ADR Alternatives Considered names CI workflow as REJECTED with memory-directive citation"
+  - "Producer-validator split locked: W6-7 meta-tests CANNOT share author with W6-2 metrics or W6-5 baseline"
 ---
 
-# Stage 4 Summary — Architect (light)
+# Stage 4 Summary — Architect (light) — run-2026-05-13-tk5
 
-3 ADRs (Accepted): tk4-001 Tier-B closure approach (7 files, all compliant), tk4-002 paradigm sub-skill pattern (3 axes), tk4-003 governance frontmatter shape with cache-prefix re-freeze.
-
-QA round-1 catch: godot 198+3=201 would breach Tier-C ceiling under W3-9 governance frontmatter rollout. Round-2 surgical fix: godot extraction deepened to 197 (236-38-1). All 7 files now project compliant post-rollout with check_skill_budgets.py exit-0.
+Celebrimbor forged architecture doc + single ADR-tk5-001 first-try. Architect DoD 9/9, QA DoD 7/7 PASS. Local-only constraint pre-armed for Stage 7 grep gate. No debates, no security review (light); not warranted for internal test runner.
