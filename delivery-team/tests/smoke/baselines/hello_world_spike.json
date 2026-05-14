@@ -1,24 +1,24 @@
 {
-  "_header_comment": "Stub baseline. Stage-7 UAT (run-2026-05-13-tk5) deferred live --init-baseline because the single $2-budget probe surfaced D-tk5-04: workspace.py overrides HOME, breaking Claude Code auth (cred lookup under ~/.claude/.credentials.json). Live subprocess exited within 0.57s with subprocess-exit-1 before emitting any stream events. Fix path: keep HOME unchanged + isolate via cwd + XDG_*, OR symlink ~/.claude/.credentials.json into tmpdir HOME at setup, OR pass ANTHROPIC_API_KEY if available. See .delivery/defects/sprint-tk5.md#D-tk5-04. After D-tk5-04 lands, run: python3 delivery-team/tests/smoke/run_smoke.py --init-baseline to populate the real 5-sample mean+stddev.",
+  "_header_comment": "Partial baseline (1 of 5 samples). Stage-7 UAT (run-2026-05-13-tk5) BACKLOG-107 iter2 closed D-tk5-05 (missing --verbose flag on stream-json invocation) on 2026-05-13 at git sha 91e1297. First successful live probe completed in 44.57s with outcome.success=true, dispatch_count=1, cost_usd=0.00 (no usage events emitted in stream — captured tokens via cache_creation/cache_read fields). stddev=0.0 per metric because n=1. Run python3 delivery-team/tests/smoke/run_smoke.py --init-baseline to collect the remaining 4 samples and populate real mean+stddev.",
   "schema_version": "1",
   "scenario": "hello_world_spike",
-  "sample_status": "deferred",
-  "n_samples": 0,
-  "last_captured_utc": null,
-  "last_captured_git_sha": null,
-  "last_captured_cli_version": null,
+  "sample_status": "partial-1-of-5",
+  "n_samples": 1,
+  "last_captured_utc": "2026-05-14T00:57:10Z",
+  "last_captured_git_sha": "91e1297",
+  "last_captured_cli_version": "2.1.139 (Claude Code)",
   "metrics": {
-    "wall_clock_seconds": {"mean": null, "stddev": null, "n": 0, "classification": "hard", "hard_max": 1800.0},
-    "cost_usd": {"mean": null, "stddev": null, "n": 0, "classification": "hard", "hard_max": 3.0},
-    "tokens.input": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
-    "tokens.output": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
-    "tokens.cache_creation": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
-    "tokens.cache_read": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
-    "pipeline.stages_completed": {"mean": null, "stddev": null, "n": 0, "classification": "hard"},
-    "pipeline.stories_completed": {"mean": null, "stddev": null, "n": 0, "classification": "hard"},
-    "pipeline.dispatch_count": {"mean": null, "stddev": null, "n": 0, "classification": "hard"},
-    "skill_loads.count": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"},
-    "skill_loads.unique_skills": {"mean": null, "stddev": null, "n": 0, "classification": "advisory"}
+    "wall_clock_seconds": {"mean": 44.565676964004524, "stddev": 0.0, "n": 1, "classification": "hard", "hard_max": 1800.0},
+    "cost_usd": {"mean": 0.0, "stddev": 0.0, "n": 1, "classification": "hard", "hard_max": 3.0},
+    "tokens.input": {"mean": 6.0, "stddev": 0.0, "n": 1, "classification": "advisory"},
+    "tokens.output": {"mean": 1092.0, "stddev": 0.0, "n": 1, "classification": "advisory"},
+    "tokens.cache_creation": {"mean": 47619.0, "stddev": 0.0, "n": 1, "classification": "advisory"},
+    "tokens.cache_read": {"mean": 46561.0, "stddev": 0.0, "n": 1, "classification": "advisory"},
+    "pipeline.stages_completed": {"mean": 0.0, "stddev": 0.0, "n": 1, "classification": "hard"},
+    "pipeline.stories_completed": {"mean": 0.0, "stddev": 0.0, "n": 1, "classification": "hard"},
+    "pipeline.dispatch_count": {"mean": 1.0, "stddev": 0.0, "n": 1, "classification": "hard"},
+    "skill_loads.count": {"mean": 0.0, "stddev": 0.0, "n": 1, "classification": "advisory"},
+    "skill_loads.unique_skills": {"mean": 0.0, "stddev": 0.0, "n": 1, "classification": "advisory"}
   },
-  "deferred_reason": "D-tk5-04 (HOME-isolation breaks Claude auth). One $2 live probe exited in 0.57s with subprocess-exit-1; no stream events emitted. Defer 5-sample init to follow-up after fix lands."
+  "deferred_reason": null
 }

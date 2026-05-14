@@ -16,6 +16,11 @@ eggs/
 .eggs/
 lib/
 lib64/
+# Exception: smoke-test runner's lib/ is real source, not a virtualenv lib dir
+!delivery-team/tests/smoke/lib/
+!delivery-team/tests/smoke/lib/*.py
+# (but keep __pycache__/*.pyc ignored even under the exception)
+delivery-team/tests/smoke/lib/__pycache__/
 parts/
 sdist/
 var/
