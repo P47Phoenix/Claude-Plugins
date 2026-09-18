@@ -110,3 +110,7 @@ Allowed operations are defined in `.claude/settings.local.json` (git-ignored):
 - WebSearch: enabled
 
 **Local pre-commit hook** (W3-16, opt-in): `git config core.hooksPath .githooks` — runs SKILL.md budget + KNOWN_DEBT lint on each commit. See `governance/git-hooks-install.md`.
+
+## Repository Memory
+
+This repository has a corresponding entity in the `mcp__memory` knowledge graph (entity name: `Claude-Plugins`, type `github_repo`, linked via an `owns` relation from `Michael Connelly`). Query it via `mcp__memory__search_nodes` or `mcp__memory__open_nodes` for cross-repo context, history, and notes captured outside this file.
