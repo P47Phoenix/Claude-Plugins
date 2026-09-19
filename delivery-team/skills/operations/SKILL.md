@@ -1,6 +1,6 @@
 ---
 name: operations
-description: Operations agent for DevOps, release management, and technical writing. Auto-detects the operations role (DevOps, Release Manager, Technical Writer) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "CI/CD", "deployment", "Kubernetes", "monitoring", "release plan", "rollback", "feature flag", "SemVer", "API docs", "runbook", "release notes", "Diataxis". Full per-role triggers in references/roles/.
+description: Operations agent for DevOps, release management, and technical writing. Auto-detects the operations role (DevOps, Release Manager, Technical Writer) and reads only the relevant reference file(s) for that role into the current context. Triggers on phrases like "CI/CD", "deployment", "Kubernetes", "monitoring", "release plan", "rollback", "feature flag", "SemVer", "API docs", "runbook", "release notes", "Diataxis". Full per-role triggers in references/roles/.
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
@@ -17,9 +17,9 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Role Context Isolation
 
-This skill keeps operations-specific knowledge **out of the main context window**. When an operations task is requested, the relevant role is detected, only the corresponding reference file(s) are loaded, and a sub-agent is spawned with that isolated context. The main context receives only the finished operations artifact.
+This skill keeps operations-specific knowledge **scoped to the single relevant task**. When an operations task is requested, the relevant role is detected and only the corresponding reference file(s) are read into the current context.
 
-Unlike simple single-reference skills, operations tasks frequently span concerns -- a release may need Release Manager planning and Technical Writer release notes simultaneously. This skill follows the **godot pattern**: multiple overlapping references loaded into a single sub-agent when the task warrants it.
+Unlike simple single-reference skills, operations tasks frequently span concerns -- a release may need Release Manager planning and Technical Writer release notes simultaneously. This skill follows the **godot pattern**: multiple overlapping references read together when the task warrants it.
 
 ---
 
@@ -52,42 +52,16 @@ For cross-role tasks, see `references/contracts/cross-role-tasks.md`.
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every operations task, follow these steps exactly -- do not skip:**
 
 1. Detect the role(s) and task type (Phase 1)
 2. Read **only** the relevant reference file(s) from the role manifest -- do NOT read all reference files
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Perform the task directly in the current context, applying the principles and patterns from the file(s) you just read
+4. Return the finished output directly to the user
 
-**Do not inline operations knowledge into the main context.** The sub-agent is the execution boundary for all operations-specific reasoning.
-
-### Sub-Agent Prompt Template
-
-```
-You are an expert [ROLE]. Apply these operations principles and patterns to everything you produce:
-
----
-[PASTE FULL CONTENTS OF EACH RELEVANT REFERENCE FILE -- separated by --- if multiple]
----
-
-## Task
-
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Context
-
-[Include any of the following that are relevant:]
-- Existing system or infrastructure description
-- Constraints (budget, team size, compliance, SLAs)
-- Technology stack (cloud provider, CI tool, container orchestrator)
-- Current pain points or incidents
-- Release schedule and stakeholder requirements
-- Target audience for documentation
-- Related architecture decisions or PRD output
-
-## Output Requirements
+**Do not reason from general operations knowledge instead of the file(s) you read.** The reference read is the execution boundary for all operations-specific reasoning — you are acting as an expert in the detected role, applying the principles and patterns from the reference(s) you read to everything you produce, considering: existing system or infrastructure description, constraints (budget, team size, compliance, SLAs), technology stack (cloud provider, CI tool, container orchestrator), current pain points or incidents, release schedule and stakeholder requirements, target audience for documentation, related architecture decisions or PRD output.
 
 Produce:
 1. Artifacts appropriate to the task type (see output contract below)
@@ -97,7 +71,6 @@ Produce:
 5. Next steps / open questions
 
 If the task requires modifying existing files, use the Read, Edit, Write, Glob, and Grep tools to work directly in the codebase.
-```
 
 ---
 
@@ -113,7 +86,7 @@ Each role uses a distinct contract; load only the matched role's contract.
 
 ---
 
-## Sub-Agent Interface (Agentic Flow Integration)
+## Interface (Agentic Flow Integration)
 
 For orchestration with other delivery-team skills, the operations skill accepts and produces structured contracts.
 

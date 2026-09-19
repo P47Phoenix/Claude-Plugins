@@ -1,6 +1,6 @@
 ---
 name: product-delivery
-description: Product delivery agent with three specialized roles -- Product Owner, Scrum Bag, and Data Analyst. Auto-detects the relevant role and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "write user stories", "prioritize backlog", "acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "product owner", "retrospective", "retro", "process improvement", "velocity", "burndown", "ceremony", "standup", "sprint review", "impediment", "team health", "agile maturity", "scrum master", "agile coach", "kanban", "WIP limit", "cycle time", "analytics", "metrics", "KPI", "dashboard", "A/B test", "experiment", "data quality", "reporting", "funnel", "cohort", "retention", "HEART framework", "AARRR", "OKR metrics".
+description: Product delivery agent with three specialized roles -- Product Owner, Scrum Bag, and Data Analyst. Auto-detects the relevant role and reads only the relevant reference file(s) for that role into the current context. Triggers on phrases like "write user stories", "prioritize backlog", "acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "product owner", "retrospective", "retro", "process improvement", "velocity", "burndown", "ceremony", "standup", "sprint review", "impediment", "team health", "agile maturity", "scrum master", "agile coach", "kanban", "WIP limit", "cycle time", "analytics", "metrics", "KPI", "dashboard", "A/B test", "experiment", "data quality", "reporting", "funnel", "cohort", "retention", "HEART framework", "AARRR", "OKR metrics".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-04-22
@@ -17,9 +17,9 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Role Context Isolation
 
-This skill keeps role-specific knowledge **out of the main context window**. When a product delivery task is requested, the relevant role is detected, only the corresponding reference file(s) are loaded, and a sub-agent is spawned with that isolated context. The main context receives only the finished artifact.
+This skill keeps role-specific knowledge **scoped to the single relevant task**. When a product delivery task is requested, the relevant role is detected and only the corresponding reference file(s) are read into the current context.
 
-Product delivery tasks can span roles -- sprint planning involves both Product Owner and Scrum Bag concerns, and metrics definition may involve both Data Analyst and Product Owner. When a task spans roles, multiple overlapping references are loaded into a single sub-agent.
+Product delivery tasks can span roles -- sprint planning involves both Product Owner and Scrum Bag concerns, and metrics definition may involve both Data Analyst and Product Owner. When a task spans roles, multiple overlapping references are read together.
 
 ---
 
@@ -39,36 +39,19 @@ Detect the relevant role from (in priority order):
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every product delivery task, follow these steps exactly -- do not skip:**
 
 1. Detect the role and task type (Phase 1)
 2. Read **only** the relevant reference file(s) from the routing table -- do NOT read all reference files
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Perform the task directly in the current context, applying the principles and patterns from the file(s) you just read
+4. Return the finished output directly to the user
 
-**Do not inline role-specific knowledge into the main context.** The sub-agent is the execution boundary for all role-specific reasoning.
+**Do not reason from general product-delivery knowledge instead of the file(s) you read.** The reference read is the execution boundary for all role-specific reasoning — you are acting as an expert in the detected role, applying the principles and patterns from the reference(s) you read to everything you produce, considering: product/team, constraints, existing artifacts, sprint context, business drivers, related artifacts.
 
-### Sub-Agent Prompt Template
-
-```
-You are an expert [ROLE]. Apply these principles and patterns to everything you produce:
-
----
-[PASTE FULL CONTENTS OF EACH RELEVANT REFERENCE FILE -- separated by --- if multiple]
----
-
-## Task
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Context
-[Product/team, constraints, existing artifacts, sprint context, business drivers, related artifacts]
-
-## Output Requirements
 Produce the pattern artifact, explicit rationale, stated assumptions, open questions needing human decision, and next steps.
 If modifying existing files, use Read, Edit, Write, Glob, and Grep tools directly.
-```
 
 ---
 
@@ -216,7 +199,7 @@ Apply these checks to every artifact before output:
 
 ---
 
-## Sub-Agent Interface (Agentic Flow Integration)
+## Interface (Agentic Flow Integration)
 
 **Input contract:**
 ```json

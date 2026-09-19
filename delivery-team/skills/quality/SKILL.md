@@ -1,6 +1,6 @@
 ---
 name: quality
-description: QA Engineer agent for test planning, test case design, automation strategy, and quality metrics. Auto-detects the testing task type and spawns a scoped sub-agent so only the relevant reference loads. Triggers on phrases like "test strategy", "test cases", "test plan", "regression", "test data", "exploratory testing", "quality metrics", "automation strategy", "QA", "test coverage", "smoke test", "boundary testing", "edge cases". Output contracts in references/contracts/.
+description: QA Engineer agent for test planning, test case design, automation strategy, and quality metrics. Auto-detects the testing task type and reads only the relevant reference into the current context. Triggers on phrases like "test strategy", "test cases", "test plan", "regression", "test data", "exploratory testing", "quality metrics", "automation strategy", "QA", "test coverage", "smoke test", "boundary testing", "edge cases". Output contracts in references/contracts/.
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
@@ -17,7 +17,7 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Test Strategy Isolation
 
-This skill intentionally keeps task-specific testing knowledge **out of the main context window**. When a QA task is requested, a sub-agent is spawned carrying only the relevant test reference files. This means:
+This skill intentionally keeps task-specific testing knowledge **scoped to the single relevant task**. When a QA task is requested, only the relevant test reference file(s) are read. This means:
 
 - A test strategy task loads only `references/test-strategy.md`
 - A test case design task loads only `references/test-case-patterns.md`
@@ -25,7 +25,7 @@ This skill intentionally keeps task-specific testing knowledge **out of the main
 - A quality metrics task loads only `references/quality-metrics.md`
 - No unrelated reference files are loaded -- ever
 
-The main context receives only the finished QA artifact. All testing-specific reasoning happens inside the sub-agent's isolated context.
+All testing-specific reasoning happens directly in the current task's scoped context, using only the reference(s) that were read.
 
 ---
 
@@ -46,42 +46,16 @@ Detect the task type from the user's request using these signal patterns (in pri
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every QA task, follow these steps exactly -- do not skip:**
 
 1. Classify the task (Phase 1)
 2. Read **only** the reference file(s) listed in the routing table for that task type -- do NOT read unrelated reference files
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Perform the task directly in the current context, applying the standards from the file(s) you just read
+4. Return the finished output directly to the user
 
-**Do not inline testing best-practices into the main context.** The sub-agent is the execution boundary for all QA-specific knowledge. This is the entire point of the architecture.
-
-### Sub-Agent Prompt Template
-
-```
-You are an expert QA Engineer with deep experience in test strategy, test design, automation, and quality assurance processes. Apply these testing standards and best practices to everything you produce:
-
----
-[PASTE FULL CONTENTS OF THE RELEVANT references/*.md FILE(S) HERE]
----
-
-## Task
-
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Context
-
-[Include any of the following that are relevant:]
-- Feature or system under test
-- User stories or acceptance criteria (from Product-Owner output if available)
-- Existing test coverage or known gaps
-- Technology stack and frameworks
-- Risk areas or known defects
-- Environment constraints
-- Timeline or release context
-
-## Output Requirements
+**Do not reason from general testing knowledge instead of the file(s) you read.** The reference read is the execution boundary for all QA-specific knowledge — apply the standards and best practices from what you read to everything you produce, as an expert QA Engineer with deep experience in test strategy, test design, automation, and quality assurance processes, considering: feature or system under test, user stories or acceptance criteria (from Product-Owner output if available), existing test coverage or known gaps, technology stack and frameworks, risk areas or known defects, environment constraints, timeline or release context.
 
 Produce:
 1. Complete, structured output matching the Output Contract for this task type
@@ -90,7 +64,6 @@ Produce:
 4. Risks or gaps identified during analysis
 
 If the task requires working with existing test files, use the Read, Edit, Write, Glob, and Grep tools to work directly in the codebase.
-```
 
 ---
 
@@ -111,7 +84,7 @@ If the task requires working with existing test files, use the Read, Edit, Write
 
 ## Output Contracts
 
-Each task type emits a structured markdown contract. Load the contract file from `references/contracts/` matching the routed task type and embed the template literally in the sub-agent prompt; sub-agent fills in `[BRACKETED]` placeholders.
+Each task type emits a structured markdown contract. Load the contract file from `references/contracts/` matching the routed task type and use the template directly, filling in `[BRACKETED]` placeholders.
 
 | Task Type | Contract File |
 |---|---|
@@ -128,7 +101,7 @@ For `regression-plan` and `exploratory-testing`, combine `test-strategy.md` + `t
 
 ## Guardrails
 
-These rules apply to all sub-agent output. Violations must be corrected before returning results to the user.
+These rules apply to all output. Violations must be corrected before returning results to the user.
 
 1. **Every test case must have an expected result.** A test case without an expected result is not a test case.
 2. **Every test strategy must define entry and exit criteria.** Without exit criteria, testing never ends.
@@ -232,11 +205,11 @@ If no shared modules were modified during Development, document: "No shared modu
 
 ---
 
-## Sub-Agent Interface
+## Interface
 
 ### Input (from Product-Owner or user)
 
-The sub-agent accepts context in this JSON-compatible structure when receiving output from the Product-Owner skill:
+Accept context in this JSON-compatible structure when receiving output from the Product-Owner skill:
 
 ```json
 {
@@ -254,11 +227,11 @@ The sub-agent accepts context in this JSON-compatible structure when receiving o
 }
 ```
 
-When this structured input is available, the sub-agent should derive test cases from acceptance criteria and align test strategy with the stated risk areas.
+When this structured input is available, derive test cases from acceptance criteria and align test strategy with the stated risk areas.
 
 ### Output
 
-The sub-agent returns structured markdown matching the Output Contract for the task type (see above). The main agent passes this through to the user without modification.
+Return structured markdown matching the Output Contract for the task type (see above).
 
 ---
 

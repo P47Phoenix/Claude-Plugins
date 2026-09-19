@@ -14,9 +14,9 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 # Godot 4.x Development Agent
 
-## Design Principle: Reference-Scoped Sub-Agents
+## Design Principle: Reference-Scoped Execution
 
-Godot development spans multiple overlapping concerns (scripting, scene architecture, signals, C# interop). This skill loads only the reference file(s) relevant to the task and spawns a sub-agent with that context — keeping unrelated reference content out of the main context window.
+Godot development spans multiple overlapping concerns (scripting, scene architecture, signals, C# interop). This skill reads only the reference file(s) relevant to the task into the current context — keeping unrelated reference content out entirely.
 
 ---
 
@@ -47,7 +47,7 @@ Classify the request into one or more categories before proceeding:
 | **Validation** | verify, validate, check, test, headless, errors | `references/validation.md` |
 | **Quality Gate** | done, complete, finish, checklist, pre-commit | `references/defect-prevention.md` + `references/validation.md` |
 
-**Multiple categories are common** — a task about a player character likely touches GDScript + scene design + signals. Include all relevant reference files in the sub-agent prompt.
+**Multiple categories are common** — a task about a player character likely touches GDScript + scene design + signals. Read all relevant reference files before starting the task.
 
 **Declare before every task:**
 
@@ -55,7 +55,7 @@ Classify the request into one or more categories before proceeding:
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every implementation task, follow these steps exactly:**
 
@@ -64,44 +64,12 @@ Classify the request into one or more categories before proceeding:
 3. Read the clean code guide:
    - If `.delivery/config.yml` exists and `tech_stack.clean_code_guide` is set to a non-empty value, read that file instead of the default
    - Otherwise, read `delivery-team/skills/developer/references/clean-code.md` (shared with the developer skill — do NOT copy this file into the Godot skill directory)
-4. Spawn a sub-agent using the `Agent` tool with the prompt template below
-5. Return the sub-agent's output directly to the user
+4. Perform the task directly in the current context, applying the standards from the file(s) you just read
+5. Return the finished output directly to the user
 
-The sub-agent has access to: `Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep` — it can work directly in the Godot project files.
+Work directly in the Godot project files using `Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep`.
 
-### Sub-Agent Prompt Template
-
-```
-You are an expert Godot 4.x game developer. Apply these best practices to everything you produce:
-
----
-[PASTE FULL CONTENTS OF EACH RELEVANT REFERENCE FILE — separated by --- if multiple]
----
-
-## Clean Code Standards
-
-[PASTE FULL CONTENTS OF clean code guide HERE — either delivery-team/skills/developer/references/clean-code.md (default) or custom guide from tech_stack.clean_code_guide config]
-
----
-
-## Task
-
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Language
-
-[GDScript | C#]
-
-## Context
-
-[Include any of the following that are relevant:]
-- Existing .gd or .cs scripts to modify
-- Scene file paths (.tscn)
-- Project structure or autoload configuration
-- Godot engine version (4.x, specify if known)
-- Constraints (performance targets, existing API, multiplayer requirements)
-
-## Output Requirements
+Apply these standards to everything you produce, as an expert Godot 4.x game developer, following the official GDScript style guide and all conventions in the reference material you read (plus the clean code standards you read):
 
 Produce:
 1. Complete, working GDScript or C# code — no placeholder stubs unless requested
@@ -120,12 +88,9 @@ Produce:
 
 Scene rendering, input handling, TileMap display, physics interactions, animation playback, camera behavior, and audio playback ALWAYS require runtime validation. Never mark these as verified by inspection.
 
-Follow the official GDScript style guide and all conventions in the reference material.
-```
+### Task Type Instructions
 
-### Task Type Instructions for Sub-Agent
-
-| Task Type | What the sub-agent does |
+| Task Type | What to do |
 |---|---|
 | **write** | Implement from scratch following all conventions in the references |
 | **fix** | Identify root cause, patch it, explain what was wrong |
@@ -159,7 +124,7 @@ See `references/task-patterns.md` for 5 patterns: New Game Entity, Player Contro
 
 ## Architecture Guardrails
 
-The sub-agent must enforce these in every output:
+You must enforce these in every output:
 
 - **No hardcoded absolute paths** — use `@export` node references or `@onready`
 - **No `get_parent()` for data** — use signals or exported references
