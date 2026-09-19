@@ -1,19 +1,4 @@
----
-stage: 1
-stage_name: idea
-depth: light
-pipeline_id: run-2026-05-13-tk5
-status: DONE
-dod_rounds: 1
-dod_validators: [po, architect]
-artifacts:
-  primary: .delivery/artifacts/01-idea/po/idea-brief.md
-  input_seed: .delivery/artifacts/01-idea/_input/user-seed.md
-  dod:
-    po: .delivery/artifacts/01-idea/dod/po-review.md
-    architect: .delivery/artifacts/01-idea/dod/architect-review.md
----
-
-# Stage 1 Summary — Idea (light) — run-2026-05-13-tk5
-
-Gandalf compressed BACKLOG-106 seed into 60-line idea-brief. PO 7/7 + Architect 5/5 first-try; no self-correction. Local-only binding (memory file cite) verified line-by-line by PO; telemetry-reuse boundary verified on disk by Architect via Glob. Scope: 8 WIs / 6.5 dev-day / FEATURE band; smoke-test runner + metrics + baseline + meta-tests + README/Makefile.
+# Stage 1 Idea — Summary (run-2026-09-19-models)
+- Depth: light. Primary: po -> DONE `po/idea-brief.md` (Fable 5.1 added mid-run per user)
+- DoD (2/2 parallel): po DONE (note: "22 hits/6 files" includes the guard: 14 hits/5 source files + 8 in guard), architect DONE (feasible; smoke tests 3 pass; fixtures safe; static-grep allowlist works with token boundaries)
+- Carry to Refine: 9 open questions, fix hit-count wording, BACKLOG-108 retarget/split

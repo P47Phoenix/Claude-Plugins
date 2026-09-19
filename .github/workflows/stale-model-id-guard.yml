@@ -5,6 +5,11 @@ on:
     paths:
       - '**/*.py'
       - '**/*.md'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.json'
+      - '**/*.txt'
+      - '**/*.sh'
       - '!.delivery/**'
 
 permissions:
@@ -15,29 +20,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Scan for stale 4.x model IDs
+      - name: Scan for non-allowlisted model IDs
         run: |
           set -uo pipefail
-          # Detect stale dated 4.x model IDs (opus 4.5/4.6, sonnet 4.5-dated, haiku 4-dated, opus-4-<date>)
-          # while allowlisting current canonical IDs:
-          #   - claude-opus-4-7 (current)
-          #   - claude-sonnet-4-6 (current)
-          #   - claude-haiku-4-5-20251001 (current)
-          # and skipping provenance comments (lines starting with # after the file:lineno: prefix)
-          # and markdown blockquotes (lines starting with >).
-          HITS=$(git ls-files '*.py' '*.md' ':!:.delivery/*' ':!:prd-quality-gate-flow/prd_flows.db' \
-            | xargs grep -En 'claude-(opus|sonnet|haiku)-4[-.][^7][^[:space:]"'"'"'#]*' 2>/dev/null \
-            | grep -vE 'claude-sonnet-4-6(\b|[^0-9-])' \
-            | grep -vE 'claude-haiku-4-5-20251001' \
-            | grep -vE '^[^:]+:[^:]+:[[:space:]]*#' \
-            | grep -vE '^[^:]+:[^:]+:[[:space:]]*>' \
+          # Positive allowlist (ADR-models-001). Rollover = edit ALLOW only.
+          # Tails are prefix-less; the sed below supplies the claude- prefix.
+          ALLOW='fable-5-1|opus-5|sonnet-5|haiku-4-5-20251001'
+          # Any versioned model-ID token (family + digit), incl. dotted/suffixed.
+          TOK='claude-(opus|sonnet|haiku|fable|mythos)-[0-9][-A-Za-z0-9.]*[-A-Za-z0-9]|claude-(opus|sonnet|haiku|fable|mythos)-[0-9]'
+          # Valid delimiter after an allowed ID: EOL, non-token char, or "." then non-alnum.
+          D='$|[^-A-Za-z0-9.]|\.($|[^-A-Za-z0-9])'
+          # Provenance: lines starting with # or > (after file:line:) are exempt.
+          HITS=$(git ls-files '*.py' '*.md' '*.yml' '*.yaml' '*.json' '*.txt' '*.sh' \
+              ':!:.delivery/*' ':!:prd-quality-gate-flow/prd_flows.db' ':!:.github/workflows/stale-model-id-guard.yml' \
+            | xargs grep -EnH "$TOK" 2>/dev/null \
+            | grep -vE '^[^:]+:[0-9]+:[[:space:]]*[#>]' \
+            | sed -E "s/claude-($ALLOW)($D)/<OK>\2/g" \
+            | grep -E 'claude-(opus|sonnet|haiku|fable|mythos)-[0-9]' \
             || true)
           if [ -n "$HITS" ]; then
-            echo "::error::Stale 4.x model IDs detected (Opus 4.5/4.6, Sonnet 4.5-dated, Haiku 4-dated, or retired dated Opus 4)."
+            echo "::error::Non-allowlisted model IDs detected."
             echo "$HITS"
             echo ""
-            echo "Fix: replace with canonical family IDs (claude-opus-4-7, claude-sonnet-4-6, claude-haiku-4-5-20251001)."
-            echo "If the reference is historical provenance, put it in a '#' comment or '>' blockquote."
+            echo "Fix: use an allowlisted ID (see ALLOW in this workflow)."
+            echo "Historical provenance must sit on its own '#' comment or '>' blockquote line."
             exit 1
           fi
-          echo "No stale 4.x model IDs found."
+          echo "No non-allowlisted model IDs found."

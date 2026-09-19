@@ -332,11 +332,8 @@ specific agents to invoke, their task types, and the sub-flow sequence.
 
 ### Step 4: Invoke Primary Agent
 
-Construct the prompt using the Agent Invocation Template (see
-`references/pipeline-stages.md` for the exact fields per stage). Required fields:
-**SKILL**, **TASK_TYPE**, **ROLE**, **INPUT ARTIFACTS** (file paths only — not content),
-**MEMORY LESSONS**, **ALIAS** (personality block if non-business theme; see
-`references/pipeline-stages.md` for injection format), **OUTPUT** (namespaced path).
+Dispatch: prefer the matching `delivery-<role>` agent via `Agent` tool, else fall back to the inline
+Agent Invocation Template. Roles, fields, `delivery-orchestrator` hand-off: `references/role-agent-dispatch.md`.
 
 **PROSE STYLE block injection** (post-ALIAS, pre-OUTPUT): if `config.prose_style == caveman-lite` (default), inject the verbatim PROSE STYLE block from `references/prose-style.md` into the dispatch prompt; if `standard`, omit the block entirely (no placeholder line). Same rule applies uniformly to Primary (this Step 4), Supporting (Step 5), and DoD Validator (Step 7) dispatches. See ADR-tk3-001 Element 2.
 
@@ -368,7 +365,8 @@ The orchestrator MAY use mkdir. It MUST NOT write content into artifact files.
 ### Step 5: Invoke Supporting Agents
 
 At full depth, invoke supplementary worker sub-agents (metrics, security, test strategy,
-etc.) using file paths as inputs. Dispatch independent agents in PARALLEL. Required
+etc.) using file paths as inputs. Dispatch independent agents in PARALLEL. Role-agent-first rule as Step 4: prefer `delivery-<role>` agents
+(`references/role-agent-dispatch.md`). Required
 agent failure: retry ×2. Optional agent failure: log gap, proceed, notify downstream.
 See `references/pipeline-stages.md` for parallel/sequential annotations per stage.
 
@@ -458,7 +456,7 @@ Then IMMEDIATELY execute Step 1 of the next stage. Do not stop between stages.
 > `references/pipeline-stages.md` — always load the full definition when executing a stage.
 
 > **Anti-Patterns catalogue** (8 patterns): `delivery-team/references/shared/orchestrator-doctrine.md` § Common Orchestrator Anti-Patterns.
-> **User Commands** (18): `references/commands.md`. **References manifest** (22 files): `references/manifest.yml`.
+> **User Commands** (18): `references/commands.md`. **References manifest** (24 files): `references/manifest.yml`.
 
 ## Cross-Stage Artifact Flow
 

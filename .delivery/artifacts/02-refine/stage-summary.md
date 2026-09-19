@@ -1,28 +1,8 @@
----
-stage: 2
-stage_name: refine
-depth: light
-pipeline_id: run-2026-05-13-tk5
-status: DONE
-dod_rounds: 1
-dod_validators: [po, architect, qa]
-artifacts:
-  primary: .delivery/artifacts/02-refine/po/prd.md
-  backlog: .delivery/backlog/BACKLOG-106-delivery-team-smoke-test.md
-  constraints: .delivery/artifacts/02-refine/po/constraints.yml
-  dod:
-    po: .delivery/artifacts/02-refine/dod/po-review.md
-    architect: .delivery/artifacts/02-refine/dod/architect-review.md
-    qa: .delivery/artifacts/02-refine/dod/qa-review.md
-notable:
-  - "BACKLOG-106 lands 202 lines (within 200-300 budget)"
-  - "All 8 user-seed ACs preserved verbatim with AC-NN IDs; QA confirmed 8==8"
-  - "constraints.yml BC-01 cites memory file feedback_claude_code_local_only.md verbatim"
-  - "Producer-validator separation rule explicitly stated in PRD + BACKLOG (5 enforcement points)"
-  - "Stage 5 story-decomposition target encoded: 8 WIs → 3 stories (L+M+M)"
-  - "Stale tk4 PRD at 02-refine/po/prd.md overwritten cleanly (live W3-17 dogfood evidence)"
----
-
-# Stage 2 Summary — Refine (light) — run-2026-05-13-tk5
-
-Gandalf produced PRD + BACKLOG-106 (202 lines) + constraints.yml first-try. PO 8/8, Architect 7/7, QA 7/7 PASS (1 soft warning on Gate 5 line count — non-blocking). Producer-validator separation locked for Stage 6 dispatch planning.
+# Stage 2 Refine — Summary (run-2026-09-19-models)
+- Depth: light. Primary: po -> DONE `po/prd.md` + `po/constraints.yml` (11 FRs, 28 ACs, 16-site map; Fable allowlisted, not adopted; stamps out of scope; BACKLOG-108 superseded)
+- DoD (light: primary + 1 reviewer = qa), 3 rounds:
+  - R1 NOT_DONE (constraints.yml invalid YAML; guard token regex; FR-6/7/8/11 ACs not runnable)
+  - R2 NOT_DONE (FR-3 fable grep, FR-10 skill-load AC, FR-11 CHANGELOG AC, count mismatch)
+  - R3 (fresh dispatch) DONE: all 28 ACs runnable, pre-edit fail / post-edit pass confirmed
+- Gaps: PO revision-2 dispatch reported SKILL_LOADED failure (rate limit); artifact validated on merit by QA R3. Minor carry-over: "34 SKILL.md" stamp count should read 25.
+- Live verification: all 4 model IDs confirmed against platform.claude.com model overview on 2026-09-19 (Haiku 4.5 retires no sooner than 2026-10-15).

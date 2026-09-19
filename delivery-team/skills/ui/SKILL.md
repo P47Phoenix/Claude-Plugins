@@ -1,6 +1,6 @@
 ---
 name: ui
-description: UI/UX design agent for crafting user experiences, visual designs, and game interfaces. Auto-detects the designer role (UX Designer, UI Designer, Game UI Designer) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "user flow", "wireframe", "design system", "design tokens", "accessibility", "WCAG", "UI pattern", "HUD", "game menu", "inventory UI", "minimap". Full per-role triggers in references/roles/.
+description: UI/UX design agent for crafting user experiences, visual designs, and game interfaces. Auto-detects the designer role (UX Designer, UI Designer, Game UI Designer) and reads only the relevant reference file(s) for that role into the current context. Triggers on phrases like "user flow", "wireframe", "design system", "design tokens", "accessibility", "WCAG", "UI pattern", "HUD", "game menu", "inventory UI", "minimap". Full per-role triggers in references/roles/.
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
@@ -17,9 +17,9 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Role Context Isolation
 
-This skill keeps design-specific knowledge **out of the main context window**. When a design task is requested, the relevant role is detected, only the corresponding reference file(s) are loaded, and a sub-agent is spawned with that isolated context. The main context receives only the finished design artifact.
+This skill keeps design-specific knowledge **scoped to the single relevant task**. When a design task is requested, the relevant role is detected and only the corresponding reference file(s) are read into the current context.
 
-Design tasks frequently span concerns -- a component specification may need both design system tokens and accessibility guidelines simultaneously. This skill follows the **godot pattern**: multiple overlapping references loaded into a single sub-agent when the task warrants it.
+Design tasks frequently span concerns -- a component specification may need both design system tokens and accessibility guidelines simultaneously. This skill follows the **godot pattern**: multiple overlapping references read together when the task warrants it.
 
 ---
 
@@ -52,44 +52,16 @@ For cross-role tasks, see `references/contracts/cross-role-tasks.md`.
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every design task, follow these steps exactly -- do not skip:**
 
 1. Detect the role and task type (Phase 1)
 2. Read **only** the relevant reference file(s) from the role manifest -- do NOT read all reference files
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Perform the task directly in the current context, applying the principles and patterns from the file(s) you just read
+4. Return the finished output directly to the user
 
-**Do not inline design knowledge into the main context.** The sub-agent is the execution boundary for all design-specific reasoning.
-
-### Sub-Agent Prompt Template
-
-```
-You are an expert [ROLE]. Apply these design principles and patterns to everything you produce:
-
----
-[PASTE FULL CONTENTS OF EACH RELEVANT REFERENCE FILE -- separated by --- if multiple]
----
-
-## Task
-
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Context
-
-[Include any of the following that are relevant:]
-- Product or application description
-- Target users and their goals
-- Platform constraints (web, mobile, desktop, console, VR)
-- Brand guidelines or existing design system
-- Accessibility requirements
-- Performance or technical constraints
-- Game genre and engine (for game UI tasks)
-- Related design artifacts or prior decisions
-- PRD or user stories (from Product-Owner skill output)
-
-## Output Requirements
+**Do not reason from general design knowledge instead of the file(s) you read.** The reference read is the execution boundary for all design-specific reasoning — you are acting as an expert in the detected role, applying the principles and patterns from the reference(s) you read to everything you produce, considering: product or application description, target users and their goals, platform constraints (web, mobile, desktop, console, VR), brand guidelines or existing design system, accessibility requirements, performance or technical constraints, game genre and engine (for game UI tasks), related design artifacts or prior decisions, PRD or user stories (from Product-Owner skill output).
 
 Produce:
 1. Design artifacts appropriate to the task type (see output contract below)
@@ -99,7 +71,6 @@ Produce:
 5. Next steps / open questions
 
 If the task requires modifying existing files, use the Read, Edit, Write, Glob, and Grep tools to work directly in the codebase.
-```
 
 ---
 
@@ -116,7 +87,7 @@ Each role uses a distinct contract; load only the matched role's contract.
 
 ---
 
-## Sub-Agent Interface (Agentic Flow Integration)
+## Interface (Agentic Flow Integration)
 
 For orchestration with other delivery-team skills, the UI skill accepts and produces structured contracts.
 

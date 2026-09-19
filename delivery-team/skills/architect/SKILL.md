@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Architecture agent for technical design, ADRs, and technology governance across software and game development. Auto-detects 11 roles (Solution, Enterprise, Data, Security, Compliance, Privacy, Incident Response, Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering) and spawns a role-scoped sub-agent. Triggers on phrases like "design architecture", "ADR", "threat model", "GDPR", "SOC 2", "DDD", "ECS", "netcode", "render pipeline". Full trigger list per role in references/roles/.
+description: Architecture agent for technical design, ADRs, and technology governance across software and game development. Auto-detects 11 roles (Solution, Enterprise, Data, Security, Compliance, Privacy, Incident Response, Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering) and reads only the role-scoped reference file(s) into the current context. Triggers on phrases like "design architecture", "ADR", "threat model", "GDPR", "SOC 2", "DDD", "ECS", "netcode", "render pipeline". Full trigger list per role in references/roles/.
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-04-22
@@ -17,7 +17,7 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Role Context Isolation
 
-Architecture-specific knowledge stays **out of the main context window**. Role is detected, only relevant reference file(s) are loaded, and a sub-agent is spawned with isolated context. Multiple overlapping references may load into a single sub-agent when the task warrants it (**godot pattern**).
+Architecture-specific knowledge stays **scoped to the single relevant task**. Role is detected, and only the relevant reference file(s) are read into the current context — nothing more. Multiple overlapping references may be read together when the task warrants it (**godot pattern**).
 
 ---
 
@@ -91,35 +91,16 @@ Proposing alternatives to "Decision Already Made" elements is ONLY permitted whe
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every architecture task, follow these steps exactly — do not skip:**
 
 1. Detect the role(s) and task type (Phase 1)
 2. Read **only** the relevant reference file(s) from the routing table — do NOT read all reference files
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Perform the task directly in the current context, applying the principles and patterns from the file(s) you just read
+4. Return the finished output directly to the user
 
-**Do not inline architecture knowledge into the main context.** The sub-agent is the execution boundary for all architecture-specific reasoning.
-
-### Sub-Agent Prompt Template
-
-```
-You are an expert [ROLE] architect. Apply these architecture principles and patterns to everything you produce:
-
----
-[PASTE FULL CONTENTS OF EACH RELEVANT REFERENCE FILE — separated by --- if multiple]
----
-
-## Task
-
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Context
-
-[Include relevant: existing system, constraints, NFRs, tech stack, business drivers, related ADRs, PRD reference, Prior Art Analysis results (decisions-already-made, open questions)]
-
-## Output Requirements
+**Do not reason from general architecture knowledge instead of the file(s) you read.** The reference read is the execution boundary for all architecture-specific reasoning — you are acting as an expert in the detected role, applying the principles and patterns from the reference(s) you read to everything you produce, considering: existing system, constraints, NFRs, tech stack, business drivers, related ADRs, PRD reference, Prior Art Analysis results (decisions-already-made, open questions).
 
 Produce:
 1. Architecture artifacts appropriate to the task type (see output contract below)
@@ -185,7 +166,7 @@ Per-role manifests live in `references/roles/<role>.md`. The `game-review` and `
 
 ## Cross-Role Tasks
 
-When a task spans multiple roles (e.g., "design a multiplayer game with anti-cheat" or "design a data pipeline with security requirements"), follow the godot pattern: load all relevant reference files into a single sub-agent. See `references/contracts/cross-role-tasks.md` for the procedure, the common cross-role combination table, and the multi-reference sub-agent prompt convention.
+When a task spans multiple roles (e.g., "design a multiplayer game with anti-cheat" or "design a data pipeline with security requirements"), follow the godot pattern: read all relevant reference files into the current context. See `references/contracts/cross-role-tasks.md` for the procedure, the common cross-role combination table, and the multi-reference convention.
 
 ---
 
@@ -201,17 +182,17 @@ Phase 1 detects `task_type`; Phase 2 loads ONLY the matched contract file. Do no
 | `review`, `game-review` | `references/output-contracts/review.md` |
 | `evaluate` | `references/output-contracts/evaluation.md` |
 
-Load the matched contract file and include it verbatim in the sub-agent prompt under `## Output Requirements`.
+Load the matched contract file and apply it directly as the `## Output Requirements` for the artifact you produce.
 
 ---
 
 ## Architecture Guardrails
 
-The sub-agent MUST enforce the software and game guardrail sets defined in `references/guardrails.md`. Every guardrail violation in an artifact MUST be flagged in the review pass before the artifact returns to the orchestrator.
+You MUST enforce the software and game guardrail sets defined in `references/guardrails.md`. Every guardrail violation in an artifact MUST be flagged in the review pass before the artifact returns to the orchestrator.
 
 ---
 
-## Sub-Agent Interface (Agentic Flow Integration)
+## Interface (Agentic Flow Integration)
 
 For orchestration with other delivery-team skills, the architect skill accepts and produces structured contracts.
 
@@ -286,7 +267,7 @@ Reference files are organized by responsibility. The role / contract / decomposi
 | Subdirectory | Contents |
 |---|---|
 | `references/roles/<role>.md` | Per-role manifests for the 11 architect roles (7 software + 4 game) — declares reference-file mappings, owned task types, models, cross-role combinations |
-| `references/contracts/cross-role-tasks.md` | Multi-role combination procedure + table + multi-reference sub-agent prompt convention |
+| `references/contracts/cross-role-tasks.md` | Multi-role combination procedure + table + multi-reference convention |
 | `references/decomposition/architecture-style.md` | Config-driven architecture style + decomposition strategy + decision matrix + paradigm router priority chain |
 | `references/output-contracts/{design,adr,game,review,evaluation}.md` | Per-task-type output contracts — Phase 2 loads ONLY the matched contract |
 | `references/guardrails.md` | Software + game guardrail sets enforced on every output |

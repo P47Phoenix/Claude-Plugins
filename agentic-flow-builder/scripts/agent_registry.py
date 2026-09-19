@@ -145,8 +145,8 @@ class AgentRegistry:
                 "agent_type": "general",
                 "name": "claude-sonnet",
                 "description": "Claude Sonnet - Fast, balanced model for most tasks",
-                # canonical 2026-04-22 — opus-4-7 migration; prior: claude-sonnet-4-5-20250929 (retired)
-                "config": {"model": "claude-sonnet-4-6"},
+                # canonical 2026-09-19 — model refresh; prior: claude-sonnet-4-6, claude-sonnet-4-5-20250929 (retired)
+                "config": {"model": "claude-sonnet-5"},
                 "capabilities": [
                     {
                         "name": "general_reasoning",
@@ -186,8 +186,8 @@ class AgentRegistry:
                 "agent_type": "general",
                 "name": "claude-opus",
                 "description": "Claude Opus - Most capable for complex tasks",
-                # canonical 2026-04-22 — opus-4-7 migration; prior: claude-opus-4-20250514 (retires 2026-06-15 per F-04)
-                "config": {"model": "claude-opus-4-7"},
+                # canonical 2026-09-19 — model refresh; prior: claude-opus-4-7, claude-opus-4-20250514 (retired)
+                "config": {"model": "claude-opus-5"},
                 "capabilities": [
                     {
                         "name": "complex_reasoning",

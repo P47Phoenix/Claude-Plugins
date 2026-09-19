@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes at this time._
+### Changed
+
+- Live model literals (agent registry, smoke-test fixtures, telemetry schema, docs, prompt-engineer example) now use the latest Opus and Sonnet tiers: `claude-opus-5` and `claude-sonnet-5`. Haiku pin unchanged.
+- `stale-model-id-guard` is now a positive allowlist: only `claude-opus-5`, `claude-sonnet-5`, `claude-fable-5-1`, and the pinned Haiku ID pass; any other model ID fails CI. Scan widened to more file types.
+- `claude-fable-5-1` is allowlisted only, not adopted anywhere in code.
+
+> Retired IDs replaced: the previous Opus and Sonnet generation literals are no longer protected by the guard.
 
 ## Initiative — Skill Token-Economy (delivery-team plugin)
 

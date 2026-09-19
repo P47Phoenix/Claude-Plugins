@@ -1,6 +1,6 @@
 ---
 name: developer
-description: Developer agent for writing, reviewing, and refactoring code in any language. This skill should be used when users want to write code, fix bugs, refactor existing code, add tests, or review code quality. Auto-detects the programming language and spawns a language-scoped sub-agent so only the relevant best-practices are loaded into context — never all languages at once. Triggers on phrases like "write code", "implement", "fix this bug", "refactor", "add tests", "code review", "write a function", "build a script", and on file extensions (.py, .ts, .js, .go, .rs, .cs, .java, .sql, .sh, .r, .R, .Rmd).
+description: Developer agent for writing, reviewing, and refactoring code in any language. This skill should be used when users want to write code, fix bugs, refactor existing code, add tests, or review code quality. Auto-detects the programming language and reads only that language's best-practices reference into the current context — never all languages at once. Triggers on phrases like "write code", "implement", "fix this bug", "refactor", "add tests", "code review", "write a function", "build a script", and on file extensions (.py, .ts, .js, .go, .rs, .cs, .java, .sql, .sh, .r, .R, .Rmd).
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7-frontmatter-only
 last_audited: 2026-04-22
@@ -16,13 +16,13 @@ allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 
 ## Design Principle: Language Context Isolation
 
-This skill intentionally keeps language-specific knowledge **out of the main context window**. When a coding task is requested, a sub-agent is spawned carrying only the single relevant language reference. This means:
+This skill intentionally keeps language-specific knowledge **scoped to the single relevant task**. When a coding task is requested, only the single relevant language reference is read. This means:
 
 - A Python task loads only `references/languages/python.md`
 - A TypeScript task loads only `references/languages/typescript.md`
 - No other language files are loaded — ever
 
-The main context receives only the finished code artifact. All language-specific reasoning happens inside the sub-agent's isolated context.
+All language-specific reasoning happens directly in the current task's scoped context, using only the reference that was read.
 
 ---
 
@@ -58,56 +58,28 @@ The `Clean Code` field shows `default` when using the built-in `references/clean
 
 ---
 
-## Phase 2: Sub-Agent Invocation
+## Phase 2: Scoped Execution
 
 **For every coding task, follow these steps exactly — do not skip:**
 
 1. Detect the language (Phase 1)
 2. Read **only** `references/languages/<detected-lang>.md` — do NOT read any other language file
-3. Spawn a sub-agent using the `Agent` tool with the prompt template below
-4. Return the sub-agent's output directly to the user
+3. Read the Clean Code Standards (see Clean Code Guide Resolution below) and any conditional OOP/FP/Frontend/Nx references that apply (see the routing sections below)
+4. Perform the task directly in the current context, applying the standards from the file(s) you just read
+5. Return the finished output directly to the user, in the Output Contract format below
 
-**Do not inline language best-practices into the main context.** The sub-agent is the execution boundary for all language-specific knowledge. This is the entire point of the architecture.
+**Do not skip reading the scoped reference file(s) before doing the work.** The reference read is the execution boundary for all language-specific knowledge — apply only what you read for this task, not general knowledge of other languages/frameworks.
 
-### Sub-Agent Prompt Template
-
-```
-You are an expert [LANGUAGE] developer. Apply these coding standards and best practices to everything you write:
-
----
-[PASTE FULL CONTENTS OF references/languages/<lang>.md HERE]
----
-
-## Clean Code Standards
-
-[PASTE FULL CONTENTS OF clean code guide HERE]
-
----
-
-[CONDITIONAL: OOP/FP/Frontend/Nx patterns inserted here by existing routing logic]
-
-## Task
-
-[TASK TYPE]: [DESCRIBE WHAT THE USER WANTS]
-
-## Context
-
-[Include any of the following that are relevant:]
-- Existing code to modify or reference
-- File paths in the project
-- Constraints (performance, API compatibility, framework version)
-- Related code or interfaces this must work with
-
-## Output Requirements
+Apply these standards to everything you write for this task:
+1. Follow the coding standards and best practices from the language reference you read
+2. Follow the Clean Code Standards you read (and any conditional OOP/FP/Frontend/Nx patterns that apply)
+3. Use the Read, Edit, Write, Glob, and Grep tools to work directly in the codebase when the task requires modifying existing files
 
 Produce:
 1. Complete, runnable code — no placeholders or TODO stubs unless explicitly asked
 2. Inline comments on non-obvious logic only (do not comment obvious code)
 3. A brief explanation of key decisions (3–5 sentences)
 4. Test suggestions — how to verify the code works
-
-If the task requires modifying existing files, use the Read, Edit, Write, Glob, and Grep tools to work directly in the codebase.
-```
 
 ### Clean Code Guide Resolution
 
@@ -132,11 +104,11 @@ SEVERITY = VIOLATION (block mode) or WARNING (warn mode).
 Result line: RESULT: BLOCKED (N violations) | RESULT: PASSED with N warnings | RESULT: PASSED
 ```
 
-**For `simplify`/`refactor` tasks**: append to the sub-agent prompt: "Cite the specific clean code section (e.g., 'Functions', 'Code Smells') for each change you make."
+**For `simplify`/`refactor` tasks**: cite the specific clean code section (e.g., 'Functions', 'Code Smells') for each change you make.
 
-### Task Type Instructions for Sub-Agent
+### Task Type Instructions
 
-| Task Type | What the sub-agent does |
+| Task Type | What to do |
 |---|---|
 | **write** | Implement from scratch following all conventions in the language reference |
 | **fix** | Identify the root cause, patch it, explain what was wrong and why |
@@ -146,9 +118,9 @@ Result line: RESULT: BLOCKED (N violations) | RESULT: PASSED with N warnings | R
 | **explain** | Walk through the code with annotations; reference language idioms where relevant |
 | **coding-standards** | Generate `.delivery/standards/coding-standards.md` template from the built-in clean code reference. All 10 sections with customization placeholders. Output config instruction for `tech_stack.clean_code_guide`. Check for existing file before overwriting. |
 
-### `coding-standards` Task Type — Dispatch
+### `coding-standards` Task Type — Execution
 
-Load `references/agent-prompts/coding-standards.md` for the sub-agent prompt.
+Load `references/agent-prompts/coding-standards.md` for the task instructions.
 Load `references/coding-standards-template.md` for the template content.
 Skip language detection. Follow pre-flight and output instructions in the agent-prompt file.
 
@@ -156,7 +128,7 @@ Skip language detection. Follow pre-flight and output instructions in the agent-
 
 ## Multi-Language Projects
 
-Spawn a **separate sub-agent per language** (one language reference each). Run sequentially when outputs are dependent; in parallel (single message, multiple Agent calls) when independent. Assemble and return the combined artifacts. The main context never accumulates multiple language reference files.
+Handle **one language at a time** (read only that language's reference), working through them sequentially when outputs are dependent, or covering each independently in turn when they are not. Assemble and return the combined artifacts. Never read more than one language reference file at a time.
 
 ---
 
@@ -229,7 +201,7 @@ Pure-FP languages (F#, Elixir, Haskell) always load `fp-patterns.md` regardless 
 
 ### Nx Monorepo Cross-Language Reference
 
-For tasks in an **Nx workspace** (detected by presence of `nx.json` in the project or mentions of Nx): include `references/nx-monorepo.md` in the sub-agent prompt alongside the language reference file.
+For tasks in an **Nx workspace** (detected by presence of `nx.json` in the project or mentions of Nx): read `references/nx-monorepo.md` alongside the language reference file.
 
 **CRITICAL**: When working in an Nx workspace, ALWAYS use `nx generate` to create projects and libraries. NEVER create project directories manually (`mkdir`, `npm init`). The Nx reference enforces this.
 
@@ -239,9 +211,9 @@ To add a new language: create `references/languages/<lang>.md` using the templat
 
 ---
 
-## Sub-Agent Output Contract
+## Output Contract
 
-The sub-agent should return output in this structure (markdown):
+Return output in this structure (markdown):
 
 ```
 ## Language: [LANG]
@@ -295,5 +267,5 @@ See `references/languages/README.md` for how to add a new language.
 - `references/frontend/state-management.md` — state patterns, server state, optimistic updates
 - `references/frontend/performance.md` — bundle optimization, Core Web Vitals, lazy loading
 - `references/nx-monorepo.md` — Nx: generators (NEVER manual mkdir), affected, caching
-- `references/agent-prompts/coding-standards.md` — sub-agent prompt for coding-standards task
+- `references/agent-prompts/coding-standards.md` — task instructions for coding-standards task
 - `references/coding-standards-template.md` — template written to `.delivery/standards/`

@@ -33,7 +33,7 @@ One row is written per `Skill` tool invocation at PreToolUse time.
   "timestamp": "2026-05-03T14:22:01.123456Z",
   "session_id": "sess-abc123",
   "skill": "delivery-team:developer",
-  "model": "claude-sonnet-4-6",
+  "model": "claude-sonnet-5",
   "prefix_hash": "a1b2c3d4",
   "input_tokens": 0,
   "cache_read_tokens": 0,
