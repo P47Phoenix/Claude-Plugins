@@ -1,116 +1,35 @@
-<!-- run: run-2026-05-13-tk5 -->
-# Architect DoD Review — Stage 1 Idea
+# Architect DoD Review: Idea Stage (PR #88 CI fixes)
 
-**Reviewer**: Celebrimbor, master craftsman (Architect — Solution role)
-**Pipeline**: run-2026-05-13-tk5
-**Artifact under review**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Date**: 2026-05-13
-**Task type**: dod-validation
-**Recommended model**: sonnet
+Role: Solution | Task: dod-validation | Reviewed: `.delivery/artifacts/01-idea/po/idea-brief.md`
+All commands run from the worktree root.
 
-> *"Let us forge something that will endure beyond the ages."*
-
----
-
-## Verdict Summary
+## Criteria
 
 | # | Criterion | Result |
 |---|-----------|--------|
-| 1 | Buildable (no exotic deps) | **PASS** |
-| 2 | No obvious blockers at integration points | **PASS** |
-| 3 | Reuse boundaries correct (telemetry files exist) | **PASS** |
-| 4 | Scope sized for FEATURE (not GREENFIELD/SPIKE) | **PASS** |
-| 5 | Local-only-no-CI recorded as constraint, not goal | **PASS** |
+| 1 | Feasibility: Fix A (move Step 4/5 dispatch text to references/, meet 500-line budget, no behavior change) | PASS |
+| 2 | Feasibility: Fix B (`claude-sonnet-4-5` to `claude-sonnet-4-6` in smoke-test doc is safe) | PASS |
+| 3 | No obvious blockers or hidden dependencies | PASS (with two notes) |
 
-**Overall gate**: **PASS — DONE**. Me see no architectural blockers. Probe is feasible work, sized right, reuse map is sound.
+## Evidence
 
----
+### 1. Fix A: PASS
+- `python3 scripts/check_skill_budgets.py` reproduces `BUDGET VIOLATION: delivery-flow/SKILL.md 514/500 lines (Tier-A)`.
+- `git diff origin/main...HEAD` on SKILL.md: 18 insertions, 3 deletions. Step 4 gains a role-agent-first paragraph and an orchestrator hand-off paragraph. Step 5 gains a 3-line "same rule" addendum. All of it is self-contained prose, so it can be moved verbatim.
+- Main is 499 lines, so 1 net line of headroom exists. Moving about 15 lines into a reference and leaving a 1-line pointer gives about 500 lines, which is at the cap and passes (cap is inclusive: the violation is reported only above 500). Tightening one other line is cheap insurance.
+- `references/` holds 30+ files and `manifest.yml` indexes them (`file` + `purpose` entries). A new `references/role-agent-dispatch.md` fits the Level-3 convention. Register it in `manifest.yml`.
+- Behavior risk: the Step 4 text says "Required fields either way", which refers to the field list that stays in SKILL.md. The moved paragraph must be reworded minimally or the pointer must keep that sentence in place. Keep the fallback sentence ("fall back to the Agent Invocation Template") in the pointer, because it is the load-bearing instruction. This is an authoring detail, not a blocker.
+- `delivery-team/agents/` contains all 10 role agents plus `delivery-orchestrator.md`, matching the list in the moved text.
 
-## Per-Criterion Findings
+### 2. Fix B: PASS
+- Guard pipeline reproduced with `/usr/bin/grep` (see note 1). Exactly one hit: `delivery-team/architecture/smoke-test-architecture.md:116`. Nothing else in the tracked tree.
+- Simulated the edit (sed to a stream, not applied): the same pipeline yields zero hits, so the guard goes clean.
+- Consumers of that string: `grep -rn "sonnet-4-5"` outside `.delivery/` finds only line 116 and a `#` provenance comment in `agent_registry.py` (already exempt). `smoke-test-architecture.md` is referenced only by `delivery-team/tests/smoke/README.md` (prose links, lines 79 and 160). `model_usage` is consumed by `tests/smoke/lib/metrics.py` and `report.py`, which key on the runtime model string from the run and read no fixture from this doc. No test, fixture or JSON schema pins the value.
+- `claude-sonnet-4-6` is on the workflow allowlist. The JSON line does not start with `#` or `>`, so a provenance comment is not viable; the value swap is correct.
 
-### Criterion 1 — Buildable: PASS
+### 3. Blockers and notes: PASS
+1. The `grep` in this shell is `ugrep`, and it rejects `\b` in the guard's `grep -vE 'claude-sonnet-4-6(\b|[^0-9-])'`. My first run errored. The Developer DoD must use `/usr/bin/grep` or the CI-equivalent GNU grep, or the local guard run will produce false results. Do not conclude "clean" from an errored pipeline.
+2. The stale-id-guard workflow path filter excludes `.delivery/**` but the local pipeline also excludes it via `':!:.delivery/*'`; matching, no action.
 
-Scope is plain Python tools, no exotic stones:
-- `lib/runner.py` — subprocess wrapper around `claude` CLI (stdlib `subprocess` + env override; well-trodden ground).
-- `lib/metrics.py` — line-buffered JSON parser over stream-json (stdlib `json` + iterators).
-- `lib/aggregator.py` — reads existing `.delivery/telemetry/skill-loads.jsonl` (newline-delimited JSON; stdlib only).
-- `lib/baseline.py` — mean+stddev across 5 samples (stdlib `statistics`).
-- `tests/test_meta.py` — pytest only; no Claude calls (producer/validator separation enforced).
-
-Nothing here demands new dependency management or unusual runtime. All deps fit the repo's existing Python diet.
-
-### Criterion 2 — No obvious blockers: PASS
-
-Three integration points all plausible against existing repo surface:
-- **Claude Code stream-json output** — runner invokes `claude --output-format stream-json`; consumer parses NDJSON. Standard CLI pattern; no novel protocol.
-- **telemetry.jsonl reader** — `delivery-team/hooks/telemetry.py` already writes `.delivery/telemetry/skill-loads.jsonl` per the brief's claim; aggregator just reads what producer already emits. Re-verified file presence below.
-- **Plugin loading via `--plugin-dir` / `HOME` override** — brief acknowledges semantic uncertainty and bakes a capability-probe at startup (primary: `HOME=<fake>` + `--plugin-dir <repo>/delivery-team`; fallback: copy plugin into `<fake-home>/.claude/plugins/delivery-team/`). Risk surfaced + mitigated; not a blocker.
-
-Memory lesson applied (`hw01 adversarial`, confidence 2/5): cross-plugin invocation could bite. Brief defangs this with capability-probe up front rather than discover-at-runtime. Good craft.
-
-### Criterion 3 — Reuse boundaries correct: PASS (verified by file probe)
-
-Me run the command, not read about it:
-
-```
--rw-r--r--. 1 meconnelly meconnelly 5604 May  9 13:39 delivery-team/hooks/telemetry.py
--rw-r--r--. 1 meconnelly meconnelly 4724 May  9 13:39 delivery-team/hooks/telemetry_run_summary.py
-```
-
-Both stones present on the bench. Reuse map in brief (telemetry.py read directly; telemetry_run_summary.py as fallback) is grounded in real artifacts, not assumed surface. Mirror-shape directive for `governance/skill-budgets.json` and the `scripts/check_skill_budgets.py` exit-code convention is also concrete reuse, not hand-wave.
-
-### Criterion 4 — Scope sized for FEATURE: PASS
-
-- **8 work items** (W6-1 through W6-8) — within FEATURE band; not the 15+ that signals GREENFIELD, not the 1-3 of a SPIKE.
-- **Effort mix**: 4×M + 4×S. Me count batches with discipline (architect batching math):
-  - 4 M @ ~1 dev-day = 4 dev-days
-  - 4 S @ ~0.5 dev-day = 2 dev-days
-  - Cross-cutting architecture doc adds ~0.5 dev-day
-  - **Total ≈ 6.5 dev-days** — squarely in FEATURE range.
-- No L items, no XL items, no items requiring greenfield bootstrap. Builds on existing telemetry surface (Reuse, not Reinvent).
-- Single initiative routed through delivery-flow (constraint: "Route through delivery-flow") rather than fragmented across PRs — appropriate for FEATURE classification.
-
-Not a SPIKE: deliverables are durable artifacts (probe, baseline, regression diff, meta-tests, architecture doc), not learning notes.
-Not a GREENFIELD: builds on existing plugin + existing telemetry hooks; doesn't bootstrap a new domain.
-
-### Criterion 5 — Local-only is constraint, not goal: PASS
-
-Brief separates concerns cleanly:
-- **Constraints section** (line 26) explicitly lists `LOCAL-ONLY (binding)` with citation to the memory file. Phrased as *bounding* the design: "Tooling that shells out to `claude` MUST NOT live in `.github/workflows/`." No-bypass-with-ADR clause makes it architecturally binding.
-- **Goals section** (lines 21-23) does NOT name local-only as a deliverable. Goal 3 states "0 GitHub Actions workflows invoke `claude`" — this is an *enforcement assertion* (verifiable absence) wrapped around the constraint, not the constraint itself. The deliverable in Goal 3 is the documented constraint in `delivery-team/architecture/smoke-test-architecture.md` with memory-file pointer.
-- **Out of Scope** (line 45) restates the CI ban as scope exclusion, reinforcing it as a boundary rather than a feature.
-
-Constraint shapes the design (forces local-only runner architecture, forbids CI surface) without becoming an output artifact masquerading as a goal. Correct framing.
-
----
-
-## Trade-offs Noted (informational, no blocker)
-
-- **Producer-validator separation as social constraint**: brief states meta-test fixtures CANNOT share author with `lib/metrics.py`. This is a team-process constraint, not an architectural one — architecture cannot enforce it; relies on PR review discipline. Worth flagging to PO for Plan-stage acceptance criteria, but does not block Stage 1.
-- **5-sample baseline variance budget**: brief acknowledges (Open Risks #4) that 5 samples may underestimate true variance; first-month advisory-only on `tokens.*` and `skill_loads.*` is the right hedge. Bake the "tighten after 20+ runs" rule into the regression detector config so it not lost.
-
----
-
-## Assumptions
-
-- Existing telemetry producer (`telemetry.py`) emits the schema the aggregator expects without changes (brief asserts "zero changes" — Developer DoD will verify by running, not reading).
-- `claude` CLI honors `--plugin-dir` or `HOME=<fake>` as the brief assumes; capability-probe handles either outcome.
-- `stream-json` output format remains stable across `claude_cli_version` (worth pinning + recording in `report.json`, which brief already does via `claude_cli_version` field).
-
-## Risks (architect-flagged, beyond PO's list)
-
-- **None blocking**. PO already surfaced the four sharp risks (prompt drift, `--plugin-dir` semantics, Stop hook, variance budget). No architectural risk PO missed.
-
-## Open Questions
-
-- None blocking Stage 1 gate. `delivery-team/architecture/smoke-test-architecture.md` (cross-cutting item) is the appropriate vessel for Stage 3 Design decisions (Mermaid diagram, capability-probe state machine, baseline-shape decision).
-
----
-
-## Gate Decision
-
-**PASS — Stage 1 Idea DoD met from Architect lens.** Probe is buildable, integration points sound, reuse map verified against real files on disk, scope properly sized as FEATURE, local-only correctly framed as binding constraint.
-
-Forward to Stage 2 Refine.
-
-— Celebrimbor, master craftsman. *The work endures because the boundaries are true.*
+## Verdict
+PASS. Both fixes are feasible with no behavior change. Recommended for Plan: new `references/role-agent-dispatch.md`, 1-line pointer in Step 4 (plus Step 5 folded into it or reduced to zero net), register in `manifest.yml`, re-run budget check and the guard with GNU grep.

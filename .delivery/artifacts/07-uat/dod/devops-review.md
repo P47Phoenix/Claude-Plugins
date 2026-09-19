@@ -1,154 +1,19 @@
-<!-- run: run-2026-05-13-tk5 | stage: 07-uat | role: DevOps DoD-reviewer | author: Sam (Samwise Gamgee) -->
-<!-- task_type: dod-validation | reviewing: release-plan.md against 5 gate criteria -->
-<!-- supersedes: run-2026-05-09-tk4 prior content -->
+<!-- run: run-2026-09-18-pr88 | stage: 07-uat | role: DevOps | task_type: dod-validation -->
 
-# DevOps DoD Review — Release Plan (run-2026-05-13-tk5)
+SKILL_LOADED: delivery-team:operations
 
-> *"I can't deploy the feature for you, Mr. Frodo, but I can carry the pipeline."* — Sam
+# DevOps UAT DoD Review
 
-Sam check release plan. Sam not read commands — Sam RUN commands. Five gate criteria. Five verdicts. One verdict at end. Pack light. Walk true.
+Verdict: PASS (1 minor correction, non-blocking).
 
----
+| # | Criterion | Result | Evidence |
+|---|-----------|--------|----------|
+| 1 | File list matches `git status` | PASS with nit | 4 source files match exactly. Plan says ".delivery: 14 modified + 6 new". Actual: 16 modified + 7 new = 23 (new incl. `defects/DEFECT-008.md`, `DEFECT-009.md`, 5 artifact files). Plan omits `.delivery/defects/`. Fix: change counts to 16 M + 7 new and list `.delivery/defects/` in section 1. Explicit-path staging rule already covers it. |
+| 2 | Commit split sensible | PASS | Source vs `.delivery` artifacts split, stale-id optional third commit (recommended, keeps cherry-pick option). Stage by path, no `-A`. |
+| 3 | Rollback works | PASS | Plain `git revert` per commit, no force/reset. No workflow, governance, config diffs (`git diff --stat -- .github governance` empty). Honest that reverting source re-breaks budget-check. |
+| 4 | Commit-only-on-approval rule | PASS | Plan states all commands are proposals; commit, push, PR edit gated on user approval. |
+| 5 | No claude CLI in CI | PASS | Plan touches no workflows; grep of `.github/workflows` finds no `claude` invocation. |
+| 6 | Remote/branch supports plain push | PASS | Tracks `origin/delivery-team-agent-wrappers`; HEAD da2771b equals remote tip; fetch dry-run clean. `git merge-base HEAD origin/main` = f4fea7d = origin/main tip, so branch is not behind main, no rebase needed. |
+| 7 | Main-guard-failing claim | PASS with caveat | `origin/main:delivery-team/architecture/smoke-test-architecture.md:116` still has `claude-sonnet-4-5`, so guard would fail on main. But `gh run list --branch main --workflow stale-model-id-guard.yml` returns no runs (guard appears PR-triggered only). Claim is true by content, not by observed main CI failure. Fix: reword plan section 5 to "main contains the stale id; guard fails on any PR touching it" instead of "main's guard also fails". PR #88 guard runs are failing (latest 2026-09-19 01:11Z), consistent with the known defect. |
 
-## Verdict
-
-**STATUS: DONE** — release plan complete + rollback-ready. All five gate criteria pass. Sam sign off.
-
----
-
-## Gate-by-gate validation
-
-### Criterion 1 — Release plan covers required sections
-
-Plan must contain seven sections: scope, type, pre-merge checklist, rollback procedure, known-debt, post-merge action, no-deploy confirmation.
-
-| Section | Plan reference | Verdict |
-|---------|----------------|---------|
-| Scope | §1 (22 files enumerated across 1a/1b/1c/1d sub-tables) | PASS |
-| Release type | §2 (ff-merge, squash-rebase, Wave-N precedent with 5 prior SHAs cited) | PASS |
-| Pre-merge checklist | §3 (5 commands, verbatim, with expected exit codes + Stage-7 evidence column) | PASS |
-| Rollback procedure | §4 (`git revert <merge-sha>`, justified by 5 zero-state bullets, < 60 s time-to-clean) | PASS |
-| Known-debt | §5 (4 deferrals tabled: D-tk5-04 HIGH + D-tk5-01/02/03 LOW carry-forwards) | PASS |
-| Post-merge action | §6 (BACKLOG-107 spec — scope, effort, depends-on) | PASS |
-| No-deploy confirmation | §7 (binding memory directive cited by full path, verbatim excerpt, 5 zero-surface bullets) | PASS |
-
-**Section coverage**: 7/7. PASS.
-
-### Criterion 2 — Pre-merge checklist commands are runnable (RUN now)
-
-Sam run each command. Sam record exit code. No infer. No skip. Memory lesson: developer runs the command, does not read the command.
-
-| # | Command | Expected | Actual | Verdict |
-|---|---------|----------|--------|---------|
-| 1 | `python3 scripts/check_skill_budgets.py` | exit 0 + `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).` | exit 0, exact match: `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).` | PASS |
-| 2 | `python3 scripts/lint_known_debt.py` | exit 0 + `LINT OK: known_debt JSON↔Python in sync; all SKILL.md frontmatter complete.` | exit 0, exact match: `LINT OK: known_debt JSON↔Python in sync; all SKILL.md frontmatter complete.` | PASS |
-| 3 | `pytest delivery-team/tests/smoke/tests/test_meta.py` | 3/3 pass, < 5 s | exit 0, `3 passed in 0.02s` (test_malformed_stream_fault_injection, test_baseline_comparison_demo, test_aggregator_fixture_parsing) on Python 3.14.5 / pytest 9.0.3 | PASS |
-| 4 | `find .github/workflows -name "smoke-*.yml"` returns 0 files | output `0` | output `0`, exit 0 | PASS |
-| 5 | `git status` — clean except expected pipeline-derivative paths | only `.delivery/artifacts/*` modified (stage records) + untracked smoke-test tree (the 22 shipping files); no unexpected MODIFIED tracked files outside the pipeline-derivative set | 33 `M ` paths all under `.delivery/artifacts/*` (stage summaries, dod-review files, role artifacts); untracked = `delivery-team/tests/`, `Makefile`, `.delivery/artifacts/04-architect/adrs/ADR-tk5-001-…`, `delivery-team/architecture/smoke-test-architecture.md`, `.delivery/defects/sprint-tk5.md`, `.delivery/backlog/BACKLOG-106-…`, `.delivery/state.md`, `.delivery/artifacts/02-refine/po/constraints.yml`, plus a few stage-input/dispatch dirs — all match §1 shipping universe + §"Assumptions" item 2 | PASS |
-
-**Pre-merge checklist execution**: 5/5 green. Identical to Stage-7 evidence. Memory lesson honored. PASS.
-
-### Criterion 3 — Rollback procedure is concrete + single-revert-safe
-
-Plan §4 specifies `git revert <merge-commit-sha>` as the only rollback mechanism. Sam validate the preconditions that make single-revert sufficient:
-
-| Precondition | Plan claim | Verification |
-|--------------|------------|--------------|
-| No DB migrations | §4 bullet 1: "zero schema changes" | Confirmed — no DB layer touched in the 22 shipping files; no `database.py` modifications; no SQLite schema diffs |
-| No persistent state writes outside workspace HOME | §4 bullet 2: "Telemetry rows are written into the workspace's mktemp HOME" | Confirmed — `lib/workspace.py` writes to `tempfile.mkdtemp` only; no repo-tracked state files generated by `run_smoke.py` |
-| No external service config | §4 bullet 3 | Confirmed — no API key rotation, no webhook, no DNS, no IAM mod in shipping universe |
-| No CI workflow surface | §4 bullet 4 (Gate 5) | Confirmed — `find .github/workflows -name "smoke-*.yml" \| wc -l` = 0 (just re-executed in Criterion 2) |
-| No plugin marketplace mutation | implicit (Sam adds this check) | Confirmed — `.claude-plugin/marketplace.json` is NOT in modified-files set or untracked-files set; no plugin registry entry added/changed this wave |
-| No committed runtime-artifact contents | §4 bullet 5 | Confirmed — smoke-test artifacts directory has no committed contents at merge time |
-
-Single `git revert <merge-sha>` is sufficient. Time-to-clean < 60 s claim is realistic — no follow-up state migration, no cache invalidation, no downstream consumer notification. **PASS**.
-
-### Criterion 4 — BACKLOG-107 follow-up filed forward
-
-Plan §6 names BACKLOG-107 explicitly with:
-- Title: "Patch workspace.py auth-isolation (D-tk5-04) + retry 5-sample live baseline capture"
-- Priority: HIGH (next-wave first slot)
-- Lineage: honest-readiness-marker carry-forward from run-2026-05-13-tk5
-- Scope: 4 numbered steps (apply fix path (a), add unit test, re-run `--init-baseline`, re-run UAT Gates 1+4)
-- Effort: ≤ 1 day single-author dispatch
-- Depends-on: this release (BACKLOG-106) merged
-
-Also referenced in §5 (known-debt table fix-path column), §"Downstream notes" (for PO), and §"Trade-offs" row 4 (explains the deliberate post-merge filing decision per "PO auto-logs issues from research immediately" memory directive).
-
-Follow-up is named, scoped, prioritized, lineage-traced, and cross-referenced from three sections. **PASS**.
-
-### Criterion 5 — Local-only memory binding cited by full path
-
-Plan §7 cites the binding directive verbatim:
-
-> `/home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md`
-
-Sam verify file exists at exact cited path:
-
-```
-$ ls -la /home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md
--rw-r--r--. 1 meconnelly meconnelly 1149 May 13 18:09 .../feedback_claude_code_local_only.md
-EXIT=0
-```
-
-File present, readable, full path matches plan citation character-for-character. Plan also includes verbatim rule excerpt from that file in §7 ("Claude Code is only available locally to the developer. CI runners (GitHub Actions, etc.) do NOT have the `claude` CLI…"). **PASS**.
-
----
-
-## Cross-checks
-
-Sam do extra walk before sign-off:
-
-| Check | Outcome |
-|-------|---------|
-| Plan §1 file inventory matches Stage-6/Stage-7 implementation-notes | Confirmed — 12 (S1+S2) + 7 (S3) + 2 (Stage-7 baseline + Makefile) + 3 (governance) = 24 numbered rows; effective shipping file paths = 22 distinct (rows #10 `.gitkeep` + #21 Makefile are separately broken out for clarity). Internally consistent. |
-| Plan §3 evidence column references uat-report.md sections that exist | Confirmed — §Gate 3, §Gate 5, §Gate 7 are all present in uat-report.md as cited |
-| Plan §5 stop-rule math (1/3 = 0.333 < 0.4, 17% headroom) matches uat-report.md §Section D | Exact match — same numerator (1 new defect), same denominator (3 stories), same threshold (0.4), same headroom (0.067 ≈ 17%) |
-| Plan §6 BACKLOG-107 scope step (3) (one-line fix in `lib/workspace.py` env construction) | Consistent with uat-report.md §"Auth-isolation finding" fix path (a) and sprint-tk5.md §D-tk5-04 recommendation |
-| PARTIAL READY marker honesty | Aligned with uat-report.md verdict PASS_WITH_NOTES — neither artifact overclaims; both explicit about G1+G4 deferral |
-| Plan §"Trade-offs" row 1 (ff-merge no PR) matches actual repo Wave-N precedent | The 5 cited SHAs (b412a40, c2e7d5a, baa49b9, 2609272, d0e0928) follow the `feat(delivery-team): Wave N …` pattern; precedent is real, not invented |
-
-All cross-checks green.
-
----
-
-## Trade-offs (this review)
-
-| Decision | Alternative | Why chosen |
-|---|---|---|
-| Accept §5 known-debt list as-is | Demand D-tk5-04 fix before merge | Plan correctly invokes Wave-2 honest-readiness-marker lineage. Stop-rule has 17% headroom. Six gates green and the deferred two are bounded, ticketed, budgeted. Block-the-wave would inflate batch size against the "mechanically-independent batches" cadence rule. |
-| Accept `git status` showing 33 modified `.delivery/artifacts/*` files | Demand a tidier diff | These are pipeline-stage records — every delivery-flow run produces them. Plan §"Assumptions" item 2 explicitly anticipates this. Wave-N precedent ships them in the same commit. |
-| Treat plan §1 row 24 (`.delivery/defects/sprint-tk5.md`) as ship-with-this-commit | Carve into a separate commit | Single-commit ff-merge is the Wave-N convention; splitting would break lineage and complicate revert. |
-
-## Assumptions
-
-1. ff-merge time is "soon" — no concurrent dispatch will land between this review and the merge command. Single-author repo makes this safe.
-2. The `claude` subprocess auth path on the developer's machine will remain in its present (working, pre-D-tk5-04-fix) state until BACKLOG-107 lands; irrelevant to the release decision because the harness is local-only and the developer has manual control.
-3. `python3` and `pytest` versions at ff-merge time are the same as those exercised in Stage 7 (Python 3.14.5, pytest 9.0.3). Plan §"Assumptions" item 3 already flags this.
-
-## Risks + mitigations
-
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Developer forgets to file BACKLOG-107 post-merge | LOW | MEDIUM | Plan §6 includes the full BACKLOG-107 spec verbatim; §"Downstream notes" addresses PO directly. Self-contained. |
-| Pipeline-derivative `.delivery/artifacts/*` mods become reviewer noise on the squash diff | LOW | LOW | Plan §"Assumptions" item 2 calls it out; single-author repo absorbs the review-noise cost. |
-| Someone runs `make smoke` immediately post-merge expecting live success | MEDIUM | LOW | release-notes.md "Known limitations" + README document D-tk5-04 status. Runner exits 1 cleanly with informative `outcome.reason`. |
-
-## Open questions
-
-None. All five gate criteria green. Plan is internally consistent, cross-consistent with uat-report.md / sprint-tk5.md, and verified against the live working tree.
-
-## Downstream notes
-
-- **For Frodo (PO)**: DevOps DoD review = DONE. Plan is mergeable from a release-readiness lens. Coordinate with the rest of the DoD reviewers for the final go/no-go consolidation.
-- **For Legolas (QA)**: Sam confirms uat-report.md §Section D verdict aligns with the release plan; both name the same deferrals, same ticket, same stop-rule headroom.
-- **For Pippin (Tech Writer)**: release-notes.md should match plan §5 deferral list and §6 BACKLOG-107 reference — already verified consistent in the cross-doc consistency report in tree.
-- **For Gandalf (Architect)**: ADR-tk5-001 is in the shipping set (plan §1d row 23) and binds correctly per plan §"Assumptions".
-
----
-
-— Sam (Samwise Gamgee, DevOps DoD-reviewer), run-2026-05-13-tk5, Stage 7. *I can't deploy the feature for you, Mr. Frodo, but I can carry the pipeline.* Five criteria. Five PASS. Plan ready. Pack light. Walk true.
-
-STATUS: DONE
-ARTIFACT: /var/home/meconnelly/Documents/GitHub/Claude-Plugins/.delivery/artifacts/07-uat/dod/devops-review.md
-SUMMARY: All 5 DoD criteria PASS. Pre-merge cmds re-run (exits 0/0/0/0/0). Rollback single-revert safe. BACKLOG-107 filed forward. Memory binding path verified on disk.
+Other: branch is 1 merge-base ahead-of-nothing on main, so option B (separate PR) is cheap if maintainer wants it. Default A acceptable.

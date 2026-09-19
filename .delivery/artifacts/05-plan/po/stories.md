@@ -1,216 +1,98 @@
-<!-- run: run-2026-05-13-tk5 -->
-<!-- author: Gandalf (Product Owner, Stage 5 light, step 1) -->
-<!-- backlog: BACKLOG-106 -->
-<!-- decomposition: 8 WIs -> 3 stories (file-scope consolidation, validated:5) -->
-# Stories — BACKLOG-106 Delivery-team plugin smoke test
+# Stories: Fix PR #88 failing CI checks (BUG_FIX, LIGHT)
 
-> *"A product owner is never late, nor early. They consolidate stories precisely when they mean to."* — Gandalf
+Consolidation note: stories are grouped by file scope. Story 1 touches only `delivery-flow/SKILL.md` plus one new reference file and `manifest.yml` (one dev unit, one commit). Story 2 touches only `smoke-test-architecture.md` (one-line change). Story 3 touches no repo files (PR metadata text only). No further split or merge is warranted.
 
-Me carve eight WIs into three stories by file scope. Story 1 wire pipeline. Story 2 forge baseline + prompt. Story 3 prove harness + write README. Producer-validator split binds Story 3 to different Stage-6 Dev dispatch than Stories 1+2 (BC-03, validated:5).
+All commands run from repo root, using GNU grep (not ugrep; ugrep breaks `\b`). Dev DoD: run each command, do not just read it.
 
-WI coverage check (no orphans, no duplicates):
-- W6-1 -> S1, W6-2 -> S1, W6-3 -> S1, W6-4 -> S1
-- W6-5 -> S2, W6-6 -> S2
-- W6-7 -> S3, W6-8 -> S3
+## Story 1: Bring delivery-flow SKILL.md under the Tier-A budget (file scope: delivery-flow SKILL.md, references/)
 
-Total: 8 WIs assigned, each exactly once.
+As a delivery-team maintainer, I want the role-agent-first dispatch text moved out of `delivery-flow/SKILL.md` into a reference file, so that `budget-check` passes without a `Budget-Exception:` and PR behavior is unchanged.
 
----
+Scope of move (verbatim, no rewording):
+- Step 4 first paragraph: the `delivery-<role>` agent list, dispatch via `Agent` tool, fallback to the inline Agent Invocation Template, and the required-fields list.
+- Step 4 autonomous-run hand-off paragraph to `delivery-orchestrator`.
+- Step 5 "Same role-agent-first rule as Step 4..." sentence.
 
-## Story S1 — Wire the smoke-test pipeline (Effort: L)
+Destination: new `delivery-team/skills/delivery-flow/references/role-agent-dispatch.md` (chosen over a `pipeline-stages.md` section so pipeline-stages.md stays stable and the file has one purpose). Register it in `references/manifest.yml` with a `purpose:` entry (manifest lists every reference file). SKILL.md keeps a short pointer per step that still tells the orchestrator to prefer `delivery-<role>` agents and names `references/role-agent-dispatch.md`.
 
-**WIs**: W6-1, W6-2, W6-3, W6-4
-**Depends on**: (none — entry story)
-**Blocks**: S2, S3
+Design constraints:
+- Net line target: SKILL.md at 497 or fewer (margin of 3+ under 500; a pure pointer swap lands at exactly 500, which is too tight). Main is 499, so the pointers must be net negative versus main, or other lines tightened without semantic loss.
+- The PROSE STYLE block injection paragraph, signal block, and Verify signal text stay inline and untouched.
+- No claim in repo docs about the reference count needs change unless grep shows one (see TC-1.6).
 
-### Files
+Acceptance criteria:
+- AC-1.1: `python3 scripts/check_skill_budgets.py; echo $?` prints no `BUDGET VIOLATION` and ends with `0`.
+- AC-1.2: `wc -l < delivery-team/skills/delivery-flow/SKILL.md` prints a number `<= 497`.
+- AC-1.3: `test -f delivery-team/skills/delivery-flow/references/role-agent-dispatch.md && echo ok` prints `ok`.
+- AC-1.4: `grep -c "role-agent-dispatch" delivery-team/skills/delivery-flow/SKILL.md` prints `>= 2` (Step 4 and Step 5 pointers), and `grep -c "role-agent-dispatch" delivery-team/skills/delivery-flow/references/manifest.yml` prints `1`.
+- AC-1.5: Verbatim preservation. For each of the strings `delivery-developer`, `delivery-presentation`, `delivery-alias-creator`, `delivery-orchestrator`, `Agent Invocation Template`, `role-agent-first`, `grep -c "<string>" delivery-team/skills/delivery-flow/references/role-agent-dispatch.md` prints `>= 1`. Moved paragraphs match the origin/main...HEAD text character for character (compare `git show HEAD:delivery-team/skills/delivery-flow/SKILL.md` lines 333-346 and the Step 5 sentence against the new file body with `diff`; only the file header and whitespace-free wrapping may differ).
+- AC-1.6: SKILL.md pointers still instruct role-agent preference: `grep -n "prefer" delivery-team/skills/delivery-flow/SKILL.md` shows a hit within Steps 4 and 5.
+- AC-1.7: `python3 scripts/check_skill_budgets.py` output contains no new `KNOWN_DEBT` entry and `git diff origin/main...HEAD -- governance/skill-budgets.json` is empty (no exception path used).
+- AC-1.8: `lint` and `header-warn` workflow commands (read `.github/workflows/lint-known-debt.yml` and `.github/workflows/skill-md-header-warn.yml`, run the `run:` commands locally) exit 0 (header-warn: no new warnings for the new reference or SKILL.md).
 
-**New**:
-- `delivery-team/tests/smoke/run_smoke.py`
-- `delivery-team/tests/smoke/lib/__init__.py`
-- `delivery-team/tests/smoke/lib/runner.py`
-- `delivery-team/tests/smoke/lib/workspace.py`
-- `delivery-team/tests/smoke/lib/metrics.py`
-- `delivery-team/tests/smoke/lib/aggregator.py`
-- `delivery-team/tests/smoke/lib/report.py`
+Test cases:
+- TC-1.1: Run AC-1.1; expect exit 0 (was 514/500 violation).
+- TC-1.2: `python3 scripts/check_skill_budgets.py | grep delivery-flow`; expect line count shown at most 497 of 500.
+- TC-1.3: `diff <(git show origin/main:delivery-team/skills/delivery-flow/SKILL.md | sed -n '1,332p') <(sed -n '1,332p' delivery-team/skills/delivery-flow/SKILL.md)`; expect empty (everything before Step 4 unchanged).
+- TC-1.4: Behavior audit: `git diff origin/main...HEAD -- delivery-team/skills/delivery-flow/SKILL.md | grep '^-' | grep -v '^---'` lines removed are all present in the new reference (spot check each removed sentence with `grep -F`).
+- TC-1.5: Negative check: `grep -n "delivery-orchestrator" delivery-team/skills/delivery-flow/SKILL.md` still shows a pointer or mention so the hand-off is discoverable from SKILL.md; if it does not, the pointer wording must be extended.
+- TC-1.6: `grep -rn "reference files\|references/ (.* files" delivery-team/ARCHITECTURE.md delivery-team/skills/delivery-flow/references/manifest.yml README* 2>/dev/null`; if a numeric file-count claim exists, it is incremented by 1; if none, no doc change.
+- TC-1.7: Manifest still parses: `python3 -c "import yaml,sys; yaml.safe_load(open('delivery-team/skills/delivery-flow/references/manifest.yml'))"` exits 0 (skip if PyYAML is absent and use a visual check).
 
-**Modified**: (none)
+## Story 2: Fix stale model ID in smoke-test architecture doc (file scope: smoke-test-architecture.md)
 
-### Acceptance Criteria
+As a maintainer, I want `claude-sonnet-4-5` at `delivery-team/architecture/smoke-test-architecture.md:116` replaced by canonical `claude-sonnet-4-6`, so that `stale-id-guard` passes. This is a pre-existing defect on main (commit 91e1297) fixed inside PR #88 because it blocks this PR's merge. Provenance marking does not apply (line is inside a JSON block). Do not change the guard.
 
-- **AC-S1-01**: `python3 delivery-team/tests/smoke/run_smoke.py --help` exits 0 and lists flags `--init-baseline`, `--cost-cap`, `--timeout`, `--baseline`, `--dry-run`. (covers W6-1 AC, maps to PRD AC-01.)
-- **AC-S1-02**: `python3 delivery-team/tests/smoke/run_smoke.py --dry-run` writes `delivery-team/tests/smoke/artifacts/<utc-timestamp>/{report.json, summary.md, stream.jsonl}` WITHOUT spawning a `claude` subprocess (uses fixture stream-json). (covers W6-1+W6-2+W6-3+W6-4 wired-pipeline AC, maps to Per-Story Acceptance Story 1 in BACKLOG-106 and PRD AC-02.)
-- **AC-S1-03**: `lib/workspace.py` creates HOME via `tempfile.mkdtemp(prefix="smoke-")` and on exit a stat-based check asserts no writes landed under the developer's real `~/.claude/`. (covers W6-1 isolation AC, maps to PRD NFR-Isolation and architecture §8 mktemp-HOME decision.)
-- **AC-S1-04**: `lib/runner.py` capability-probes `claude --help | grep -q -- --plugin-dir` at startup; result written to `report.json` as `plugin_load_strategy: "plugin-dir" | "copy-into-home"`. Primary path uses `--plugin-dir <repo>/delivery-team`; fallback copies plugin tree into `<tmpdir>/.claude/plugins/delivery-team/` (skipping `tests/smoke/` to avoid recursive inclusion). (covers W6-1 capability-probe AC, maps to PRD FR-01 and architecture §4.)
-- **AC-S1-05**: `lib/runner.py` enforces `--cost-cap` and `--timeout` flags; subprocess wall-clock exceeding `--timeout` is killed with SIGTERM and `outcome.success=false`, `outcome.reason="timeout"` written to report. (covers W6-1 cost+time-cap AC, maps to PRD BC-05.)
-- **AC-S1-06**: `lib/metrics.py` is pure-function: `parse_stream(events: Iterable[dict]) -> Metrics` returns a dataclass with `tokens.{input,output,cache_creation,cache_read}`, `model_usage: list[ModelUsage]`, `cost_usd`, `wall_clock_seconds`, `dispatch_count`; malformed events emit a `warnings.warn(...)` call and do not raise. (covers W6-2 AC, maps to PRD FR-02 and AC-03.)
-- **AC-S1-07**: `lib/aggregator.py` reads `<workspace>/.delivery/telemetry/skill-loads.jsonl`, newest `<workspace>/.delivery/telemetry/run-summary-*.json`, and `<workspace>/.delivery/state.md`; missing `skill-loads.jsonl` treated as empty list; missing `run-summary-*.json` fallback-invokes `delivery-team/hooks/telemetry_run_summary.py`. NO modifications to either telemetry hook source file. (covers W6-3 AC, maps to PRD FR-03 and BC-02 reuse mandate.)
-- **AC-S1-08**: `lib/report.py` writes `report.json` containing exactly the schema in `delivery-team/architecture/smoke-test-architecture.md` §5: keys `schema_version`, `run_id`, `git_sha`, `claude_cli_version`, `plugin_load_strategy`, `outcome.{success,exit_code,reason}`, `wall_clock_seconds`, `cost_usd`, `tokens.*`, `model_usage[]`, `pipeline.{stages_completed,stories_completed,dispatch_count,defects_logged}`, `skill_loads[]`, `advisory_warnings[]`, `hard_failures[]`. Unmeasurable fields emit `null`, not omitted. (covers W6-4 AC, maps to PRD AC-03 and FR-04.)
+Consumer check already done at plan time: repo grep for `claude-sonnet-4-5` finds only this fixture line plus `.delivery/` artifacts (prose, excluded by the guard via `':!:.delivery/*'`) and a dated `claude-sonnet-4-5-20250929` in a dev log (also under `.delivery/`). No code or test consumes the fixture value. Dev re-runs the grep before editing.
 
-### Test cases (QA will expand)
+Acceptance criteria:
+- AC-2.1: The FULL guard pipeline from `.github/workflows/stale-model-id-guard.yml` (GNU grep; the `git ls-files ... | xargs grep -En ... | grep -vE ...` chain including the `#` provenance and `>` blockquote filters) is the check. Pre-edit it prints exactly one line, `delivery-team/architecture/smoke-test-architecture.md:116:...claude-sonnet-4-5...`. Post-edit it prints nothing and `HITS` is empty (exit 0). Note: a raw `grep -n "claude-sonnet-4-5"` also matches `agentic-flow-builder/scripts/agent_registry.py:148`, a `#` provenance comment; the guard's `^[^:]+:[^:]+:[[:space:]]*#` filter exempts it, so it is not a hit and must not be edited. Verified 2026-09-18 with GNU grep 3.12: pre-edit output is the single line-116 hit.
+- AC-2.2: `sed -n 116p delivery-team/architecture/smoke-test-architecture.md` prints `    {"model": "claude-sonnet-4-6", "dispatches": 5, "input_tokens": 4345, "output_tokens": 2589}` (only the model string differs; the diff is exactly 1 line).
+- AC-2.3: The guard pipeline from `.github/workflows/stale-model-id-guard.yml` (the `HITS=$(...)` block, run with GNU grep via a temp script) leaves `HITS` empty and prints `No stale 4.x model IDs found.`
+- AC-2.4: `git diff origin/main...HEAD --stat -- delivery-team/architecture/smoke-test-architecture.md` shows 1 insertion, 1 deletion.
+- AC-2.5: `git diff origin/main...HEAD -- .github/workflows/stale-model-id-guard.yml` is empty (guard not weakened).
 
-- **TC-S1-01**: `--help` shows all 5 flags + exits 0.
-- **TC-S1-02**: `--dry-run` writes all three artifacts under timestamped dir; no `claude` process spawned (asserted via `psutil` or process-table snapshot).
-- **TC-S1-03**: post-run stat check confirms `~/.claude/` unmodified after a dry-run (mtime + size invariant on a chosen sentinel file).
-- **TC-S1-04**: capability-probe sets strategy correctly when `--plugin-dir` is in help text and when it is absent (mocked help output).
-- **TC-S1-05**: `--timeout 1` against a sleeping fixture subprocess produces `outcome.success=false`, `outcome.reason="timeout"` within 2 sec.
-- **TC-S1-06**: malformed stream-json event (missing `usage` key) produces a `warnings.warn` call and does not raise; downstream Metrics still emitted.
-- **TC-S1-07**: aggregator against fixture workspace with missing `skill-loads.jsonl` returns merged dict with `skill_loads: []`.
-- **TC-S1-08**: `report.json` schema validates against the §5 contract; null-emission preserved for `claude_cli_version` when `claude --version` fails.
+Test cases:
+- TC-2.1: Run the guard pipeline before the edit; expect exactly one hit at line 116 (proves the local replica is faithful, and the failing state).
+- TC-2.2: Run it after the edit; expect no hits and exit 0.
+- TC-2.3: `python3 -c "import json;json.loads('{\"m\":[{\"model\":\"claude-sonnet-4-6\"}]}')"`-style check is unnecessary; instead confirm the surrounding JSON block still has the same structure via `git diff` showing only the model string changed.
+- TC-2.4: Run the guard after Story 1 lands too, since the new reference file is `*.md` and in scope; expect no hits (the new file must not contain any 4.x model ID).
 
-### Constraints (per producer-validator separation)
+## Story 3: PR #88 hygiene text (file scope: none; proposed text only, PR is not edited by this team step)
 
-- Story 1 authors `lib/metrics.py` (W6-2). It does NOT author the meta-tests for `lib/metrics.py` — those belong to Story 3 per BC-03 producer-validator separation.
-- Story 1 Dev dispatch may also be assigned Story 2 (per BACKLOG-106 §Story Decomposition: "Stories 1+2 to one Dev dispatch").
-- Story 1 does not touch `lib/baseline.py`, `baselines/`, `prompts/`, `fixtures/`, `tests/`, `README.md`, or root `Makefile` — those belong to S2 or S3.
+As a reviewer, I want the PR body to disclose the 7-role SKILL.md rewrite, the CI fixes, and a test plan of checks actually run, so that the diff matches the description.
 
-### Out of scope (story-local)
+Proposed PR body additions (fill the checkbox states only after running the commands):
 
-- Baseline JSON file and regression detector (Story 2).
-- Pipeline kickoff prompt + minimal config fixture (Story 2).
-- Pytest meta-tests + fixture workspaces (Story 3).
-- README + Makefile target (Story 3).
-- `--init-baseline` 5-run loop body (Story 2 — wired into runner but loop semantics are baseline-detector responsibility).
+```
+## Also in this PR
+- Rewrites 7 role SKILL.md files (architect, developer, godot, operations, product-delivery, quality, ui): net deletions, about -170 lines. Intentional: dynamic sub-agent spawning removed from role skills' internal dispatch, since the thin `delivery-<role>` agents are now the execution boundary (see commits bd83591, da2771b).
+- Moves the role-agent-first dispatch and `delivery-orchestrator` hand-off text from delivery-flow/SKILL.md into references/role-agent-dispatch.md (verbatim) to fit the Tier-A 500-line budget. No behavior change.
+- Fixes a pre-existing main defect: stale `claude-sonnet-4-5` in delivery-team/architecture/smoke-test-architecture.md:116 (introduced in 91e1297) changed to `claude-sonnet-4-6`, needed for stale-id-guard.
 
----
+## Test plan
+- [ ] python3 scripts/check_skill_budgets.py exits 0 (delivery-flow SKILL.md at N/500)
+- [ ] stale-model-id-guard grep pipeline (GNU grep) returns no hits
+- [ ] lint and header-warn workflow commands pass
+- [ ] moved text diffed against origin/main; matches verbatim
+- [ ] all 4 required checks green on the PR
+```
 
-## Story S2 — Forge baseline + scenario prompt (Effort: M)
+Acceptance criteria:
+- AC-3.1: Proposed text is delivered to the maintainer in the final report; `gh pr view 88 --json body` is unchanged by this step (no PR edit).
+- AC-3.2: Each test-plan checkbox is checked only after its command was run in Development; otherwise it is marked PARTIAL with a reason.
+- AC-3.3: `git diff origin/main...HEAD --stat | grep -c "SKILL.md"` is consistent with the "7 role SKILL.md files plus delivery-flow" claim (8 SKILL.md files); the maintainer confirms the count before editing the PR.
 
-**WIs**: W6-5, W6-6
-**Depends on**: S1 (needs `lib/runner.py` + `lib/report.py` interfaces wired so `--init-baseline` 5-run loop can produce reports for stddev computation)
-**Blocks**: S3 (meta-tests exercise `lib/baseline.py` paths)
+Test cases:
+- TC-3.1: `git diff origin/main...HEAD --stat -- '*/SKILL.md'`; expect 7 role files with net deletions plus delivery-flow.
+- TC-3.2: After the maintainer edits the PR, `gh pr view 88 --json body -q .body | grep -c "7 role SKILL.md"` prints `1`.
 
-### Files
+## Final verification sweep (Development DoD, after all stories)
+1. `python3 scripts/check_skill_budgets.py` exit 0.
+2. Guard pipeline exit 0 with no hits.
+3. lint and header-warn commands exit 0.
+4. `git status --short` shows only: delivery-flow/SKILL.md, references/role-agent-dispatch.md, references/manifest.yml, smoke-test-architecture.md (plus `.delivery/` artifacts).
 
-**New**:
-- `delivery-team/tests/smoke/lib/baseline.py`
-- `delivery-team/tests/smoke/baselines/hello_world_spike.json`
-- `delivery-team/tests/smoke/prompts/hello_world_spike.txt`
-- `delivery-team/tests/smoke/fixtures/delivery_config_minimal.yml`
-
-**Modified**: (none)
-
-### Acceptance Criteria
-
-- **AC-S2-01**: `python3 delivery-team/tests/smoke/run_smoke.py --init-baseline --dry-run` runs the scenario 5× sequentially (concurrency-of-1 enforced — second invocation while one is in flight raises) and writes `delivery-team/tests/smoke/baselines/hello_world_spike.json` with `mean`, `stddev`, `n` per metric. (covers W6-5 AC, maps to PRD AC-04 and FR-06.)
-- **AC-S2-02**: `baselines/hello_world_spike.json` JSON shape matches `delivery-team/architecture/smoke-test-architecture.md` §6 exactly: top-level `schema_version`, `scenario`, `n_samples`, `last_captured_utc`, `last_captured_git_sha`, `last_captured_cli_version`, `metrics{}` map; each metric entry has `mean`, `stddev`, `n`, optional `hard_max`, explicit `classification: "hard" | "advisory"`. Mirrors `governance/skill-budgets.json` per BC-02. (covers W6-5 shape AC, maps to PRD FR-05 and BC-02.)
-- **AC-S2-03**: `lib/baseline.py` `compare(report: dict, baseline: dict) -> CompareResult` returns `(exit_code, hard_failures: list[str], advisory_warnings: list[str])`. Exit-code mirrors `scripts/check_skill_budgets.py`: 0 = pass, 1 = hard fail, 2 = config/usage error (missing baseline file, malformed JSON). (covers W6-5 detector AC, maps to PRD AC-05 and architecture §7.)
-- **AC-S2-04**: HARD-FAIL triggers exactly: `outcome.success == false` OR `cost_usd > metrics.cost_usd.hard_max` OR `wall_clock_seconds > metrics.wall_clock_seconds.hard_max` OR `pipeline.dispatch_count > metrics.pipeline.dispatch_count.hard_max` OR `pipeline.stories_completed != metrics.pipeline.stories_completed.mean` (strict equality). (covers W6-5 hard-fail AC, maps to PRD FR-05 and architecture §7.)
-- **AC-S2-05**: ADVISORY-WARN triggers (exit code stays 0): `tokens.{input,output,cache_creation,cache_read}` outside `mean ± 2·stddev` OR any `skill_loads.<skill>` outside `mean ± 2·stddev`. Warnings appended to `report.json.advisory_warnings[]` and `summary.md`. (covers W6-5 advisory AC, maps to PRD FR-05 and architecture §7.)
-- **AC-S2-06**: `prompts/hello_world_spike.txt` is a single-paragraph delivery-flow kickoff prompt that explicitly requests: minimal pipeline, skip personas, skip UAT beyond minimal Stop-hook retrospective, single hello-world story. Plain text, no markdown. (covers W6-6 prompt AC, maps to PRD risk-register row "Prompt drift" mitigation.)
-- **AC-S2-07**: `fixtures/delivery_config_minimal.yml` is a minimal-viable `.delivery/config.yml` pinned to current config schema (v2.7 per `delivery-team/skills/delivery-flow/references/config-schema.md`); no optional sub-skills, no analytics dashboard, no fitness reviews; passes the delivery-flow setup-wizard schema check on load. (covers W6-6 fixture AC, maps to PRD FR-08 and BACKLOG-106 §W6-6.)
-- **AC-S2-08**: `baselines/hello_world_spike.json` contains entries for ≥ 6 metric groups: `wall_clock_seconds`, `cost_usd`, `tokens.*` (4 entries), `pipeline.*` (≥ 2 entries), `skill_loads.*` (≥ 3 entries). Total ≥ 11 metric rows in the `metrics{}` map. (covers W6-5 baseline-coverage AC, maps to PRD Success Metric.)
-
-### Test cases (QA will expand)
-
-- **TC-S2-01**: `--init-baseline --dry-run` with 5 fixture reports produces a baseline JSON whose `mean` and `stddev` match a hand-computed reference for each metric.
-- **TC-S2-02**: `--init-baseline` while one is already in flight raises with a clear "concurrency-of-1" error message.
-- **TC-S2-03**: baseline JSON validates against `governance/skill-budgets.json`-style shape (required keys present, `classification` is one of the two literals).
-- **TC-S2-04**: `compare()` against a synthetic report with `outcome.success=false` returns exit_code=1 + `hard_failures` containing the rule string.
-- **TC-S2-05**: `compare()` against a synthetic report with `cost_usd` above `hard_max` returns exit_code=1.
-- **TC-S2-06**: `compare()` against a synthetic report with `tokens.input` outside `mean ± 2·stddev` returns exit_code=0 + `advisory_warnings` non-empty.
-- **TC-S2-07**: `compare()` with missing baseline file returns exit_code=2.
-- **TC-S2-08**: prompt file passes a grep-check for the required guardrails ("skip personas", "skip UAT", "minimal retrospective").
-- **TC-S2-09**: minimal config loads under the delivery-flow setup-wizard without error.
-
-### Constraints (per producer-validator separation)
-
-- Story 2 authors `lib/baseline.py` (W6-5). It does NOT author the meta-tests for `lib/baseline.py` — those belong to Story 3 per BC-03 producer-validator separation.
-- Per BACKLOG-106 §Story Decomposition, Story 2 Dev dispatch is the SAME dispatch as Story 1 (producer side of producer-validator pair).
-- Story 2 does not author meta-tests, README, or Makefile (Story 3).
-- Story 2 may consume the `lib/runner.py` and `lib/report.py` interfaces produced by Story 1 but does not modify those modules' public APIs (any required API change goes back to S1 first).
-
-### Out of scope (story-local)
-
-- Meta-tests against `lib/baseline.py` (Story 3 — different Dev dispatch).
-- README documentation of baseline format (Story 3).
-- Makefile `smoke` target wiring (Story 3).
-- Re-running the 5-sample baseline post-merge (Stage 7 UAT + post-merge task per BACKLOG-106 §Post-merge).
-- Tightening 2σ band to 1.5σ (deferred per NFR-Reproducibility — future BACKLOG after 20+ runs).
-
----
-
-## Story S3 — Prove harness + ship docs (Effort: M)
-
-**WIs**: W6-7, W6-8
-**Depends on**: S1 (meta-tests exercise `lib/metrics.py` + `lib/aggregator.py` paths), S2 (meta-tests exercise `lib/baseline.py` paths; README documents prompt + config fixture)
-**Blocks**: (none — exit story)
-
-### Files
-
-**New**:
-- `delivery-team/tests/smoke/tests/__init__.py`
-- `delivery-team/tests/smoke/tests/test_meta.py`
-- `delivery-team/tests/smoke/tests/fixtures/` (directory with malformed-stream `.jsonl` fixtures, baseline-comparison demo `.json` fixtures, aggregator parsing inputs — sample `skill-loads.jsonl` + `run-summary-*.json` + `state.md`)
-- `delivery-team/tests/smoke/README.md`
-
-**Modified / New-or-Edit**:
-- `Makefile` (root) — NEW if absent, EDIT if present; adds `smoke` target.
-
-### Acceptance Criteria
-
-- **AC-S3-01**: `python3 -m pytest delivery-team/tests/smoke/tests/` passes 3 tests in < 5 sec wall-clock; zero `claude` subprocesses spawned during the run (asserted via process-table snapshot in a fixture or by inspection of the test bodies — no `subprocess.Popen("claude", ...)` allowed). (covers W6-7 AC, maps to PRD AC-06 and FR-07.)
-- **AC-S3-02**: Test 1 — malformed-stream fault injection: fixture jsonl contains 3 valid events + 2 malformed (missing `usage`, malformed JSON line); `lib/metrics.py:parse_stream` emits `warnings.warn(...)` for each malformed line and returns a `Metrics` whose `dispatch_count` reflects only the valid events. Test asserts both the warning count and the dispatch count. (covers W6-7 malformed-stream AC, maps to PRD FR-02.)
-- **AC-S3-03**: Test 2 — baseline-comparison demo: two synthetic reports (one tripping hard-fail via `cost_usd > hard_max`, one tripping advisory-warn via `tokens.input` outside ± 2σ) are passed to `lib/baseline.py:compare()` against a synthetic baseline fixture. Test asserts exit_code=1 + non-empty `hard_failures` on report A; exit_code=0 + non-empty `advisory_warnings` on report B. (covers W6-7 baseline-comparison AC, maps to PRD FR-05.)
-- **AC-S3-04**: Test 3 — aggregator-fixture parsing: fixture workspace at `tests/fixtures/workspace_sample/.delivery/{telemetry/skill-loads.jsonl, telemetry/run-summary-*.json, state.md}` is read by `lib/aggregator.py`; merged dict contains the expected `skill_loads[]`, `pipeline.{stages_completed,stories_completed,dispatch_count,defects_logged}` values pre-computed by hand. (covers W6-7 aggregator-parsing AC, maps to PRD FR-03.)
-- **AC-S3-05**: `delivery-team/tests/smoke/README.md` documents: (1) one-line invocation (`python3 delivery-team/tests/smoke/run_smoke.py` and `make smoke`), (2) the LOCAL-ONLY constraint with full path to the binding memory file `/home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md`, (3) flag reference (`--init-baseline`, `--cost-cap`, `--timeout`, `--baseline`, `--dry-run`), (4) baseline-capture workflow, (5) exit-code conventions, (6) pointer to `delivery-team/architecture/smoke-test-architecture.md`. (covers W6-8 README AC, maps to PRD AC-07/AC-08 and BC-01.)
-- **AC-S3-06**: root `Makefile` `smoke` target exists, invokes `python3 delivery-team/tests/smoke/run_smoke.py --cost-cap 3.00 --timeout 1800`, declared `.PHONY: smoke`. If `Makefile` is new, it carries that single target plus a `help` target listing it. (covers W6-8 Makefile AC, maps to PRD FR-08 and BACKLOG-106 §W6-8.)
-- **AC-S3-07**: No file authored by Story 3 imports from `delivery-team/tests/smoke/lib/metrics.py` or `delivery-team/tests/smoke/lib/baseline.py` source files at fixture-authoring time — Story 3 Dev dispatch wrote fixtures from the PRD/BACKLOG/architecture-doc contract only. (Verifiable post-hoc by git-blame split + commit-author check; covers W6-7 producer-validator AC, maps to BC-03.)
-- **AC-S3-08**: `python3 -m pytest delivery-team/tests/smoke/tests/ --collect-only` shows exactly 3 test functions; no `parametrize` explosion (keeps the < 5 sec budget honest and the failure attribution clear). (covers W6-7 test-count AC, maps to PRD AC-06.)
-
-### Test cases (QA will expand)
-
-- **TC-S3-01**: `python3 -m pytest delivery-team/tests/smoke/tests/` exits 0 and reports `3 passed in < 5.00s`.
-- **TC-S3-02**: process-table inspection during test run shows no `claude` child processes.
-- **TC-S3-03**: malformed-stream fixture trips exactly 2 warnings (one per malformed line); valid-event `dispatch_count` is correct.
-- **TC-S3-04**: synthetic hard-fail report yields exit_code=1; synthetic advisory-warn report yields exit_code=0 with non-empty advisory list.
-- **TC-S3-05**: aggregator fixture parsing yields the hand-computed merged dict (byte-equal JSON dump).
-- **TC-S3-06**: README contains the binding memory-file full path (grep check).
-- **TC-S3-07**: `make smoke -n` (dry-run) prints the runner invocation without executing it.
-- **TC-S3-08**: `make help` lists `smoke` as a target.
-- **TC-S3-09**: post-hoc git history shows S3 commit(s) by a different author/dispatch than S1+S2 commit(s).
-
-### Constraints (per producer-validator separation)
-
-- **producer-validator separation (BC-03, BINDING from past waves; validated:5)**: Story 3 meta-tests and fixtures MUST be authored by a DIFFERENT Stage-6 Dev dispatch than the dispatch that authored Story 1's `lib/metrics.py` (W6-2) and Story 2's `lib/baseline.py` (W6-5). The validator Dev dispatch authors fixtures from the PRD, BACKLOG-106, and `delivery-team/architecture/smoke-test-architecture.md` contracts ONLY and MUST NOT read the source of `lib/metrics.py` or `lib/baseline.py` while writing fixtures. Stage-7 UAT verifies the git log shows two separate Dev commits (or two distinct authors within a squash) for the producer (S1+S2) and validator (S3) halves. Source: ADR-tk5-001 §"Producer-Validator Separation" + BACKLOG-106 §W6-7 + BC-03.
-- The Scrum Bag at Stage 5 owns the dispatch assignment that enforces this separation; the orchestrator dispatches Story 3 to a fresh sub-agent context, not the same context that ran S1+S2.
-- Story 3 does not modify `lib/metrics.py`, `lib/baseline.py`, `lib/aggregator.py`, `lib/runner.py`, `lib/workspace.py`, `lib/report.py`, `prompts/`, `fixtures/delivery_config_minimal.yml`, or `baselines/hello_world_spike.json` — those are owned by S1 and S2.
-
-### Out of scope (story-local)
-
-- Modifying any `lib/*.py` parser, runner, or baseline detector (S1 + S2 own those — producer side).
-- Modifying the `baselines/hello_world_spike.json` capture (S2 — re-capture post-merge per BACKLOG-106 §Post-merge).
-- Re-authoring the prompt or minimal config fixture (S2).
-- Adding `.github/workflows/smoke-*.yml` (BANNED by BC-01 — README explicitly cites the binding memory file).
-- Cost-tracking dashboards or per-run history beyond the timestamped artifacts dir (future BACKLOG per PRD Out-of-Scope).
-
----
-
-## Cross-story producer-validator summary
-
-| Story | Dev dispatch | Authors | Validator-blind? |
-|-------|--------------|---------|------------------|
-| S1 | Dispatch A (producer) | `run_smoke.py`, `lib/{runner,workspace,metrics,aggregator,report}.py` | n/a — producer side |
-| S2 | Dispatch A (producer, same as S1) | `lib/baseline.py`, `baselines/hello_world_spike.json`, `prompts/hello_world_spike.txt`, `fixtures/delivery_config_minimal.yml` | n/a — producer side |
-| S3 | Dispatch B (validator, DIFFERENT from A) | `tests/test_meta.py`, `tests/fixtures/`, `README.md`, root `Makefile` | YES — fixtures written from PRD/BACKLOG/architecture contract only; MUST NOT read S1+S2 source while authoring |
-
-Search-grep-able phrase: **producer-validator** separation enforced at S3 per BC-03 (validated:5 from past waves).
-
----
-
-## WI coverage audit (no orphans, no duplicates)
-
-| WI | Story | File scope |
-|----|-------|-----------|
-| W6-1 | S1 | `run_smoke.py` + `lib/runner.py` + `lib/workspace.py` |
-| W6-2 | S1 | `lib/metrics.py` |
-| W6-3 | S1 | `lib/aggregator.py` |
-| W6-4 | S1 | `lib/report.py` |
-| W6-5 | S2 | `lib/baseline.py` + `baselines/hello_world_spike.json` |
-| W6-6 | S2 | `prompts/hello_world_spike.txt` + `fixtures/delivery_config_minimal.yml` |
-| W6-7 | S3 | `tests/test_meta.py` + `tests/fixtures/` |
-| W6-8 | S3 | `README.md` + root `Makefile` |
-
-Eight WIs, three stories, zero orphans, zero duplicates. Carve done.
-
-— Gandalf, PO, run-2026-05-13-tk5. Three stories to bind the eight, in the smoke-test ground where the shadows lie.
+## Open items
+- Maintainer decision: keep Fix B in PR #88 (recommended) or split to a separate PR against main.
+- Reference filename `role-agent-dispatch.md` is proposed; dev may confirm no naming clash in `references/`.

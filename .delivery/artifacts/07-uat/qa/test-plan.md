@@ -1,69 +1,78 @@
-<!-- STALE-WAVE-N-1 (W3-17 banner): this artifact carries marker `run-2026-05-09-tk4` but the current pipeline is `run-2026-05-13-tk5`. Producer/validator: confirm relevance before re-using. -->
-<!-- run: run-2026-05-09-tk4 | stage: 07-uat | depth: full | author: QA Engineer (Legolas Greenleaf) | role: qa-engineer | task: test-plan | wave: 3 — final -->
+<!-- run: run-2026-09-18-pr88 -->
+# UAT Test Plan: PR #88 CI fixes (BUG_FIX, LIGHT)
 
-# UAT Test Plan — Wave 3 (run-2026-05-09-tk4, BACKLOG-104 closure)
+Acceptance source: stories.md (Story 1 budget, Story 2 stale ID, Story 3 PR text) + idea brief. No PRD.
+Env: uncommitted working tree on branch delivery-team-agent-wrappers, worktree pr88. Each CI workflow `run:` command replayed locally. Guard replica run via `bash` with /usr/bin/grep (GNU). Note: the interactive shell aliases `grep` to ugrep; replica script run in fresh bash, unaffected.
 
-> "The leaves are counted, the road is marked, the last ridge is in sight. Five waves walked; the trees stand straighter than when we found them."
-> — Legolas, surveying the field at the end of the road.
+## 1. Test plan
 
-Stage 7 UAT for the final wave of the Skill Token-Economy initiative. Seven stories, 35 story-ACs, 10 initiative-ACs, 7 PRD FRs — all converged on Stage 6 with developer + qa + architect + tech-writer DoD reviews PASS. UAT verifies the integration: every test case from the test-strategy executes against the merged-but-unreleased tree, the cumulative token-economy delta is computed against the pre-Wave-0 baseline, the caveman-lite AC-13 close-out is honestly attempted, and the stop-rule status is recomputed.
+Scope: 4 CI checks + story ACs. Risk order: budget-check (P0, was failing) > stale-id-guard (P0, was failing) > lint/header-warn (regression guards) > behavior preservation of moved text.
+Entry: Dev DoD 3/3 done, working tree has changes. Exit: all CI-equivalent commands exit 0, no verbatim-loss, no new defects caused by PR.
+Assumptions: (a) CI runs on merge-ref of commit; uncommitted tree is a proxy, so real CI still needed after commit. (b) `origin/main` ref not fetched locally; `HEAD` (f4fea7d parent chain, = main content for these files) used as baseline. (c) Guard uses `git ls-files`, so untracked new reference file is skipped locally AND until `git add`; scanned manually.
 
-## Scope
+## 2. Executed test cases
 
-**In**:
-1. Empirical execution of all 16 test cases from `.delivery/artifacts/05-plan/qa/test-strategy.md` against the post-Story-7 tree.
-2. Cumulative reduction calculation across Waves 0+1+2+caveman-lite+3 vs the pre-Wave-0 baseline (BACKLOG-104 §6 AC-6 / NFR-4 — target ≥50%).
-3. caveman-lite AC-13 close-out attempt using post-W3-18 telemetry (PRD §FR-7.6 placeholder route honored).
-4. Stop-rule recomputation: defects/story rolling 3-PR window + Wave 3 first-dispatch reduction.
-5. Story 5 AC-amendment honored: Stories 5/7 carry-forward closures verified per `.delivery/artifacts/06-dev/dod/story-5-ac-amendment.md`.
+| ID | Check / command | Expected | Actual | Result |
+|---|---|---|---|---|
+| CI-1 budget-check | `python3 scripts/check_skill_budgets.py` | exit 0, no violation | `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).` exit=0 | PASS |
+| CI-1b permissive scan (warn-only) | `--warn-permissive` | never blocks | prints PERMISSIVE-LANGUAGE warnings (user-feedback etc., unrelated files); `|| true` in workflow | PASS (warn) |
+| CI-2 stale-id-guard | workflow HITS pipeline, GNU grep, temp script | no hits, exit 0 | `No stale 4.x model IDs found.` exit=0 | PASS |
+| CI-2b untracked new file | `grep -En 'claude-(opus\|sonnet\|haiku)-4[-.]' references/role-agent-dispatch.md` | no match | no match (grep exit 1) | PASS |
+| CI-3 lint | `python3 scripts/lint_known_debt.py` | exit 0 | `LINT OK: known_debt JSON-Python in sync; all SKILL.md frontmatter complete.` exit=0 | PASS |
+| CI-4 header-warn | `git ls-files '*SKILL.md' ':!:.delivery/*' \| xargs grep -L model_awareness:` | continue-on-error, warn only | 9 files listed (4 user-feedback personas, 5 research-agent types). None touched by PR; delivery-flow SKILL.md not listed | PASS (pre-existing warn, non-blocking) |
+| AC-1.2 | `wc -l < SKILL.md` | <=497 | 497 (was 514) | PASS |
+| AC-1.3 | reference file exists | ok | exists | PASS |
+| AC-1.4 | pointer count | SKILL.md >=2, manifest =1 | 2 and 1 | PASS |
+| AC-1.5 | verbatim strings in reference | each >=1 | developer 1, presentation 1, alias-creator 1, orchestrator 2, Invocation Template 1, role-agent-first 2 | PASS |
+| AC-1.5b | moved paragraphs vs HEAD SKILL.md | char-for-char | Read side-by-side of `git diff`: removed text present in reference; Step 4 fields/roles intact; wrapping of one line differs (whitespace only) | PASS |
+| AC-1.6 | "prefer" in Steps 4 and 5 | hit each | SKILL.md:335 and :368 | PASS |
+| AC-1.7 | governance/skill-budgets.json + workflows diff | empty | empty | PASS |
+| TC-1.3 | diff lines 1-332 vs HEAD | empty | identical | PASS |
+| TC-1.5 | `delivery-orchestrator` in SKILL.md | present | SKILL.md:336 | PASS |
+| TC-1.6 | numeric ref-count claims | +1 if any | SKILL.md:459 says 24 files; manifest self-entry says 24; manifest has 24 `- file:` rows. Consistent | PASS |
+| TC-1.7 | manifest YAML parse | exit 0 | ScannerError line 49 col 29; SAME error on HEAD version | FAIL-PREEXISTING (DEFECT-008) |
+| AC-2.2/2.4 | smoke-test-architecture diff | 1 line, model string only | +1/-1 at line 116, sonnet-4-5 -> 4-6 | PASS |
+| AC-2.5 | guard workflow unchanged | empty diff | empty | PASS |
+| NEG-1 | negative: reintroduce check - pre-edit hit was single line 116 | n/a | post-edit zero hits proves the filter chain does not mask (agent_registry.py:148 `#` comment exempt by design) | PASS |
+| AC-3.x | Story 3 PR text | no PR edit | not testable locally; PR body untouched by this step | N/A |
 
-**Out**:
-- Other-plugin Tier-B/C debt (deferred to BACKLOG-105+).
-- Wave 4 paradigm sub-skills beyond research-agent + user-feedback.
-- Additional cache-prefix re-freezes for non-anchor files (Story 5 AC-3 batch tool deferred to Wave 4 admin per AC-amendment).
+## 3. Exploratory session (Cross-Story Interaction)
 
-## Entry Criteria (verified at UAT load)
+Charter: Explore Story 1 (moved dispatch text) x Story 2 (doc edit) x agents/hooks/scripts using HICCUPPS (Claims, Comparable product, History) to discover whether moving text out of SKILL.md broke any pointer, anchor or link. Time-box: 30 min. Tour: dependency tour.
 
-- All 7 Story implementations present in `06-dev/developer/`: confirmed (story-1 through story-7-implementation.md).
-- All 7 Story DoD reviews present (developer + qa + architect + tech-writer per story): confirmed; STATUS values per `extract_dod_status.py` show DONE for all closed stories (Story 5 had R2 after AC-amendment).
-- `python3 scripts/check_skill_budgets.py` exits 0 with empty `known_debt[]`: VERIFIED at QA load — "BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s)."
-- `governance/cache-prefix-hash.txt` post-Story-5 hash `43067c9e07e0b988cd976432dd07d5bb3d2336c41ad08a1b0064fb2fbd0b8328` recorded.
-- `.delivery/telemetry/skill-loads.jsonl` reachable (10 rows; all pre-W3-18 placeholders per design); `.delivery/telemetry/stop-rule-tk4.txt` exists.
-- Wave 2 + caveman-lite both merged on main (pre-flight gate SATISFIED).
+Observations:
+1. Reachability: SKILL.md Step 4 (line 335-336) and Step 5 (368-369) name `references/role-agent-dispatch.md`; manifest row registered (line 106). Orchestrator hand-off discoverable from Step 4 pointer. OK.
+2. `delivery-team/agents/delivery-orchestrator.md` refs Steps 4, 5, 7, 4.5 and "Agent Invocation Template" by name only, no line numbers. Steps still exist with same headings. OK. Its Step 4 semantic text now lives one hop away; orchestrator must follow pointer (same as any reference). Minor note, not defect.
+3. Old anchors: grep of hooks/, scripts/, .claude-plugin/, governance/, delivery-team/ for moved text or SKILL.md line numbers found only `architecture/sub-agent-dispatch.md:51` ("SKILL.md line 699", already wrong vs 497-line file) -> DEFECT-009, pre-existing.
+4. Relative links in new file: `references/pipeline-stages.md` (exists, relative to skill dir, same as original SKILL context) and `agents/` (relative to plugin root; copied verbatim, was same in SKILL.md). Text is written from SKILL.md's viewpoint, so `references/...` is skill-root relative, not file-relative. Resolves per convention; low confusion risk.
+5. Step 5 wording is condensed (not verbatim: "Role-agent-first rule as Step 4: prefer..."). Reference retains original full sentence. Meaning identical. Step 5 line 368 is now over-long (long line) - cosmetic.
+6. Story 2 x Story 1: new .md is in guard scope only once tracked; scanned manually, clean.
+7. `delivery-team/tests/smoke/README.md` references smoke-test-architecture.md; only a doc pointer, fixture value not consumed by code.
 
-## Test Environment
+No new bugs caused by PR. Two pre-existing defects logged.
 
-- **Repo state**: branch `main` + Wave 3 work tree (post-Story-7 commit, pre-merge).
-- **Working dir**: `/var/home/meconnelly/Documents/GitHub/Claude-Plugins`.
-- **Tooling**: `wc -l`, `grep`, `find`, `python3` (3.11+), `git`, the new `scripts/{check_skill_budgets,lint_known_debt,extract_dod_status,sweep_stale_artifacts}.py` and `delivery-team/hooks/telemetry_run_summary.py`.
-- **Data fixtures**: pre-Wave-0 baseline reconstructed from `git show d0e0928~1:<path>` per file; Wave 0 archive `run-2026-05-03-tk0e.md` cited for the original AC-13 deferral context.
+## 4. Shared-Module Review <!-- retro c8f2 -->
 
-## Exit Criteria
+**Shared modules identified**: 3 (files modified in Dev and referenced by 2+ stage dirs: 05-plan, 06-development, 07-uat)
 
-- All 16 TCs executed; PASS / PASS_WITH_NOTES / FAIL recorded with empirical evidence (command + actual output).
-- Cumulative reduction calculated and reported with explicit formula + numerator + denominator + percentage.
-- AC-13 close-out: honest determination — empirical measurement attempted; chicken-and-egg case (W3-18 hardening shipped THIS pipeline) documented when applicable.
-- Stop-rule status: rolling 3-PR mean recomputed; tripwire artifact existence + parse verified.
-- go-no-go-input.md emitted for PO with QA confidence rating + rationale.
+| Module Path | Stages Referencing | Modified in Dev | Test Coverage | Status |
+|---|---|---|---|---|
+| delivery-team/skills/delivery-flow/SKILL.md | 05, 06, 07 | Yes | CI-1, CI-3, CI-4, AC-1.x, TC-1.3, exploratory 1-3 | PASS |
+| delivery-team/skills/delivery-flow/references/manifest.yml | 05, 06, 07 | Yes | AC-1.4, TC-1.6, TC-1.7 (pre-existing parse fail) | PASS with note |
+| delivery-team/architecture/smoke-test-architecture.md | 05, 06, 07 | Yes | CI-2, AC-2.x | PASS |
 
-## Approach
+New file references/role-agent-dispatch.md: also referenced in 3 stages, new; covered by AC-1.5, CI-2b.
+Consumers (grep, excl. .delivery): SKILL.md is consumed by delivery-orchestrator agent (by step name), scripts/check_skill_budgets.py + lint_known_debt.py + governance/skill-budgets.json (line-count only), CI workflows. manifest.yml consumed by SKILL.md count claim only; no code parses it. smoke-test-architecture.md consumed by tests/smoke/README.md (link only).
+**Findings**: every consumer context exercised; no assumption broken. Dev DoD 16/16 ACs corroborated.
 
-Eyes first, hands second — every TC runs the literal command from test-strategy.md against the working tree and records the actual output verbatim. Where the test-strategy specifies fault-injection (TC-5 frontmatter delete; TC-12 JSON↔Python drift; TC-13 synthetic stale file; TC-14 zero-token row; TC-16 injection-lint), the inverse-PASS path is verified by the structural shape of the lint/workflow + the implementation evidence cited in the developer's Story 7 implementation report (which already empirically tested the inverse paths during Stage 6) — re-running every fault-injection live during UAT would risk staining the working tree without proportional value.
+## 5. Verdict: GO_WITH_NOTES
 
-For the 4 Empirical Protocols (Empirical Measurement, Tripwire Activation, DoD Pass-Rate Regression, Defects-Per-Story Rolling Window), QA at Stage 7 runs them against live data and writes the binding citation evidence directly into `dogfood-report.md` rather than separate per-protocol artifacts; the test-strategy permits this consolidation.
+All 4 CI checks reproduce green locally against the working tree; behavior of moved text preserved.
 
-## Risk Calls (3)
-
-| Risk | Likelihood at UAT | Mitigation |
-|---|---|---|
-| AC-13 chicken-and-egg (W3-18 hardening shipped THIS pipeline; pre-W3-18 telemetry rows are structurally placeholder per FR-7.6 → no empirical first-3-dispatch reduction can be computed) | High (architecturally inherent) | Confidence rating capped at 4/5; future-run telemetry baseline named explicitly in dogfood-report; honest deferral cited in go-no-go-input |
-| Cumulative reduction target ≥50% measured on what? Lines vs tokens diverge (lines are eager-load proxy; tokens include lazy-load progressive disclosure) | Medium | Both numbers reported in dogfood-report; structural-lines result + telemetry-token-deferral both honest; PO chooses which is binding |
-| Fitness-review governance doc has 2 of 5 strict TC-15 header matches (Cadence, Outputs present; Owner / Inputs / Kill-criteria embedded but not as level-2/3 headers) | Low | TC-15 marked PASS_WITH_NOTES with semantic-content evidence; Story 6 tech-writer review already ruled this acceptable |
-
-## Pipeline Context
-
-- **Initiative**: Skill Token-Economy Wave 3 (final). 5 waves shipped across 2026-05-03 → 2026-05-09. End-state per BACKLOG-104 §Goal: empty `known_debt[]`; governance frontmatter on every delivery-team SKILL.md; 4 Wave 2 + 2 caveman-lite carry-forwards discharged; paradigm sub-skill pattern shipped on ≥3 axes.
-- **Theme**: lotr (continued). Run alias: Legolas (moderate).
-- **Models**: Sonnet primaries, Haiku DoD validators per binding from `topics/skill-token-economy.md`.
-
-— Legolas, QA Engineer, run-2026-05-09-tk4. *"Mark every leaf; the count is what proves the road was walked."*
+Residual risks / notes:
+- Nothing is committed. Local pass is a proxy; real CI must be green after commit/push (guard's `git ls-files` only sees the new reference once `git add`ed; ensure it is added or SKILL.md pointer dangles).
+- manifest.yml line-49 YAML parse error pre-exists on main (DEFECT-008); story TC-1.7 unmeetable; separate fix.
+- governance/cache-prefix-hash.txt stale (whole-file hash 43067c...; prefix hash 8c2e... unchanged by PR). Pre-existing (DEFECT-009).
+- header-warn lists 9 SKILL.md without model_awareness: warn-only, unrelated.
+- PR-body test-plan checkboxes (Story 3, "all 4 required checks green on the PR", verbatim diff vs origin/main) need a live PR run/dogfood and maintainer edit; not possible here. origin/main not fetched; HEAD used as baseline.
+- Behavioral risk: orchestrator now needs one extra file read for dispatch detail; not dogfooded with a live pipeline run.
