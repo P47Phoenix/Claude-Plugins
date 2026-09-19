@@ -112,8 +112,8 @@ The probe is intentionally a help-text grep rather than a feature flag — it st
     "cache_read": 32100
   },
   "model_usage": [
-    {"model": "claude-opus-4-7", "dispatches": 3, "input_tokens": 8000, "output_tokens": 4200},
-    {"model": "claude-sonnet-4-6", "dispatches": 5, "input_tokens": 4345, "output_tokens": 2589}
+    {"model": "claude-opus-5", "dispatches": 3, "input_tokens": 8000, "output_tokens": 4200},
+    {"model": "claude-sonnet-5", "dispatches": 5, "input_tokens": 4345, "output_tokens": 2589}
   ],
   "pipeline": {
     "stages_completed": 7,

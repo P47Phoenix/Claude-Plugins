@@ -365,7 +365,7 @@ This sub-section isolates 4.7-only guidance so future model migrations can repla
 Python and YAML/JSON config callers must name model IDs with a provenance comment so drift is auditable (F-01, F-03, F-04). Example:
 
 ```python
-MODEL_ID = "claude-opus-4-7"  # canonical 2026-04-22
+MODEL_ID = "claude-opus-5"  # canonical 2026-09-19
 ```
 
 Comment format: `# canonical <YYYY-MM-DD>` where the date matches the skill's `last_audited` frontmatter. Never hardcode a bare model ID without the comment — reviewers need one grep to find every pinned reference.
