@@ -1,26 +1,35 @@
-# QA DoD Review: Plan stage (BUG_FIX, LIGHT), round 2
+# Plan DoD: QA coverage review (Round 2, LIGHT)
 
-Status: DONE (all criteria PASS; 2 non-blocking notes)
+SKILL_LOADED: delivery-team:quality
+Role: QA | Task: dod-validation | Base tip 337edb5 | Inputs: stories.md, prd.md, ADR-models-001
 
-## AC enumeration (16 total)
-Story 1: AC-1.1 to AC-1.8 (8). Story 2: AC-2.1 to AC-2.5 (5). Story 3: AC-3.1 to AC-3.3 (3). Test cases: TC-1.1..1.7, TC-2.1..2.4, TC-3.1..3.2 (13). Each AC has a command and expected result.
+**Status: DONE** (all criteria PASS; 0 must-fix; 3 non-blocking notes)
 
-## Baseline runs (read-only)
-- `python3 scripts/check_skill_budgets.py`: prints `BUDGET VIOLATION ... delivery-flow/SKILL.md 514/500 (Tier-A)`, exit rc=1. Reproduces. AC-1.1 baseline correct.
-- SKILL.md is 514 lines; main is 499. Worktree file equals HEAD. Target <=497 needs net -17 lines. The moved block (Step 4 para 1, orchestrator para, Step 5 sentence) is about 20 lines, so pointers must total <=3 net-added lines. Feasible, tight; margin of 3 is right.
-- Stale-id guard, full pipeline, GNU grep 3.12 (`/usr/bin/grep`; the shell `grep` is a ugrep wrapper): HITS is exactly `smoke-test-architecture.md:116: {"model": "claude-sonnet-4-5", ...}`. Matches AC-2.1 and TC-2.1. Line 116 text matches AC-2.2 pre-edit apart from the model string. Post-edit expectation (no hits, "No stale 4.x model IDs found.") is sound: `claude-sonnet-4-6` is allowlisted.
-- `python3 scripts/lint_known_debt.py`: exit 0 (lint baseline OK). header-warn checks only `model_awareness:` in `*SKILL.md`; the new reference is not a SKILL.md, so no regression risk beyond keeping the SKILL.md header untouched (TC-1.3 covers lines 1-332).
-- `git diff origin/main...HEAD --stat -- '*/SKILL.md'`: 8 files (7 roles + delivery-flow), 99+/266-. Consistent with AC-3.3 and the PR text (about -170 net).
+## 1. PRD AC enumeration (own count from prd.md)
 
-## Per-criterion
-- AC-1.1 PASS. AC-1.2 PASS. AC-1.3 PASS. AC-1.4 PASS. AC-1.6 PASS (see note 2). AC-1.7 PASS. AC-1.8 PASS (covered via lint script and header-warn command, both runnable).
-- AC-1.5 PASS with note 1.
-- AC-2.1 PASS. AC-2.2 PASS. AC-2.3 PASS (overlaps AC-2.1; harmless). AC-2.4 PASS. AC-2.5 PASS.
-- AC-3.1 PASS. AC-3.2 PASS. AC-3.3 PASS.
-- Budget margin: PASS (497 target, 3 lines).
-- Lint/header-warn regression coverage: PASS (AC-1.8, TC-1.3).
+FR-1 4 | FR-2 2 | FR-3 2 | FR-4 2 | FR-5 1 | FR-6 5 (positive, negative-inject, positive-IDs, delimiters, no github.event) | FR-7 2 | FR-8 3 | FR-9 1 | FR-10 3 | FR-11 3 = **28**. Matches stories.md.
 
-## Notes (non-blocking, dev should apply)
-1. AC-1.5: "lines 333-346" is imprecise. In the current file the Step 4 paragraph starts at about line 335 and the orchestrator paragraph is at 350-352, so 333-346 misses the orchestrator text. Dev should use the actual line range (about 335-352, plus Step 5 line 385) or `git diff` removed lines (TC-1.4), which is the robust check.
-2. AC-1.6: "prefer" currently appears only in Step 5 (line 385), not Step 4. The Step 4 pointer must add the word "prefer" or the grep will not hit within Step 4. TC-1.5 similarly requires `delivery-orchestrator` to remain in SKILL.md.
-3. Shell `grep` here is a ugrep wrapper; use `/usr/bin/grep` for the guard, as stories already state.
+Mapping: AC-01..04 FR-1; 05-06 FR-2; 07-08 FR-3; 09-10 FR-4; 11 FR-5; 12-16 FR-6; 17-18 FR-7; 19-21 FR-8; 22 FR-9; 23-25 FR-10; 26-28 FR-11. AC-01..AC-28 contiguous, no gaps, no dupes, each FR-order matches PRD order. **PASS**
+
+## 2. Runnable / non-vacuous checks (RUN for real)
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| (a) `'*.ext'` globs cover root files | PASS | Scratch repo, root README.md with stale ID: `git ls-files '*.md'` -> 1 match; `'**/*.md'` -> 0 (false pass reproduced). Guard built with `'*.ext'` flagged injected README.md line exit 1. `'**/*.ext'` only in `on.paths` (AC-19 = 7 stays valid; current file has 2 such lines, becomes 7 after rewrite). |
+| (b) diff/commit-count post-commit forms | PASS | Scratch clone sim: `rev-list --count 337edb5..HEAD -- ':!.delivery'` = 0 pre-ship, 0 after .delivery-only commit (all=1, so bare count would break), 1 after ship. Post-ship: `numstat` prompt-engineer `1 1`; delivery-flow name-only count `0`; CHANGELOG `-vc` `0`; AC-10 `git diff -U0 337edb5..HEAD` and `git show -U0 HEAD` both `0`. Pre-ship forms yield 0/empty (vacuous only pre-ship; each has a non-vacuous post-ship expected value, so the final pass is real). |
+| (c) CHANGELOG rule vs guard | PASS | Baseline count of `claude-opus-5\|claude-sonnet-5\|stale-model-id-guard` in CHANGELOG = 0 (so AC-28a not vacuous). Guard on current tree flags exactly the 10 live sites, none in CHANGELOG. Stale ID appended to root CHANGELOG.md -> exit 1, so the no-retired-ID wording rule (T-C3) is needed and present. Placeholder `_No unreleased changes at this time._` exists at line 10. |
+| (d) US-4 | PASS | Explicit paths `.delivery/backlog/BACKLOG-109..112-*.md`; runnable US4-a/b/c; pre-impl run: 109-112 unused, US4-a prints MISSING, US4-b/c error rc=2 (not false pass). Wording "25 SKILL.md files" present; verified 25 SKILL.md files / 26 stamp lines. |
+| Guard matrix (guard per story contract, post-migration sim) | PASS | Clean tree -> message + 0. T-N1..N8 all 1; T-N9 1; T-P1..P4 all 0; T-D1/D2 0; T-D3 1; T-E1/E2 0; T-E3/E4 1; T-W1 scratch.json 1; T-R1 README/CHANGELOG 1. `\2` sed correct. |
+| Pre-impl gates | PASS | AC-02 baseline 4 old IDs in conftest (lines 105,117,129,151); AC-03 line 36; AC-04 line 174; AC-09 `3 passed`; AC-23 budget check exit 0; AC-24 `0`; AC-21 YAML loads; AC-22 currently exit 1 (gate blocks, T-V1). |
+
+## 3. Ordering and atomicity
+
+US-2 -> US-3 -> US-1 (guard + literals + fixtures + CHANGELOG in one commit) -> US-4 sane. US-1 holds guard (S15), literals (S1,S2,S5,S6,S11-S14) and fixtures (S7-S10); T-X1 proves halves fail alone; AC-26 `':!.delivery'` count tolerates interleaved artifact commits. **PASS**
+
+## Non-blocking notes (no fix required for DoD)
+
+1. AC-04 (line 174) and AC-06 (lines 148, 189) are line-pinned; S1/S5 provenance rewrite must stay line-neutral or Dev updates the numbers. Baseline lines 148/189 are already `#` lines.
+2. AC-01 has no guard-file exclusion: the rewritten guard must not keep old IDs outside `#` lines (current echo text at line 39 and grep at line 30 do). Rewrite removes them; keep in mind for Dev.
+3. AC-23/AC-10 pre-commit `git diff` is empty if changes are staged; use the stated post-commit forms for the final pass.
+
+## Verdict: DONE

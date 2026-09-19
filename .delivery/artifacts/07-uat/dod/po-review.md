@@ -1,36 +1,32 @@
-<!-- run: run-2026-09-18-pr88 -->
-# UAT DoD: Product Owner Review (PR #88 CI fix)
+# PO UAT DoD Review - model literals refresh (PR #88)
 
-Verdict: PASS (all criteria). Independently re-ran commands, did not trust QA table alone.
+Role: product-owner | Verdict: DONE (no must-fix)
 
-## Independent runs
-- `python3 scripts/check_skill_budgets.py` -> `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).` exit 0.
-- `wc -l` delivery-flow SKILL.md -> 497 (was 514; main 499).
-- `git diff --stat` (working tree): 3 source files touched (delivery-flow SKILL.md, references/manifest.yml, smoke-test-architecture.md) + new untracked references/role-agent-dispatch.md; rest is `.delivery/` artifacts. No change to governance/ or .github/.
-- Line 116 of smoke-test-architecture.md now `claude-sonnet-4-6`; repo grep for `claude-sonnet-4-5` outside `.delivery/` in tracked .md returns nothing.
-- SKILL.md:335 and :368 keep "prefer `delivery-<role>`" plus pointer to reference; `delivery-orchestrator` discoverable at :336.
+## Evidence run independently
+- grep of `claude-(opus|sonnet|haiku|fable)-[0-9]` outside .git/.delivery: 16 text hits (plus binary .pyc, untracked cache, ignored).
+- `python3 scripts/check_skill_budgets.py`: PASSED (17 files, 0 debt, 0 exceptions).
+- `git diff --stat -- . ':!.delivery'`: 7 files, +43/-31 (guard yml, CHANGELOG, agent_registry.py, smoke-test-architecture.md, telemetry-schema.md, conftest.py, prompt-engineer/SKILL.md).
+
+## Hit classification
+| Location | Class |
+|---|---|
+| agent_registry.py:149, 190 (sonnet-5, opus-5) | live, allowlisted |
+| agent_registry.py:174 (haiku-4-5-20251001) | live, allowlisted (pinned Haiku) |
+| agent_registry.py:148, 173, 189 | `#` provenance, exempt (retired IDs only in comments) |
+| smoke-test-architecture.md:115-116, telemetry-schema.md:36, conftest.py:105/117/129/151, prompt-engineer/SKILL.md:368 | live, allowlisted |
+| CHANGELOG.md:12-14 | doc, allowlisted IDs only (opus-5, sonnet-5, fable-5-1) |
+No non-allowlisted live literal remains.
 
 ## Criteria
-| # | Criterion | Result | Note |
-|---|-----------|--------|------|
-| G1 | budget-check exits 0, <=500, no Budget-Exception | PASS | 497/500, 0 exceptions, 0 known-debt |
-| G2 | stale-id-guard clean | PASS | One-line fix; guard workflow untouched; QA guard replica exit 0 |
-| G3 | Dispatch semantics preserved, PR behavior unchanged | PASS | Text moved to reference; pointers keep prefer-role-agent + fallback + orchestrator handoff; lines 1-332 identical |
-| G4 | lint + header-warn stay green | PASS | lint OK; header-warn lists only pre-existing untouched files |
-| G5 | PR text discloses rewrite, test plan honest | PASS (see Story 3) | |
-| Defect triage | DEFECT-008/009 prioritized, non-blocking | PASS | see below |
+1. All hard-coded literals migrated: PASS. Zero stale live IDs; guard is now positive allowlist (opus-5, sonnet-5, fable-5-1, haiku-4-5-20251001), so regressions fail CI.
+2. Fable 5.1 allowlisted: PASS (guard ALLOW list; CHANGELOG:13-14).
+3. Fable not-adopted honestly disclosed with rationale: PASS. CHANGELOG states "allowlisted only, not adopted"; BACKLOG-112 records rationale (2x Opus 5 cost, forced tool_choice 400, always-on thinking, refusal handling, no ZDR/Priority Tier) and adoption conditions. Note: user said "we have fabel now"; not adopting is a deliberate deviation, so PR body must say so up front (non-blocking).
+4. Deferred items captured with ACs: PASS. BACKLOG-109 (25 stamps, Should), BACKLOG-110 (cache-prefix-hash, Could), BACKLOG-111 (live baseline, local-only), BACKLOG-112 (Fable). ACs are checkable (stamp bumped-with-evidence or reason recorded; hash equals `sha256sum` of delivery-flow/SKILL.md or file removed). Minor: 109/110 ACs lack literal command strings; nice-to-have.
+5. BACKLOG-108 handling coherent: PASS. SUPERSEDED record maps retarget, carries forward decisions, splits S3->109, S5->111, drops re-freeze->110. Caveat: original 108 file is untracked in main checkout and not edited here; owner must apply header block.
+6. Residual risks prioritized, non-blocking: PASS. Release-plan risks (accidental staging, allowlist tightness) have mitigations; deferrals ranked Should/Could/Won't. Stamps stay stale until 109, honestly not bulk-bumped.
+7. Budget + diff scope: PASS (see evidence).
 
-## Defects
-- DEFECT-008 (P3): manifest.yml line 49 invalid YAML, same error on HEAD, so pre-existing. No CI parses it. Non-blocking. Rightly filed for separate PR. TC-1.7 marked FAIL-PREEXISTING honestly, good. Note: PR touches manifest.yml (adds a row), so reviewer may ask "why not fix?" Recommendation: keep out to keep diff tight; optionally one-line quote fix if maintainer wants. Team decision: separate PR.
-- DEFECT-009 (P4): stale line anchor in docs + hash file. Docs-only, pre-existing, not regression. Non-blocking.
-- Severity/priority ordering right (P3 above P4). Neither blocks any required check.
-
-## Story 3 adequacy
-Adequate. Discloses 7-role rewrite (with commit refs), verbatim move, pre-existing main defect fix, and test plan with concrete commands. Confirmed diff count: 7 role SKILL.md + delivery-flow = 8 files (99+/266-), matches the "8 SKILL.md" claim; "about -170" in text is net across the 7 role files only (idea brief figure), fine.
-Conditions (non-blocking, do before/while editing PR):
-1. Check the test-plan boxes only for commands QA actually ran (all 4 CI ones were run; "all 4 required checks green on the PR" only after push and CI runs, leave unchecked until then).
-2. Add to disclosure: DEFECT-008/009 are known pre-existing, not fixed here.
-3. Work is uncommitted in the worktree; new reference file is untracked. Must `git add` the reference file or CI will still fail (manifest points at it, budget only passes because the text moved). This is the top ship risk.
-
-## Residual risk
-Low. Main risk is forgetting to commit the untracked reference file. PR edit is maintainer action (AC-3.1).
+## Non-blocking follow-ups
+- State Fable decision in PR body.
+- Apply 108 header block in main checkout.
+- Add literal verify commands to 109/110 ACs.

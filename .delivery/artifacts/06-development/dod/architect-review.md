@@ -1,20 +1,30 @@
-# Architect DoD Review: role-agent-dispatch extraction
+# Architect DoD Review - Development (ADR-models-001)
 
-Verdict: PASS (5/5), one non-blocking note.
+Verdict: PASS. No must-fix. Four notes.
 
+## Criteria
 | # | Criterion | Result | Evidence |
-|---|-----------|--------|----------|
-| 1 | Three-level loading | PASS | New file is level-3 resource in references/. SKILL.md keeps 2-line pointer in Step 4 and Step 5. Content moved verbatim. |
-| 2 | Cache-prefix / Volatile rules | PASS | No check script exists that verifies the hash. Direct check: first 2048 bytes of SKILL.md sha256 8c2ebf97... identical to HEAD (and 2047/2049 differ, so boundary test is sensitive). Edits are in Phase 4 (~line 332+), well past Phase 3 end (~249). |
-| 3 | One Role = One Sub-Agent | PASS | Heading at line 253 untouched; changed hunks only Step 4/5/459. |
-| 4 | manifest.yml entry | PASS | Same `- file:` / `purpose:` shape as siblings (folded `>` used by others). Line 49 YAML error (unquoted colon in purpose) is identical on origin/main (col 29). New entry adds no second error: parse fails at line 49 in both. Count 23 -> 24 entries; self-entry text updated to 24. |
-| 5 | PR #88 semantics | PASS | "Prefer delivery-<role> agent, else inline Agent Invocation Template" preserved in SKILL.md Step 4 and full text in reference; orchestrator hand-off and required fields kept; Step 5 rule kept. |
+|---|---|---|---|
+| 1 | Positive allowlist | PASS | Guard sed-strips ALLOW IDs, fails on any leftover `claude-(family)-<digit>` token |
+| 2 | Single ALLOW var, prefix-less tails | PASS | `ALLOW='fable-5-1\|opus-5\|sonnet-5\|haiku-4-5-20251001'` |
+| 3 | Static grep only, GNU grep, no `claude` CLI | PASS | git ls-files + xargs grep/sed only |
+| 4 | No dual-allow window | PASS | Only 4 current IDs; no 4-7/4-6/4-8 in ALLOW |
+| 5 | Provenance exemption (`#`/`>` line start) | PASS | grep -vE on `file:line:` prefix; BACKLOG-108 record uses `>` |
+| 6 | Exclusions | PASS | `.delivery/*`, prd_flows.db, guard file; 7 file types |
+| 7 | Rollover = edit ALLOW only | PASS | Arch s.rollover documents; TOK edit only for new family (fable/mythos pre-seeded) |
+| 8 | Atomic single commit readiness | PASS | Guard + literals in the same working tree; my rerun of the guard pipeline on the tree gives zero hits |
+| 9 | FR-9 verification file exists and gates | PASS | qa/model-id-verification.md: live fetch 2026-09-19, 4 IDs confirmed, AC-22 run PASS; allowlist matches |
+| 10 | cache-prefix-hash honestly deferred | PASS | us-1.md states no cache-prefix files touched (BC-10); BACKLOG-110 OPEN records drift |
+| 11 | BACKLOG-108 superseded record coherent | PASS | Retarget opus-5/sonnet-5/haiku unchanged/fable allowlisted-not-adopted; split-outs map to 109/110/111/112, all exist |
 
-## Reference-count docs
-- SKILL.md line 459 updated 22 -> 24 files (matches actual 24 manifest entries; main text said 22 but had 23, so old count was already stale).
-- No other "22 files/entries" refs found outside .delivery artifacts.
+## Blind spots (honest, none correctness gaps)
+- Unscanned types: .toml/.cfg/.ini/.ts/.js/.tsx. Current tree: no ID hits in them (only .py hits, which are scanned). Arch doc failure-mode table does not list this. NOTE: add one line to architecture.md s.4 or BACKLOG.
+- Legacy/dot forms (`claude-3-5-sonnet`, `claude-3-opus`): not matched by TOK (family must follow `claude-`). Zero hits in tree. Undocumented. NOTE.
+- Bedrock/Vertex `@date` and `-v1:0` suffix forms: token matched up to `@`; stale ones caught, allowed ones with `@` pass delimiter. Haiku `claude-haiku-4-5@20251001` fails by design (not in ALLOW); documented only in QA note. NOTE.
+- Bare aliases (`model: opus|sonnet` in agents/*.md frontmatter, 15 occurrences): intentionally out of scope, family aliases exempt (carried in BACKLOG-108 record). Not a version pin. Acceptable.
+- Paths trigger: PR touching only unlisted types (.toml, .ts, ...) skips the guard. Same set as scanned files, so consistent; no false-green on scanned content. Acceptable. Undocumented; NOTE.
+- Guard file self-excluded: documented risk, covered by FR-6 ACs.
+- Split-line/concat IDs: documented, accepted.
 
-## Notes (non-blocking)
-- governance/cache-prefix-hash.txt holds sha256 43067c9e... of whole SKILL.md, matching neither HEAD (f3e626e5) nor working tree (0a7a92f4). Stale before this change; not a regression. Whole-file hash would need regeneration only if policy is whole-file; prefix bytes are unchanged.
-- Pre-existing manifest line 49 YAML error should be fixed separately (quote or use `>` on purpose).
-- Step 4 pointer text in SKILL.md is terse; acceptable.
+## Must-fix
+None.

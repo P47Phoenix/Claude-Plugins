@@ -1,25 +1,20 @@
-# PO DoD Review: Idea Brief (PR #88 BUG_FIX)
+# PO DoD Review: Idea Brief (model migration)
 
-Commands run from repo root:
-- `python3 scripts/check_skill_budgets.py` -> `BUDGET VIOLATION ... delivery-flow/SKILL.md 514/500 (Tier-A)`. Confirmed.
-- `wc -l` SKILL.md: 514 on branch; `git show origin/main:...| wc -l`: 499. Confirmed.
-- `sed -n 116p smoke-test-architecture.md` -> `{"model": "claude-sonnet-4-5", ...}`. Confirmed.
-- Workflow grep: regex flags `claude-sonnet-4-5`; allowlist and `#`/`>` exemptions match brief. Confirmed.
-- Repo grep for `claude-sonnet-4-5` bare: only the fixture line plus .delivery artifacts (prose/history). No code consumer found. Open question resolved.
-- File not in branch diff vs origin/main (pre-existing). Confirmed.
+Reviewer: PO | Input: .delivery/artifacts/01-idea/po/idea-brief.md | Verdict: PASS (1 minor wording fix)
 
+## Discovery grep re-run
+Command: `grep -rnoE 'claude-(opus|sonnet|haiku)-[0-9][0-9a-z.-]*' . --exclude-dir=.git --exclude-dir=.delivery`
+Result: 22 hits. Per file: agent_registry.py 6, conftest.py 4, stale-model-id-guard.yml 8, smoke-test-architecture.md 2, telemetry-schema.md 1, prompt-engineer/SKILL.md 1. Zero `claude-fable` hits (matches brief).
+Count CONFIRMED: 22 hits, 6 files. But the 6 files INCLUDE the guard; brief says "22 literal hits across 6 files plus the guard" and "The 6 files above with live literals, plus ... guard". Real split: 14 hits in 5 files + 8 hits in guard.
+
+## Criteria
 | Criterion | Result | Note |
 |---|---|---|
-| Problem | PASS | Both failures verified with numbers. |
-| Users | PASS | Author, contributors, reviewers. |
-| Goals present | PASS | 5 goals. |
-| Goals measurable | PASS | Exit codes, line counts, grep clean. Goal 5 is checklist-verifiable. |
-| Constraints | PASS | Verbatim move, cap, no CLI in CI, no guard weakening. |
-| Scope | PASS | Fix A/B/C plus verification. |
-| Out of scope | PASS | Explicit, non-empty. |
-
-Minor non-blocking notes:
-- Goal 1 wording "499 or fewer plus a short pointer" vs cap 500: net pointer must be <=1 line. Constraint says this; keep consistent in Plan.
-- Fix B: bare-grep shows no code consumer; Plan can drop the pre-edit grep as done.
-
-OVERALL: PASS
+| Problem | PASS | Stale IDs, guard allows old IDs, Fable absent. |
+| Users | PASS (weak) | Implicit (plugin maintainers/consumers, downstream API callers). Acceptable for LIGHT stage. |
+| Measurable goals | PASS | 4 goals + Success signal testable via git grep, guard inject test, smoke/budget/hash checks. |
+| Constraints | PASS | CI static-only, guard mechanics, budgets, hash re-freeze, Fable/Opus5 API diffs. |
+| Scope / out-of-scope | PASS | Both explicit; out-of-scope marked "proposed", Refine confirms. |
+| Open questions actionable | PASS | 9 items, each with option set or recommended default; Refine told to take Q1-4 first. |
+| BACKLOG-108 coherent | PASS | Supersede+retarget; carry-forward, retarget, split-out lists consistent with scope; memory topic handling stated. |
+| Discovery count | FAIL (minor) | Section: Discovery totals + In scope. Why: "6 files plus the guard" is off by one; guard is the 6th file. Fix: reword to "22 hits: 14 in 5 files plus 8 in the guard (6 files total)"; In scope: "the 5 files above plus the guard rewrite".

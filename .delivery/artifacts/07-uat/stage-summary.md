@@ -1,7 +1,7 @@
-<!-- run: run-2026-09-18-pr88 -->
-# Stage 7 UAT — Summary (run-2026-09-18-pr88)
-
-- QA -> DONE GO_WITH_NOTES (`qa/test-plan.md`); DevOps -> DONE (`devops/release-plan.md`)
-- DoD (3/3 parallel): po DONE, qa DONE (8/8), devops DONE (7/7)
-- Defects logged: DEFECT-008 (manifest.yml line-49 YAML error, pre-existing on main, P3), DEFECT-009 (stale line anchor, P4)
-- Verdict: GO_WITH_NOTES. Nothing committed/pushed; awaiting user approval.
+# Stage 7 UAT — Summary (run-2026-09-19-models)
+- DoD (3/3 required, parallel): po DONE (7/7), qa DONE (all CI commands re-run green, no must-fix), devops DONE (8/8)
+- DevOps: file list matches git status; scratch-clone revert restored pre-change state; paths syntax valid; no claude CLI or github.event in workflows; branch at 337edb5 supports plain push
+- Technical Writer: optional, skipped (CHANGELOG covered by US-3)
+- Final verdict: GO_WITH_NOTES
+- Notes: guard does not scan .toml/.ts/.js or legacy claude-3-*/@date forms (zero hits today); manifest.yml line-49 YAML error and stale governance/cache-prefix-hash.txt pre-existing, deferred (BACKLOG-109..112)
+- Nothing committed; commit/push awaits user approval

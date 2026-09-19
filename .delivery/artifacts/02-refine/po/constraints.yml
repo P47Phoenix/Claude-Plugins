@@ -1,51 +1,77 @@
 # .delivery/artifacts/02-refine/po/constraints.yml
-# Problem-scoped constraints for BACKLOG-106 (delivery-team plugin smoke test)
-# Run: run-2026-05-13-tk5
+# Problem-scoped constraints for: model literals refresh + stale-model-id-guard redesign
+# Branch: delivery-team-agent-wrappers (PR #88 worktree). Supersedes prior-run content (BACKLOG-106).
 
-problem_scope: smoke-test runner for delivery-team plugin
+problem_scope: repo-wide migration of hard-coded model IDs to the latest set, plus positive-allowlist CI guard
 
 binding_constraints:
   - id: BC-01
-    rule: NO .github/workflows/smoke-*.yml — claude CLI not available in CI runners
-    source: /home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md
+    rule: CI guard is static grep only (git ls-files | grep). No claude CLI, curl, wget, pip or network in workflows.
+    source: memory feedback_claude_code_local_only.md
     bypass_allowed: false
   - id: BC-02
-    rule: Aggregator reads existing telemetry hooks output directly; no re-implementation
-    source: BACKLOG-106 reuse mandate (idea-brief Constraints section)
-    references:
-      - delivery-team/hooks/telemetry.py
-      - delivery-team/hooks/telemetry_run_summary.py
-      - governance/skill-budgets.json  # shape pattern for baseline JSON
-      - scripts/check_skill_budgets.py  # exit-code convention
-      - scripts/lint_known_debt.py      # exit-code convention
+    rule: Guard is a positive allowlist of exactly claude-fable-5-1, claude-opus-5, claude-sonnet-5, claude-haiku-4-5-20251001. Whole-token match (token regex claude-(opus|sonnet|haiku|fable|mythos)-[0-9][-A-Za-z0-9.]*[-A-Za-z0-9]; a trailing '.' or ',' is not part of the token); anything else matching claude-(opus|sonnet|haiku|fable|mythos)-<digit> fails.
+    source: PRD Q3 / FR-6; memory allowlist-over-deny lesson
+    bypass_allowed: false
   - id: BC-03
-    rule: Meta-test fault-injection fixtures and lib/metrics.py + lib/baseline.py authored by SEPARATE Stage-6 Dev dispatches
-    source: producer-validator separation (binding from past waves; validated:5)
-    applies_to:
-      producer:
-        - delivery-team/tests/smoke/lib/metrics.py
-        - delivery-team/tests/smoke/lib/baseline.py
-      validator:
-        - delivery-team/tests/smoke/tests/test_meta.py
-        - delivery-team/tests/smoke/tests/fixtures/
+    rule: No dual-allow window. Literals and guard allowlist ship in one atomic commit.
+    source: BINDING-2.1 (carried from BACKLOG-108); PRD FR-11
+    bypass_allowed: false
   - id: BC-04
-    rule: Full scope (runner + metrics + baseline + regression diff + meta-tests) in one initiative; not staged across separate commits
-    source: idea-brief PO directive — route through delivery-flow
+    rule: "Provenance exemption is retained. Lines whose content starts with '#' or '>' (after the file:line prefix) are exempt. A trailing mid-line '# prior: ...' on a code line is NOT exempt."
+    source: PRD FR-2 / FR-7
+    bypass_allowed: false
+  - id: BC-05
+    rule: Use GNU grep (/usr/bin/grep). No PCRE-only or BSD-only flags in the workflow.
+    source: task invocation
+    bypass_allowed: false
+  - id: BC-06
+    rule: Workflow run blocks must not interpolate ${{ github.event.* }}.
+    source: .github/workflows/workflow-injection-lint.yml (DEFECT-004 guard)
+    bypass_allowed: false
+  - id: BC-07
+    rule: Fable is not adopted in any role. claude-fable-5-1 is permitted by the guard only. Registry keeps three default agents.
+    source: PRD Q4/Q5
+    bypass_allowed: false
+  - id: BC-08
+    rule: Tier mapping preserved. Sonnet sites -> claude-sonnet-5; Opus sites -> claude-opus-5; Haiku claude-haiku-4-5-20251001 unchanged.
+    source: PRD section 5
+    bypass_allowed: false
+  - id: BC-09
+    rule: model_awareness stamps, "Opus 4.7"/F-08/xhigh prose, family-alias model frontmatter, .delivery/ history and CHANGELOG history are NOT edited.
+    source: PRD section 4
+    bypass_allowed: false
+  - id: BC-10
+    rule: delivery-team/skills/delivery-flow/SKILL.md is not edited; governance/cache-prefix-hash.txt is not re-frozen in this change.
+    source: PRD section 7
+    bypass_allowed: false
+  - id: BC-11
+    rule: Smoke fixture string edits in conftest.py are separate from harness logic; existing smoke tests keep passing (baseline 3 passed).
+    source: BINDING-4.5; PRD FR-4
+    bypass_allowed: false
+  - id: BC-12
+    rule: SKILL.md budgets hold (scripts/check_skill_budgets.py exit 0); prompt-engineer/SKILL.md edit is line-count neutral and made via plugin-dev:skill-development.
+    source: CLAUDE.md; PRD FR-10
+    bypass_allowed: false
+  - id: BC-13
+    rule: Merge blocked until QA records live-page verification of all four IDs in .delivery/artifacts/06-development/qa/model-id-verification.md.
+    source: PRD FR-9; memory (external claims cite live URL)
+    bypass_allowed: false
+  - id: BC-14
+    rule: BACKLOG-108 is not edited (untracked, main checkout). Supersede text lives in PRD section 9.
+    source: task invocation
+    bypass_allowed: false
 
-cost_limits:
-  per_run_usd: 3.00              # hard --cost-cap on single smoke run
-  baseline_capture_usd_envelope: 15.00  # 5 runs x $3 cap for --init-baseline
-  wall_clock_seconds: 1800       # 30 min hard ceiling per run
-  concurrency: 1                 # baseline capture enforces sequential
+scan_surface:
+  globs: ['*.py', '*.md', '*.yml', '*.yaml', '*.json', '*.txt', '*.sh']
+  excluded: ['.delivery/', 'prd-quality-gate-flow/prd_flows.db', '.github/workflows/stale-model-id-guard.yml']
 
-regression_thresholds:
-  hard_fail:
-    - outcome.success == false
-    - cost_usd > hard_max
-    - wall_clock_seconds > hard_max
-    - pipeline.stories_completed mismatch vs baseline
-    - pipeline.dispatch_count > hard_max
-  advisory_warn:
-    - tokens.* outside mean +/- 2 * stddev
-    - skill_loads.* outside mean +/- 2 * stddev
-  tightening_policy: advisory-only on tokens/skill_loads for first month; tighten after 20+ accumulated production runs
+allowlist:
+  - claude-fable-5-1
+  - claude-opus-5
+  - claude-sonnet-5
+  - claude-haiku-4-5-20251001
+
+verification_sources:
+  - url: https://platform.claude.com/docs/en/about-claude/models/overview
+    status: unverified-live   # verified only against claude-api skill cache 2026-06-24; QA re-fetch required (BC-13)

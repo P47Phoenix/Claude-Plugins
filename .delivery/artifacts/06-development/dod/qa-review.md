@@ -1,43 +1,57 @@
-# QA DoD Review: Stories 1-2 (PR #88 CI fixes)
+# QA DoD Review: Development (US-1..US-3, PR #88 model-ID guard)
 
-**Status**: DONE (all 16 ACs PASS; 2 non-blocking notes)
-Env: GNU grep 3.12 at /usr/bin/grep (default `grep` on PATH is ugrep 7.8.4; guard rerun with GNU). All commands run by QA.
+Status: DONE. 28/28 ACs PASS. No FAIL, no must-fix.
 
-## Story 1
-| AC | Expected | Actual | Result |
-|---|---|---|---|
-| 1.1 | no BUDGET VIOLATION, exit 0 | "BUDGET CHECK PASSED: 17 file(s), 0 known-debt, 0 exception(s)", exit 0 | PASS |
-| 1.2 | <=497 | 497 | PASS |
-| 1.3 | ok | ok | PASS |
-| 1.4 | SKILL.md >=2; manifest ==1 | 2; 1 | PASS |
-| 1.5 | each string >=1; verbatim | developer 1, presentation 1, alias-creator 1, orchestrator 2, Agent Invocation Template 1, role-agent-first 2. Text diff vs HEAD SKILL.md: only whitespace rewrap (one line joined, "fall back ... Agent Invocation Template (see ...") | PASS |
-| 1.6 | "prefer" hit in Steps 4, 5 | line 335 (Step 4), line 368 (Step 5) | PASS |
-| 1.7 | no new KNOWN_DEBT; skill-budgets.json diff empty | 0 lines diff (origin/main...HEAD and worktree); 0 known-debt | PASS |
-| 1.8 | lint, header-warn exit 0 / no new warnings | `lint_known_debt.py` exit 0 "LINT OK". header-warn logic: 9 files missing model_awareness, all pre-existing (user-feedback personas x4, research-types x5); delivery-flow SKILL.md and new ref not in list. No new warnings | PASS |
+Method: ran each AC on live working tree (WT). Post-commit ACs run in scratch clone `/tmp/qa` (clone of worktree, `git apply` diff, untracked copied, one commit `fbf9a34` atop 337edb5). Guard runner `/tmp/g.sh` extracted verbatim from workflow `steps[1].run`. AC count confirmed: FR table 4+2+2+2+1+5+2+3+1+3+3 = 28 (AC-01..AC-28).
 
-TCs:
-- TC-1.3 (lines 1-332 vs HEAD): identical.
-- Prefer+fallback semantics (diff vs HEAD): Step 4 pointer keeps "prefer matching `delivery-<role>` agent via Agent tool, else fall back to inline Agent Invocation Template". Step 5 keeps "Role-agent-first rule as Step 4: prefer `delivery-<role>` agents". Removed text all present in the ref file (Step 4 role list, required fields, orchestrator hand-off, Step 5 sentence). PROSE STYLE block untouched. PASS.
-- TC-1.5: `delivery-orchestrator` discoverable at SKILL.md:336. PASS.
-- TC-1.6: only manifest comment at line 2 (no numeric claim). Dev updated SKILL.md "22 files" to 24 and manifest "22 entries" to 24 (22 + new ref + self entry was already counted; consistent with manifest edit). Not an AC; QA did not recount entries.
-- Budget margin: 497/500, margin 3 (meets target).
-- New-ref side effect: HEAD has role-agent-dispatch.md untracked; guard file-list uses `git ls-files` so it is scanned only once tracked. Manual scan of it: no 4.x model IDs.
+## Per-AC results
 
-## Story 2
-| AC | Expected | Actual | Result |
-|---|---|---|---|
-| 2.1 | pre-edit 1 hit at :116; post-edit none | pre-edit (HEAD blob): line 116 `claude-sonnet-4-5`; post-edit HITS empty | PASS |
-| 2.2 | line 116 exact text with 4-6 | `    {"model": "claude-sonnet-4-6", "dispatches": 5, "input_tokens": 4345, "output_tokens": 2589}` | PASS |
-| 2.3 | HITS empty, "No stale" | HITS=[] (full pipeline, GNU grep) | PASS |
-| 2.4 | 1 ins, 1 del | 1 file changed, 1 insertion(+), 1 deletion(-) | PASS |
-| 2.5 | guard workflow diff empty | 0 lines | PASS |
+| AC | Where | Expected | Actual | Result |
+|---|---|---|---|---|
+| 01 | WT | no output | none (rc 1) | PASS |
+| 02 | WT | conftest.py:4 | `conftest.py:4` | PASS |
+| 03 | WT | line 36 | `telemetry-schema.md:36` | PASS |
+| 04 | WT | line 174 | `agent_registry.py:174` | PASS |
+| 05 | WT | no output | none | PASS |
+| 06 | WT | 2 | 2 | PASS |
+| 07 | WT | no output | none | PASS |
+| 08 | WT | >=1 | 1 | PASS |
+| 09 | WT+clone | 3 passed | 3 passed | PASS |
+| 10 | WT (git diff) + clone (git show) | 0 | 0 / 0 | PASS |
+| 11 | WT | no output, rc 1 | none, rc 1 | PASS |
+| 12 | clone | msg + 0 | `No non-allowlisted model IDs found.` 0 | PASS |
+| 13 | clone | 8 IDs + json line rc 1 | all 9 rc 1 | PASS |
+| 14 | clone | 4 allowed rc 0 | all rc 0 | PASS |
+| 15 | clone | haiku-20251001 0; multi 0; opus-5.1 1 | 0, 0, 1 | PASS |
+| 16 | WT | 0 | 0 | PASS |
+| 17 | clone | `#`/`>` 0; bare 1; mid-line 1 | 0,0,1,1 | PASS |
+| 18 | WT | no output rc 1 | none, rc 1 | PASS |
+| 19 | WT | 7 | 7 | PASS |
+| 20 | clone | scratch.json hit, rc 1 | `scratch.json:1:...` rc 1 | PASS |
+| 21 | WT | 0 | 0 | PASS |
+| 22 | WT | 0, no MISSING | 0, none | PASS |
+| 23 | WT+budgets; clone | budget rc 0; `1 1` | PASSED 17 files rc 0; `1 1` both | PASS |
+| 24 | clone (337edb5..HEAD) | 0 | 0 | PASS |
+| 25 | WT | >=1 | 2 | PASS |
+| 26 | clone | 2 and 1 | 2 and 1 (plain rev-list also 1) | PASS |
+| 27 | clone HEAD | msg + 0 | msg + 0 | PASS |
+| 28 | WT / clone | >=1 ; 0 | 2 ; 0 | PASS |
 
-## Story 3 (text only)
-- AC-3.1: proposed text present in stories.md (Story 3 block); no PR edit made by QA. PASS.
-- AC-3.2: checkboxes must be ticked only after run; QA ran budget, guard, lint, header-warn, diff. "all 4 required checks green on PR" cannot be ticked until CI runs (mark PARTIAL). PASS (rule stated).
-- AC-3.3: `git diff origin/main...HEAD --stat -- '*/SKILL.md'` = 8 files (7 roles + delivery-flow), 99+/266-, net -167 (about -170). Consistent. PASS.
+## Guard matrix (single line appended to root README.md in clone)
+
+- 8 stale, exit 1: claude-opus-4-7, sonnet-4-6, sonnet-4-5, opus-4-8, opus-5.1, haiku-4-5, sonnet-4-5-20250929, opus-4-20250514 -> all 1.
+- JSON-style `{"model": "claude-opus-4-7"}` in README.md -> 1.
+- Allowed 4 (fable-5-1, opus-5, sonnet-5, haiku-4-5-20251001) -> all 0.
+- Trailing punct: `opus-5.` 0, `opus-5,` 0, `haiku-4-5-20251001.` 0, multi-ID list 0, `opus-5.1` 1, `opus-5.1.` 1.
+- `# prior: ...opus-4-8` 0; `> prior: ...opus-4-8` 0; bare `prior: ...` 1; `MODEL = "claude-sonnet-5"  # prior: claude-opus-4-7` 1 (mid-line comment not exempt).
+- Root README.md injection detected (exit 1): no F-1 false pass.
+- scratch.json tracked injection -> `scratch.json:1` exit 1.
+- After cleanup: clean tree exit 0.
+
+## Other
+- Smoke tests: 3 passed (WT and clone).
+- `scripts/check_skill_budgets.py`: PASSED, 17 files, 0 debt, rc 0.
 
 ## Notes (non-blocking)
-1. `manifest.yml` line 49 fails `yaml.safe_load` ("mapping values are not allowed here": unquoted `Git integration: ...`). Pre-existing at HEAD, not from this change. TC-1.7 fails as literally written; no CI job parses it. Suggest a separate fix (quote the purpose value), out of scope.
-2. Default `grep` here is ugrep; the guard was rerun with /usr/bin/grep. CI uses GNU, so result stands.
-3. Untracked new ref file must be `git add`ed so CI (and guard) sees it.
+- Post-commit ACs simulated with a single commit incl. `.delivery` files; AC-26 uses `:!.delivery` pathspec so a separate artifacts commit still counts 1.
+- AC-25 dev-notes.md and AC-22 verification file present as untracked; they must be staged in the ship commit(s).

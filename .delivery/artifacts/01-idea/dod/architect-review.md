@@ -1,35 +1,32 @@
-# Architect DoD Review: Idea Stage (PR #88 CI fixes)
+# Architect DoD Review: Idea brief (model literal migration)
 
-Role: Solution | Task: dod-validation | Reviewed: `.delivery/artifacts/01-idea/po/idea-brief.md`
-All commands run from the worktree root.
+SKILL_LOADED: delivery-team:architect | Role: Solution | Task: review | Model: sonnet
+
+Verdict: feasible. No blockers. 3 PASS, 0 FAIL, 4 advisory notes.
 
 ## Criteria
 
 | # | Criterion | Result |
-|---|-----------|--------|
-| 1 | Feasibility: Fix A (move Step 4/5 dispatch text to references/, meet 500-line budget, no behavior change) | PASS |
-| 2 | Feasibility: Fix B (`claude-sonnet-4-5` to `claude-sonnet-4-6` in smoke-test doc is safe) | PASS |
-| 3 | No obvious blockers or hidden dependencies | PASS (with two notes) |
+|---|---|---|
+| 1 | Literal-site inventory complete | PASS |
+| 2 | Fixture change (conftest.py) safe | PASS |
+| 3 | Static-grep positive allowlist expressible, incl. fable-5-1/opus-5/sonnet-5/haiku-4-5-20251001 | PASS |
 
-## Evidence
+### 1. Inventory
+Own grep `claude-(opus|sonnet|haiku|fable|mythos)-[0-9]...` over whole tree (excl .git, .delivery), all file types: hits only in the 6 files + guard yml the brief lists. Line numbers match exactly (agent_registry 148/149/173/174/189/190; conftest 105/117/129/151; prompt-engineer 368; telemetry-schema 36; smoke-test-architecture 115/116). Zero `claude-fable`, zero `.json/.yml/.sh` literals besides guard. No hook or test pins a versioned ID. `model:` frontmatter: 14 sonnet + 1 opus, aliases only. Confirmed.
+Note: `agent_registry.py` comments at 148/173/189 also say "opus-4-7 migration" (no `claude-` prefix, not caught by any ID regex). Reword them when editing so provenance stays accurate.
 
-### 1. Fix A: PASS
-- `python3 scripts/check_skill_budgets.py` reproduces `BUDGET VIOLATION: delivery-flow/SKILL.md 514/500 lines (Tier-A)`.
-- `git diff origin/main...HEAD` on SKILL.md: 18 insertions, 3 deletions. Step 4 gains a role-agent-first paragraph and an orchestrator hand-off paragraph. Step 5 gains a 3-line "same rule" addendum. All of it is self-contained prose, so it can be moved verbatim.
-- Main is 499 lines, so 1 net line of headroom exists. Moving about 15 lines into a reference and leaving a 1-line pointer gives about 500 lines, which is at the cap and passes (cap is inclusive: the violation is reported only above 500). Tightening one other line is cheap insurance.
-- `references/` holds 30+ files and `manifest.yml` indexes them (`file` + `purpose` entries). A new `references/role-agent-dispatch.md` fits the Level-3 convention. Register it in `manifest.yml`.
-- Behavior risk: the Step 4 text says "Required fields either way", which refers to the field list that stays in SKILL.md. The moved paragraph must be reworded minimally or the pointer must keep that sentence in place. Keep the fallback sentence ("fall back to the Agent Invocation Template") in the pointer, because it is the load-bearing instruction. This is an authoring detail, not a blocker.
-- `delivery-team/agents/` contains all 10 role agents plus `delivery-orchestrator.md`, matching the list in the moved text.
+### 2. Fixtures
+`python3 -m pytest -q` in delivery-team/tests/smoke: 3 passed (pytest 9.0.3 available). Grep of tests/ shows no assertion on the `opus-4-7` literal; conftest strings are only fixture data. Changing to `claude-opus-5` is safe. Keep telemetry-schema.md:36 and smoke-test-architecture.md:115-116 in sync (docs only).
 
-### 2. Fix B: PASS
-- Guard pipeline reproduced with `/usr/bin/grep` (see note 1). Exactly one hit: `delivery-team/architecture/smoke-test-architecture.md:116`. Nothing else in the tracked tree.
-- Simulated the edit (sed to a stream, not applied): the same pipeline yields zero hits, so the guard goes clean.
-- Consumers of that string: `grep -rn "sonnet-4-5"` outside `.delivery/` finds only line 116 and a `#` provenance comment in `agent_registry.py` (already exempt). `smoke-test-architecture.md` is referenced only by `delivery-team/tests/smoke/README.md` (prose links, lines 79 and 160). `model_usage` is consumed by `tests/smoke/lib/metrics.py` and `report.py`, which key on the runtime model string from the run and read no fixture from this doc. No test, fixture or JSON schema pins the value.
-- `claude-sonnet-4-6` is on the workflow allowlist. The JSON line does not start with `#` or `>`, so a provenance comment is not viable; the value swap is correct.
+### 3. Guard
+Feasible in pure `git ls-files | grep`. Sketch: extract all `claude-(opus|sonnet|haiku|fable|mythos)-[0-9][-0-9a-z.]*` matches, drop lines whose text (after `file:line:`) starts with `#` or `>`, then drop allowed IDs with `grep -vE` on an exact-token allowlist:
+`claude-(fable-5-1|opus-5|sonnet-5|haiku-4-5-20251001)([^0-9a-z.-]|$)`.
+The trailing boundary is required so `claude-opus-5-1`, `claude-sonnet-5-20250101`, `claude-fable-5` (prefix of fable-5-1) are NOT accepted by prefix. Existing guard's `[^7]` trick and `\b` are brittle; replace.
 
-### 3. Blockers and notes: PASS
-1. The `grep` in this shell is `ugrep`, and it rejects `\b` in the guard's `grep -vE 'claude-sonnet-4-6(\b|[^0-9-])'`. My first run errored. The Developer DoD must use `/usr/bin/grep` or the CI-equivalent GNU grep, or the local guard run will produce false results. Do not conclude "clean" from an errored pipeline.
-2. The stale-id-guard workflow path filter excludes `.delivery/**` but the local pipeline also excludes it via `':!:.delivery/*'`; matching, no action.
-
-## Verdict
-PASS. Both fixes are feasible with no behavior change. Recommended for Plan: new `references/role-agent-dispatch.md`, 1-line pointer in Step 4 (plus Step 5 folded into it or reduced to zero net), register in `manifest.yml`, re-run budget check and the guard with GNU grep.
+## Advisory notes (not FAIL)
+- A. Line-level exemption: a line with both an allowed and a stale ID passes only if the stale is in a comment line; do the allowlist check per-match (`grep -o`, then filter tokens), not per-line, else `"claude-opus-5" ... claude-opus-4-7` on one line slips through. Use `grep -Eno` then filter.
+- B. Inline trailing comments (`code  # prior: claude-x`) are NOT exempt under a line-start rule. Current repo has none (registry provenance is on own `#` lines), so fine; document it.
+- C. Prose false positives: 11 non-comment prose lines mention "Opus 4.7" (space/dot form, no `claude-` prefix), so the ID regex ignores them. Good; but CHANGELOG.md historical lines containing full IDs would need `>` or exclusion. Currently none found with full IDs.
+- D. Widening scan paths to `*.yml/*.json/*.txt` would self-match the guard file's own allowlist and `.github/workflows` text; exclude the guard file (or keep the allowlist in a `#`-free helper file excluded by pathspec). Also `governance/cache-prefix-hash.txt` needs re-freeze only if delivery-flow/SKILL.md changes; this migration need not touch it (stamps out of scope), so likely no re-freeze.
+- E. Live-model-ID verification (brief's caveat, skill table cached 2026-06-24) remains a Refine action; feasibility does not depend on it.

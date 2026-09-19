@@ -1,7 +1,8 @@
-# Stage 6 Development — Summary (run-2026-09-18-pr88)
-
-- Story 1 (budget): developer -> CODE_COMPLETE; SKILL.md 514->497, new references/role-agent-dispatch.md, manifest 23->24
-- Story 2 (stale ID): developer -> CODE_COMPLETE; smoke-test-architecture.md:116 sonnet-4-5 -> 4-6
-- Story 3: PR text only, no repo change
-- DoD (3/3 required validators, parallel): developer DONE, qa DONE (16/16 ACs), architect DONE
-- Notes: manifest.yml line-49 YAML parse error pre-exists on origin/main (not fixed here); governance/cache-prefix-hash.txt already stale (not a regression); SKILL.md 2048-byte prefix unchanged. Nothing committed yet.
+# Stage 6 Development — Summary (run-2026-09-19-models)
+- US-2 (qa) live model-ID verification: CODE_COMPLETE
+- US-3 (developer) CHANGELOG + dev-notes: CODE_COMPLETE
+- US-4 (po) BACKLOG-108-SUPERSEDED + BACKLOG-109..112: CODE_COMPLETE
+- US-1 (developer) atomic migration (10 literal sites + 2 provenance comments) + positive-allowlist guard: CODE_COMPLETE
+- DoD (3/3 required, parallel): developer DONE (16/16), architect DONE (11/11), qa DONE (28/28 ACs, post-commit simulated in /tmp clone)
+- Orchestrator spot-check: guard run block exits 0 on tree; exits 1 on stale root README; smoke 3 passed; budgets pass; diff = 7 source files
+- Notes: guard does not scan .toml/.ts/.js or legacy claude-3-*/@date ID forms (zero hits today; undocumented); nothing committed
