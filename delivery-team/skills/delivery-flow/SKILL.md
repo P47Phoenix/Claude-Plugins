@@ -332,11 +332,24 @@ specific agents to invoke, their task types, and the sub-flow sequence.
 
 ### Step 4: Invoke Primary Agent
 
-Construct the prompt using the Agent Invocation Template (see
-`references/pipeline-stages.md` for the exact fields per stage). Required fields:
+If a `delivery-<role>` agent exists for the required SKILL (e.g. `delivery-developer`,
+`delivery-architect`, `delivery-quality`, `delivery-operations`, `delivery-ui`,
+`delivery-user-feedback`, `delivery-product-delivery`, `delivery-godot`,
+`delivery-presentation`, `delivery-alias-creator` — see `agents/`), dispatch by
+calling the `Agent` tool with that agent's name, passing it the same fields below as
+its task. The role agent is a thin wrapper that calls the matching skill internally,
+so this avoids constructing the full inline prompt in this context. If no matching
+role agent exists, fall back to constructing the prompt directly using the Agent
+Invocation Template (see `references/pipeline-stages.md` for the exact fields per
+stage). Required fields either way:
 **SKILL**, **TASK_TYPE**, **ROLE**, **INPUT ARTIFACTS** (file paths only — not content),
 **MEMORY LESSONS**, **ALIAS** (personality block if non-business theme; see
 `references/pipeline-stages.md` for injection format), **OUTPUT** (namespaced path).
+
+For an autonomous/background run of the full pipeline, `delivery-flow` may instead
+hand off entirely to the `delivery-orchestrator` agent (spawn via `Agent` tool, name
+`delivery-orchestrator`), which owns the complete stage loop — including this dispatch
+rule — off the calling conversation's context.
 
 **PROSE STYLE block injection** (post-ALIAS, pre-OUTPUT): if `config.prose_style == caveman-lite` (default), inject the verbatim PROSE STYLE block from `references/prose-style.md` into the dispatch prompt; if `standard`, omit the block entirely (no placeholder line). Same rule applies uniformly to Primary (this Step 4), Supporting (Step 5), and DoD Validator (Step 7) dispatches. See ADR-tk3-001 Element 2.
 
@@ -368,7 +381,9 @@ The orchestrator MAY use mkdir. It MUST NOT write content into artifact files.
 ### Step 5: Invoke Supporting Agents
 
 At full depth, invoke supplementary worker sub-agents (metrics, security, test strategy,
-etc.) using file paths as inputs. Dispatch independent agents in PARALLEL. Required
+etc.) using file paths as inputs. Dispatch independent agents in PARALLEL. Same
+role-agent-first rule as Step 4: prefer dispatching to the matching `delivery-<role>`
+agent by name over constructing an inline prompt, where one exists. Required
 agent failure: retry ×2. Optional agent failure: log gap, proceed, notify downstream.
 See `references/pipeline-stages.md` for parallel/sequential annotations per stage.
 
