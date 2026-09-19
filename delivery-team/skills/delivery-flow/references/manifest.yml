@@ -103,5 +103,9 @@ references:
   - file: references/commands.md
     purpose: Full 18-row user commands table (all commands recognized during pipeline session)
 
+  - file: references/role-agent-dispatch.md
+    purpose: >
+      Role-agent-first dispatch rule (Steps 4-5) and delivery-orchestrator hand-off text, moved verbatim from SKILL.md
+
   - file: references/manifest.yml
-    purpose: This file — references manifest (22 entries)
+    purpose: This file — references manifest (24 entries)
