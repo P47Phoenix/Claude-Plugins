@@ -1,5 +1,5 @@
 # .delivery/artifacts/02-refine/po/constraints.yml
-# Problem-scoped constraints for BACKLOG-108 (latest-model references; Revision 4)
+# Problem-scoped constraints for BACKLOG-108 (latest-model references; Revision 5)
 # Run: run-2026-05-28-backlog-108
 
 problem_scope: remove hard-pinned model version strings repo-wide and refer to the latest version of a model family; migrate today's stale 4.7 pins to that scheme (user decision 2026-09-20, supersedes the claude-opus-5 pin)
@@ -15,7 +15,7 @@ entities:
 
 invariants:
   - One Role = One Sub-Agent; dispatch count equals stage dod_validators length
-  - No pinned model-version string, versioned stamp, or model-version prose mention (PIN_RE, STAMP_RE, PROSE_RE, BARE_RE) in py/md/yml/yaml/txt/sh outside CHANGELOG.md and .delivery/; NO comment, blockquote, heading or code-fence exemption; only per-line escape is the marker model-pin-ok
+  - No pinned model-version string, versioned stamp, or model-version prose mention (PIN_RE, STAMP_RE, PROSE_RE, BARE_RE; counts and durations filtered by COUNT_RE) in py/md/yml/yaml/txt/sh outside CHANGELOG.md and .delivery/; NO comment, blockquote, heading or code-fence exemption and NO per-line escape (a sentence that trips the guard is reworded)
   - Baselines record the concrete model observed at run time (model_resolved, primary = system/init model); never assumed; an unknown or empty model is a capture failure
   - model_awareness stamps are applied only after prose review passes DoD
   - No .github/workflows file invokes the claude CLI; no smoke-*.yml workflow
@@ -52,14 +52,18 @@ binding_constraints:
     source: BINDING-2.1, BINDING-5.1
     bypass_allowed: false
   - id: BC-07
-    rule: Producer-validator separation. Smoke meta-test fixtures testing metrics.py / baseline.py are authored in a SEPARATE Agent dispatch from the producer-file authors. Observable invariant — git status during validator dispatch shows producer files unchanged.
+    rule: Producer-validator separation. Smoke meta-test fixtures testing the smoke lib are authored in a SEPARATE Agent dispatch from the producer-file authors. Observable invariants (FR-4.4) - separate commits; disjoint non-empty Dispatch-Id trailer sets; producer lib/ unchanged from validator start to validator END; the real_shape test fails against the unfixed parser first (AC-5.9b).
     source: BINDING-4.5
     applies_to:
       producer:
         - delivery-team/tests/smoke/lib/metrics.py
         - delivery-team/tests/smoke/lib/baseline.py
+        - delivery-team/tests/smoke/lib/runner.py
+        - delivery-team/tests/smoke/lib/report.py
+        - delivery-team/tests/smoke/lib/aggregator.py
+        - delivery-team/tests/smoke/run_smoke.py
       validator:
-        - delivery-team/tests/smoke/tests/test_meta.py
+        - delivery-team/tests/smoke/tests/test_model_capture.py
         - delivery-team/tests/smoke/tests/fixtures/
     bypass_allowed: false
   - id: BC-08
@@ -91,8 +95,9 @@ model_refs:
     STAMP_RE: any digit in a model_awareness value; pattern_library_version must be rev-<n>
     PROSE_RE: Opus/Sonnet/Haiku/Fable/Mythos followed by a version digit (capitalised or upper case), or lowercase alias with hyphen-digit
     BARE_RE: bare version numbers (4.7 style) in md prose after on/under/in/for/the/new/so/with/isolates
-    scope: tracked py, md, yml, yaml, txt, sh files; json is outside scope by design (baselines record observed IDs)
-  allowlisted_locations: [CHANGELOG.md, ".delivery/**", "lines carrying the marker model-pin-ok"]
+    COUNT_RE: false-positive filter; a family word plus integer plus count noun, or a context word plus decimal plus time/size unit, is blanked before PROSE_RE and BARE_RE
+    scope: git ls-files --cached --others --exclude-standard, py, md, yml, yaml, txt, sh files; json is outside scope by design (baselines record observed IDs)
+  allowlisted_locations: [CHANGELOG.md, ".delivery/**"]   # no per-line escape exists
   frontmatter_tier_aliases:  # 9 lines in 9 SKILL.md (model: and phase_1_detector_model:); each value must be one of opus, sonnet, haiku
     allowed_values: [opus, sonnet, haiku]
   exempt:
@@ -104,6 +109,7 @@ cost_limits:
   baseline_capture_usd_envelope: 15.00   # 5 runs x $3 cap for --init-baseline
   wall_clock_seconds: 1800               # 30 min hard ceiling per run
   concurrency: 1                         # baseline capture enforces sequential
+  cli_budget_flag: --max-budget-usd      # runner passes the per-run cap to claude itself (in-process cap cannot fire on the real stream)
 
 smoke_metrics:
   confirmed_observable:                   # track always (BINDING-4.1)

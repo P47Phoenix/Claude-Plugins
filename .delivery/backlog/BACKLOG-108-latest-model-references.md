@@ -20,7 +20,7 @@ This initiative: invert the guard to forbid pins; make stamps and prose version-
 ## Discovery (verified 2026-09-20; canonical commands in the PRD section 1)
 
 - `find . -name SKILL.md | wc -l` = **34**; stamp census `26 25 {...frontmatter-only: 19, opus-4-7: 7}`
-- Canonical count (PRD section 1, Revision 4 contract, no exemptions): `guard-scope hits 91 files 31` = pin 20 + stamp 52 + prose 19 (target `guard-scope hits 0 files 0`)
+- Canonical count (PRD section 1, Revision 5 contract: no exemptions, no per-line escape, COUNT_RE filters counts and durations): `guard-scope hits 91 files 31` = pin 20 + stamp 52 + prose 19 (target `guard-scope hits 0 files 0`)
 - Real `stream-json` capture (CLI 2.1.278): model is top-level in `system/init`, `message.model` in assistant events; the current parser reports model `unknown` and cost 0.0 on it (PRD S5)
 - Claude Code aliases `opus`/`sonnet` = latest; API has no evergreen alias for current models (PRD section 8)
 
@@ -36,7 +36,7 @@ This initiative: invert the guard to forbid pins; make stamps and prose version-
 | S6 | `governance/cache-prefix-hash.txt` + cache-fingerprint ADR | S | G9 |
 | S7 | memory + CHANGELOG + squash/ff/push + dispatch manifests | S | G8, G10 |
 
-Acceptance criteria are authoritative in the PRD (`.delivery/artifacts/02-refine/po/prd.md`, Revision 4), one runnable AC per FR. Ship path: local `python3 scripts/check_model_pins.py` gate, then squash-rebase + ff-merge + push origin/main, no PR.
+Acceptance criteria are authoritative in the PRD (`.delivery/artifacts/02-refine/po/prd.md`, Revision 5), one runnable AC per FR. Ship path: local `python3 scripts/check_model_pins.py` gate, then squash-rebase + ff-merge + push origin/main, no PR.
 
 ## Budget
 

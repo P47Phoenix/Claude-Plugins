@@ -25,16 +25,18 @@ stale 4.7 pins to that scheme.
 - Tests and doc examples use synthetic IDs with no digit and no `-latest` suffix (for example `claude-opus-fixture`).
 - Baselines record the concrete model observed (`model_requested`, `model_resolved`, `model_pin_env`); a regression run WARNs on `model moved`.
 
-**BINDING-0.3 — Guard forbids pins (amended by Revision 4, 2026-09-20).** The patterns `PIN_RE`, `STAMP_RE`, `PROSE_RE`, `BARE_RE`
+**BINDING-0.3 — Guard forbids pins (amended by Revision 5, 2026-09-20).** The patterns `PIN_RE`, `STAMP_RE`, `PROSE_RE`, `BARE_RE`, `COUNT_RE`
 live in ONE place, `scripts/check_model_pins.py` (no ID allowlist; the workflow only calls the script). PIN_RE is family-agnostic
-and case-insensitive. No comment, blockquote, heading or code-fence exemption. Allowlisted locations: `CHANGELOG.md`, `.delivery/**`,
-and a line carrying the marker `model-pin-ok` (forbidden at ship). Scope: tracked py, md, yml, yaml, txt, sh; `.json` excluded
+and case-insensitive. No comment, blockquote, heading or code-fence exemption. Allowlisted locations: `CHANGELOG.md`, `.delivery/**`. NO per-line escape (the `model-pin-ok` marker was removed in Revision 5;
+counts and durations such as "Sonnet 4 stories" or "in 5.0 seconds" are filtered by `COUNT_RE`, anything else is reworded).
+Scope: `git ls-files --cached --others --exclude-standard`, py, md, yml, yaml, txt, sh; `.json` excluded
 (baselines record observed IDs). The workflow triggers on push to main, pull_request and workflow_dispatch; because ship is a
 direct push, the blocking gate is the LOCAL run of the same script before the push (PRD FR-1.5, FR-7.3).
 
 **BINDING-0.4 — Observed model, never `unknown` (Revision 4).** Baselines record `model_resolved[0]` = the `system/init` model
 (observed top-level `model` on CLI 2.1.278). An `unknown` or empty model fails the capture. The smoke parser must read the real
 stream shape (`message.model`, `message.usage`, result `total_cost_usd`); the hand-written fixture shape was wrong.
+Revision 5: the baseline also lists per-sample raw streams (`samples`, hashes) so the observed model and cost are checkable; the per-run cap is enforced by the CLI (`--max-budget-usd`) as well as the harness; S5 meta-tests live in `tests/test_model_capture.py`; producer-validator separation is observable (separate commits, disjoint `Dispatch-Id` trailers, `lib/` unchanged start to end, red-first `real_shape` test).
 Caveats: serving infrastructure can change behaviour under a fixed ID; `claude -p` without `--bare` loads host context.
 
 **Superseded rulings**
