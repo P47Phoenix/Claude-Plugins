@@ -1,0 +1,3 @@
+expected_validators: 2
+architect	a1f6316f53fa69575
+qa	a87b8afed927a9cbc
