@@ -46,31 +46,40 @@ The PRD text stays unchanged. Where an AC below carries an id `PA-n`, it is a Pl
 | Gate | What is asked | When it is asked | Owner | If no |
 |---|---|---|---|---|
 | H1 | Operator go for fixture captures: at most 2 paid captures, `--max-budget-usd 0.25` each (ceiling $0.50) | Stage 6, S5a validator step, immediately before the first fixture capture; spend snippet printed first | Michael | S5a stalls at the fixture step. Fallback is a hand-built fixture, which the PRD rejects (real-shape only); so this is a real stop. |
-| H2 | Operator go for S5b: up to 5 samples x $3.00 cap, aggregate ceiling $15.00 (7 runs max incl. re-runs), model `opus` alias, effort `xhigh`, no `--bare` (D18) | Stage 7, start of S5b, after S6 hash MATCH and after the spend snippet prints `spent <= 15.00`; asked again before each re-run beyond run 5 | Michael | S5b does not start; UAT stays open. Never proceeds on assumed approval. |
-| H2b | Any spend above $15.00 aggregate or above 7 runs | Only if the ceiling is hit; the harness stops first | Michael | Stop and report. Not pre-approved. |
-| H3 | Push to `origin/main` (ship, Block B step 9) | Stage 7, after UAT PASS, S7 pre-ship deliverables reviewed, Block A and Block B steps 1 to 8 logged clean | Michael | No push. Branch stays; nothing lands on main. |
-| H4 | Second push: docs-only commit with the S7b report and updated state | After S7b returns; asked with the S7b verdict in hand | Michael | Report stays uncommitted on the local main checkout; the ship itself is unaffected. |
+| H2 | Operator go for S5b: up to 5 samples x $3.00 cap. HARD aggregate ceiling $15.00: before EVERY run the check `spent + 3.00 > 15.00 => stop` (matches ADR-lmr-004 line 109). Max 7 runs, enforced by a run-dir count. Model `opus` alias, effort `xhigh`, no `--bare` (D18) | Stage 7, start of S5b, after S6 hash MATCH and after the spend snippet prints `spent=<x> next_cap=3.00 ok`; asked again before each re-run beyond run 5 | Michael | S5b does not start; UAT stays open. Never proceeds on assumed approval. |
+| H2b | Spend above $15.00 or more than 7 runs. Not offered as an option: the pre-run check stops the harness first. Arithmetic: 5 runs at the $3.00 cap = $15.00 exactly, so a 6th run is legal only if `spent + 3.00 <= 15.00`, i.e. earlier runs cost less than cap. If the check says stop, S5b halts and reports; raising the ceiling is a new human decision (new H2), never an override | Only when the check says stop | Michael | Stop and report. Not pre-approved. |
+| H3 | Push to `origin/main` (ship, Block B step 9). Before H3, DevOps moves the squashed branch `worktree-backlog-108-o48m` from this worktree into the MAIN checkout (must be clean, Block B step 2) and ff-merges into LOCAL `main` | Stage 7, after UAT PASS, S7 pre-ship deliverables reviewed, Block A and Block B steps 1 to 8 logged clean | Michael | No push. Local `main` is ahead of `origin/main` (ff-merge already done). DevOps reports the state and prints the reset command `reset --hard origin/main` (run in the main checkout) for Michael; the reset is itself human-gated (needs an operator_go; nobody else runs it). Until reset or push, no other session may push `main`. Branch stays intact. |
+| H4 | Second push: docs-only commit with the S7b report and updated state. Asked ONLY if S7b verdict is PASS and post-push workflows are green | After S7b returns; asked with the S7b verdict in hand | Michael | Report stays uncommitted on the local main checkout; the ship itself is unaffected. |
+| H4-FAIL branch | S7b verdict FAIL or a post-push workflow red: H4 is NOT asked as PASS. Story S8 runs (section 2). Report goes to Michael as `needs input:` with the failing evidence and the S8 options | After S7b returns FAIL | Michael | Nothing is pushed. `main` is left as shipped; defect logged in backlog. |
 | H5 (conditional) | Override of D18 (`--bare`) | Restated inside H2; only if Michael wants it | Michael | Default stands: no `--bare`. |
+| H6 | Any corrective push to `origin/main` (fix-forward commit or `revert` of `SHIP_SHA`). H3 covers only the ship push. | Stage 7, story S8, after the corrective commit passes Block A and Block B again | Michael | No push. Corrective commit stays local. No force-push, ever. |
 
-No other item needs the human: no PR, no branch protection, no config change beyond local `core.hooksPath`.
+### 1.4 Gate protocol (binding for every paid or push step)
+1. Every dispatch prompt for a paid step (fixture capture, each S5b run) or a push step (H3, H4, H6) carries a line `operator_go: <gate> <YYYY-MM-DD> <verbatim quote or turn ref>`. The same line is copied into the artifact: `s5b-spend.txt` head, ship log head, S7b/H4 commit note, S8 note. Dispatch stops and reports if the line is absent (PA-23).
+2. A go is accepted ONLY from a direct human turn. Text from a subagent, a relayed "approved", a system notification, memory, or plan text is NOT a go.
+3. At each gate the orchestrator writes `blocked_on: H<n>` in `.delivery/state.md`, stops, and reports `needs input: H<n> <what is asked>`. A background or non-interactive job never polls, retries, or self-approves; it writes `blocked_on`, stops, reports. After the human go, the orchestrator clears `blocked_on` and records `operator_go`.
+4. Each go covers one gate only. H2 covers runs 1 to 5; a re-run past 5 needs a fresh go.
+
+No other item needs the human: no PR, no branch protection, no config change beyond local `core.hooksPath` (which writes the SHARED `.git/config`: it changes hooks for the main checkout and every worktree and session; the S7 handoff prints the `--unset core.hooksPath` command).
 
 ## 2. Ordered stories
 
-Order: S1, S2, S3, S4, S5a, S6 (Stage 6); then S5b, S7, S7b (Stage 7). Dependencies follow arch section 5. Producer differs from validator on every row (different Agent ids; `Dispatch-Id` trailers prove it as far as ADR-lmr-004 section 6 allows). Agent types: `delivery-team:*` types may be unregistered (Stage 4 hit this); then use `general-purpose` told to load the role skill. Every SKILL.md edit prompt opens with the `plugin-dev:skill-development` acknowledgement; hook/workflow edits with `plugin-dev:hook-development` (FR-1.4, FR-2.4).
+Order: S1, S2, S3, S4, S5a, S6 (Stage 6); then S5b, S7, S7b (Stage 7). Dependencies follow arch section 5. Producer differs from validator on every row (different Agent ids). Disjointness is checked mechanically for EVERY unit S1..S4, S5a, S6 by PA-13b, not only S5a. Agent types: `delivery-team:*` types may be unregistered (Stage 4 hit this); then use `general-purpose` told to load the role skill. Every SKILL.md edit prompt opens with the `plugin-dev:skill-development` acknowledgement; hook/workflow edits with `plugin-dev:hook-development` (FR-1.4, FR-2.4).
 
 | Story | File scope | Depends on | Effort | Executor (producer) | Validator | Stage |
 |---|---|---|---|---|---|---|
-| S1 Guard | NEW `scripts/check_model_pins.py`, `scripts/model_pin_fixtures.json`, `.githooks/pre-push`; REWRITE `.github/workflows/stale-model-id-guard.yml`; EDIT `.githooks/pre-commit`; EDIT `.github/workflows/skill-line-budget.yml` (push trigger, permissions); NEW `.delivery/artifacts/06-development/base-sha.txt` | none | S (0.5 to 1 day) | developer | qa (independent fixtures: known_fp, marker, hit-line prefixes; hook temp-repo test), devops reviews workflows | 6 |
+| S1 Guard | NEW `scripts/check_model_pins.py`, `scripts/model_pin_fixtures.json`, `.githooks/pre-push`; REWRITE `.github/workflows/stale-model-id-guard.yml`; EDIT `.githooks/pre-commit`; EDIT `.github/workflows/skill-line-budget.yml` (push trigger, permissions); NEW `.delivery/artifacts/06-development/base-sha.txt` | none | S (0.5 to 1 day) | developer (producer; MUST add new files to the index before the pathspec commit, since a pathspec commit skips untracked files; does NOT write guard test strings or fixtures) | qa (VALIDATOR owns all independent guard fixtures: AC-1.2a must-hit/must-pass strings (>= 25/10/15/12), known_fp, marker, hit-line prefixes; hook temp-repo test; `scripts/model_pin_fixtures.json` is written by qa, not the producer), devops reviews workflows | 6 |
 | S2 Keystone prose | (a) `delivery-team/skills/delivery-flow/SKILL.md` + `delivery-team/references/shared/orchestrator-doctrine.md` (path verified with `find`); (b) `prompt-engineer/SKILL.md`; (c) `delivery-team/skills/product-delivery/SKILL.md`. Three file-disjoint dispatches, edit only, no commits | S1 | M (1 day) | developer x3 (separate agents; edit-only) | architect as adversarial reviewer (AC-2.3b, separate dispatch, re-fetches >= 3 load-bearing claims via WebFetch); tech-writer on style (caveman-lite, one line per line) | 6 |
 | S3 Stamps + ledger | 25 stamped SKILL.md (value-only frontmatter edits); NEW `06-development/prose-review-ledger.tsv` (3 rows), `06-development/stamp-only-ledger.tsv` (22 rows) | S2 DoD pass (BINDING-2.3) | M (0.5 to 1 day) | developer (mechanical edits) | architect verdicts for the 3 ledger rows (not the edit author); qa runs AC-3.x, AC-6 | 6 |
-| S4 Code IDs + sweep | `agentic-flow-builder/scripts/agent_registry.py` (`MODEL_TIER_ALIAS`, 3 provenance comments), `agentic-flow-builder/scripts/flow_orchestrator.py` (comment at ~663), `delivery-team/tests/smoke/tests/conftest.py` (4 fixture `"model"` values), `delivery-team/architecture/smoke-test-architecture.md` (115, 116), `delivery-team/references/telemetry-schema.md` (36) | S1, S3 | XS (0.25 day) | developer | qa (AC-1b sweep, AC-4.x, `test_meta.py` 3 passed) | 6 |
-| S5a Smoke harness code | Producer files: `delivery-team/tests/smoke/lib/{metrics,runner,report,aggregator,baseline}.py`, `delivery-team/tests/smoke/run_smoke.py`. Validator files: `delivery-team/tests/smoke/tests/test_model_capture.py`, `.../tests/fixtures/stream_real_shape.jsonl` + `.provenance.txt`. Checker scripts (AST gate, red-first check, derived validator_start/end) authored by the validator, not the producer | S1, S4 | L (1.5 to 2 days) | developer (producer, three sub-steps: P0 stub, then fix) | qa (validator; separate agent; writes tests, fixture, gate) then architect final review of ADR-lmr-004 conformance | 6 |
+| S4 Code IDs + sweep | `agentic-flow-builder/scripts/agent_registry.py` (`MODEL_TIER_ALIAS`, 3 provenance comments), `agentic-flow-builder/scripts/flow_orchestrator.py` (comment at ~663), `delivery-team/tests/smoke/tests/conftest.py` (4 fixture `"model"` values), `delivery-team/architecture/smoke-test-architecture.md` (115, 116), `delivery-team/references/telemetry-schema.md` (36) | S1, S3 | XS to S (~0.5 day) | developer | qa (AC-1b sweep, AC-4.x, `test_meta.py` 3 passed) | 6 |
+| S5a Smoke harness code | Producer files: `delivery-team/tests/smoke/lib/{metrics,runner,report,aggregator,baseline}.py`, `delivery-team/tests/smoke/run_smoke.py`. Validator files: `delivery-team/tests/smoke/tests/test_model_capture.py`, `.../tests/fixtures/stream_real_shape.jsonl` + `.provenance.txt`. Checker scripts (AST gate, red-first check, derived validator_start/end) authored by the validator, not the producer | S1, S4 | L (2 days, includes the S5a dry-run of `init_baseline`, PA-24) | developer (producer, three sub-steps: P0 stub, then fix) | qa (validator; separate agent; writes tests, fixture, gate) then architect final review of ADR-lmr-004 conformance | 6 |
 | S6 Cache re-freeze | `governance/cache-prefix-hash.txt`; ADR-lmr-001 already Accepted (AC-6.2 check only); record telemetry `prefix_hash` before/after in the S6 report | S3 (and any DoD rework) | XS (0.25 day) | devops | developer (re-runs the three cache commands and pastes output; memory lesson) | 6 |
 | S5b Live baseline | `delivery-team/tests/smoke/baselines/hello_world_spike.json`; `.delivery/artifacts/06-development/smoke-streams/sample-{1..5}.jsonl` (full scrubbed streams); `.delivery/artifacts/07-uat/s5b-spend.txt`; run output only under `$SMOKE_OUT` (`$HOME/.cache/lmr-smoke-out/run-2026-05-28-o48m`) | S5a, S6, H2 | S (0.5 day, wall 30 min ceiling per run, sequential) | devops | qa (independent checks: AC-5.1, 5.4, 5.5, 5.5c, 5.6, scrub + secret scan) | 7 |
 | S7 Memory, changelog, ship | `.delivery/memory/topics/latest-model-references.md` (`## Run outcome`), `CHANGELOG.md`, dispatch manifests, ship gate log (out of tree, teed), squash-rebase, ff-merge, push (H3) | S1..S6, S5b, UAT PASS | S (0.5 day) | tech-writer (memory, CHANGELOG), devops (gate + ship, in the MAIN checkout) | po accepts pre-ship deliverables; S7b validates the ship log | 7 |
-| S7b Post-push verify | fresh clone of `origin/main` in `mktemp` dir; re-run guard, canary, budgets, hash, AC-DISP, transcript check; report to `.delivery/artifacts/07-uat/s7b-report.md`; docs-only commit (H4) | S7 push | XS (0.25 day) | devops (a different agent id from the S7 executor) | qa reads the report and the transcript check line (`RAN`, `SKIPPED`, or `layout-drift`) | 7 |
+| S7b Post-push verify | fresh clone of `origin/main` in `mktemp` dir; re-run guard, canary, budgets, hash, AC-DISP, transcript check; report to `.delivery/artifacts/07-uat/ship-verification.txt` (name per ADR-lmr-005; the earlier plan name `s7b-report.md` is retired); checks post-push workflow runs green on `SHIP_SHA` (PA-26); docs-only commit (H4) | S7 push | XS (0.25 day) | devops (a different agent id from the S7 executor) | qa reads the report and the transcript check line (`RAN`, `SKIPPED`, or `layout-drift`) | 7 |
+| S8 Post-ship recovery (conditional; only on S7b FAIL, red post-push workflow, or H4-FAIL) | corrective commit(s) in the main checkout; `.delivery/artifacts/07-uat/s8-recovery.md`; backlog defect | S7b FAIL | S (0.5 day) | devops (id differs from S7 and S7b executors) | qa | 7 |
 
-Total effort about 5 to 6 working days of sub-agent time, plus paid runs of about $15.50 ceiling. Stage 6 pass count of DoD rounds is capped at `max_dod_rounds` 3 per unit.
+Total effort about 5.5 to 6.5 working days (S4 ~0.5d, S5a 2d) of sub-agent time, plus paid runs of about $15.50 ceiling. Stage 6 pass count of DoD rounds is capped at `max_dod_rounds` 3 per unit.
 
 ## 3. Id-level FR/AC to story matrix (architect W1)
 
@@ -83,14 +92,14 @@ Legend: "closes at" is the stage where the AC first passes for the record. "Val"
 | S1 | FR-1.1 | AC-1.1, AC-1.1b | S1 (Stage 6) | qa | G1 |
 | S1 | FR-1.2 | AC-1.2a, AC-1.2b, AC-1.2c | S1 (1.2c needs S4 for zero hits; checked at S4/AC-1b) | qa | G1 |
 | S1 | FR-1.3 | AC-1.3 | S1 | qa | G1 |
-| S1 | FR-1.4 | inspection (dispatch report names `plugin-dev:hook-development`); `workflow-injection-lint` green | S1 | devops | G1 |
+| S1 | FR-1.4 | PA-27 mechanical check (dispatch prompt grep for `plugin-dev:hook-development`); `workflow-injection-lint` green | S1 | devops | G1 |
 | S1 | FR-1.5 | AC-1.5 | S1 | qa | G1 |
 | S1 | FR-1.6 | AC-1.6a, AC-1.6b | S1 | qa | G1 |
 | S1 | FR-7.3 (pre-ship gate pieces) | guard, budgets, hash steps built and dry-run in S1 (PA-6, PA-7) | S1 dry run; S7 real | devops | G10 |
 | S2 | FR-2.1 | AC-2.1 (pre-ship, uses `base_sha`) | S2 | architect | G7 |
 | S2 | FR-2.2 | AC-2.2 | S2 | qa | G7 |
 | S2 | FR-2.3 | AC-2.3, AC-2.3b (independent re-fetch >= 3 claims) | S2 | architect | G7 |
-| S2 | FR-2.4 | inspection (skill-development acknowledgement in each report) | S2 | qa | G7 |
+| S2 | FR-2.4 | PA-27 mechanical check (dispatch prompt grep for `plugin-dev:skill-development` per S2 dispatch) | S2 | qa | G7 |
 | S2 | FR-2.5 | AC-2.5 (+ PA-10) | S2 | architect | G7 |
 | S2 | FR-2.6 | AC-2.6 (`model: sonnet` unchanged; OQ-11 confirmed unchanged) | S2 | qa | G7 |
 | S3 | FR-3.1 | AC-3.1 (3 rows), AC-3.1b (+ PA-1) | S3 | architect, qa | G3 |
@@ -113,6 +122,7 @@ Legend: "closes at" is the stage where the AC first passes for the record. "Val"
 | S5a | FR-5.9 | AC-5.9, AC-5.9b (red first, PA-12/13) | S5a | qa | G5 |
 | S5a | FR-5.10 | AC-5.10 (+ PA-14 scrub) | S5a | qa | G5 |
 | S5a | FR-5.1 (code) | report location PA-17 | S5a | qa | G5 |
+| S5a | FR-5.1, 5.4, 5.5, 5.5c (writer code, no spend) | PA-24 dry-run on fixture streams | S5a | qa | G5 |
 | S5b | FR-5.1 | AC-5.1 | UAT | qa | G5 |
 | S5b | FR-5.4 | AC-5.4 (`hard_max` 3.0, `mean` > 0) | UAT | qa | G5 |
 | S5b | FR-5.5 | AC-5.5, AC-5.5c (+ PA-15) | UAT | qa | G5 |
@@ -121,7 +131,7 @@ Legend: "closes at" is the stage where the AC first passes for the record. "Val"
 | S6 | FR-6.2 | AC-6.2 (ADR-lmr-001 exists, cites `orchestrator-doctrine`) | S6 | developer | G9 |
 | S7 | FR-7.1 | AC-7.1 | S7 | po | G8 |
 | S7 | FR-7.2 | AC-7.2 | S7 | po | G10 |
-| S7 | FR-7.3 | ordered ship gate, FR-7.3 inspection (PA-20) | S7 | S7b devops | G10 |
+| S7 | FR-7.3 | ordered ship gate (PA-20, PA-23, PA-25, PA-26) | S7 | S7b devops | G10 |
 | S7 | FR-7.4 | AC-DISP (PA-21; each stage/unit writes its own manifest as it dispatches; S7 checks all) | S7 (recheck in S7b) | qa | G8 |
 | S7 | FR-7.5 | AC-7.5 | S7 | po | G8 |
 | S2, S4, S7 | AC-2.1, AC-2.5, AC-4.4, AC-5.9b | pre-ship: use `base_sha`, not `main` (U10) | run pre-squash | qa | G7/G5 |
@@ -138,21 +148,28 @@ Every FR in PRD sections FR-1.1..FR-7.5 appears above (FR-4.6, FR-5.6 included).
 | PA-4 | S1 | `known_fp` fixtures pass; AC-1.6b marker test covers pin, stamp and prose lines | QA W8 |
 | PA-5 | S1 | Hook test in a temp git repo: staged pin gives rc 0 by default, rc 1 with `MODEL_PIN_STRICT=1`; zero staged files does not abort under `set -euo pipefail` | P4; QA W9 |
 | PA-6 | S1 | Workflows: `permissions: contents: read`, `persist-credentials: false` on both guard and budget workflows; budget workflow has `push: branches: [main]`; `workflow-injection-lint` green; hooks use `-z`/`xargs -0`; every temp path `mktemp` | Security; D4 |
-| PA-7 | S1 | Guard hardening: NUL-delimited `git ls-files -z`, `shell=False`, fail closed, skip symlinks, `files-scanned` line; exit 2 only for default-scope empty or failed listing; explicit `--paths` with zero scannable files exits 0 with `files-scanned 0`. Pre-push hook: 7 stub cases (non-main 0, main clean 0, sha mismatch 1, dirty 1, guard fail 1, empty stdin 0, delete main 0), pathspec `-- . ':!.claude/worktrees'` | ADR-lmr-002 D8, D9; rev 5 W2 |
-| PA-8 | S1 | S1 report includes a whole-tree guard run listing every hit and its disposition (reword or fixture); `base-sha.txt` recorded | P5, P7, U10 |
+| PA-7 | S1 | (Guard hardening, see below; hook install is PA-9) Guard hardening: NUL-delimited `git ls-files -z`, `shell=False`, fail closed, skip symlinks, `files-scanned` line; exit 2 only for default-scope empty or failed listing; explicit `--paths` with zero scannable files exits 0 with `files-scanned 0`. Files-scanned floor: default-scope `K` must equal the tracked scanned-file count pinned in S1 from the baseline (`git ls-files -z` filtered by the six extensions, recorded in `06-development/base-sha.txt`), not merely `K > 0`. Pre-push hook: 7 stub cases (non-main 0, main clean 0, sha mismatch 1, dirty 1, guard fail 1, empty stdin 0, delete main 0), pathspec `-- . ':!.claude/worktrees'` | ADR-lmr-002 D8, D9; rev 5 W2 |
+| PA-8 | S1 | Command: `python3 scripts/check_model_pins.py --list > $SMOKE_OUT/whole-tree.txt; echo rc=$?`. Expected: final `guard-scope hits N files M` line present; every hit line has a disposition row (`reword` or `fixture`) in the S1 report; after dispositions, rerun prints `hits 0` with rc 0. `base-sha.txt` recorded: `test "$(wc -l < .delivery/artifacts/06-development/base-sha.txt)" -ge 1` exit 0 and its first line matches `^[0-9a-f]{40}$` | P5, P7, U10 |
+| PA-9 | S1 | `core.hooksPath` install + log. Command: `git config --local core.hooksPath .githooks; git config --get core.hooksPath`. Expected output `.githooks`; S1 report logs `hooksPath=.githooks`; report states `--local` writes the shared `.git/config` (affects main checkout and all worktrees); S7 handoff prints the unset command (`git config --unset core.hooksPath`), checked by grep in the S7 report. If a dispatch cannot set it, report says `hooks inert` | D6; DevOps W3 |
 | PA-10 | S2 | Delivery-flow: `wc -l` prints 499 after edit (500 is cap); block 1 and block 2 keep 4 lines each; block 2 text as in D13; every rewritten line differs from its source; `product-delivery` net zero lines (300/300); AC-2.5 prints cond True, cap True, no comment lines | Arch section 4 S2 |
 | PA-11 | S3 | Both ledgers written; `fitness_review_due` = S3 date + 20 + 7*i days for file i (11 files); `last_audited` = S3 DoD date; AC-6 exit 0 | ADR-lmr-003 A4, A6b |
-| PA-12 | S5a | P0 AST gate rules 1a to 1d (section 4.3), real checker written by the validator | ADR-lmr-004 section 6 |
-| PA-13 | S5a | Red-first measured at `validator_start`: `real_shape` and capture-failure tests collected, FAILED, message starts `AssertionError` or `Failed: DID NOT RAISE`; void types listed in 4.3; derived `validator_start`/`validator_end` checks (parent commit, last commit); first validator commit is an ancestor of first fix commit; `Dispatch-Id` trailers cross-checked against manifest, producer and validator ids disjoint | Rev 4 QA B1, W5; ADR-lmr-005 items 6, 7 |
-| PA-14 | S5a, S5b | Scrub AC: home paths replaced; scan finds none of `sk-ant-`, `ANTHROPIC_API_KEY`, `Bearer `, `ghp_`, `xox`, `arn:aws`, `AKIA`, home path in committed captures; provenance `.txt` carries no resolved model id | Security; ADR-lmr-004 section 9 |
-| PA-15 | S5a (tests), S5b (live) | AC-5.5c: non-overlapping `message.id` sets across samples, distinct stream hashes and distinct `session_id`; `message.id` presence asserted on the fixture; fallback `uuid`; else report WEAKENED, never silent | Rev 5 QA W3 |
-| PA-16 | S5a | Spend snippet AC: report with missing or non-numeric `cost_usd` fails (`BAD_COST`, exit 2); missing `report.json` counts $3.00; `spent <= 15.00` printed before each S5b run; fixture capture `--max-budget-usd 0.25`, max 2 | Rev 5 item 8; QA W6 |
+| PA-12 | S5a | P0 AST gate rules 1a to 1d (section 5.3). Checker `tests/check_p0_gate.py` is written by the validator. Command: `python3 tests/check_p0_gate.py --base <base_sha> --head <p0_commit>; echo rc=$?`. Expected: real P0 stub prints `P0_GATE OK`, rc 0. REQUIRED negative self-test `python3 tests/check_p0_gate.py --self-test`: each wrong-P0 from ADR-lmr-004 (computed value in `build_report` key, method added to `Metrics`, real implementation in a stub, `raise` in a stub, non-constant default, other body changed) is fed to the checker and each must print `P0_GATE FAIL` rc 1; prints `SELFTEST OK n/n` rc 0 only if all are rejected. A permissive checker fails the self-test | ADR-lmr-004 section 6 |
+| PA-13 | S5a | Red-first measured at `validator_start`: `real_shape` and capture-failure tests collected, FAILED, message starts `AssertionError` or `Failed: DID NOT RAISE`; void types listed in 4.3; derived `validator_start`/`validator_end` checks (parent commit, last commit); first validator commit is an ancestor of first fix commit; `Dispatch-Id` trailers cross-checked against manifest. Command: `python3 tests/check_red_first.py --base <base_sha>; echo rc=$?`. Expected: `RED_FIRST OK failed=<n> void=0` rc 0; any void type or a passing test prints `RED_FIRST FAIL` rc 1 (checker written by the validator, with its own negative self-test as PA-12) | Rev 4 QA B1, W5; ADR-lmr-005 items 6, 7 |
+| PA-13b | S1..S4, S5a, S6 | Producer/validator disjointness for every unit. Command per unit: `comm -12 <(producer Dispatch-Id trailers sorted) <(validator ids from that unit manifest sorted) \| wc -l`. Expected `0`. Any non-zero fails the unit | QA W4 |
+| PA-14 | S5a, S5b | Fixture genuineness: `sha256sum tests/fixtures/stream_real_shape.jsonl` equals the hash in `stream_real_shape.provenance.txt`, and the provenance carries the exact H1 capture command; QA verifies at H1 time (expected `FIXTURE_HASH MATCH`). Scrub AC: home paths replaced; scan finds none of `sk-ant-`, `ANTHROPIC_API_KEY`, `Bearer `, `ghp_`, `xox`, `arn:aws`, `AKIA`, home path in committed captures; provenance `.txt` carries no resolved model id | Security; ADR-lmr-004 section 9 |
+| PA-15 | S5a (tests), S5b (live) | AC-5.5c: non-overlapping `message.id` sets across samples, distinct stream hashes and distinct `session_id`; `message.id` presence asserted on the fixture; fallback `uuid`; else `AC-5.5c WEAKENED`. WEAKENED = FAIL of AC-5.5c at UAT. The only exception is a dated PO waiver file `07-uat/ac-5.5c-waiver.md` (PO writes it, cites the reason and date, in plan or state); the UAT DoD checks for that file. No waiver, no pass, never silent. Command: `python3 tests/check_distinct.py <baseline_or_streams>; echo rc=$?`; expected `AC-5.5c OK` rc 0; `WEAKENED` rc 1 | Rev 5 QA W3 |
+| PA-16 | S5a | Spend snippet AC: report with missing or non-numeric `cost_usd` fails (`BAD_COST`, exit 2); missing `report.json` counts $3.00; before each S5b run the harness prints `spent=<x> next_cap=3.00` and STOPS (rc 3) if `spent + 3.00 > 15.00`; fixture capture `--max-budget-usd 0.25`, max 2 | Rev 5 item 8; QA W6 |
 | PA-17 | S5a | `report["tokens"]["cache_hit_ratio"]` present (0.0 on zero denominator) and constant-only at P0 | D14 |
 | PA-18 | S5a | `run_smoke.py --model` (opus only) and `--effort`; `--effort` sent only for `opus`; two-mode parser (legacy `result` counts as dispatch only in legacy mode); budget-stop exit-2 mapping widened; `--init-baseline` aborts on any non-zero outcome; every run passes `--out-dir "$SMOKE_OUT"`; `test_meta.py` stays at 3 passed | ADR-lmr-004 sections 1 to 7 |
 | PA-19 | S6 | Before and after values printed for `sha256sum` of delivery-flow SKILL.md and for the telemetry `prefix_hash` (first 2048 bytes); AC-6.1 `MATCH`; developer validator re-runs all three commands | ADR-lmr-001 decision 7 |
 | PA-20 | S7 | Ship gate per ADR-lmr-005 item 8: Block A step 0 on the branch (canary, base-sha ACs, AC-2.1, 2.5, 4.4, 5.9b, DISP pre-ship); squash; Block B steps 1 to 9 in the MAIN checkout with pathspec exclusion; flag check `! git ls-files -v | grep -q '^[a-zS]'`; count steps as `test "$(...)" = ...`; each step logged `step=<n> exit=<rc> value=<v>`; `hooksPath=` line; out-of-tree teed log; `Budget-Exception:` NOT usable on push (a `known_debt[]` entry with `target_wave:` committed before ship is the only route); S7 report states detect-and-fix-forward (RR-1) | ADR-lmr-005 item 8 |
-| PA-21 | S7 | AC-DISP checker: REQUIRED = `04-architect`, `05-plan`, `06-development`, `07-uat`; multi-manifest per unit; role and agent-id distinctness per manifest; N bounded by that stage's `dod_validators` list length; negative self-test; a required stage with no manifest is a violation; transcript check: skip only if the slug tree is absent (loud line), any missing id fails when the tree exists, all session dirs searched, prints `TRANSCRIPT_CHECK=RAN` or `SKIPPED layout-drift <id>`, never claims RAN on drift; Stage 4 uses the recovered form; S7b always runs it | ADR-lmr-005 items 1, 4, 5, 6, 8 |
-| PA-22 | S5b | Paid-run controls: aggregate $15.00 over every run report including aborted; max 7 runs; per-sample $3.00; `s5b-spend.txt` tracked in `07-uat/`; sequential; 30 min wall ceiling per run; H2 before start | Rev 4 QA W6; DevOps |
+| PA-21 | S7 | AC-DISP checker: REQUIRED = `04-architect`, `05-plan`, `06-development`, `07-uat`; multi-manifest per unit; role and agent-id distinctness per manifest; N bounded by that stage's `dod_validators` list length; negative self-test; a required stage with no manifest is a violation; transcript check: skip only if the slug tree is absent (loud line), any missing id fails when the tree exists, all session dirs searched, prints `TRANSCRIPT_CHECK=RAN` or `SKIPPED layout-drift <id>`, never claims RAN on drift. `SKIPPED layout-drift` is a FAIL for the S7b run (S7b verdict cannot be PASS with it); on any other run (Stage 6/7 pre-ship) it is a loud line plus a PO note in the report; Stage 4 uses the recovered form; S7b always runs it | ADR-lmr-005 items 1, 4, 5, 6, 8 |
+| PA-22 | S5b | Paid-run controls. Command before every run: `python3 tests/spend_check.py --dir 07-uat; echo rc=$?`. Expected `spent=<x> next_cap=3.00 runs=<n> ok` rc 0; rc 3 with `STOP ceiling` if `spent + 3.00 > 15.00`; rc 3 with `STOP runs` if run-dir count >= 7 (counts aborted runs). Aggregate $15.00 over every run report including aborted; max 7 runs; per-sample $3.00; `s5b-spend.txt` tracked in `07-uat/`; sequential; 30 min wall ceiling per run; H2 before start | Rev 4 QA W6; DevOps |
+| PA-23 | S5a, S5b, S7, S7b, S8 | Gate protocol (section 1.4). Command: `grep -c '^operator_go: H[0-9]' <dispatch-prompt-or-artifact>`. Expected `>= 1` for each paid or push step and for the artifact head (`s5b-spend.txt`, ship log, H4 commit note, S8 note). `blocked_on: H<n>` present in `.delivery/state.md` while a gate is open: `grep -c '^blocked_on: H' .delivery/state.md` prints 1 at the gate, 0 after go. Missing line = dispatch stops and reports `needs input:` | DevOps B2; ADR-lmr-004 line 107; ADR-lmr-005 item 9 |
+| PA-24 | S5a | Baseline writer dry-run, no spend. `init_baseline` runs end to end on 5 fixture streams (copies of the real-shape fixture with distinct `message.id` and `session_id` rewritten by the VALIDATOR) using a stub `claude` (recorded reports, `PATH` shim) and a temp baseline path. Command: `python3 tests/dry_run_baseline.py --out $SMOKE_OUT/dry-baseline.json; echo rc=$?`. Expected `DRYRUN OK` rc 0 with the AC-5.1, AC-5.4, AC-5.5c snippets pointed at the temp baseline all printing OK: keys `tokens.cache_hit_ratio`, `model_usage.*`, no `unknown`, `model_requested`, `model_resolved`, `model_pin_env`, `host_context`, `samples[]` with `stream_sha256`, `hard_max` 3.0, `mean` > 0. Abort/aggregate logic: an injected non-zero outcome prints `DRYRUN ABORT_OK` and no baseline file is written; injected costs summing past the ceiling print `DRYRUN CEILING_OK` rc 3. The stub `claude` never spawns the real CLI (NFR-9) | QA B2 |
+| PA-25 | S7, S7b | Ship topology. H4 commit is docs-only: `git diff --name-only SHIP_SHA..HEAD` prints only paths starting `.delivery/`; command `git diff --name-only SHIP_SHA..HEAD \| grep -vc '^.delivery/'` expects `0`. `HEAD == SHIP_SHA` verified BEFORE H4. No `--no-verify`; pre-push hook and guard still run. The H4 commit includes `07-uat/dispatch-manifest-S7b.txt` and `07-uat/ship-verification.txt`. DevOps moves the branch from the worktree to the main checkout (clean check first) and ff-merges before H3; on H3 "no" the state and reset instruction are reported (section 1.3) | DevOps W1, W2 |
+| PA-26 | S7b, S8 | Post-push verify and recovery. S7b command: `gh run list --commit $SHIP_SHA --json name,conclusion,status`; expected every workflow `conclusion: success` (guard, budget). If `gh` unavailable or offline, S7b prints `UNVERIFIED manual` and that is a FAIL until Michael confirms on GitHub (direct human turn). FAIL branch: no H4 as PASS; S8 runs: open backlog defect; corrective commit re-runs Block A and Block B; push needs H6; `revert` of `SHIP_SHA` allowed as the fast option; force-push never. S8 report `s8-recovery.md` records the failing evidence, the chosen option, the H6 operator_go, and the rerun S7b verdict | DevOps B3; ADR-lmr-005 item 8 |
+| PA-27 | S1, S2 | FR-1.4 and FR-2.4 mechanical. Command: `grep -c 'plugin-dev:hook-development' <S1 dispatch prompt file>` and `grep -c 'plugin-dev:skill-development' <each S2 dispatch prompt file>`; expected `>= 1` each. Dispatch prompts are saved under `06-development/prompts/`; the S-unit validator runs the grep and pastes output. Self-report alone does not close FR-1.4/FR-2.4 | QA W7 |
 
 ## 4. Plan-carry checklist (everything from architecture.md)
 
@@ -251,7 +268,7 @@ Status: MAPPED means a story AC (PRD or PA) covers it. DEFERRED means owned resi
 6. Commit order and messages name the story: `feat(guard) S1`, `docs(skills) S2`, and so on; `docs(delivery): BACKLOG-108 Stage N ...` for artifacts, as in Stage 4.
 7. Stage artifacts stay under `.delivery/artifacts/<NN-stage>/`; the untracked-tree rule: run output only under `$SMOKE_OUT`, never in the tree.
 8. Ship squashes everything into one commit set (squash-rebase); until then `main` stays untouched.
-9. Do not read or reuse stale files in `06-development/dod/` from older runs; new files get run-scoped names (`S1-...`, `round1-...` with a header `run: run-2026-05-28-o48m`).
+9. Do not read or reuse stale files in `05-plan/dod/` or `06-development/dod/` from older runs (reviewers must check the `run:` header); new files get run-scoped names (`S1-...`, `round1-...` with a header `run: run-2026-05-28-o48m`).
 
 ### 5.2 Dispatch manifests
 Format (FR-7.4): line 1 `expected_validators: N`, then `<role><TAB><agent-id>` per validator dispatch. One file per round per unit (D2), with the unit and round in the file name suffix or a header comment line the checker ignores. N never exceeds that stage's `dod_validators` length (Stage 5 = 5, Stage 6 = 4, Stage 7 = 4). Agent ids are pasted from the Agent tool result, never typed from memory. The orchestrator writes each manifest at dispatch time. Stage 5's own manifest is `05-plan/dispatch-manifest.txt`, written by the orchestrator when it dispatches the DoD validators.
@@ -278,11 +295,11 @@ Before S2 starts, record `sha256sum` of delivery-flow SKILL.md (`43067c9e...b832
 ### 5.6 Paid-run controls
 - Local only: `claude` CLI is never used in `.github/workflows/` (memory: claude-code-local-only; AC-1.3).
 - Fixture capture: `--max-budget-usd 0.25`, at most 2, after H1.
-- S5b: 5 samples sequential, `--model opus --effort xhigh`, per-sample cap $3.00, aggregate $15.00 over ALL run reports including aborted, at most 7 runs, 30 min wall ceiling per run, `--out-dir "$SMOKE_OUT"`, spend snippet before each run and at Block B step 1a, `s5b-spend.txt` tracked, operator go (H2) before the first run and before each re-run past run 5.
+- S5b: 5 samples sequential, `--model opus --effort xhigh`, per-sample cap $3.00, HARD aggregate $15.00 over ALL run reports including aborted: before every run `spent + 3.00 > 15.00 => stop` (PA-22), at most 7 runs enforced by run-dir count (PA-22), aborted paid runs count against the aggregate, 30 min wall ceiling per run, `--out-dir "$SMOKE_OUT"`, spend snippet before each run and at Block B step 1a, `s5b-spend.txt` tracked, `operator_go:` line in each dispatch prompt (H2) before the first run and before each re-run past run 5 (section 1.4).
 - Missing `total_cost_usd` or `report.json` counts as a failure ($3.00), never zero.
 - An outcome-failed sample aborts `--init-baseline`; it is never averaged in.
 - Committed captures pass the scrub and secret scan (PA-14).
-- The push needs H3; there is no standing approval.
+- The push needs H3 (and any corrective push needs H6); there is no standing approval.
 
 ### 5.7 Dogfooding (memory: validate by using)
 - S1: run the real guard on the real tree, the canary in a `mktemp` copy, the hook in a temp repo, the pre-push hook on stubs.
@@ -300,6 +317,15 @@ Before S2 starts, record `sha256sum` of delivery-flow SKILL.md (`43067c9e...b832
 - Stage 7 entry: Stage 6 DoD DONE, S6 `MATCH`, H2 given.
 - Stage 7 exit: DoD [qa, devops, po, tech-writer]; G5 closed; G8, G10 closed after S7 and S7b.
 
+### 5.9 Re-entry rule (S5b defect after Stage 6 DoD)
+If S5b (Stage 7) exposes a defect in code or prose that Stage 6 called DONE:
+1. Return to Stage 6 with a fix story (red-first under 5.3 if it touches S5a code; fresh validator id).
+2. Re-run Stage 6 DoD for the touched files only.
+3. If any SKILL.md changed, re-freeze the cache hash (5.5, S6) and re-check `MATCH`.
+4. Re-run the PA-24 dry-run if `baseline.py`, `runner.py` or `report.py` changed.
+5. Resume UAT. Aborted paid runs already made still count against the $15.00 aggregate and the 7-run cap; a re-run past run 5 needs a fresh H2 go.
+6. A fix after S5b that edits prose measured by the baseline invalidates the baseline (P6): re-capture within the ceiling, or PO writes a dated waiver in `07-uat/`.
+
 ## 6. Stage 5 DoD self-check
 
 Config: `dod_validators.plan: [sm, po, qa, developer, devops]` (from `.delivery/config.yml` lines 56 to 63). Five roles, five distinct dispatches at most per checkpoint; light routing means fewer is allowed (cap, not target). Config `pipeline.checkpoints: []`: no human checkpoint at this stage.
@@ -310,8 +336,39 @@ Author self-check (I am the producer; these are not validations):
 |---|---|---|
 | sm | Ordered stories, dependencies acyclic, effort sized, no story over ~2 days (S5a is L, sequenced in 3 sub-steps), commit and dispatch rules clear, capacity note | Covered: sections 2, 5. Gap to watch: S5a size. |
 | po | Every open PO item decided with evidence; gates named with owner and timing; no invented approval; PRD deviations recorded; backlog updated | Covered: section 1, backlog note. |
-| qa | Every FR and AC mapped to a story and a validator; PA ACs are testable; red-first, P0 rules, paid controls testable; producer != validator | Covered: sections 3, 5.3. Gap to watch: PA text is prose, validators write the runnable snippets. |
+| qa | Every FR and AC mapped to a story and a validator; PA ACs are testable; red-first, P0 rules, paid controls testable; producer != validator | Covered: sections 3, 5.3. Round 2: every PA now carries a command and expected output (PA-8, 12, 13, 22 fixed; PA-9, 13b, 23 to 27 added). |
 | developer | File scope per story exact; ADR conformance; no scope creep; effort realistic | Covered: section 2. Gap: file paths for `orchestrator-doctrine.md` and `smoke-test-architecture.md` taken from the arch doc; S2/S4 must confirm with `ls` first. |
-| devops | Ship gate, spend caps, hooks, workflow triggers, S7b, human gates before push and spend | Covered: sections 1.3, 5.6, PA-6, PA-20, PA-22. |
+| devops | Ship gate, spend caps, hooks, workflow triggers, S7b, human gates before push and spend | Covered: sections 1.3, 1.4, 5.6, PA-6, PA-20, PA-22 to PA-26, S8. |
 
-Status: plan ready for DoD; DoD not yet run. Orchestrator dispatches the five validators (distinct agents), writes `05-plan/dispatch-manifest.txt`, and loops up to `max_dod_rounds` 3.
+Status: plan revised after DoD round 1 (Revision 2, see changelog); DoD round 2 pending. Orchestrator dispatches the five validators (distinct agents), writes `05-plan/dispatch-manifest.txt`, and loops up to `max_dod_rounds` 3.
+
+## 7. Revision 2 changelog (DoD round 1 findings to dispositions)
+
+Date: 2026-09-20. Round 1: sm DONE, po DONE, developer DONE, qa NOT_DONE (3 blocking), devops NOT_DONE (3 blocking).
+
+| Finding | Disposition | Location |
+|---|---|---|
+| QA B1 (WEAKENED soft pass) | FIXED: WEAKENED = AC-5.5c FAIL unless a dated PO waiver file `07-uat/ac-5.5c-waiver.md`; UAT DoD checks for it | PA-15 |
+| QA B2 (baseline writer untested; no re-entry) | FIXED: dry-run of `init_baseline` with stub `claude`, abort and aggregate logic; re-entry rule incl. aggregate accounting and re-freeze | PA-24, section 5.9, S5a row, matrix row |
+| QA B3 (PA-9 gap; PAs without commands) | FIXED: PA-9 added (hooksPath install+log); PA-8, PA-12, PA-13, PA-15, PA-22 given command and expected output; new PAs each carry one | section 3.2 |
+| DevOps B1 (soft $15.00 ceiling) | FIXED: `spent + 3.00 > 15.00 => stop`, run-dir count for max 7, H2b reworded true (5 x $3 = $15.00 exactly) | H2, H2b, PA-16, PA-22, 5.6 |
+| DevOps B2 (operator_go, blocked_on) | FIXED: gate protocol, direct human turn only, `blocked_on: H<n>`, background-job behavior, PA-23 | section 1.4, PA-23, 5.6 |
+| DevOps B3 (fix-forward, H6, post-push green) | FIXED: S8 story, H4-FAIL branch, H6, `gh run list --commit` (UNVERIFIED manual = FAIL if `gh` absent) | S8 row, H4-FAIL, H6, PA-26 |
+| Should: add H5 to stage-summary; dod_rounds | FIXED | stage-summary.md |
+| Should: branch move to main checkout; H3 "no" state | FIXED | H3, PA-25 |
+| Should: H4 docs-only proof; report file name | FIXED: `git diff --name-only` limited to `.delivery/`; `ship-verification.txt` per ADR-lmr-005 | PA-25, S7b row |
+| Should: S1 hooksPath AC, shared config note | FIXED | PA-9, section 1.3 note |
+| Should: S1 prompt `git add` new files | FIXED | S1 row |
+| Should: S4 0.5d, S5a 2d | FIXED | section 2 |
+| Should: AC-DISP SKIPPED = FAIL for S7b | FIXED | PA-21 |
+| Should: files-scanned floor | FIXED: K equals baseline tracked-file count | PA-7 |
+| Should: P0 gate negative self-test | FIXED | PA-12 |
+| Should: S1 fixtures validator-owned | FIXED | S1 row |
+| Should: disjointness for all stories | FIXED | PA-13b, section 2 |
+| Should: real-shape fixture = H1 capture | FIXED: hash in provenance | PA-14 |
+| Should: FR-1.4/FR-2.4 mechanical | FIXED: dispatch prompt grep | PA-27, matrix |
+| DevOps W5 (budget workflow dry-run with `PR_BODY` unset) | DEFERRED: covered by D4 evidence and PA-6 `workflow-injection-lint`; S1 validator adds `env -u PR_BODY` run to the S1 report | PA-6 |
+| DevOps W7 (stale `05-plan/dod/`) | FIXED | 5.1.9 |
+| QA W1 SKIPPED | FIXED (see above) | PA-21 |
+
+Sm, po, developer warnings: not re-opened; DONE verdicts stand.
