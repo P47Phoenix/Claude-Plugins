@@ -3,7 +3,7 @@
 
 **Stage**: 4 Architect, LIGHT depth (single coherent doc plus 5 ADRs, no debate)
 **Role / task**: Solution Architect (Elrond) / design. Recommended model class: synthesis.
-**Revision**: 3 (adversarial loop 3 addressed; see the Revision 3 changelog and the `cap_reached` exit record at the end of this file).
+**Revision**: 4 (DoD round-2 self-correction: QA B1 plus should-fix findings; see the Revision 4 changelog at the end of this file). Revision 3 = adversarial loop 3 (see the Revision 3 changelog and the `cap_reached` exit record).
 **Adversarial loop exit**: `cap_reached` (3 loops, `pipeline.max_self_correction = 3`). Documented exit, not a failure: 0 blocking findings in loop 3; residuals are listed in the Residuals table at the end of this file.
 **Inputs**: PRD Revision 6 (`.delivery/artifacts/02-refine/po/prd.md`), `constraints.yml`, BACKLOG-108, memory topic `latest-model-references.md`, round-2 DoD reviews (architect, QA), stage and hot lessons, and the repository sources named in section 11.
 **ADRs** (all under `.delivery/artifacts/04-architect/adrs/`, status Proposed until DoD):
@@ -124,8 +124,8 @@ Block 2, replaces lines 273 to 276:
 ```
 > **Model awareness (latest Opus):** When the orchestrating session runs the latest Opus,
 > silent sub-agent fusion or over-spawning is the highest-confidence regression mode.
-> `dod_validators.<stage>` is the cap: at most that many subagents per stage, on any model;
-> the dispatched roles at each DoD checkpoint MUST equal the length of that list.
+> `dod_validators.<stage>` is the cap: at most that many subagents per DoD checkpoint, on any model;
+> the dispatched roles at each DoD checkpoint MUST NOT exceed the length of that list.
 ```
 Simulation results (commands run, output recorded): line count 499 to 499; bytes 28,616 to 28,684; guard hits in the rewritten file 0 (all five regexes); AC-2.5 prints cond True, cap True, no comment lines; AC-2.1 prints `0 source lines still present`; `check_skill_budgets.py --check <file> --tier A` PASSED. The behavioural claim in block 1 ("delegates ... more readily than prior models") is the doc-verified anchor (PRD section 8; https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5, quote recorded there, not re-fetched at this stage). The direction is the reverse of the older "dispatches fewer sub-agents" claim, which stays refuted and never ships (FR-2.1).
 
@@ -140,7 +140,7 @@ Doctrine mirror (`orchestrator-doctrine.md`, lines 77 to 82, no tier key, no bud
 `MODEL_TIER_ALIAS`, the three provenance comments, `flow_orchestrator.py:663` comment, `conftest.py` four fixture IDs, two doc fixture IDs, `telemetry-schema.md:36`, `prompt-engineer/SKILL.md:368` (already S2). The closing run is AC-1b: `guard-scope hits 0 files 0`. S4 must leave `python3 -m pytest delivery-team/tests/smoke/tests/test_meta.py` at 3 passed. The `conftest.py` edit changes only the `"model"` string values; its `schema_version "1"` fixtures stay.
 
 ### S5 Smoke harness (ADR-lmr-004)
-Producer files: `lib/metrics.py`, `lib/runner.py`, `lib/report.py`, `lib/aggregator.py` (pass-through only), `lib/baseline.py`, `run_smoke.py`. Validator files: `tests/test_model_capture.py`, `tests/fixtures/stream_real_shape.jsonl` and `.provenance.txt`. Interface, ordering (stub, red validator, fix), schema 2, budget-stop mapping and the init-baseline rule are in ADR-lmr-004. The fixture's `real_shape` failure message names the defect it catches. Revision 3: the pinned `build_report` keys and the `init_baseline` inputs are in ADR-lmr-004 section 2 (F8); red-first is also measured at `validator_start` (F6); an outcome-failed sample aborts `--init-baseline` (F9); every S5a and S5b dispatch passes `--out-dir "${TMPDIR:-/tmp}/smoke-out"` so run output never lands untracked in the tree (F2).
+Producer files: `lib/metrics.py`, `lib/runner.py`, `lib/report.py`, `lib/aggregator.py` (pass-through only), `lib/baseline.py`, `run_smoke.py`. Validator files: `tests/test_model_capture.py`, `tests/fixtures/stream_real_shape.jsonl` and `.provenance.txt`. Interface, ordering (stub, red validator, fix), schema 2, budget-stop mapping and the init-baseline rule are in ADR-lmr-004. The fixture's `real_shape` failure message names the defect it catches. **P0 stub rule (revision 4, QA B1; ADR-lmr-004 section 6 items 1 and 2).** The P0 stub keeps every pre-existing function body unchanged (AST check) with ONE named exemption, `report.py::build_report`, which gains the pinned keys with constant defaults only (the gate strips those entries and requires the rest to equal the `base_sha` body, so a computed key or any other edit fails). New stub functions return inert values and never raise `NotImplementedError`. Red-first at `validator_start` means the `real_shape` and capture-failure tests are collected, FAIL, and each failure message begins `AssertionError` or `Failed: DID NOT RAISE`; `ImportError`, `ModuleNotFoundError`, `SyntaxError`, `TypeError`, `AttributeError`, `NameError`, `NotImplementedError` or a collection error voids the evidence. Also revision 4: `_spawn_and_tee` (runner.py:167, the only caller of `_build_claude_command` at :175) joins the interface table; `run_smoke.py` gets `--model` (opus only) and `--effort`; `sample-<n>.jsonl` is the full scrubbed stream (needed for the `message.id` distinctness rule); committed captures pass a secret and path scrub (ADR-lmr-004 sections 5, 8, 9). Revision 3: the pinned `build_report` keys and the `init_baseline` inputs are in ADR-lmr-004 section 2 (F8); red-first is also measured at `validator_start` (F6); an outcome-failed sample aborts `--init-baseline` (F9); every S5a and S5b dispatch passes `--out-dir "${TMPDIR:-/tmp}/smoke-out"` so run output never lands untracked in the tree (F2).
 
 Baseline JSON after capture (schema 2, illustrative; the value under `model_resolved` is observed at capture time and is a `.json`, so outside the guard):
 ```json
@@ -202,7 +202,7 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 
 **Producer/validator dispatch separation (BINDING-4.5, FR-4.4).** Two independent Agent dispatches, never the same agent id: the producer authors `lib/` and `run_smoke.py`; the validator authors only `tests/test_model_capture.py` and `tests/fixtures/`. Order and observables are in ADR-lmr-004 section 6 and the AC-4.4 additions in ADR-lmr-005 items 6 and 7 (first validator commit is an ancestor of the first fix commit; `Dispatch-Id` trailers cross-checked against the manifest). The S2 prose review follows the same principle at story level: the adversarial reviewer for AC-2.3b is a separate dispatch from the developers who edited the files.
 
-**Where the live baseline runs (needs Plan confirmation).** `.delivery/state.md` records: "Stage 7 UAT: full (includes live --init-baseline 5x ...)", while the PRD closes G5 in S5. Recommendation: Stage 6 delivers S5a (everything except the baseline file and streams; cost about one cheap capture); Stage 7 UAT runs S5b and commits the baseline and streams; S7 ship follows UAT PASS. G5's closing ACs (AC-5.4, 5.5, 5.5c, 5.6) then close at UAT. This changes when G5 closes, not what it requires. It also makes `07-uat` a required AC-DISP stage (ADR-lmr-005). Manifest units are S1, S2, S3, S4, S5a, S6 (`06-development`) and S5b, S7, S7b (`07-uat`), ADR-lmr-005 item 4b (revision 3, F4). If the Plan keeps the live capture inside Stage 6, nothing else in this design changes.
+**Where the live baseline runs (needs Plan confirmation).** `.delivery/state.md` records: "Stage 7 UAT: full (includes live --init-baseline 5x ...)", while the PRD closes G5 in S5. Recommendation: Stage 6 delivers S5a (everything except the baseline file and streams; cost about one cheap capture); Stage 7 UAT runs S5b and commits the baseline and streams; S7 ship follows UAT PASS. G5's closing ACs (AC-5.4, 5.5, 5.5c, 5.6) then close at UAT. This changes when G5 closes, not what it requires. It also makes `07-uat` a required AC-DISP stage (ADR-lmr-005). Manifest units are S1, S2, S3, S4, S5a, S6 (`06-development`) and S5b, S7, S7b (`07-uat`), ADR-lmr-005 item 4b (revision 3, F4). If the Plan keeps the live capture inside Stage 6, nothing else in this design changes. **Paid-run controls (revision 4, QA W6, DevOps; ADR-lmr-004 section 8).** The S5b executor is a `devops` dispatch (producer-side, not listed in the S5b manifest; the S5b manifest lists the `qa` validator). Per-sample cap $3.00; aggregate S5b ceiling $15.00 summed over every run report including aborted ones; at most 2 re-runs (7 runs total); fixture capture capped at `--max-budget-usd 0.25`, at most 2 captures. An explicit operator go is required before any paid run and before the push. Because G5's closing ACs move to UAT, Stage 6 DoD cannot pass AC-5.4, 5.5, 5.5c, 5.6; the Plan must record that or Stage 6 stalls.
 
 ## 6. Resolution of open questions
 
@@ -335,6 +335,7 @@ Revision 1 (WebFetch by the challenger, 2026-09-20, https://code.claude.com/docs
 - The S7 executor records `step=<n> exit=<rc> value=<v>` per step and uses the `!` form for the flag check (revision 2, F1). The S7 report states that the ship path is detect-and-fix-forward (RR-1, P20).
 - The S2(b) prompt-engineer dispatch also rewrites the two stamp-doc bullets at lines 420 and 421 (ADR-lmr-003 A6a).
 - The S2 developer runs `wc -l` on delivery-flow after the edit and pastes it; it must print 499 (500 is the cap).
+- Revision 4 handoff: S1 implements the guard hardening in ADR-lmr-002 D9 (NUL-delimited `git ls-files -z`, `shell=False`, fail closed, `files-scanned` line, canary AC, known-fp fixtures, AC-1.6b for three categories, workflow `permissions: contents: read` and `persist-credentials: false`); S5a/S5b follow ADR-lmr-004 sections 6, 8, 9; S7 follows the ADR-lmr-005 item 8 additions (guard return code, count extraction, operator go, aggregate spend check, S7b transcript check); every temp path is `mktemp`.
 
 ## Revision 2 changelog (adversarial loop 2: `challenger/loop-2.md`, 5 findings, no blocking)
 
@@ -384,3 +385,49 @@ Nothing REBUTTED. 13 FIXED, 1 FIXED-with-residual (F7), 1 DEFERRED (F10). No ADR
 | R-4 | Guard scope excludes two executable files, P19 (carried from loop 2) | PO | Both clean today | A pin needed in `Makefile` or `.githooks/` |
 | R-5 | `02-refine` dropped from AC-DISP, PRD deviation P22 (F5) | PO | Only truthful option; the manifest could not be written without typed ids | PO wants Stage 2 covered: then a reconstructed form must be designed |
 | R-6 | F12 (serial commit rule) and F13 (doc facts) are argued or carried from the challenger, not reproduced by this author | Solution Architect, then S2 executor | F12 is a process rule the orchestrator can follow; F13 changes no requirement | First S2 run shows an `index.lock` error or mis-attributed trailer; a CLI or docs upgrade |
+
+## Revision 4 changelog (DoD round 2: `dod/{architect,qa,developer,devops,security}-review.md`; QA NOT_DONE with 1 blocking, others DONE)
+
+Section numbers 1 to 12 unchanged. Edits are inside existing sections and ADRs.
+
+| Finding | Disposition | Where |
+|---|---|---|
+| QA B1a AST gate vs pinned `build_report` stub | FIXED. Exemption `{build_report}`, restricted to constant-valued pinned keys; gate strips them and compares the rest to `base_sha`; new functions inert, no `NotImplementedError`. | ADR-lmr-004 section 6 item 1 (1a, 1b, 1c); section 4 S5 |
+| QA B1b `NotImplementedError` vs `AssertionError` | FIXED. Stubs return inert values. Failure-type rule: collected, FAILED, message begins `AssertionError` or `Failed: DID NOT RAISE`; ImportError, ModuleNotFoundError, SyntaxError, TypeError, AttributeError, NameError, NotImplementedError, collection error void it; test-writing rule stated. | ADR-lmr-004 section 6 item 2; section 4 S5 |
+| QA W1 AC-3.1b ignores guard return code | FIXED (design; Plan writes AC). rc in (0,1), summary regex, `files-scanned` above 0, listing count equals summary; ship step 4 judged on own rc. | ADR-lmr-002 D9; ADR-lmr-005 item 8 step 4 |
+| QA W2 scan-nothing looks clean; canary | FIXED. `files-scanned <K>` line, exit 2 on empty scope or failed listing, canary AC in `mktemp` copy (S1, Block A, S7b). | ADR-lmr-002 D9 |
+| QA W3 identical streams; AC-5.5c distinctness | FIXED. Non-overlapping `message.id` sets plus distinct hash and `session_id`; samples are full scrubbed streams so the ids exist. | ADR-lmr-004 section 5; ADR-lmr-002 D9 |
+| QA W4 transcript check skippable | FIXED. Skip only if the slug tree is absent, loud line; any missing id fails when the tree exists, all session dirs searched; S7b always runs it. Role/unit match stays an accepted limit. | ADR-lmr-005 item 6, item 8 |
+| QA W5 producer ids item 5 vs 6 | FIXED. Manifests list validators only; producer/executor ids live in `Dispatch-Id` trailers; disjointness is the cross-check. | ADR-lmr-005 items 5, 6; ADR-lmr-004 section 8 |
+| QA W6 S5b owner, aggregate budget, fixture budget | FIXED. Executor `devops`; $15.00 aggregate incl. aborted runs; max 7 runs; fixture `--max-budget-usd 0.25`, max 2; operator go. Stage 6 cannot pass G5 ACs recorded (PLAN-CARRY). | ADR-lmr-004 section 8; section 5 |
+| QA W7 per-stage cap vs per-unit manifests | FIXED. Cap is per DoD checkpoint; checker bounds each manifest; shipped block 2 text reworded (also `MUST equal` became `MUST NOT exceed`, matching `N <=` and light stages). PRD note below. | ADR-lmr-005 item 5; section 4 S2 |
+| QA W8 known false positives; AC-1.6b breadth; validator_start/end self-recorded | FIXED. `known_fp` fixtures; marker test on pin, stamp and prose lines; self-recorded note plus derived parent/last-commit checks. R-1, R-2 stay open (unchanged). | ADR-lmr-002 D9; ADR-lmr-004 section 6 item 4 |
+| Architect ADR-005 item 2 still maps `02-refine` | FIXED. Removed from the map. | ADR-lmr-005 item 2 |
+| Developer `--model`/`--effort` for `run_smoke.py`; `_spawn_and_tee` | FIXED. Flags pinned (land at P1); `_spawn_and_tee` (runner.py:167 to :175) added to the table. | ADR-lmr-004 section 2 |
+| Developer sources for `session_id`, `stream_path`, `host_context.bare`, `model_pin_env` | FIXED. Sources named in the `build_report` row; `model_pin_env` holds `"set"` or null, never values. | ADR-lmr-004 section 2 |
+| Developer `sample-<n>.jsonl` content | FIXED. Full verbatim scrubbed stream; consistent with distinctness rule; size note. | ADR-lmr-004 section 5 |
+| Developer ADR-001 decision 4 "S7 step 5" | FIXED. Now Block B step 7 (also the alternatives row). | ADR-lmr-001 decision 4 and alternatives |
+| Developer `$canonical_count`/`$script_list_count` extraction | FIXED. Field 3 of the canonical last line vs hit-line count by `awk`; both must equal the summary hits. | ADR-lmr-005 item 8 step 5 |
+| Developer sidecar must not carry a resolved model ID | FIXED. Provenance `.txt` is in guard scope; ID lives only in `.jsonl`/`.json`. | ADR-lmr-004 section 9 |
+| DevOps aggregate check and operator go | FIXED. `spent <= 15.00` printed before S5b and at Block B step 1; operator go before paid runs and push. | ADR-lmr-005 item 8 step 9; ADR-lmr-004 section 8 |
+| DevOps `Budget-Exception:` on a direct push | FIXED. No exception route on push; a `known_debt[]` entry with `target_wave:` committed before ship is the only route. | ADR-lmr-005 item 8 |
+| DevOps S1..S4 red guard | FIXED. Single squashed push keeps `main` green; do not push S1 to S3 alone. | ADR-lmr-005 item 8; P14 |
+| Security workflow permissions, `persist-credentials` | FIXED, including the `skill-line-budget.yml` push trigger. | ADR-lmr-002 D9; ADR-lmr-005 item 8 |
+| Security scrub/secret-scan AC, no ARN values | FIXED. Home-path replace and a scan for `sk-ant-`, `ANTHROPIC_API_KEY`, `Bearer `, `ghp_`, `xox`, `arn:aws`, `AKIA`, home paths. | ADR-lmr-004 section 9 |
+| Security guard `-z`, `shell=False`, fail closed, skip symlinks | FIXED. | ADR-lmr-002 D9 |
+| Security `mktemp`, S7b transcript, hooks `-z`/`xargs -0` | FIXED. | ADR-lmr-005 item 8; ADR-lmr-002 D9 |
+| Architect W1 id-level FR/AC matrix | DEFERRED to Plan (PLAN-CARRY 1). | below |
+| Architect W3 PO decisions P1/P2/P16/P21/P22 pending | DEFERRED to Plan (PLAN-CARRY 2); not designable by the architect. | below |
+
+**PRD conflicts, stated not changed.** (1) Dropping `02-refine` from AC-DISP REQUIRED stays P22. (2) The PRD AC-3.1b and AC-5.5c snippets lack the return-code, canary and distinctness checks; ADR text says what the Plan adds, and the PRD text is untouched. (3) The `files-scanned` stdout line is an addition; the last-line format `guard-scope hits N files M` is unchanged. (4) The block 2 shipped-prose reword ("per DoD checkpoint", "MUST NOT exceed") touches wording that PRD FR-2.1 and BINDING-5.4 describe as a cap; the meaning "never more than the list" is preserved, "MUST equal" is dropped because light stages dispatch fewer (ADR-lmr-005 context). PO confirms at Plan. The reworded line still holds `dod_validators`, a cap word and `subagents` (AC-2.5), and the four-line block shape. Hash values quoted in ADR-lmr-001 came from the earlier simulated text; S6 recomputes the real hash, so no hash is pinned by this reword.
+
+### Plan-carry (deferred, not designed here)
+
+1. Id-level FR to AC traceability matrix (architect W1): the Plan builds it from PRD FR/AC ids against the traceability table in the QA round-1 review.
+2. PO decisions still open: P1 (live capture placement), P2 (multi-manifest AC-DISP form), P16 (budget push trigger and pre-push hook), P21 (uniform `latest` stamp on 22 unreviewed files), P22 (`02-refine` dropped from REQUIRED).
+3. Plan AC text for: AC-3.1b caller rules and canary (ADR-lmr-002 D9); AST P0 gate 1a to 1c and red-first failure-type rule (ADR-lmr-004 section 6); scrub AC (section 9); paid-run ceiling and operator go (section 8); derived `validator_start`/`validator_end` checks; AC-DISP transcript rules.
+4. Stage 6 DoD cannot pass the G5 closing ACs (5.4, 5.5, 5.5c, 5.6) when the baseline capture sits in Stage 7 (P1).
+
+### ADR status after revision 4
+
+Left PROPOSED. B1 is fixed in the text, but the fix has not been re-validated by the QA reviewer, and every ADR says "flips to Accepted when Stage 4 DoD passes". Flipping on the author's own judgement would be a self-approval. The orchestrator flips all five after QA round 2 returns DONE.

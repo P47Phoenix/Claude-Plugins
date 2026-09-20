@@ -62,7 +62,7 @@ Cache-cost impact: the prompt cache is keyed on a byte-identical prefix, so a by
    wc -l delivery-team/skills/delivery-flow/SKILL.md    # must print 499 or fewer
    ```
    The second command must print `MATCH`. The third protects the Tier-A budget (500).
-4. **Re-check at ship (S7 step 5)**, after the final rebase and after the CHANGELOG and memory edits. If it prints anything but `MATCH`, the S7 executor re-runs step 3 and records why in the S7 report. A rebase onto a `main` that advanced and touched this file is the expected cause.
+4. **Re-check at ship (ship-gate Block B step 7, ADR-lmr-005 item 8; revision 4 corrected the reference from "S7 step 5")**, after the final rebase and after the CHANGELOG and memory edits. If it prints anything but `MATCH`, the S7 executor re-runs step 3 and records why in the S7 report. A rebase onto a `main` that advanced and touched this file is the expected cause.
 5. **Any later edit to delivery-flow/SKILL.md re-runs step 3.** No silent drift: the S7 check is the only consumer, so it is the only thing that would notice.
 6. The stale `## Volatile` comment ("bytes 0..2048", "end of Phase 3") is a known documentation defect. It is logged for a later wave; fixing it costs one in-place comment rewrite in an at-cap file and is not needed for this initiative.
 7. **S6 must also account for the telemetry hash (revision 1, F1).** Beside the governance re-freeze, the S6 report records before and after values of the 2048-byte hash for delivery-flow: `head -c 2048 delivery-team/skills/delivery-flow/SKILL.md | sha256sum | cut -c1-8` (before `8c2ebf97`, simulated after `66bcaa25`; the real after-value is recorded at S6) and states that all 13 stamped `delivery-team` skills will show a new telemetry `prefix_hash` at ship. The governance fingerprint stays whole-file; `telemetry.py` and its schema doc are NOT changed by this initiative (a change would alter the telemetry contract, ADR-tk0e-001, and no requirement asks for it). If a later wave wants one shared boundary, it must update the `PREFIX_READ_BYTES` constant, the schema doc and the SKILL.md comment together; that is a separate decision.
@@ -73,7 +73,7 @@ Byte-arithmetic rule for the S6 developer: run the commands, do not estimate. Th
 
 | Alternative | Why rejected |
 |---|---|
-| Fingerprint `head -c 2048` only (restore ADR-tk2 wording) | Not what the governance file holds. Also weaker: it would not notice a post-S6 edit at line 273 (byte 16,806 and later), and S7 step 5 exists precisely to catch silent edits. It would also lock a boundary that falls in the middle of Phase 0 line 40, which no reader can point at. |
+| Fingerprint `head -c 2048` only (restore ADR-tk2 wording) | Not what the governance file holds. Also weaker: it would not notice a post-S6 edit at line 273 (byte 16,806 and later), and ship-gate step 7 exists precisely to catch silent edits. It would also lock a boundary that falls in the middle of Phase 0 line 40, which no reader can point at. |
 | Fingerprint bytes 0..end of Phase 3 (the SKILL.md comment) | Same weakness for lines 273 to 276 and beyond. The regions after Phase 3 are edited by S2 too. Choosing it would also mean deciding which of two contradictory comments is right by convention rather than by measurement. |
 | Multi-file fingerprint including `orchestrator-doctrine.md` | Changes the file format and AC-6.1 for a file outside the cache path. The mirror is guarded by other ACs. |
 | Drop the fingerprint | Violates BINDING-5.3 (re-fingerprint after all SKILL.md edits) and G9. |

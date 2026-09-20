@@ -1,137 +1,94 @@
-<!-- run: run-2026-05-09-tk4 | stage: 4 (Architect, light) | DoD round: 1 | reviewer: Developer (RUNS-THE-COMMAND, FRESH dispatch) -->
-
-# Developer DoD Review — Stage 4 Architect, Wave 3
-
-**STATUS**: DONE
-**Pipeline**: `run-2026-05-09-tk4`
-**Stage**: 4 (Architect, LIGHT) — DoD round 1
-**Reviewer**: developer skill (FRESH dispatch, runs-the-command)
-**Binding**: per tk3 retro Hot Lesson #1 extension, cache-prefix-impacting ADRs (ADR-tk4-003) require Dev runs-the-command at DoD. This review honors that binding.
-
-Artifacts under review:
-
-- `.delivery/artifacts/04-architect/adrs/ADR-tk4-001-tier-b-closure-approach.md`
-- `.delivery/artifacts/04-architect/adrs/ADR-tk4-002-paradigm-sub-skill-pattern.md`
-- `.delivery/artifacts/04-architect/adrs/ADR-tk4-003-governance-frontmatter-shape.md`
-- `.delivery/artifacts/04-architect/solution/architecture-tk4-wave-3.md`
-
+---
+verdict: DONE
+role: developer (DoD validator)
+stage: 4 (Architect)
+run: run-2026-05-28-o48m
+backlog: BACKLOG-108
+artifact_reviewed: architecture.md rev 3, ADR-lmr-001..005
+blocking_count: 0
+warning_count: 6
+prose_style: caveman-lite
 ---
 
-## Commands run
+# Developer DoD review, Stage 4, BACKLOG-108 (fresh review of rev 3)
 
-1. `ls -la .delivery/artifacts/04-architect/{adrs,solution,dod}/` — confirmed all four artifact files exist on disk with timestamps from the current run.
-2. `ls -la governance/ scripts/` — confirmed `governance/cache-prefix-hash.txt` and `governance/skill-budgets.json` exist; `scripts/check_skill_budgets.py` exists; `scripts/regenerate_cache_prefix_hash.py` does NOT exist.
-3. `for f in <7 over-budget files>; do wc -l < "$f"; done` — verified line counts on all 7 SKILL.md files. Results match ADR-tk4-001 `before` column EXACTLY: architect 500, presentation 545, ui 496, operations 420, quality 418, user-feedback 399, godot 236.
-4. `head -15` + `head -c 200 | od -c` on architect, presentation, godot SKILL.md — confirmed frontmatter sits at byte 0 (file begins with `---\nname:`).
-5. `printf '<3 new keys>\n' | wc -c` and `wc -l` — exact byte cost of 3 frontmatter keys = **83 bytes / 3 lines** (ADR claimed ~50 bytes; ADR underestimates by ~33 bytes/file but conclusion intact).
-6. `cat governance/cache-prefix-hash.txt` — current hash file is sha256sum format, scoped to `delivery-team/skills/delivery-flow/SKILL.md` only. Matches ADR-tk4-003 §"this wave expands the hash file's scope" claim.
-7. `sha256sum delivery-team/skills/delivery-flow/SKILL.md` — confirmed current hash matches the recorded hash byte-for-byte. Re-freeze procedure is trivially achievable via `sha256sum <files> > governance/cache-prefix-hash.txt`.
-8. `find . -maxdepth 4 -name "research-agent" -type d` + `ls research-agent/SKILL.md` — research-agent path resolves at top-level repo (`./research-agent/SKILL.md`), no `skills/` subtree yet (matches ADR-tk4-002).
-9. `ls delivery-team/skills/{presentation,user-feedback,architect/paradigms}/` — presentation and user-feedback skill dirs exist; `architect/paradigms/{volatility,ddd}/` precedent exists (matches ADR-tk4-002 grandfathering claim).
-10. `grep -m1 '^\*\*Status\*\*' <each ADR>` — all three ADRs report `**Status**: Accepted`. Binary, no parentheticals.
-11. `grep -nE -i "(MUST|hard gate|sequenc|after.*W3-1|before.*W3-9|stories 1-4|story 5)" ADR-tk4-003 + architecture-tk4-wave-3.md` — sequencing recorded explicitly in BOTH artifacts (ADR lines 25, 61, 74, 76; architecture lines 25, 44, 47-58).
-12. `sed -n` spot-checks on architect and godot — line-range citations in ADR-tk4-001 resolve precisely (`## Architecture Style and Decomposition from Config` at line 132, `## Software Architecture Roles` at line 231, `## Common Task Patterns` at godot line 151, `## Architecture Guardrails` at godot line 190).
-13. `grep -nE '^\s*(```|    )?(python3?|sha256sum|grep|find|wc|...)\b' <ADRs>` — audited cited verification commands; all standard CLI tools (python3, grep, find, sha256sum, wc) already in environment.
-14. `grep -n "skills/paradigms\|architect/paradigms" CLAUDE.md` — confirmed CLAUDE.md line 49 says `skills/paradigms/` while actual path is `paradigms/`; ADR-tk4-002's stale-doc claim is accurate.
+Question: can a dev implement S1..S7 without guessing? Answer: yes. No blocker. Six gaps, all small, each has a sane default a dev would pick. Fix at Plan or in dispatch prompts.
 
----
+## Blocking issues
 
-## Gate evaluations
+None.
 
-### Gate 1 — Per-file batching math closes for ALL 7 files: **PASS**
+## Non-blocking warnings
 
-Verified `before` against ADR §3 table:
+### W1. `run_smoke.py` argparse for `--model` / `--effort` not pinned; `_spawn_and_tee` missing from interface table
+- PRD AC-5.3: `run_smoke.py --help | grep -cE -- "--(model|effort)"` must be >= 2.
+- ADR-lmr-004 s2 pins `_build_claude_command` and `run_pipeline` only. It says "`run_smoke.py` exposes no `--model` other than `opus`". Reads two ways: flag exists with only `opus` allowed, or flag absent. Absent would fail AC-5.3.
+- Real code: `run_pipeline` (runner.py:304) calls `_spawn_and_tee` (runner.py:167), which calls `_build_claude_command(workspace, prompt_path)` at runner.py:175. `_spawn_and_tee` is not in the table, so nobody is told to thread `model`/`effort`/cap through it. `_execute_single_run` in run_smoke.py also not named.
+- Evidence:
+  - `grep -n "add_argument" ...run_smoke.py` -> flags today: `--init-baseline --cost-cap --timeout --baseline --out-dir --prompt --config --stream-fixture --repo-root`. No `--model`, no `--effort`.
+  - `grep -n "_build_claude_command" runner.py` -> lines 112, 175.
+- Ask: pin `--model` (default `opus`, choices `[opus]`) and `--effort` (default `xhigh`), and add `_spawn_and_tee` to the table, in the P0 stub list.
 
-| File | ADR before | wc -l | match | ADR after | tier ceiling | within? |
-|---|---:|---:|:-:|---:|---:|:-:|
-| architect | 500 | 500 | YES | 288 | 300 (B) | YES |
-| presentation | 545 | 545 | YES | ≈160 | 300 (B) | YES (broad margin) |
-| ui | 496 | 496 | YES | 273 | 300 (B) | YES |
-| operations | 420 | 420 | YES | 255 | 300 (B) | YES |
-| quality | 418 | 418 | YES | 276 | 300 (B) | YES |
-| user-feedback | 399 | 399 | YES | 250 | 300 (B) | YES |
-| godot | 236 | 236 | YES | 198 | 200 (C) | YES (margin = 2) |
+### W2. Source of new report fields not stated
+- ADR-lmr-004 s2 adds `session_id`, `stream_file`, `host_context.bare`, `model_pin_env` to report/baseline. `Metrics` (ADR s1 item 6) has no `session_id` field, and no text says who reads it from `system/init` or who passes `stream_path`/`session_id` into `build_report`. Same for `bare` (bool) and `model_pin_env` (read four env vars).
+- Evidence: `build_report(*, run_id, repo_root, plugin_load_strategy, outcome, metrics, aggregator_dict, advisory_warnings, hard_failures)` at report.py:61; no session or stream args today.
+- Ask: one line: `_execute_single_run` extracts `session_id` from the `system/init` event and passes it plus `stream_path`; env vars read in `init_baseline` or report.
 
-Per-file Δ arithmetic in ADR-tk4-001 §W3-1..W3-7 sums correctly in every case (e.g., architect: -76 -56 -30 -23 -27 = -212; 500-212 = 288). Godot's tight 2-line margin is acknowledged with a stated fallback (additional 5-line trim from `## Architecture Guardrails`).
+### W3. Content of `smoke-streams/sample-<n>.jsonl` ambiguous
+- ADR-lmr-004 s5: "per-sample raw stream (trimmed `system/init`: `type`, `subtype`, `model`, `session_id`)". Architecture s3 says "5 raw streams and their hashes". Full stream or a trimmed init line? Affects hash rule (distinct hashes) and repo size.
+- Ask: state "full stream" or "trimmed init only".
 
-### Gate 2 — All cited file paths resolve for 7 over-budget files: **PASS**
+### W4. Stale step number in ADR-lmr-001
+- ADR-lmr-001 decision 4 says "Re-check at ship (S7 step 5)". ADR-lmr-005 item 8 has the hash `MATCH` at Block B step 7; step 5 is the R12 count equivalence.
+- Evidence: `grep -n "step 5" ADR-lmr-001*.md` vs ADR-lmr-005 steps list (1 fetch, 2 clean tree, 3 SHIP_SHA, 4 guard, 5 R12, 6 budgets, 7 hash, 8 DISP, 9 push).
+- Ask: change to "step 7".
 
-All 7 paths exist on disk with current line counts matching ADR claims (Gate 1 table). No path drift.
+### W5. Ship-gate step 5 variables undefined
+- ADR-lmr-005 step 5: `test "$canonical_count" = "$script_list_count"`. No text says how to get each. Canonical = PRD s1 python heredoc (its last summary line, parse `hits N`). Script side = `--list` lines; D5 says `--list` also prints the summary line, so count must drop it.
+- Evidence: PRD lines 30-65 heredoc prints `guard-scope hits 91 files 31` (ran it, see below). ADR-lmr-002 D5 "`--list` prints `category file:line` per hit before the summary".
+- Ask: give the two extraction one-liners (for example `bash canonical | sed -n '1s/.*hits \([0-9]*\) .*/\1/p'` and `script --list | grep -c '^\(pin\|stamp\|prose\) '`).
 
-### Gate 3 — Frontmatter byte-impact math (ADR-tk4-003): **PASS WITH NOTE**
+### W6. Fixture sidecar is inside guard scope
+- `stream_real_shape.provenance.txt` is `.txt`, so scanned (scope `.py .md .yml .yaml .txt .sh`). A natural provenance note ("model observed: <full id>") is a pin hit and fails AC-1b. The `.jsonl` is out of scope. ADR-lmr-002 D9 names tests and README, not the sidecar.
+- Ask: add sidecar to the D9 "no literal model id" rule; record `command:` (alias only) and CLI version, not the resolved id.
 
-Sampled 3 SKILL.md files (architect, presentation, godot):
+## Verified references (design matches real code)
 
-- All begin with `---\nname:` at byte 0; frontmatter is unambiguously at the cache-prefix region.
-- Existing frontmatter blocks span ~10 lines; adding 3 keys is a clean append.
-- **Exact** byte cost of the 3 cited keys (`maintainer: delivery-team-leads\nfitness_review_due: 2026-08-09\ncontext_budget: 300\n`) = **83 bytes**, not the ADR's stated ~50 bytes. ADR uses ~17 bytes/line average; actual is closer to ~28 bytes/line for these specific keys.
-- Cumulative impact at 13 files: actual ≈ **1,080 bytes**, not 650 bytes. Still well within the 2,048-byte cache-prefix region; conclusion (one-time re-warm, scoped, justified) is intact.
+| Claim in design | Check | Result |
+|---|---|---|
+| Guard scope 91 hits / 31 files (pin 20, stamp 52, prose 19) | ran PRD s1 heredoc: `bash /tmp/lmr/count.sh` | `guard-scope hits 91 files 31` / `pin 20 stamp 52 prose 19`. Exact match. |
+| `governance/cache-prefix-hash.txt` = whole-file sha256 of delivery-flow SKILL.md | `cat` + `sha256sum` | both `43067c9e...b8328`, identical |
+| delivery-flow 499 lines / 28,616 bytes | `wc -lc` | `499 28616` |
+| 2048-byte hash `8c2ebf97` | `head -c 2048 ... \| sha256sum` | `8c2ebf9705bc...37750` |
+| First byte difference 854; stamps start by byte 927; 25 of 25 inside 2048 | grep -bo `opus-4-7`; python offset scan over 25 stamped files | 854; max first-stamp offset 927; `25 stamped ... inside 2048: 25` |
+| telemetry `PREFIX_READ_BYTES = 2048`, `_compute_prefix_hash` sha256[:8] | `grep -n` telemetry.py | line 21, line 46-49 |
+| 25 stamped SKILL.md, 26 model_awareness lines, 11 with `fitness_review_due` | grep -rl / grep -rn | 25 / 26 / 11 |
+| 13 stamped delivery-team skills | counted from ADR table | 13 |
+| Version blocks at delivery-flow lines 27-30 and 273-276, 4 lines each; doctrine 77-82 | `sed -n` | match |
+| Proposed rewrite blocks are guard-clean | ran PIN/STAMP/PROSE/BARE on all 8 lines | all False |
+| `MODEL_TIER_ALIAS` placement: after imports, above class; registry lines 148/149, 173/174, 189/190 | read agent_registry.py 1-40, 146-190 | imports end line 17, first class line 21, config lines and comment lines match |
+| Budgets: 17 files, delivery-flow 499/500, product-delivery 300/300 | `check_skill_budgets.py` | `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).`; `wc -l` 499 and 300 |
+| `--out-dir` at run_smoke.py line 57 | `grep -n` | line 57 |
+| `run_smoke.py` exit-code table; `_init_baseline_flow` aborts only on (2,3,4) | read lines 184-207 | matches; design fix (abort on any non-zero) is a real change, correctly called out |
+| runner in-loop kill at lines 95 and 252 | `grep -n _running_cost` | 95, 252 |
+| `parse_stream` reads top-level `usage`/`model`, buckets `unknown` | read metrics.py 62-128 | matches ADR context |
+| `_collect_metric_values` collects only fixed keys plus `skill_loads.*`; `_classify` returns hard/advisory only | read baseline.py 39-135 | matches; design's "skip is a no-op, real work is collect" is right |
+| `SCHEMA_VERSION = "1"` in baseline.py:12 and report.py:13 | grep | match |
+| `test_meta.py` = 3 passing | `pytest -q` | `3 passed` |
+| conftest has 4 `claude-opus-4-7` model values (105,117,129,151) | grep | match |
+| `config.yml` `dod_validators` at lines 56-63 | sed | match |
+| `.claude/worktrees` absent from `.gitignore`; `core.hooksPath` = `.git/hooks` (hooks inert) | grep, `git config --show-origin` | confirmed; P23 correct |
+| Ship step 2 pathspec form and `! git ls-files -v \| grep -q` form | ran on this worktree | porcelain with pathspec lists only .delivery review files; `grep -c '^[a-zS]'` printed 0 (exit 1, so the design's move away from `grep -c` is right) |
+| `.githooks/pre-commit` structure (set -euo pipefail, ends `budget + lint OK.`) | read file | insertion point valid |
+| `skill-line-budget.yml` is `on: pull_request` with `paths:` | sed | match |
+| prompt-engineer/SKILL.md 520 lines, no tier; lines 363/365/368/371/420/421 as named | wc, sed | match |
 
-NOTE: Stage 6 DoD must cite ACTUAL byte counts after rollout (the ADR itself mandates this in §"Procedure" item 3 — "MUST cite the regenerated hash file's actual byte counts, NOT the +650-byte projection"). The architect's projection is OPTIMISTIC but the binding is correct.
+No wrong line number, name or behavior found in the checked references.
 
-### Gate 4 — Cache-prefix re-freeze procedure inspectable: **PASS WITH NOTE**
+## Note (not a finding)
 
-- `governance/cache-prefix-hash.txt` exists, contents inspectable, currently 1 line covering `delivery-team/skills/delivery-flow/SKILL.md` only — matches ADR's "expands the hash file's scope" claim.
-- Hash format = sha256sum (verified by `sha256sum delivery-team/skills/delivery-flow/SKILL.md` matching the file's recorded hash byte-for-byte).
-- Regeneration is trivially achievable: `sha256sum delivery-team/skills/*/SKILL.md delivery-team/skills/architect/paradigms/*/SKILL.md > governance/cache-prefix-hash.txt`.
-
-NOTE: ADR-tk4-003 §Procedure cites `python3 scripts/regenerate_cache_prefix_hash.py --target ... --files ...` but this script does **NOT** exist in `scripts/` (only `check_skill_budgets.py` is present). The ADR's parenthetical fallback ("Or the equivalent enumeration of all 13 SKILL.md files") covers this — Stage 6 must either create the script OR record the actual `sha256sum` invocation used. Procedure is recoverable without architectural change. Not a blocker for Architect DoD because the procedure intent and target file are both well-specified; the script reference is a forward-looking placeholder.
-
-### Gate 5 — ADR-tk4-002 paradigm pattern locations correct: **PASS**
-
-- `research-agent/SKILL.md` resolves at top-level repo (`./research-agent/SKILL.md`, 17,746 bytes); no `skills/` subtree yet — matches ADR's "verified path: top-level repo `/research-agent/SKILL.md`, no `skills/` subtree yet".
-- `delivery-team/skills/presentation/` resolves; SKILL.md present.
-- `delivery-team/skills/user-feedback/` resolves; SKILL.md present.
-- `delivery-team/skills/architect/paradigms/{volatility,ddd}/` resolve as the grandfathered precedent.
-- CLAUDE.md line 49 says `skills/paradigms/` (stale per ADR's claim); actual path is `paradigms/`. ADR's stale-doc note is accurate; W3-12 fix scope correctly cited.
-
-### Gate 6 — All 3 ADR Statuses BINARY: **PASS**
-
-| ADR | Status |
-|---|---|
-| ADR-tk4-001 | Accepted |
-| ADR-tk4-002 | Accepted |
-| ADR-tk4-003 | Accepted |
-
-No parentheticals. No "Accepted (pending …)" anti-pattern. Binary in all three.
-
-### Gate 7 — No new CLI deps in cited verification commands: **PASS**
-
-All cited tools (`python3`, `grep`, `find`, `wc`, `sha256sum`) are standard and present in the environment. The single non-standard reference (`scripts/regenerate_cache_prefix_hash.py`) is a procedure forward-reference and does not introduce a new CLI dependency — it relies on `python3` plus a script that does not yet exist (see Gate 4 NOTE).
-
-### Gate 8 — Mandatory-rollout sequencing recorded: **PASS**
-
-Sequencing is recorded EXPLICITLY in both required artifacts:
-
-- ADR-tk4-003 line 25: "W3-9 MUST run AFTER W3-1..W3-7 content trims, because adding ~3 lines to a file already AT-budget pushes it over."
-- ADR-tk4-003 line 76: "W3-9 MUST NOT begin until W3-1..W3-8 have landed in the working tree. … This sequencing is a **hard gate** — NOT a soft preference."
-- ADR-tk4-003 §"Mandatory-rollout sequencing (binding Wave 0 lesson)" is a dedicated subsection.
-- architecture-tk4-wave-3.md line 44: ASCII boundary diagram explicitly labels "HARD GATE — Stories 1-4 must land in working tree first" between content trims and Story 5 (W3-9).
-- ADR-tk4-001 §"Sequencing with ADR-tk4-003" reciprocates the gate from the trim-side.
-
-Sequencing is recorded in three places, with consistent language ("hard gate"), and traces back to the Wave 0 mandatory-rollout-side-effect lesson.
-
----
-
-## Summary scorecard
-
-| Gate | Result |
-|---|---|
-| 1. Per-file batching math closes for all 7 files | PASS |
-| 2. All cited file paths resolve | PASS |
-| 3. Frontmatter byte-impact math | PASS WITH NOTE (ADR projection optimistic by ~430 bytes total; conclusion intact) |
-| 4. Cache-prefix re-freeze procedure inspectable | PASS WITH NOTE (cited python script doesn't exist; sha256sum fallback is trivial) |
-| 5. ADR-tk4-002 paradigm path claims correct | PASS |
-| 6. All 3 ADR Statuses BINARY | PASS |
-| 7. No new CLI deps | PASS |
-| 8. Mandatory-rollout sequencing recorded | PASS |
-
----
+Stage dirs: `git status` shows other reviewers' files (`devops-review.md`, `security-review.md`, modified `architect-review.md`) as dirty. That is normal mid-DoD and not a defect in the design.
 
 ## Verdict
 
-All eight gates pass; two carry forward-looking notes that Stage 6 must honor (cite actual byte counts after rollout, and either create or substitute the `regenerate_cache_prefix_hash.py` script with an equivalent `sha256sum` enumeration). The contracts in all three ADRs and the architecture summary are well-formed and runs-the-command verifiable, with line counts, paths, and sequencing all confirmed empirically against the working tree.
-
-**STATUS: DONE.**
-
-— developer (FRESH dispatch, runs-the-command), DoD round 1, run-2026-05-09-tk4
+DONE. A developer can implement S1..S7 from this design. W1 to W6 are small clarifications to fold into Plan or dispatch prompts; none blocks.
