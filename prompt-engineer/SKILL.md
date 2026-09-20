@@ -348,17 +348,17 @@ Synthesis:
 
 This sub-section isolates latest-Opus guidance so future model migrations can replace it surgically without touching the rest of the pattern library. It names no version; "latest Opus" means the newest Opus in the models overview.
 
-**Adaptive thinking is the thinking-on mode for the latest Opus (F-11).** Prefer `extended_thinking: { "effort": "<level>" }` over the legacy `thinking: { "type": "enabled", "budget_tokens": N }` surface. Do not emit `budget_tokens` in new code paths; do not port it forward from snippets written for older models.
+**Adaptive thinking is the thinking-on mode for the latest Opus (F-11).** Use `thinking: { "type": "adaptive" }` and set depth at `output_config.effort`, not inside `thinking`; `budget_tokens` (`thinking.type: "enabled"`) returns a 400 on Claude 4.7 and later, so do not emit it or port it from snippets written for prior models.
 
-**Effort levers (F-15).** Valid values: `low`, `medium`, `high`, `xhigh`, `max`. Guidance:
+**Effort levers (F-15).** Set at `output_config.effort`. Valid values: `low`, `medium`, `high`, `xhigh`, `max`; not every model that supports `max` supports `xhigh`. Guidance:
 - `low` / `medium` — short conversational turns, cheap classification, routing decisions.
-- `high` — deeper reasoning for multi-step agentic skill work.
-- Start from the API default effort and tune on your own evals; levels are recalibrated between releases, so do not copy a per-model recommended level from prompts or docs of an older model.
+- `high` — deeper reasoning for multi-step agentic skill work; `xhigh` (where supported) — long-running agentic and coding tasks.
 - `max` — escalation-only: multi-hour root-cause work, hard architectural trade-offs, contested debates. Expect latency cost.
+- Start from the API default effort (`high`) and tune on your own evals; do not copy a per-model recommended level from prompts or docs of prior models.
 
-**Sampling levers (temp / top_p / top_k).** Treat API defaults as the baseline. Raise temperature only for creative ideation; do NOT raise it for agentic tool-use or code generation. If a prompt relied on `temperature: 0` for determinism, re-test on the latest Opus before porting.
+**Sampling levers (temp / top_p / top_k).** Leave them at API defaults: on Claude 4.7 and later, non-default `temperature`, `top_p`, or `top_k` values return a 400 error. Steer style through the prompt and `effort` instead.
 
-**Delegation and verification on the latest Opus:** it delegates to subagents more readily than prior models, so state the delegation scope and a spawn cap in the prompt. Explicit re-verification instructions cause over-verification; drop them. Otherwise leave sampling alone, pick an `effort` level, and let the model handle its own reasoning budget.
+**Delegation and verification on the latest Opus:** it delegates to subagents more readily than prior models, so state the delegation scope and a spawn cap in the prompt. Explicit verification instructions cause over-verification, so do not add them. Pick an `effort` level and leave sampling alone.
 
 ### Pattern 4.1 — Model ID From Config
 
@@ -368,7 +368,7 @@ Python and YAML/JSON config callers read the model ID from one configuration val
 MODEL_ID = os.environ["CLAUDE_MODEL_ID"]  # one config value; set from the models overview, never hard-coded in code
 ```
 
-Reviewers need one grep to find the single config read. Serving infrastructure around a fixed model ID can change over time, so behaviour under a fixed ID is not a permanent guarantee either.
+Reviewers need one grep to find the single config read.
 
 ### Pattern 4.2 — Latest-Opus-Aware Role Prompt Skeleton
 
