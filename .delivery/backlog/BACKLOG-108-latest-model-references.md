@@ -72,3 +72,7 @@ Defects/story > 0.4 across any 3-story window pauses the initiative. Current rol
 - Claude Code model aliases: `https://code.claude.com/docs/en/model-config`
 - Model IDs and versioning: `https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions`
 - Prior wave precedent: BACKLOG-106 (run-2026-05-13-tk5), BACKLOG-100..104 squash-ship pattern
+
+## Plan decisions (Stage 5, 2026-09-20)
+
+See `.delivery/artifacts/05-plan/plan.md`. R4 (guard false positives in hardware-team prose) is rated MEDIUM, not Low (D12). Live baseline runs in Stage 7 UAT (S5b); human gates H1 to H4 for spend and pushes.

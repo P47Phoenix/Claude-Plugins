@@ -1,30 +1,28 @@
 ---
 stage: 5
 stage_name: plan
-depth: light
-pipeline_id: run-2026-05-13-tk5
-status: DONE
-dod_rounds: 1
-dod_validators: [sm, po, qa]
+depth: light (all content present)
+pipeline_id: run-2026-05-28-o48m
+status: READY_FOR_DOD
+decisions_count: 21
+dod_validators: [sm, po, qa, developer, devops]
+dod_rounds: 0
+open_human_gates:
+  - "H1 operator go for fixture captures (<= 2 x $0.25), asked in Stage 6 at S5a validator step"
+  - "H2 operator go for S5b live baseline (5 x $3 cap, $15.00 aggregate, max 7 runs), asked at Stage 7 S5b start; also restates no --bare (D18)"
+  - "H2b any spend above $15.00 or more than 7 runs (conditional)"
+  - "H3 push to origin/main, asked in Stage 7 after UAT PASS and clean gate log"
+  - "H4 second push (docs-only S7b report), asked after S7b"
 artifacts:
-  primary: .delivery/artifacts/05-plan/po/stories.md
-  sequencing: .delivery/artifacts/05-plan/architect/sequencing.md
-  test_cases: .delivery/artifacts/05-plan/qa/test-cases.md
-  sprint_plan: .delivery/artifacts/05-plan/sm/sprint-plan.md
-  dod:
-    sm: .delivery/artifacts/05-plan/dod/sm-review.md
-    po: .delivery/artifacts/05-plan/dod/po-review.md
-    qa: .delivery/artifacts/05-plan/dod/qa-review.md
-notable:
-  - "8 WIs → 3 stories (S1=L, S2=M, S3=M) — file-scope consolidation (validated:5 → validated:6 after merge)"
-  - "Capacity 71.4% (under 80% WARN threshold)"
-  - "All 8 PRD FRs mapped to stories; coverage matrix gate clear"
-  - "All 24 story ACs traced to TCs; all 8 Stage-7 UAT gates have TC mappings"
-  - "Stop-rule headroom 0.289 defects/story before pause threshold"
-  - "Architect sequencing locks S3 to FRESH Stage-6 Dev dispatch (not parallel) for producer-validator-separation freshness"
-  - "3 non-blocking QA warnings logged for Stage 6 attention"
+  primary: .delivery/artifacts/05-plan/plan.md
 ---
 
-# Stage 5 Summary — Plan (light) — run-2026-05-13-tk5
+# Stage 5 Summary — Plan — run-2026-05-28-o48m
 
-Three stories carved by Gandalf, sequencing forged by Celebrimbor, TCs sharpened by Legolas, sprint marched by Aragorn. All DoD first-try: SM 6/6, PO 7/7, QA covers all 24 ACs + 8 UAT gates. Producer-validator dispatch guidance: S1+S2 share one Dev dispatch context; S3 launches in fresh dispatch after S1+S2 DoD pass.
+Plan written: 21 decisions, stories S1..S7 plus S5a/S5b/S7b with scope, effort, executor/validator, stage. Id-level FR/AC matrix built. Plan-carry mapped (P1..P23, U1..U14, R-1..R-6, DoD warnings). Stage 6/7 rules set.
+
+Key calls: S5a in Stage 6, S5b live baseline in Stage 7 (Stage 6 DoD skips AC-5.1/5.4/5.5/5.5c/5.6); multi-manifest AC-DISP; `02-refine` dropped from REQUIRED; push trigger + pre-push hook accepted; uniform `latest` stamp accepted with stamp-only ledger; R4 raised to Medium; no `--bare`; `--effort xhigh` opus only.
+
+Old files in `05-plan/` (`po/`, `qa/`, `dod/`, ...) belong to run `run-2026-05-13-tk5`; not used.
+
+DoD not yet run. Orchestrator dispatches the five plan validators and writes `05-plan/dispatch-manifest.txt`.
