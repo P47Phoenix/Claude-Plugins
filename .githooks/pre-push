@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# pre-push hook (BACKLOG-108, ADR-lmr-002 D8). Opt-in via core.hooksPath.
+# Acts only on pushes to refs/heads/main. Other refs pass untouched.
+# Advisory unless MODEL_PIN_STRICT=1 (then failures block).
+# Detection, not prevention: `git push --no-verify` bypasses it.
+set -euo pipefail
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-push: python3 not found in PATH; skipping" >&2
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+zero="0000000000000000000000000000000000000000"
+strict="${MODEL_PIN_STRICT:-0}"
+
+# fail: block when strict, else warn and pass
+fail() {
+  echo "pre-push: $1" >&2
+  if [ "$strict" = "1" ]; then exit 1; fi
+  echo "pre-push: advisory only (set MODEL_PIN_STRICT=1 to block)." >&2
+}
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] || continue
+  [ "$local_sha" != "$zero" ] || continue
+  if [ "$local_sha" != "$(git rev-parse HEAD)" ]; then
+    fail "pushed commit is not HEAD; guard scans the working tree, not that commit"
+    continue
+  fi
+  # pathspec skips nested worktrees (ADR-lmr-005); only emptiness tested, so no -z
+  if [ -n "$(git status --porcelain --untracked-files=all -- . ':!.claude/worktrees')" ]; then
+    fail "working tree not clean; guard scope would differ from the pushed commit"
+    continue
+  fi
+  echo "pre-push: model-pin guard + skill budgets (main push)..."
+  rc=0
+  python3 scripts/check_model_pins.py --list || rc=$?
+  if [ "$rc" -ne 0 ]; then fail "model-pin guard rc=$rc"; fi
+  rc=0
+  python3 scripts/check_skill_budgets.py || rc=$?
+  if [ "$rc" -ne 0 ]; then fail "skill budget check rc=$rc"; fi
+done
+exit 0

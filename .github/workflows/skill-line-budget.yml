@@ -1,6 +1,8 @@
 name: SKILL.md line-budget gate
 
 on:
+  push:
+    branches: [main]
   pull_request:
     paths:
       - 'delivery-team/**/SKILL.md'
@@ -14,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Check SKILL.md line budgets
         env:

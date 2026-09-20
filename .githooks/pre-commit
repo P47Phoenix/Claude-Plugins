@@ -44,5 +44,23 @@ if [ -f scripts/lint_known_debt.py ]; then
   fi
 fi
 
+# Model-pin guard (BACKLOG-108, ADR-lmr-002 D8): staged files, advisory unless
+# MODEL_PIN_STRICT=1. NUL-delimited; tolerates zero staged files and rc != 0 under set -e.
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+if [ ! -f scripts/check_model_pins.py ]; then
+  echo "pre-commit: scripts/check_model_pins.py missing; skipping pin guard" >&2
+elif [ -n "$staged" ]; then
+  echo "pre-commit: model-pin guard (staged files)..."
+  pin_rc=0
+  git diff --cached --name-only -z --diff-filter=ACMR | xargs -0 python3 scripts/check_model_pins.py --paths || pin_rc=$?
+  if [ "$pin_rc" -ne 0 ]; then
+    if [ "${MODEL_PIN_STRICT:-0}" = "1" ]; then
+      echo "pre-commit: MODEL PIN VIOLATION - commit blocked." >&2
+      exit 1
+    fi
+    echo "pre-commit: model-pin hits above are advisory (set MODEL_PIN_STRICT=1 to block)." >&2
+  fi
+fi
+
 echo "pre-commit: budget + lint OK."
 exit 0
