@@ -27,6 +27,24 @@ ADVISORY_METRIC_KEYS = (
 )
 
 
+class ModelMovedError(Exception):
+    """Raised when model_resolved[0] differs between samples (ADR-lmr-004 s2)."""
+
+
+class BaselineSchemaError(Exception):
+    """Raised by load_baseline on a schema_version other than "2" (ADR-lmr-004 s2)."""
+
+
+def check_model_consistency(reports: list[dict]) -> None:
+    """P0 stub: inert until the P1 fix (ADR-lmr-004 s6 item 1c)."""
+    return None
+
+
+def load_baseline(path: Path) -> dict:
+    """P0 stub: inert until the P1 fix (ADR-lmr-004 s6 item 1c)."""
+    return {}
+
+
 @dataclass
 class RegressionResult:
     """Outcome of a single report-vs-baseline comparison."""
@@ -277,6 +295,7 @@ def compare(
     *,
     hard_metrics: set[str] | None = None,
     advisory_metrics: set[str] | None = None,
+    strict_model: bool = False,
 ) -> RegressionResult:
     """Diff a report against a baseline. Returns RegressionResult.
 

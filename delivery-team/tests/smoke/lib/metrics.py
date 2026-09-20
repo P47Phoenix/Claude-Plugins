@@ -30,6 +30,18 @@ class Metrics:
     })
     model_usage: list = field(default_factory=list)
     dispatch_count: int = 0
+    model_primary: str | None = None
+    models_observed: list = field(default_factory=list)
+    cache_hit_ratio: float = 0.0
+
+
+class ModelCaptureError(Exception):
+    """Raised when no usable model string was captured (ADR-lmr-004 s1 item 7)."""
+
+
+def check_model_capture(metrics: Metrics) -> list[str]:
+    """P0 stub: inert until the P1 fix (ADR-lmr-004 s6 item 1c)."""
+    return []
 
 
 def _coerce_int(value) -> int:

@@ -112,6 +112,10 @@ def _run_from_fixture(
 def _build_claude_command(
     workspace: Workspace,
     prompt_path: Path,
+    *,
+    model: str = "opus",
+    effort: str | None = "xhigh",
+    max_budget_usd: float | None = None,
 ) -> list[str]:
     # D-tk5-05 fix (BACKLOG-107 iter2): `--print --output-format=stream-json`
     # requires `--verbose` per Claude Code CLI contract; absence caused the
@@ -171,6 +175,9 @@ def _spawn_and_tee(
     cost_cap: float,
     timeout: int,
     prompt_path: Path,
+    *,
+    model: str = "opus",
+    effort: str | None = "xhigh",
 ) -> dict:
     cmd = _build_claude_command(workspace, prompt_path)
     env = workspace.subprocess_env()
@@ -310,6 +317,8 @@ def run_pipeline(
     stream_path: Path,
     stream_fixture: Optional[Path] = None,
     prompt_path: Optional[Path] = None,
+    model: str = "opus",
+    effort: str | None = "xhigh",
 ) -> dict:
     """Drive one smoke-run end-to-end. Returns dict with events + outcome + elapsed.
 

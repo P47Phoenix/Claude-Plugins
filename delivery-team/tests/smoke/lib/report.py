@@ -68,6 +68,8 @@ def build_report(
     aggregator_dict: dict,
     advisory_warnings: list[str] | None = None,
     hard_failures: list[str] | None = None,
+    stream_path: str | None = None,
+    session_id: str | None = None,
 ) -> dict:
     """Assemble the schema-v1 report dict per architecture §5."""
     return {
@@ -76,6 +78,13 @@ def build_report(
         "git_sha": _git_sha(repo_root),
         "claude_cli_version": _claude_cli_version(),
         "plugin_load_strategy": plugin_load_strategy,
+        "model_requested": None,
+        "model_resolved": [],
+        "effort": None,
+        "host_context": {},
+        "session_id": None,
+        "stream_file": None,
+        "model_pin_env": {},
         "outcome": {
             "success": bool(outcome.get("success", False)),
             "exit_code": int(outcome.get("exit_code", 0)),
@@ -88,6 +97,7 @@ def build_report(
             "output": int(metrics.tokens.get("output", 0)),
             "cache_creation": int(metrics.tokens.get("cache_creation", 0)),
             "cache_read": int(metrics.tokens.get("cache_read", 0)),
+            "cache_hit_ratio": 0.0,
         },
         "model_usage": _model_usage_dicts(metrics.model_usage),
         "pipeline": {
