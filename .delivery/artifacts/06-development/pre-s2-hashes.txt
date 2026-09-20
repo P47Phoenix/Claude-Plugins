@@ -1,0 +1,10 @@
+run: run-2026-05-28-o48m
+recorded: 2026-09-20 (Stage 6 entry, before S2)
+head: 6e536bf0efc9a471fb2179852f133f4c510e230e
+merge_base_main: f4fea7db5b39da374ab0d24e529da7a049abb150
+delivery_flow_sha256: 43067c9e07e0b988cd976432dd07d5bb3d2336c41ad08a1b0064fb2fbd0b8328
+governance_cache_prefix_hash: 43067c9e07e0b988cd976432dd07d5bb3d2336c41ad08a1b0064fb2fbd0b8328
+telemetry_prefix_hash_head_2048: 8c2ebf9705bc0c7f94ee5049e1cc0030cdc5615a868b8bc07097021064837750
+lines: delivery-flow 499, product-delivery 300, prompt-engineer 520
+core.hooksPath: .git/hooks (from shared .git/config; NOT changed by this run; deviation from PA-9 install step, see stage-6 notes)
+smoke_out: $HOME/.cache/lmr-smoke-out/run-2026-05-28-o48m (created)

@@ -1,0 +1,24 @@
+run: run-2026-05-28-o48m
+purpose: running ledger of Stage 6 decisions, plan/ADR amendments, and residuals (orchestrator-owned)
+
+## Amendments (recorded here, PRD/ADR text untouched; PO confirms at Stage 7 acceptance)
+
+A-1 PA-9 (core.hooksPath install) moves from S1 to S7/human. Reason: `git config --local core.hooksPath` writes the SHARED .git/config and would arm the blocking pre-commit hook for the user's main checkout and every other session. S1 tested hooks with `-c core.hooksPath` and temp repos. Hooks are inert in this checkout. S7 handoff prints `git config --local core.hooksPath .githooks` and `git config --unset core.hooksPath` plus a `hooksPath=` log line. Owner: PO/Michael.
+A-2 ADR-lmr-002 amendment (S1 DoD architect W4): `--strict` flag accepted, inert (hooks own strictness via MODEL_PIN_STRICT); `--paths` implies listing; relative `--paths` resolve against the repo toplevel; known_fp `expect:"pass"` supported; empty default scope prints `hits 0 files 0` but exits 2 (judge on rc).
+A-3 Pre-push is advisory unless MODEL_PIN_STRICT=1 (ADR reference hook always strict). The S7 ship gate MUST run the guard strictly itself (blocking control), export MODEL_PIN_STRICT=1, run `python3 .delivery/artifacts/06-development/S1-guard-tests/mutation_and_floor.py` from the REPO ROOT (PA-7 floor lives there), and call scripts directly because hooks are inert.
+A-4 The guard workflow is RED on main until S4 brings hits to 0. Do NOT push to main before S4 (post-push PA-26 would fail). Branch pushes do not trigger the main workflows.
+A-5 Stage 6 manifests list only roles in config `dod_validators.development` [developer, qa, architect, tech-writer]. Devops reviews are recorded via Dispatch-Id commit trailers, not manifests.
+
+## Residuals (accepted, non-blocking; owner PO unless noted)
+
+R-S1-1 GIT_DIR set without GIT_WORK_TREE makes the guard fail open from a subdir. Trigger: any caller sets GIT_DIR. Hardening: strip GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE before calling git.
+R-S1-2 `--paths` drops args starting with `--`; relative `--paths` resolve against toplevel not cwd (`--paths "sp ace.md"` from a subdir scans 0 files, rc 0). Trigger: hook or script passes cwd-relative paths from a subdir.
+R-S1-3 pre-commit scans the working-tree file, not the staged blob. Trigger: partial staging false negatives observed.
+R-S1-4 pre-push loop children inherit stdin (`</dev/null` hardening); `remote_sha` unused (SC2034); unknown flags ignored silently; one non-UTF-8 scanned file exits 2 (by design).
+R-S1-5 Regex gaps (QA N3), PRD-verbatim contract gaps: single-quoted stamps, `opus_4_7`, odd whitespace/zero-width, mixed case, fullwidth digits, `**Opus** 4.7`, non-.md files for Rule B. Trigger: any real miss.
+R-S1-6 pre-push N2: `Budget-Exception:` cannot apply to a direct push (main-push run red); consistent with plan rule PA-20.
+R-S1-7 QA independence rests on commit order and manifest ids (all commits share one git author).
+
+## Unit ledger
+
+S1 Guard: producer ab0a6adcdaa36cc80 (6560e64), fix a3a4092db05792c5f (b082a0c); story validators af9b0fca71235419d (qa, 3337deb), afcc7a46ca9bd20ac (devops review, b870843: APPROVE); QA first verdict FAIL (D1 subdir fail-open) fixed; DoD round 1: qa a099373e856d0d420 DONE, developer a7f0e958e47ad9222 DONE, architect a9046d102caf82988 DONE (0 blocking). Manifest: dispatch-manifest-S1.txt. Guard on real tree: files-scanned 486, `guard-scope hits 85 files 30` (91/31 minus the 6 pin literals of the rewritten old workflow).
