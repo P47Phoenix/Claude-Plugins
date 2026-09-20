@@ -85,7 +85,7 @@ When users need help with prompts:
 - Emphasis on helpful, harmless, honest principles
 - Strong XML tag support for structure
 - Excellent at following detailed instructions
-- `<thinking>` tags in few-shot examples or agent-authored prompts are PROMPT SCAFFOLDS that nudge chain-of-thought generation inside the response body. They are NOT the same as Anthropic's extended thinking / `thinking: { type: "enabled" }` API surface (F-13, F-29), which is a separate first-class API mechanism for server-side reasoning. On Opus 4.7 with adaptive thinking, manual `<thinking>` scaffolds may duplicate the model's own reasoning — evaluate case-by-case (F-26, F-29) and prefer the API lever on 4.7.
+- `<thinking>` tags in few-shot examples or agent-authored prompts are PROMPT SCAFFOLDS that nudge chain-of-thought generation inside the response body. They are NOT the same as Anthropic's extended thinking / `thinking: { type: "enabled" }` API surface (F-13, F-29), which is a separate first-class API mechanism for server-side reasoning. On the latest Opus with adaptive thinking, manual `<thinking>` scaffolds may duplicate the model's own reasoning — evaluate case-by-case (F-26, F-29) and prefer the API lever.
 - Constitutional AI techniques work well
 
 **GPT (OpenAI)**
@@ -344,35 +344,35 @@ Synthesis:
 
 **When to use:** Complex decisions, bias reduction, comprehensive analysis
 
-## Model-specific optimisation — Claude Opus 4.7
+## Model-specific optimisation: latest Opus
 
-This sub-section isolates 4.7-only guidance so future model migrations can replace it surgically without touching the rest of the pattern library.
+This sub-section isolates latest-Opus guidance so future model migrations can replace it surgically without touching the rest of the pattern library. It names no version; "latest Opus" means the newest Opus in the models overview.
 
-**Adaptive thinking is the only thinking-on mode (F-11).** The legacy `thinking: { "type": "enabled", "budget_tokens": N }` surface is gone on 4.7. Callers now pass `extended_thinking: { "effort": "<level>" }` instead. Do not emit `budget_tokens` in new 4.7 code paths; do not port it forward from 4.5/4.6 snippets.
+**Adaptive thinking is the thinking-on mode for the latest Opus (F-11).** Prefer `extended_thinking: { "effort": "<level>" }` over the legacy `thinking: { "type": "enabled", "budget_tokens": N }` surface. Do not emit `budget_tokens` in new code paths; do not port it forward from snippets written for older models.
 
 **Effort levers (F-15).** Valid values: `low`, `medium`, `high`, `xhigh`, `max`. Guidance:
 - `low` / `medium` — short conversational turns, cheap classification, routing decisions.
-- `high` — default for most agentic skill work.
-- `xhigh` — **recommended default for coding and agentic workloads on Opus 4.7.** Delivers the deepest single-turn reasoning the model is tuned to exploit without crossing into `max` latency.
+- `high` — deeper reasoning for multi-step agentic skill work.
+- Start from the API default effort and tune on your own evals; levels are recalibrated between releases, so do not copy a per-model recommended level from prompts or docs of an older model.
 - `max` — escalation-only: multi-hour root-cause work, hard architectural trade-offs, contested debates. Expect latency cost.
 
-**Sampling levers (temp / top_p / top_k).** 4.7 exhibits behavioural changes at elevated temperature — treat defaults (temp ~1.0, top_p unset, top_k unset) as the calibrated baseline. Raise temperature only for creative ideation; do NOT raise it for agentic tool-use or code generation, where it degrades tool-call fidelity on 4.7. If a 4.5/4.6 prompt relied on `temperature: 0` for determinism, re-test on 4.7 before porting — adaptive thinking already suppresses most of the non-determinism that setting used to guard against.
+**Sampling levers (temp / top_p / top_k).** Treat API defaults as the baseline. Raise temperature only for creative ideation; do NOT raise it for agentic tool-use or code generation. If a prompt relied on `temperature: 0` for determinism, re-test on the latest Opus before porting.
 
-**When in doubt on 4.7:** leave sampling alone, pick an `effort` level, and let the model handle its own reasoning budget.
+**Delegation and verification on the latest Opus:** it delegates to subagents more readily than prior models, so state the delegation scope and a spawn cap in the prompt. Explicit re-verification instructions cause over-verification; drop them. Otherwise leave sampling alone, pick an `effort` level, and let the model handle its own reasoning budget.
 
-### Pattern 4.1 — Versioned Model Reference
+### Pattern 4.1 — Model ID From Config
 
-Python and YAML/JSON config callers must name model IDs with a provenance comment so drift is auditable (F-01, F-03, F-04). Example:
+Python and YAML/JSON config callers read the model ID from one configuration value. The Claude API has no evergreen "latest" alias for current models, so the ID lives at one config point, set from the models overview, never hard-coded in code (F-01, F-03, F-04). Example:
 
 ```python
-MODEL_ID = "claude-opus-4-7"  # canonical 2026-04-22
+MODEL_ID = os.environ["CLAUDE_MODEL_ID"]  # one config value; set from the models overview, never hard-coded in code
 ```
 
-Comment format: `# canonical <YYYY-MM-DD>` where the date matches the skill's `last_audited` frontmatter. Never hardcode a bare model ID without the comment — reviewers need one grep to find every pinned reference.
+Reviewers need one grep to find the single config read. Serving infrastructure around a fixed model ID can change over time, so behaviour under a fixed ID is not a permanent guarantee either.
 
-### Pattern 4.2 — 4.7-Aware Role Prompt Skeleton
+### Pattern 4.2 — Latest-Opus-Aware Role Prompt Skeleton
 
-Every agent dispatch (sub-agent invocation, delegated task, role-scoped prompt) uses the same shape so 4.7 extended-thinking + adaptive routing stays consistent across the codebase:
+Every agent dispatch (sub-agent invocation, delegated task, role-scoped prompt) uses the same shape so extended-thinking + adaptive routing stays consistent across the codebase:
 
 ```
 SKILL: <skill-name>
@@ -394,18 +394,18 @@ The signal block at the end is load-bearing — it lets orchestrators parse comp
 - The caller wants CoT rendered inline in the visible response body (e.g., for human audit).
 - Few-shot examples need to demonstrate intermediate reasoning steps.
 
-On Opus 4.7 with adaptive thinking enabled, prefer the API lever (see Model-specific optimisation above) and omit the scaffold to avoid duplicated reasoning.
+On the latest Opus with adaptive thinking enabled, prefer the API lever (see Model-specific optimisation above) and omit the scaffold to avoid duplicated reasoning.
 
 ### Pattern 4.4 — Calibrated Instruction Voicing
 
-Default voicing is plain imperative: "Use …", "Do …", "Return …". Reserve high-intensity markers (`CRITICAL:`, `You MUST`, `NEVER`, `ALWAYS`) for irreversible or safety-critical constraints only (F-28, F-25). Overusing them on 4.7 flattens the signal — when everything is CRITICAL, nothing is. Guideline:
+Default voicing is plain imperative: "Use …", "Do …", "Return …". Reserve high-intensity markers (`CRITICAL:`, `You MUST`, `NEVER`, `ALWAYS`) for irreversible or safety-critical constraints only (F-28, F-25). Overusing them flattens the signal — when everything is CRITICAL, nothing is. Guideline:
 - Routine instruction → imperative verb first.
 - Recoverable mistake → "Prefer …" / "Avoid …".
 - Irreversible consequence (data loss, secret leak, prod impact) → `CRITICAL:` / `NEVER`.
 
 ### Pattern 4.5 — Model-Specific Optimisation Sub-section
 
-Isolate 4.7-only guidance in a single named sub-section per model (see "Model-specific optimisation — Claude Opus 4.7" above for the live example). Rationale: when the next model lands, a reviewer replaces exactly one sub-section without re-reading the rest of the pattern library. Naming convention: `## Model-specific optimisation — <Vendor> <Model> <Version>`.
+Isolate latest-model guidance in a single named sub-section per model family (see "Model-specific optimisation: latest Opus" above for the live example). Rationale: when the next model lands, a reviewer replaces exactly one sub-section without re-reading the rest of the pattern library. Naming convention: `## Model-specific optimisation: <Vendor> <Family>` (no version number).
 
 ### Pattern 4.6 — SKILL.md Forward-Compatibility Header
 
@@ -417,7 +417,7 @@ last_audited: 2026-04-22
 pattern_library_version: 4-7-1
 ```
 
-- `model_awareness` — the model generation the skill was authored or last re-audited against.
+- `model_awareness` — version-free stamp (`latest`): the skill tracks the latest model of its family; `last_audited` records when that was last checked.
 - `last_audited` — ISO-8601 date of the most recent review against that model.
 - `pattern_library_version` — version tag of `prompt-engineer/SKILL.md` the skill is aligned to (enables reverse-lookup when the library bumps).
 
