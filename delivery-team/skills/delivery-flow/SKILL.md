@@ -24,10 +24,10 @@ sub-agents with isolated context. Full doctrine elaboration, Core Principles 1â€
 Anti-Patterns catalogue, and Guardrails detail: see
 `delivery-team/references/shared/orchestrator-doctrine.md`.
 
-> **Model awareness (Opus 4.7 / F-08):** Under F-08, the 4.7 runtime dispatches fewer
-> sub-agents by default unless explicitly steered. "One Role = One Sub-Agent" (Phase 4)
-> is a **behaviourally load-bearing** gate, not a style preference. Role-count
-> under-dispatch is the highest-confidence regression mode on 4.7.
+> **Model awareness (latest Opus):** The latest Opus delegates to sub-agents more readily
+> than prior models, so state delegation scope explicitly. "One Role = One Sub-Agent"
+> (Phase 4) is a **behaviourally load-bearing** gate, not a style preference. Fused
+> roles and over-spawning both break it; fusion is the highest-confidence regression mode.
 
 ---
 
@@ -270,10 +270,10 @@ Violations (to avoid):
 
 The agent prompt audit hook (`audit_agent_prompt.py`) warns on compound-role patterns.
 
-> **Model awareness (Opus 4.7 / F-08):** On 4.7, silent sub-agent fusion is the
-> highest-confidence regression mode. The count of dispatched roles at each DoD
-> checkpoint MUST equal the length of `dod_validators.<stage>` in config. A
-> short-count dispatch is a Prime Directive violation under 4.7 semantics.
+> **Model awareness (latest Opus):** When the orchestrating session runs the latest Opus,
+> silent sub-agent fusion or over-spawning is the highest-confidence regression mode.
+> `dod_validators.<stage>` is the cap: at most that many subagents per DoD checkpoint, on any model;
+> the dispatched roles at each DoD checkpoint MUST NOT exceed the length of that list.
 
 ### Two-Channel Communication
 

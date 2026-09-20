@@ -74,13 +74,13 @@ produced by a dispatched sub-agent.
 
 ---
 
-## Model Awareness Note (Opus 4.7 F-08)
+## Model Awareness Note (latest Opus)
 
-Under F-08, the 4.7 runtime dispatches fewer sub-agents by default unless explicitly
-steered. This elevates "One Role = One Sub-Agent" (Phase 4 of SKILL.md) from a
-stylistic convention to a **behaviourally load-bearing** gate. Role-count
-under-dispatch is the highest-confidence regression mode for this pipeline on 4.7 —
-treat the principle as a hard invariant, not a style preference.
+The latest Opus delegates to sub-agents more readily than prior models, so state
+delegation scope explicitly. This keeps "One Role = One Sub-Agent" (Phase 4 of SKILL.md)
+a **behaviourally load-bearing** gate, not a stylistic convention. Fused roles and
+over-spawning both break it; fusion is the highest-confidence regression mode.
+Treat the principle as a hard invariant, not a style preference.
 
 ---
 
