@@ -4,8 +4,8 @@ status: in_progress
 project_type: FEATURE
 detected_at: 2026-05-28
 force_type: FEATURE
-current_stage: 2
-stages_completed: [1]
+current_stage: 4
+stages_completed: [1, 2]
 stages_skipped: [3]
 human_checkpoints_passed: []
 final_verdict: null
@@ -28,7 +28,9 @@ config_snapshot:
   pipeline.checkpoints: []
 artifacts:
   idea-brief: .delivery/artifacts/01-idea/po/idea-brief.md
-last_updated: 2026-05-28
+  prd: .delivery/artifacts/02-refine/po/prd.md
+  constraints: .delivery/artifacts/02-refine/po/constraints.yml
+last_updated: 2026-09-20
 initiative: Latest-model references — remove version pinning repo-wide, adopt "latest version of model X", migrate stale 4.7 pins + smoke-test extension (BACKLOG-108)
 binding_notes:
   - "One Role = One Sub-Agent (model-independent invariant; do not fuse roles); refer to the latest version of a model family, never pin a version string (user decision 2026-09-20; Opus 5 is the effective current model, cited only in dated citations and observed baselines); effort xhigh is a project choice (docs recommend high as start, see PRD OQ-5)"
