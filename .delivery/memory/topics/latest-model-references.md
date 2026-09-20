@@ -46,7 +46,7 @@ Caveats: serving infrastructure can change behaviour under a fixed ID; `claude -
 | BINDING-1.3 (4-7 / 4-8 retired, one provenance comment) | SUBSUMED: any versioned ID is rejected; the `#` provenance comments in `agent_registry.py` are NOT exempt under Revision 4 and are reworded (provenance moves to CHANGELOG) |
 | BINDING-1.4 (prd-quality-gate-flow aliases exempt) | UNCHANGED |
 | BINDING-2.1 (positive-allowlist guard, no dual-allow) | REPLACED by 0.3; "no dual-allow window / squash so the guard never sees a partial state" still holds |
-| BINDING-2.2 (full prose review, no `-frontmatter-only`) | RETAINED (PRD OQ-9 asks Michael whether to narrow); `-frontmatter-only` stamps are removed entirely |
+| BINDING-2.2 (full prose review, no `-frontmatter-only`) | SUPERSEDED 2026-09-20 by BINDING-6.1 (human decision, OQ-9 = NARROW); `-frontmatter-only` stamps are still removed entirely |
 | BINDING-2.3 (stamps after prose DoD) | RETAINED with new stamp values |
 | BINDING-2.4 (registry `claude-opus-5` + provenance comment) | REPLACED by `MODEL_TIER_ALIAS` central dict |
 | BINDING-2.5, 3.x, 4.1 to 4.6, 5.x | RETAINED. 4.3 `--effort xhigh` stays a project choice; runner also gains `--model opus`. 4.4 baseline re-capture stays, now records observed model. 5.5 ADR name may be made version-free by the Architect |
@@ -100,7 +100,7 @@ on a partial mid-merge state. NO dual-allow transition window. NO PR — direct 
 to origin/main post-squash. (Rationale: allowlist-over-deny CI guard pattern,
 validated in Hot Lesson 3 and gate-patterns.md ADR-002.)
 
-**BINDING-2.2 — Full prose review for ALL SKILL.md files**
+**BINDING-2.2 — Full prose review for ALL SKILL.md files** (SUPERSEDED 2026-09-20 by BINDING-6.1: review narrowed to 3 files)
 ALL ~25 SKILL.md files receive a full prose review — not a stamp-only pass.
 The `-frontmatter-only` qualifier is RETIRED for this initiative. There is no two-tier
 stamp (`opus-5` vs `opus-5-frontmatter-only`). Every file ships reviewed.
@@ -327,7 +327,7 @@ Open questions carried from this retarget:
 | BINDING-1.3 | claude-opus-4-7 retired | §1 |
 | BINDING-1.4 | prd-quality-gate-flow aliases exempt | §1 |
 | BINDING-2.1 | CI guard: positive-allowlist, no dual-allow window | §2 |
-| BINDING-2.2 | Full prose review, -frontmatter-only qualifier retired | §2 |
+| BINDING-2.2 | Full prose review, -frontmatter-only qualifier retired (SUPERSEDED by BINDING-6.1) | §2 |
 | BINDING-2.3 | Stamps applied after prose review | §2 |
 | BINDING-2.4 | agent_registry.py heavy-tier update + provenance comment | §2 |
 | BINDING-2.5 | Keystone edit order | §2 |
@@ -359,3 +359,7 @@ Open questions carried from this retarget:
 - topics/claude-plugins-repo.md — keystone file order, zero SDK imports, model-ID as prose strings
 - archive/run-2026-05-13-tk5.md — producer-validator two-dispatch, DEFERRED-gate honest-readiness-marker
 - archive/run-2026-05-09-tk4.md — 5/5 binding rulings preserved across 5 waves; zero ruling-loss
+
+## Revision 6 binding (2026-09-20, human decision by Michael)
+
+**BINDING-6.1 — OQ-9 = NARROW (supersedes BINDING-2.2).** The Stage 6 / S3 prose review covers only the SKILL.md files with model-version mentions (delivery-flow, prompt-engineer) plus the keystones (delivery-flow, prompt-engineer, product-delivery) = 3 files. Stamp edits stay on all 25 stamped files (mechanical, line-neutral; budget headroom 499/500 and 300/300 stays a constraint). The 9 unstamped files get no stamp and no review; the other 31 SKILL.md get no prose review. No spot-check sample. AC-3.1b still requires zero version markers in every SKILL.md. OQ-12 (`--bare`) stays OPEN.

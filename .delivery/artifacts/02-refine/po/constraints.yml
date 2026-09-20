@@ -1,5 +1,5 @@
 # .delivery/artifacts/02-refine/po/constraints.yml
-# Problem-scoped constraints for BACKLOG-108 (latest-model references; Revision 5)
+# Problem-scoped constraints for BACKLOG-108 (latest-model references; Revision 6)
 # Run: run-2026-05-28-backlog-108
 
 problem_scope: remove hard-pinned model version strings repo-wide and refer to the latest version of a model family; migrate today's stale 4.7 pins to that scheme (user decision 2026-09-20, supersedes the claude-opus-5 pin)
@@ -18,6 +18,7 @@ invariants:
   - No pinned model-version string, versioned stamp, or model-version prose mention (PIN_RE, STAMP_RE, PROSE_RE, BARE_RE; counts and durations filtered by COUNT_RE) in py/md/yml/yaml/txt/sh outside CHANGELOG.md and .delivery/; NO comment, blockquote, heading or code-fence exemption and NO per-line escape (a sentence that trips the guard is reworded)
   - Baselines record the concrete model observed at run time (model_resolved, primary = system/init model); never assumed; an unknown or empty model is a capture failure
   - model_awareness stamps are applied only after prose review passes DoD
+  - Prose review scope is NARROWED (OQ-9 = NARROW, Michael 2026-09-20, supersedes BINDING-2.2) to 3 SKILL.md (delivery-flow, prompt-engineer, product-delivery); the 25 stamped files get mechanical, line-neutral stamp edits only; the 9 unstamped files and the other 31 SKILL.md get no review
   - No .github/workflows file invokes the claude CLI; no smoke-*.yml workflow
   - Shipped behavioral claims about the latest Opus are doc-cited and version-free; no provisional text
   - Each success gate is closed by exactly one story

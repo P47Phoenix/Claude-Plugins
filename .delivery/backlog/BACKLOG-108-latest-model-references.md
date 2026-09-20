@@ -30,7 +30,7 @@ This initiative: invert the guard to forbid pins; make stamps and prose version-
 |-------|---------|--------|-------------|
 | S1 | `scripts/check_model_pins.py` + fixtures (PIN/STAMP/PROSE/BARE contract, no exemptions) + `.github/workflows/stale-model-id-guard.yml` (push to main, pull_request, workflow_dispatch) + `.githooks/pre-commit` call | S | G1 |
 | S2 | 3 keystone SKILL.md + `orchestrator-doctrine.md` mirror + `prompt-engineer/SKILL.md:368` config-read snippet | M | G7 |
-| S3 | all 34 SKILL.md prose; version-free stamps on the 25 stamped files | L | G2, G3, G6 |
+| S3 | narrowed prose review of 3 SKILL.md (delivery-flow, prompt-engineer, product-delivery; OQ-9 = NARROW, Michael 2026-09-20); version-free stamps on the 25 stamped files (9 unstamped files: nothing) | M | G2, G3, G6 |
 | S4 | `agent_registry.py` `MODEL_TIER_ALIAS` + `conftest.py` + `smoke-test-architecture.md` + `telemetry-schema.md` | M | G4, G-LIT |
 | S5 | `delivery-team/tests/smoke/` `--model`/`--effort`/`--strict-model`, real-shape parser fix and fixture, resolved-model capture (never `unknown`), baseline | M | G5 |
 | S6 | `governance/cache-prefix-hash.txt` + cache-fingerprint ADR | S | G9 |

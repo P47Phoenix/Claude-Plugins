@@ -318,30 +318,26 @@ Floor checks versus intent gates (F6): several ACs below are floor checks that a
 - **FR-2.6** Tier consistency of the keystone (F7). `delivery-flow/SKILL.md` frontmatter says `model: sonnet` while FR-2.5 writes guidance about "the latest Opus". PO decision (recorded, not re-debated by later stages unless OQ-11 changes it): the frontmatter `model:` value is NOT changed by this initiative (re-tiering the orchestrator is a cost and behaviour decision nobody has made); the guidance is conditional ("when the orchestrating session runs the latest Opus ...") and the spawn cap holds for every model. The Architect confirms or overrides at Stage 4 (OQ-11).
   - **AC-2.6**: `grep -c "^model: sonnet" delivery-team/skills/delivery-flow/SKILL.md` MUST print 1 (unchanged), unless OQ-11 records a different decision; the conditional phrasing is enforced by AC-2.5.
 
-### S3 — Full prose sweep and version-free stamps (closes G2, G3, G6)
+### S3 — Narrowed prose review, version-free stamps (closes G2, G3, G6)
 
-- **FR-3.1** Full prose review of all 34 SKILL.md, keystones plus 31 others (BINDING-2.2 retained; see OQ-9, still OPEN for the user). Lens: the model behaviours documented as of the sweep date (section 8) and the scheme convention; version mentions removed. Revision 4 change (F6): Revision 3 required a body change in all 34 files, which a reviewer could satisfy with a one-character edit and which forced pointless edits on the 9 unstamped files. The evidence of review is now a ledger, and a file with nothing to fix says so explicitly.
-  - **AC-3.1** (review ledger; the intent gate is that every SKILL.md has a named reviewer verdict, every CHANGED row has a real diff, every NO_CHANGE_NEEDED row carries a reason of at least 20 characters, and the adversarial reviewer spot-checks 5 CHANGED diffs and 5 NO_CHANGE_NEEDED rows; the spot-check is Verification: inspection of the adversarial artifact). The ledger is `.delivery/artifacts/06-development/prose-review-ledger.tsv` with header `path<TAB>agent_id<TAB>verdict<TAB>note`. Executed 2026-09-20 against the current tree: fails with FileNotFoundError because the ledger does not exist yet (expected):
+- **FR-3.1** Narrowed prose review (Revision 6; human decision 2026-09-20, OQ-9 = NARROW, supersedes BINDING-2.2; no spot-check sample). The Stage 6 prose review covers exactly 3 SKILL.md files, no more: (a) the SKILL.md files that contain model-version mentions, found by re-running the guard-scope discovery (PROSE and BARE rules; 19 prose lines in 3 files today, of which 2 are SKILL.md: `delivery-team/skills/delivery-flow/SKILL.md` and `prompt-engineer/SKILL.md`; the third file is `orchestrator-doctrine.md`, an .md reference reviewed with delivery-flow per FR-2.1), plus (b) the keystone skills the PRD designates: `delivery-flow`, `prompt-engineer` and `delivery-team/skills/product-delivery/SKILL.md` (FR-2.1 keystone order). Union: 3 files (delivery-flow, prompt-engineer, product-delivery). The 31 other SKILL.md get NO prose review and NO prose edit; the 9 unstamped files get no stamp and no review; the 25 stamped files still get the mechanical stamp edits of FR-3.2 (stamp edits are not prose review). Safety net: AC-3.1b requires zero version markers in EVERY SKILL.md after S3, so a version mention in a file outside the review scope still fails the gate and forces that file into scope; narrowing removes review effort, not the guard. The review of the 3 files is dispatched in S2 (FR-2.1); the S3 ledger records the verdicts so the evidence sits with the gate that S3 closes. Lens: the model behaviours documented as of the sweep date (section 8) and the scheme convention; version mentions removed. Ledger, not body-change, is the evidence of review (Revision 4, F6): a file with nothing to fix says so explicitly.
+  - **AC-3.1** (review ledger; the intent gate is that each of the 3 in-scope SKILL.md has a named reviewer verdict, every CHANGED row has a real diff, every NO_CHANGE_NEEDED row carries a reason of at least 20 characters, and the adversarial reviewer inspects the 3 rows; the inspection is Verification: inspection of the adversarial artifact). The ledger is `.delivery/artifacts/06-development/prose-review-ledger.tsv` with header `path<TAB>agent_id<TAB>verdict<TAB>note`. Executed 2026-09-20 against the current tree: fails with FileNotFoundError because the ledger does not exist yet (expected). Mechanics also executed 2026-09-20 with a scratch ledger of 3 NO_CHANGE_NEEDED rows (scratch file deleted afterwards): printed `3 missing 0 extra 0 bad 0`:
     ```bash
     python3 - <<'PY'
     import csv, os, subprocess
-    def files(exts=None, name=None):
-        for f in sorted(set(subprocess.run(['git', 'ls-files', '--cached', '--others', '--exclude-standard'], capture_output=True, text=True, check=True).stdout.split('\n'))):
-            if f and not f.startswith('.delivery/') and os.path.isfile(f) and (not name or os.path.basename(f) == name) and (not exts or f.endswith(exts)):
-                yield './' + f
+    KEYSTONES = {'delivery-team/skills/delivery-flow/SKILL.md', 'prompt-engineer/SKILL.md', 'delivery-team/skills/product-delivery/SKILL.md'}
     rows = list(csv.reader(open('.delivery/artifacts/06-development/prose-review-ledger.tsv'), delimiter='\t'))
     assert rows[0] == ['path', 'agent_id', 'verdict', 'note'], 'header must be: path, agent_id, verdict, note'
     rows = rows[1:]
-    want = {os.path.normpath(f) for f in files(name='SKILL.md')}
     got = {os.path.normpath(r[0]) for r in rows}
     bad = [r[0] for r in rows
            if r[2] not in ('CHANGED', 'NO_CHANGE_NEEDED') or not r[1].strip()
            or (r[2] == 'NO_CHANGE_NEEDED' and len(r[3].strip()) < 20)
            or (r[2] == 'CHANGED' and subprocess.run(['git', 'diff', '--quiet', 'main', '--', r[0]]).returncode == 0)]
-    print(len(rows), 'missing', len(want - got), 'extra', len(got - want), 'bad', len(bad))
+    print(len(rows), 'missing', len(KEYSTONES - got), 'extra', len(got - KEYSTONES), 'bad', len(bad))
     PY
     ```
-    MUST print `34 missing 0 extra 0 bad 0`.
+    MUST print `3 missing 0 extra 0 bad 0`.
   - **AC-3.1b** (no leftover version markers in any SKILL.md; reads the hit list from the guard script's `--list` output, so it uses the real patterns including COUNT_RE blanking; today the script does not exist; executed against the simulated script on 2026-09-20: prints `69 19`, i.e. 16 prose lines plus 1 pin line at `prompt-engineer/SKILL.md:368` plus 52 stamp lines, and 19 SKILL.md files still carrying the `frontmatter-only` marker, which is a subset of the stamp lines and MUST also reach 0):
     ```bash
     python3 - <<'PY'
@@ -353,7 +349,7 @@ Floor checks versus intent gates (F6): several ACs below are floor checks that a
     PY
     ```
     MUST print `0 0`.
-- **FR-3.2** Stamps become version-free, in the 25 files that carry them; the 9 unstamped files get NO new stamp (a "latest" stamp with no audit date certifies nothing, and adding 9 stamps is an edit with no purpose under the new scheme). The existing header-warning workflow `.github/workflows/skill-md-header-warn.yml` (presence-only `grep -L 'model_awareness:'`, `continue-on-error: true`; the only script or workflow that reads a stamp, verified) keeps warning on those 9 files; that is accepted and non-blocking. Census-consequence: the 26 stamp lines and the 26 `pattern_library_version` lines all need edits (they encode 4.7 today); the other 9 files need prose review only. The `prompt-engineer` documentation example (lines 415 to 417) is one of the 26 and becomes `latest` / `rev-1` too.
+- **FR-3.2** Stamps become version-free, in the 25 files that carry them; the 9 unstamped files get NO new stamp (a "latest" stamp with no audit date certifies nothing, and adding 9 stamps is an edit with no purpose under the new scheme). The existing header-warning workflow `.github/workflows/skill-md-header-warn.yml` (presence-only `grep -L 'model_awareness:'`, `continue-on-error: true`; the only script or workflow that reads a stamp, verified) keeps warning on those 9 files; that is accepted and non-blocking. Census-consequence: the 26 stamp lines and the 26 `pattern_library_version` lines all need edits (they encode 4.7 today); the other 9 files need no edit at all (Revision 6: no stamp, no prose review). The `prompt-engineer` documentation example (lines 415 to 417) is one of the 26 and becomes `latest` / `rev-1` too.
   - **AC-3.2** (the stamp census after S3, self-contained; ran 2026-09-20: prints `34 26 25 {...opus-4-7...}` then `26 {'pattern_library_version: 4-7-1': 26}`):
     ```bash
     python3 - <<'PY'
@@ -678,7 +674,7 @@ Running the current `parse_stream` on that stream (executed): `dispatch_count 1`
 | G1 — Guard forbids version pins (PIN/STAMP/PROSE/BARE contract, no exemptions) with zero literal IDs of its own, and runs at ship time (push trigger plus local script) | S1 | AC-1.1, AC-1.1b, AC-1.2a, AC-1.2b, AC-1.3, AC-1.5, AC-1.6a, AC-1.6b | none |
 | G-LIT — Zero model-version strings repo-wide (pins, stamps, prose): canonical count `guard-scope hits 0 files 0` | S4 | AC-1b, AC-1.2c, AC-4.5b | S1, S2, S3 |
 | G2 — Stamps version-free: 26 lines = `model_awareness: latest`, 26 `pattern_library_version: rev-1`, no unstamped file stamped, audit and review-due dates current | S3 | AC-3.2, AC-3.3a | S2 |
-| G3 — 34/34 prose-reviewed (ledger with verdicts); zero version mentions or `frontmatter-only` in SKILL.md | S3 | AC-3.1, AC-3.1b | S2 |
+| G3 — Narrowed prose review: 3/3 in-scope SKILL.md (delivery-flow, prompt-engineer, product-delivery) ledgered with verdicts; zero version mentions or `frontmatter-only` in ANY SKILL.md | S3 | AC-3.1, AC-3.1b | S2 |
 | G4 — Registry tiers use ONE central alias dict, no literal ID; frontmatter tier aliases stay in `opus|sonnet|haiku` | S4 | AC-4.1, AC-4.5, AC-4.6 | none |
 | G5 — 5-sample baseline captured with observed (never `unknown`) resolved model, parser proven on a real-shape stream, model-moved WARN | S5 | AC-5.4b, AC-5.5, AC-5.5b, AC-5.5c, AC-5.7, AC-5.9, AC-5.9b, AC-5.10, AC-4.4 | S4 (fixtures) |
 | G6 — Line budgets pass | S3 | AC-6 | S2 |
@@ -715,7 +711,7 @@ Model observation rules (Revision 4): primary model = `system/init` model; other
 | ID | Risk | L | I | Mitigation |
 |----|------|---|---|-----------|
 | R1 | Dispatch discipline: roles fused or sub-agents over-spawned; the latest Opus delegates more readily (section 8) | M | H | AC-DISP manifest; one-role-one-agent at DoD; dispatch count capped at `dod_validators` length |
-| R2 | Prose sweep touches 34 files and breaches line budgets | M | M | AC-6 exit 0; `Budget-Exception:` protocol; keystone-first |
+| R2 | Prose review touches 3 SKILL.md (Revision 6, was 34) plus 25 mechanical stamp edits, and breaches line budgets (delivery-flow is 499/500, Tier B files 300/300; stamp edits must be line-neutral: replace a value in place, add no line) | M | M | AC-6 exit 0; `Budget-Exception:` protocol; keystone-first |
 | R3 | Baseline cost overrun | M | M | `--cost-cap 3.00`, sequential, NFR-1/2 |
 | R4 | Guard false positive on legitimate text (Rules A and B have no comment, blockquote or fence exemption; Challenger showed "run haiku 3 times" tripping the Revision 3 PROSE_RE) | L | M | PROSE_RE is case-sensitive so a lowercase alias plus a bare integer passes; COUNT_RE blanks counts and durations ("Sonnet 4 stories", "in 5.0 seconds") before Rule B; AC-1.2a has a must-pass floor (>= 10 rule A, >= 12 rule B) that names the QA-probed false positives and runs in both engines; AC-1.2c zero-hit check; 19 prose lines affected today (section 1); history goes to CHANGELOG; NO per-line escape exists (FR-1.6): a sentence that trips the guard is reworded per the wording rule in FR-1.2 |
 | R5 | Unverified behavioural claim leaks into prose | M | H | AC-2.3 scan + AC-2.3b re-fetch; OQ-2 claim never ships |
@@ -776,16 +772,16 @@ All rows fetched live on 2026-09-20 (WebFetch), plus one local command. Quotes a
 | OQ-6 | Restated (former Sonnet-tier question, now moot: `sonnet` alias tracks the latest Sonnet, no allowlist tier remains). Remaining: does the `haiku` alias resolve to the latest Haiku? Docs do not say "latest" for haiku | Developer (S5) | S5 start | The registry haiku entry is a label only (FR-4.5); the smoke runner uses `opus` only |
 | OQ-7 | RESOLVED: `claude --model opus` accepted by the installed CLI (`claude --help`, section 8); run-time acceptance proven by capture (FR-5.8) | Developer (S5) | S5 start | Failure stops S5 with a defect |
 | OQ-8 | Is the Claude Code default effort `high`? UNVERIFIED | Developer (S5) | S5 start | Runner sets effort explicitly; claim never ships |
-| OQ-9 | Now that stamps no longer certify an audit against a version, must all 34 SKILL.md still get a full prose review (BINDING-2.2), or only the 2 SKILL.md files with version mentions (delivery-flow, prompt-engineer) plus keystones? PO default: retain full sweep. STILL OPEN for the user; Revision 4 did not decide it (AC-3.1 is now a ledger that works under either answer: a narrowed sweep would shrink the ledger and the AC's count) | Michael | S3 start | Default already scoped and costed; narrowing only reduces work |
+| OQ-9 | RESOLVED 2026-09-20 by Michael: NARROW. The prose review is narrowed from 34 SKILL.md to the SKILL.md files with model-version mentions (delivery-flow, prompt-engineer) plus the keystones (delivery-flow, prompt-engineer, product-delivery) = 3 files; stamp edits stay on all 25 stamped files; the 9 unstamped files get neither; no spot-check sample. Supersedes BINDING-2.2 | Michael (decided) | done | S3 effort L to M; AC-3.1 count 34 to 3; AC-3.1b still guards all 34 files |
 | OQ-10 | RESOLVED by observation, doc gap remains: on CLI 2.1.278 the model is top-level `model` in `system/init`, `message.model` in assistant events, and the keys of `modelUsage` in the result event (S5 table). The docs do not name these fields, so the shape is pinned by the real-shape fixture (FR-5.10) and re-verified on CLI upgrades | Developer (S5) | S5 start | FR-5.5 fails loudly on no or `unknown` model; FR-5.9 and AC-5.10 make the parser and fixture testable |
 | OQ-11 | Delivery-flow frontmatter says `model: sonnet` while its dispatch guidance targets the latest Opus. PO decision recorded in FR-2.6 (frontmatter unchanged, guidance conditional). Confirm or override | Architect | Stage 4 | Either answer leaves AC-2.5 satisfiable; the cap holds for every model |
 | OQ-12 | Should the smoke runner add `--bare` so a baseline does not depend on host hooks, plugins and `CLAUDE.md`? Bare mode authenticates only via `ANTHROPIC_API_KEY` or `apiKeyHelper` (local help), which may change the billing path. PO default: no `--bare`; record `host_context` (FR-5.5) | Michael | S5 start | Default is the current behaviour; the caveat is recorded (R13) |
 
 ## 10. Scope
 
-**In scope**: guard rewrite (forbid pins; new `scripts/check_model_pins.py` and `scripts/model_pin_fixtures.json`; workflow triggers push/pull_request/workflow_dispatch; `.githooks/pre-commit` call); version-free stamps in the 25 stamped SKILL.md (26 model_awareness + 26 pattern_library_version lines) and reset of the 11 lapsed `fitness_review_due` dates; version-free prose in 34 SKILL.md plus `delivery-team/references/shared/orchestrator-doctrine.md` (19 prose lines in 3 files today, plus the hand-named lines `prompt-engineer/SKILL.md` 363, 365, 371, 420); `agent_registry.py` central `MODEL_TIER_ALIAS` and its three comment lines; `flow_orchestrator.py:663` comment; `prompt-engineer/SKILL.md:368`; real-shape stream fixture and parser fix in the smoke harness; `conftest.py`, `smoke-test-architecture.md`, `telemetry-schema.md` example strings; runner `--model` / `--effort`; baseline schema (`model_requested`, `model_resolved`, `model_pin_env`, `effort`, `tokens.cache_hit_ratio`, `model_usage`); baseline re-capture; cache re-fingerprint and ADR; dispatch manifests; memory + CHANGELOG; the renames in the Revision 3 changelog.
+**In scope**: guard rewrite (forbid pins; new `scripts/check_model_pins.py` and `scripts/model_pin_fixtures.json`; workflow triggers push/pull_request/workflow_dispatch; `.githooks/pre-commit` call); version-free stamps in the 25 stamped SKILL.md (26 model_awareness + 26 pattern_library_version lines) and reset of the 11 lapsed `fitness_review_due` dates; version-free prose review in 3 SKILL.md (delivery-flow, prompt-engineer, product-delivery; OQ-9 resolved NARROW) plus `delivery-team/references/shared/orchestrator-doctrine.md` (19 prose lines in 3 files today, plus the hand-named lines `prompt-engineer/SKILL.md` 363, 365, 371, 420); `agent_registry.py` central `MODEL_TIER_ALIAS` and its three comment lines; `flow_orchestrator.py:663` comment; `prompt-engineer/SKILL.md:368`; real-shape stream fixture and parser fix in the smoke harness; `conftest.py`, `smoke-test-architecture.md`, `telemetry-schema.md` example strings; runner `--model` / `--effort`; baseline schema (`model_requested`, `model_resolved`, `model_pin_env`, `effort`, `tokens.cache_hit_ratio`, `model_usage`); baseline re-capture; cache re-fingerprint and ADR; dispatch manifests; memory + CHANGELOG; the renames in the Revision 3 changelog.
 
-**Out of scope**: `prd-quality-gate-flow/` routing aliases (BINDING-1.4; version-agnostic labels, and PIN_RE finds none); any `.github/workflows/smoke-*.yml` (BINDING-4.6; the guard workflow is a static scan, not a smoke workflow); any PR (BINDING-5.1); branch protection or any mechanism that blocks a direct push (the local script is the gate); creating stamps in the 9 unstamped files; changing delivery-flow's `model: sonnet` (FR-2.6); `--bare` for the smoke runner unless OQ-12 says so; scanning `.json` files (baselines record observed IDs by design); changing the Claude API contract (no repo caller exists); rewriting Stage 1 historical artifacts or QA round files.
+**Out of scope**: `prd-quality-gate-flow/` routing aliases (BINDING-1.4; version-agnostic labels, and PIN_RE finds none); any `.github/workflows/smoke-*.yml` (BINDING-4.6; the guard workflow is a static scan, not a smoke workflow); any PR (BINDING-5.1); branch protection or any mechanism that blocks a direct push (the local script is the gate); creating stamps in the 9 unstamped files; prose review of the 31 SKILL.md that neither carry a version mention nor are keystones (OQ-9 = NARROW, 2026-09-20); changing delivery-flow's `model: sonnet` (FR-2.6); `--bare` for the smoke runner unless OQ-12 says so; scanning `.json` files (baselines record observed IDs by design); changing the Claude API contract (no repo caller exists); rewriting Stage 1 historical artifacts or QA round files.
 
 ## 11. Constraints
 
@@ -901,7 +897,7 @@ Inputs: `challenger/challenge.md` (F1 to F6 significant, F7 to F11 minor; confid
 | W4-6 R9 provider claim over-broad | FIXED | R9 and section 8 rewritten: `sonnet` differs on every non-Anthropic provider, `opus` only on Foundry |
 | S4-1 constraints.yml wording (BC-04, BC-02 URL) | FIXED | constraints.yml edited; `validate_constraints.py`: valid, rc=0 |
 | S4-2 AC-2.1 phrasing about stamps | FIXED | AC-2.1 rewritten (no stamp lines involved) |
-| OQ-9 (narrow the 34-file review?) | OPEN, not decided | Stays with Michael, due S3 start; AC-3.1 works under either answer |
+| OQ-9 (narrow the 34-file review?) | OPEN in Revision 4; RESOLVED NARROW in Revision 6 | Stays with Michael, due S3 start; AC-3.1 works under either answer |
 
 **Canonical numbers now (re-run after all edits, 2026-09-20, worktree root, before any migration)**: `guard-scope hits 91 files 31` with `pin 20 stamp 52 prose 19`. Replaces the Revision 3 values (`pinned-id hits 14 files 6`; AC-1.2c value 70; 8 prose lines in 2 files), which counted a narrower contract with exemptions.
 
@@ -971,8 +967,33 @@ Inputs: Team DoD validation round 1 (`dod/qa-review.md` NOT_DONE, 3 blocking; `d
 
 `guard-scope hits 91 files 31`, `pin 20 stamp 52 prose 19`, listing identical to Revision 4. AC-1.2c pre-migration value unchanged (91 files 31); AC-3.1b equivalent `69 19` (69 SKILL.md hit lines, 19 files with `frontmatter-only`); AC-2.1 `25`; AC-3.3a `36 violations`; stamp census `skill 34` / `26 25 {...19, ...7}` / `26 x 4-7-1`.
 
-**Still OPEN, not decided here**: OQ-9 (narrow the 34-file review) and OQ-12 (`--bare`), both Michael, both non-blocking with defaults.
+**Still OPEN, not decided here (as of Revision 5; OQ-9 resolved in Revision 6, see the Revision 6 changelog)**: OQ-9 (narrow the 34-file review) and OQ-12 (`--bare`), both Michael, both non-blocking with defaults.
 
 **Commands run for this revision**: canonical count and stamp census extracted from this file and executed; AC-1.2a extracted and executed in a scratch `scripts/` directory with 29/12/21/16 fixtures (`fixture failures 0 []`) plus two mutation runs; AC-1.1b (self-tests, compliant sample `OK`, today's file assertion); AC-1.6a (`0`) and AC-1.6b (`1 guard-scope hits 1 files 1` on the simulated script); AC-2.1 (`25`), AC-2.3 (`0`), AC-2.5 (`FAIL`), AC-3.1 (FileNotFoundError), AC-3.1b on the simulated script (`69 19`), AC-3.2, AC-3.3a (`36 violations`), AC-4.2 (`False 4`), AC-4.4 (assertion, no S5 commits), AC-4.5 (`0`), AC-4.6 (`9 [...] violations 0`), AC-5.5c (assertion, no `samples`), AC-5.10 on a scratch copy of the real capture (`OK`), AC-DISP (`4 violations`); `validate_constraints.py` (valid, rc=0); NFR-8 `pip install` count (`0`); `pytest test_meta.py` (`3 passed`); local `claude --help` for `--max-budget-usd`, `--model`, `--effort`. Nothing ran the `claude` model or spent money. Scratch scripts are under `/tmp/rx` and are not part of the repository.
+
+## 18. Revision 6 changelog (2026-09-20; human decision OQ-9 = NARROW)
+
+Binding decision (Michael, 2026-09-20): the Stage 6 / S3 prose review narrows from all 34 SKILL.md to the SKILL.md files that contain model-version mentions plus the keystones. Supersedes BINDING-2.2 (full 34-file prose review). No spot-check sample. Stamp edits stay mechanical on all 25 stamped files; the 9 unstamped files get no stamp and no review. Guard design and regex contract unchanged; OQ-12 (`--bare`) stays OPEN.
+
+**Exact review scope (3 files)**: discovery re-run 2026-09-20 (guard-scope PROSE and BARE rules over `--include=SKILL.md`, worktree root) finds prose version mentions in 2 SKILL.md: `delivery-team/skills/delivery-flow/SKILL.md` (lines 27, 30, 273, 276) and `prompt-engineer/SKILL.md` (88, 347, 349, 351, 356, 359, 361, 373, 375, 397, 401, 408; hand-named 363, 365, 371, 420; pin 368). Keystones designated by FR-2.1 and BINDING-2.5: delivery-flow, prompt-engineer, `delivery-team/skills/product-delivery/SKILL.md`. Union = 3 files; the 31 remaining SKILL.md are out of prose-review scope.
+
+Edits in this revision:
+
+| Section | Edit |
+|---|---|
+| S3 heading | "Full prose sweep" renamed "Narrowed prose review" |
+| FR-3.1 | Rewritten: scope is the 3-file union, rationale, safety net (AC-3.1b still zero-hits across every SKILL.md), review dispatched in S2, ledger recorded in S3 |
+| AC-3.1 | Expected count `34 missing 0 extra 0 bad 0` becomes `3 missing 0 extra 0 bad 0`; expected set is a fixed 3-path KEYSTONES constant instead of `files(name='SKILL.md')`; mechanics run with a scratch ledger (printed `3 missing 0 extra 0 bad 0`, scratch file removed); pre-ledger run fails with FileNotFoundError as before; adversarial inspection covers the 3 rows (5+5 spot-check removed) |
+| AC-3.1b | Unchanged (still all SKILL.md, `0 0`); its role as the backstop for the narrowed scope is stated in FR-3.1 |
+| FR-3.2 | "the other 9 files need prose review only" becomes "need no edit at all"; AC-3.2 unchanged (`34 26 25` census still counts every SKILL.md) |
+| FR-3.3 / AC-3.3a-c | Unchanged (stamp dates apply to the 25 stamped files) |
+| G3 (section 5) | "34/34 prose-reviewed" becomes "3/3 in-scope SKILL.md ledgered"; still closed by S3 alone via AC-3.1 and AC-3.1b; one work item still closes each gate |
+| R2 | 34 files becomes 3 files plus 25 line-neutral stamp edits; line-budget headroom stays a stated constraint (delivery-flow 499/500, Tier B 300/300; stamp edits replace a value in place and add no line) |
+| OQ-9 | Marked RESOLVED 2026-09-20, owner Michael, decision NARROW |
+| Scope / out of scope (section 10) | In scope: prose review of 3 SKILL.md; out of scope adds the 31 unreviewed SKILL.md |
+| Revision history rows (Revision 4 table, Revision 5 closing note) | Annotated as superseded by this revision; text otherwise left as history |
+| S3 effort | L becomes M (BACKLOG-108 sizing table) |
+
+**Commands run for this revision (worktree root, 2026-09-20)**: prose-mention discovery (2 SKILL.md, list above); `find . -name SKILL.md` outside `.delivery`, `.git` and worktrees prints 34 (unchanged census); AC-3.1 unedited-tree run fails FileNotFoundError; AC-3.1 with scratch 3-row ledger prints `3 missing 0 extra 0 bad 0`; `validate_constraints.py` output recorded in the Stage 2 report. Effort estimate: S3 M (3 reviewed files plus 25 mechanical, line-neutral stamp edits).
 
 — Gandalf, PO, run-2026-05-28-backlog-108.
