@@ -3,6 +3,7 @@
 
 **Stage**: 4 Architect, LIGHT depth (single coherent doc plus 5 ADRs, no debate)
 **Role / task**: Solution Architect (Elrond) / design. Recommended model class: synthesis.
+**Revision**: 2 (adversarial loop 2 addressed; see the Revision 2 changelog at the end of this file).
 **Inputs**: PRD Revision 6 (`.delivery/artifacts/02-refine/po/prd.md`), `constraints.yml`, BACKLOG-108, memory topic `latest-model-references.md`, round-2 DoD reviews (architect, QA), stage and hot lessons, and the repository sources named in section 11.
 **ADRs** (all under `.delivery/artifacts/04-architect/adrs/`, status Proposed until DoD):
 ADR-lmr-001 cache fingerprint scope; ADR-lmr-002 guard design; ADR-lmr-003 central alias, stamps and line-budget math; ADR-lmr-004 smoke harness capture contract; ADR-lmr-005 dispatch manifest and ship gate.
@@ -95,6 +96,8 @@ flowchart LR
   SMOKE --> BASE
 ```
 
+**Control posture (revision 2, loop-2 F2).** Every control on the ship path is DETECTION with fix-forward, not prevention, for a pusher who skips the gate. The ship path is squash-rebase, ff-merge, `git push origin main`, no PR (BINDING-5.1). The pre-push hook is opt-in and `--no-verify` skips it; the S7 gate is run by the orchestrator that pushes and its log is self-produced; S7b and the `push: main` workflow both run after the push. Nothing here can stop a bad commit reaching `main`. Prevention (branch protection with required checks, or a server-side hook) is recorded as ACCEPTED RESIDUAL RISK RR-1 in ADR-lmr-005 item 8, owner PO, with revisit triggers; it is not designed in because it would change BINDING-5.1 (no PR). The threat model is accidental drift, not an adversary.
+
 Data flow of the guard: `git ls-files --cached --others --exclude-standard` gives the file set; each line is classified once (`pin`, `stamp`, `prose`); the last stdout line is `guard-scope hits N files M`; exit 1 when N above 0.
 
 Data flow of the smoke harness: `run_smoke.py` builds `claude --print --output-format stream-json --verbose --model opus --effort xhigh --max-budget-usd 3.00`, tees events to `stream.jsonl`, `parse_stream` folds them into `Metrics` (model from `system/init`, cost from `result.total_cost_usd`, dispatches by distinct `message.id`), `report.py` writes `report.json`, and `baseline.py` either compares against a schema-2 baseline (WARN on `model moved`) or, with `--init-baseline`, writes a fresh one with the 5 raw streams and their hashes.
@@ -127,7 +130,7 @@ Simulation results (commands run, output recorded): line count 499 to 499; bytes
 
 Doctrine mirror (`orchestrator-doctrine.md`, lines 77 to 82, no tier key, no budget): same content as block 1 under a family heading (for example `## Model Awareness Note (latest Opus)`), review together with delivery-flow so the two cannot diverge. It is outside the fingerprint (ADR-lmr-001 decision 2).
 
-`prompt-engineer/SKILL.md`: unbudgeted (no tier key), 520 lines. Rewrite the named lines (FR-2.1 list, including 363, 365, 371, 420); Pattern 4.1 becomes a config-read pattern (`MODEL_ID = os.environ["CLAUDE_MODEL_ID"]`, FR-2.2); the "Model-specific optimisation" block becomes `latest Opus`; effort advice says "start from the API default and tune on your own evals", never a per-version level (docs: effort levels are recalibrated between releases, PRD section 8). The claim "Claude Code default effort is `high`" stays unshipped (OQ-8 UNVERIFIED).
+`prompt-engineer/SKILL.md`: unbudgeted (no tier key), 520 lines. Rewrite the named lines (FR-2.1 list, including 363, 365, 371, 420); the stamp-doc bullets at lines 420 and 421 are reworded so `model_awareness` is defined as `latest` (ADR-lmr-003 A6a, revision 2, F5; one line for one line); Pattern 4.1 becomes a config-read pattern (`MODEL_ID = os.environ["CLAUDE_MODEL_ID"]`, FR-2.2); the "Model-specific optimisation" block becomes `latest Opus`; effort advice says "start from the API default and tune on your own evals", never a per-version level (docs: effort levels are recalibrated between releases, PRD section 8). The claim "Claude Code default effort is `high`" stays unshipped (OQ-8 UNVERIFIED).
 
 ### S3 Stamps and ledger (ADR-lmr-003)
 25 files, value-only edits, zero line delta (proved per file in ADR-lmr-003). `last_audited` = the S3 DoD date; `fitness_review_due` reset in the 11 files that have it to a date after today and within 90 days (2026-12-19 for today's date). The prose ledger `06-development/prose-review-ledger.tsv` has exactly 3 rows. S3 owns AC-6 (budget exit 0).
@@ -165,7 +168,7 @@ Baseline JSON after capture (schema 2, illustrative; the value under `model_reso
 After S3 and any DoD rework, one command rewrites `governance/cache-prefix-hash.txt` and AC-6.1 must print `MATCH`. The hash changes because the frontmatter (first byte difference at 854) and two blocks change; that is deliberate and recorded. Revision 1 (F1): S6 also records the before and after 2048-byte hash used by `delivery-team/hooks/telemetry.py` (`prefix_hash`). It changes for all 13 stamped `delivery-team` skills at ship (measured: 25 of 25 stamped files change in the first 2048 bytes, since the stamps start by byte 927), expected, no code change, no consumer breaks (ADR-lmr-001 decision 7).
 
 ### S7 Memory, changelog, ship (ADR-lmr-005)
-`## Run outcome` in the memory topic, a CHANGELOG entry naming BACKLOG-108 (CHANGELOG may name retired IDs, it is excluded from the guard), then the ordered ship gate in ADR-lmr-005 item 8: clean-tree check, one out-of-tree evidence log, then push, then an independent post-push re-run on a fresh clone of `origin/main` by a different dispatch (S7b; revision 1, F2 and F3).
+`## Run outcome` in the memory topic, a CHANGELOG entry naming BACKLOG-108 (CHANGELOG may name retired IDs, it is excluded from the guard), then the ordered ship gate in ADR-lmr-005 item 8 (each step judged by exit status; count steps also print their value into the log; revision 2, F1): clean-tree check, one out-of-tree evidence log, then push, then an independent post-push re-run on a fresh clone of `origin/main` by a different dispatch (S7b; revision 1, F2 and F3).
 
 ## 5. Sequencing, dependency graph and parallelism (BINDING-2.5, BINDING-4.5)
 
@@ -237,7 +240,9 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | P14 | S1 to S3 leave the tree red on the guard workflow until S4; ship is one squashed push so main never sees it | Keep squash; do not push S1 alone (the pre-push hook acts only on `refs/heads/main`, so branch pushes are not blocked) |
 | P15 | Ship-gate evidence and S7b: the S7b report lands in a post-ship docs-only commit (a second push of `.delivery/` files); Plan confirms that is acceptable or names another home (revision 1, F3) | Plan decision; recommendation in ADR-lmr-005 item 8 |
 | P16 | `skill-line-budget.yml` push trigger and `.githooks/pre-push` are additions to the PRD's S1 scope; PO confirms or strikes; if the trigger is struck, budgets are unenforced by CI on direct pushes (F3) | Plan decision |
-| P17 | Guard scope blind spots: extensions outside `.py .md .yml .yaml .txt .sh` (16 tracked `.json`, `.githooks/pre-commit`, `Makefile`, `.example`) are out of scope by decision; none carries a pin today (F10) | Accepted; ADR-lmr-002 D3 |
+| P17 | Guard scope blind spots: 26 tracked files outside `.py .md .yml .yaml .txt .sh` and `.delivery/` (17 `.json`, 1 `.jsonl`, 2 `.gitignore`, and one each of `.githooks/pre-commit`, `Makefile`, `LICENSE`, `.gitkeep`, `.gitattributes`, `.example`) are out of scope by decision; none carries a pin today (F10; recounted in revision 2) | Accepted; ADR-lmr-002 D3 |
+| P19 | Two tracked executable files sit outside the guard scope: `.githooks/pre-commit` (the only mode-100755 tracked file outside `.delivery/`) and `Makefile`. Widening the scope changes the PRD's fixed six-extension scan and the count-equals-script equivalence, so it is a PO decision (loop-2 F3). Both are clean today (pin-pattern grep exits 1). Owner: PO. Non-blocking: no current false negative, and S1 edits the hook under review | Plan decision; ADR-lmr-002 D3 |
+| P20 | RR-1: direct push to main is detect-and-fix-forward, not prevent (loop-2 F2). Branch protection or a server-side hook would prevent it but conflicts with BINDING-5.1 (no PR). Owner PO. Revisit if a pin reaches main, a second pusher appears, or BINDING-5.1 is reopened | Accepted residual risk; ADR-lmr-005 item 8 |
 | P18 | Telemetry `prefix_hash` changes for 13 skills at ship; a reader grouping by it sees new groups (F1) | Accepted; S6 records the delivery-flow before and after values |
 
 ## 8. PRD items found technically unsound (flagged, not changed)
@@ -256,6 +261,7 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | U10 | AC-2.1, AC-2.5, AC-4.4, AC-5.9b use the moving `main` ref | Fragile if main advances (F8). | `base-sha.txt` |
 | U12 | PRD FR-1.5 / S1 scope names a pre-commit hook and a guard workflow only; the ship path is a direct push (BINDING-5.1) and `skill-line-budget.yml` is `pull_request`-only | Two controls have no PRD text: a pre-push hook and a push trigger for the budget workflow. Proposed as additions, not silent changes (P16). | ADR-lmr-002 D8, ADR-lmr-005 item 8 |
 | U13 | PRD OQ-5 / OQ-8 assume no documented Claude Code default effort for the latest Opus | Live docs document per-named-version defaults (`high` everywhere except Opus 4.7, where `xhigh`). Contradiction is partial: nothing for "latest". No requirement changes (the runner passes `--effort` explicitly). | Section 6 rows OQ-5 and OQ-8; ADR-lmr-004 |
+| U14 | PRD FR-1.5 and BINDING-5.1 describe the local run as the "blocking gate" | For a direct push to main the gate cannot block a pusher who skips it (`--no-verify`, or the same orchestrator both runs and reports it); it detects. Not a requirement change: the PRD already states the workflow "detects after the push" (FR-1.1). Wording flagged so no reader takes the gate as an access control. | Section 3 control posture; ADR-lmr-005 RR-1 |
 | U11 | Design brief and PRD both call Stage 4 "single cache-fingerprint ADR" | Five decisions are load-bearing; the ADR set is five files, not one. Not a defect, a scope note. | This document |
 
 ## 9. Non-functional traceability
@@ -292,6 +298,10 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | Revision 1: `bash /tmp/lmr-hk/test.sh` (pre-push hook against a stubbed `git`) | 7 cases as expected: non-main rc=0, main clean rc=0, sha mismatch rc=1, dirty rc=1, guard fail rc=1, empty stdin rc=0, delete main rc=0 (F3) |
 | Revision 1: `claude --help \| grep -n -i -A2 'effort\|fable'`; `grep -n '_running_cost\|cost_cap' delivery-team/tests/smoke/lib/runner.py`; `grep -n '"model": "claude-' prd-quality-gate-flow/stage_definitions.py`; extension census of tracked files outside `.delivery/` | `--effort` levels low..max, alias `fable` documented; in-loop kill at runner.py lines 95 and 252; 7 digit-free labels in `stage_definitions.py`; 16 `.json` plus 8 other files outside the scan extensions (F4, F5, F6, F7, F10) |
 | Revision 1: `ls ~/.claude/projects/<slug>/<session>/subagents/` | `agent-<id>.jsonl` and `.meta.json` per subagent exist (F9) |
+| Revision 2: `git ls-files -v \| grep -c '^[a-zS]'; echo exit=$?` and the negated `grep -q` form | `0` with `exit=1` (the clean case exits 1, F1); the `!` form is exit-clean and is the one specified |
+| Revision 2: tracked-file census outside `.delivery/` minus the six scanned extensions; `git ls-files -s` filtered for mode 100755; grep of `Makefile` and `.githooks/pre-commit` for the pin patterns | 26 files (17 `.json`, 1 `.jsonl`, 2 `.gitignore`, 1 each `pre-commit`, `Makefile`, `LICENSE`, `.gitkeep`, `.gitattributes`, `.example`); only `.githooks/pre-commit` is 100755; grep exit 1 (no match) (F3) |
+| Revision 2: `git grep -n model_awareness` outside `.delivery/`, then sed of `prompt-engineer/SKILL.md` 416 to 424 and of `skill-md-header-warn.yml` 20 to 36 | readers: header-warn (presence only), `prompt-engineer/SKILL.md:420` (definition), `delivery-flow/SKILL.md:491` (volatile note) (F5) |
+| Revision 2: `ls scripts/` | `check_model_pins.py` not present yet (S1 creates it); no guard run was claimed for the new text, the new lines carry no digit (F5) |
 | Reads of `runner.py`, `metrics.py`, `baseline.py`, `report.py`, `run_smoke.py`, `tests/conftest.py`, `tests/test_meta.py`, `agent_registry.py`, `.githooks/pre-commit`, `stale-model-id-guard.yml`, `skill-md-header-warn.yml`, `.delivery/config.yml`, `state.md`, `pipeline-stages.md`, `quality-gates.md` | facts cited in ADR-lmr-002 to 005 |
 
 ## 11. Citations and UNVERIFIED items
@@ -314,4 +324,18 @@ Revision 1 (WebFetch by the challenger, 2026-09-20, https://code.claude.com/docs
 - Every producer and validator commit carries `Dispatch-Id`; the orchestrator writes the per-round manifests as it dispatches (P13).
 - The S7 executor runs steps 2 to 8 of ADR-lmr-005 item 8 as one teed block with the log outside the tree; a separate devops dispatch (S7b) re-runs on a fresh clone of `origin/main` after the push.
 - The S6 report records the telemetry-hash before and after values (ADR-lmr-001 decision 7).
+- The S7 executor records `step=<n> exit=<rc> value=<v>` per step and uses the `!` form for the flag check (revision 2, F1). The S7 report states that the ship path is detect-and-fix-forward (RR-1, P20).
+- The S2(b) prompt-engineer dispatch also rewrites the two stamp-doc bullets at lines 420 and 421 (ADR-lmr-003 A6a).
 - The S2 developer runs `wc -l` on delivery-flow after the edit and pastes it; it must print 499 (500 is the cap).
+
+## Revision 2 changelog (adversarial loop 2: `challenger/loop-2.md`, 5 findings, no blocking)
+
+| Finding | Class | Disposition | Where |
+|---|---|---|---|
+| F1 gate step 2 exit-code contradiction | minor | FIXED. The flag check is now `! git ls-files -v \| grep -q '^[a-zS]'`. Reproduced: the `grep -c` form printed `0` with `exit=1`. The gate is judged by exit status; count steps also print their value into the S7 log. | ADR-lmr-005 item 8 step 2; section 4 S7; section 10; section 12 |
+| F2 NO-PR push is detect-and-fix-forward | significant | FIXED by statement, plus ACCEPTED RESIDUAL RISK. Stated in section 3 and ADR-lmr-005 item 8 (RR-1: what is not prevented, blast radius, prevention options, owner PO, three revisit triggers); ADR-lmr-002 consequences point to it; no PR requirement added. Recorded as P20 and U14. | Section 3, section 7 P20, section 8 U14; ADR-lmr-005 item 8, alternatives, consequences; ADR-lmr-002 consequences |
+| F3 guard scope misses extensionless executables | minor | FIXED by declaration with count, widening DEFERRED to Plan (P19, owner PO). The PRD fixes the six-extension scope, so widening is a requirement change, not an architect edit. Measured: 26 out-of-scope tracked files; exactly two are executable code (`.githooks/pre-commit`, `Makefile`); pin grep exits 1. The stale "16 `.json`" count is corrected to 17. Non-blocking: no current false negative; the S1 developer edits the hook under review. | ADR-lmr-002 D3; section 7 P17, P19 |
+| F4 alias set includes `fable` | minor | FIXED. `fable` is intentionally excluded from `MODEL_TIER_ALIAS` (no tier meaning, no consumer), stated where the dict is defined, with the one-edit widening path. `inherit` likewise. | ADR-lmr-003 A1 (with A3) |
+| F5 `model_awareness` definition contradicts `latest` | minor | FIXED. All readers listed: header-warn is presence-only (unaffected), `delivery-flow/SKILL.md:491` stays true (no edit), `prompt-engineer/SKILL.md:420` is reworded (line 421 alongside), one line for one line, inside the S2(b) dispatch. | ADR-lmr-003 A6a; section 4 S2; section 12 |
+
+Nothing was rebutted. One item is deferred (F3 widening, P19) with owner and reason. F2 has no design fix by intent; it is an accepted residual risk. Cross-references checked after the edits: the ADR item numbers used above (item 8, step 2, A1, A3, A6a, D3) exist as cited; the section numbers cited in this file (3, 4, 7, 8, 10, 12) are unchanged. No PRD requirement changed; U14 flags the PRD's "blocking gate" wording. All five ADRs stay Proposed (binary status).
