@@ -1,79 +1,88 @@
 <!-- run: run-2026-05-28-o48m -->
 ---
 verdict: NOT_DONE
+round: 2
 role: qa (DoD validator, fresh reviewer)
 stage: 4 Architect (light)
 run: run-2026-05-28-o48m
 backlog: BACKLOG-108
 blocking_count: 1
-warning_count: 8
-inputs: architecture.md rev 3, ADR-lmr-001..005, PRD rev 6 ACs, challenger loop-1..3
+warning_count: 6
+inputs: architecture.md rev 4, ADR-lmr-001..005, round-1 review, real lib/ sources
 note: delivery-team:qa skill failed to load (unknown skill); role applied from the task brief.
+experiment: $CLAUDE_JOB_DIR/tmp/exp (gate.py, mk.py, setup.py, p0/tests/test_red.py, junit.py)
 ---
 
-# QA DoD review: Stage 4 design, BACKLOG-108
+# QA DoD review round 2: Stage 4 design, BACKLOG-108
 
-Overall: design is mostly testable. Most PRD ACs have a runnable path and loop 1-3 closed real holes. One internal contradiction makes the red-first evidence AC unsatisfiable as written. Small fix, but Plan cannot write a passing AC from the text today. Everything else is warning-level, carry to Plan.
+Short version. B1 as I wrote it is fixed: a correct stub now passes the AST gate and gives the two allowed failure markers. But the rewritten rule 1b(ii) and the P0 stub scope do not match the real code, so one new blocking gap remains (B2, same defect class: P0 rule cannot carry what the tests need). Four "pass while unmet" holes are closed in design. Small fix again.
 
 ## Blocking issues
 
-### B1. P0 "stub" rule contradicts itself and contradicts the red-first check (ADR-lmr-004 section 2 and 6)
+### B2. P0 stub rule cannot carry `tokens.cache_hit_ratio` or the new `Metrics` fields (ADR-lmr-004 section 6 item 1b, section 2, section 1 item 6)
 
-Two contradictions, one mechanism (the F6 fix from loop 3).
+Evidence from the experiment (real `lib/report.py` and `lib/metrics.py` copied to scratch; gate coded from 1a to 1c; pytest run against a gate-passing P0).
 
-1. AST-body gate vs pinned stub. Section 6 item 1 says the BODY of every pre-existing function, and lists `build_report` and `init_baseline` among them, must be unchanged at P0 (Plan AC: `ast.dump` body at `base_sha` equals body at `validator_start`). Section 2 says the P0 stub of `build_report` "gains ... new keys present with `None`/empty defaults, existing keys unchanged". Adding keys to the returned dict is a body edit. A correct P0 fails the AST gate; a P0 that passes the AST gate cannot carry the pinned keys the validator needs for AC-5.5b(iv) and AC-5.5c tests. Evidence: ADR-lmr-004 section 2 table row `build_report` vs section 6 item 1 function list.
-2. Stub behaviour vs "fails by AssertionError". Section 6 item 1 lets new functions "raise `NotImplementedError`" (for example `check_model_capture`). Section 6 item 2 requires the `real_shape` and capture-failure tests to fail at `validator_start` "with `AssertionError`, not ImportError or TypeError". A test that calls a NotImplementedError stub fails with NotImplementedError. A test written as `pytest.raises(ModelCaptureError)` against a non-raising stub fails with `Failed: DID NOT RAISE`, which is pytest's outcome exception, not AssertionError. So the AC passes only if every such test is written in bare-`assert` style and every stub returns a value. Neither is stated.
+1. Rule 1b(ii) names "the single assignment `metrics["tokens.cache_hit_ratio"] = ...`". In the real `build_report` there is no such assignment target. `metrics` is the `Metrics` dataclass parameter, and the report is one returned dict literal with a nested `"tokens"` dict; `tokens.cache_hit_ratio` is resolved by `baseline._extract_metric` as `report["tokens"]["cache_hit_ratio"]`. Results:
+   - `A_top_only` (six pinned keys, constants): gate PASS. But `report["tokens"]["cache_hit_ratio"]` is absent, so a test that reads it fails with `KeyError`, which VOIDS the red evidence.
+   - `A_with_nested` (also adds `"cache_hit_ratio": 0.0` inside `tokens`, the only natural way to carry it): gate FAIL, `body differs after strip`. A correct P0 fails the gate.
+   - `B_assign` (literal `metrics["tokens.cache_hit_ratio"] = 0.0` as the rule says): gate PASS, but at runtime `Metrics` is not subscriptable: `TypeError: 'Metrics' object does not support item assignment`. A dev who follows the text literally breaks every `build_report` call.
+2. Section 1 item 6 adds `model_primary`, `models_observed` and `tokens.cache_hit_ratio` to `Metrics`. Nothing pins them at P0: not in the section 2 tables, not in the 1c new-symbol list (1c covers top-level names and functions, not fields of an existing class). Test `parse_stream(...).model_primary == ...` at `validator_start` fails with `AttributeError: 'Metrics' object has no attribute 'model_primary'` (run, junit message confirmed). `AttributeError` is on the void list.
+3. `model_pin_env` is a report key at P1 (section 2 `build_report` row) but is not in the pinned-key set the gate strips, so a stub adding it fails 1a.
 
-Effect: the Plan writes an AC that either fails a correct P0 (red-first evidence "void", per the ADR's own words) or forces the stub author to guess. Dev and UAT cannot verify BINDING-4.5 red-first.
+What DID work (B1 proper, confirmed by run): with a gate-passing P0, value tests using bare `assert` failed as `AssertionError: ...`, and `pytest.raises(ModelCaptureError)` against an inert `check_model_capture` failed as `Failed: DID NOT RAISE <class ...>`; both are the two permitted markers, both as `<failure>` elements. So the failure-type rule and the "inert, no NotImplementedError" rule are sound.
 
-Fix (architect, small): (a) drop `build_report` from the unchanged-body list, or say the stub adds keys via a new helper called from the pre-existing body and the AST gate excludes that one call, or exempt `build_report` explicitly; (b) replace "AssertionError" with a rule that survives: failing outcome, exception type not in {ImportError, ModuleNotFoundError, TypeError, NotImplementedError, `Failed: DID NOT RAISE`}, or require stubs to return legacy-equivalent values and tests to use bare `assert`; state which.
+Effect: Plan cannot write a passing AC for "P0 passes 1a to 1c AND red run clean" for any test touching cache-hit ratio or `Metrics` fields, unless the validator happens to use `.get`/`getattr` (I confirmed `.get(...)` gives `AssertionError`; not stated anywhere).
+
+Fix (architect, small, text only):
+- 1b(ii): replace with "the pinned key `cache_hit_ratio` inside the nested `tokens` dict literal, constant value (`0.0`)", and add `model_pin_env` to the pinned-key set.
+- P0 stub scope: list the `Metrics` field additions (`model_primary: str | None = None`, `models_observed: list = field(default_factory=list)`, `cache_hit_ratio: float = 0.0`) as allowed P0 class-body additions with constant defaults, or state the test-writing rule "read new attributes with `getattr(x, name, default)` / `dict.get`".
+
+## Attack on the AST gate (wrong P0 that should fail)
+
+| Variant | Gate result | Verdict |
+|---|---|---|
+| `session_id` computed from `metrics` (`metrics.tokens.get("input")`) | FAIL `nonconst pinned value` | caught |
+| existing key edited (`cost_usd ... or 0.1`) | FAIL `body differs after strip` | caught |
+| pre-existing `parse_stream`/`compare`/etc body change | FAIL by 1a (same mechanism) | caught |
+| `model_resolved: ["<fixture id>"]` hardcoded constant | PASS | gate cannot see it; the red run catches it because the value test then PASSES, which fails the "every test FAILED" rule. OK, but the red run, not the AST, is the real control here. |
+| real implementation smuggled into a NEW function (`check_model_capture` reading `metrics.models_observed`, `check_model_consistency` comparing `reports[i]["model_resolved"]`, raising `ModelCaptureError`) | PASS. 1c bans only `message`/`modelUsage`/`total_cost_usd` string literals and `NotImplementedError`; "return inert values" is prose, not an AST check. | see W1 |
+
+## Re-check of the four "pass while unmet" holes
+
+| Hole | Status | Evidence |
+|---|---|---|
+| AC-3.1b ignores rc | CLOSED (design) | ADR-lmr-002 D9 "AC-3.1b caller rules": rc in (0,1), last-line regex, `files-scanned` above 0, `n` equals summary `hits`. Ship step 4 judged on own rc. Plan must write the text (Plan-carry 3 lists it). |
+| Guard scans nothing looks clean | CLOSED (design), see W2 | `files-scanned <K>` line before summary, exit 2 when K is 0 or `git ls-files` fails, fail closed on unreadable files, canary AC. |
+| AC-5.5c five identical streams | CLOSED in ADR text, see W3 | ADR-lmr-004 section 5 and D9: distinct hash, distinct `session_id`, pairwise non-overlapping `message.id`; samples are now the full scrubbed stream so ids exist. |
+| AC-DISP forged ids | CLOSED for recovered manifests; residual accepted | Item 4a fails (no skip) on a missing transcript; item 6 skip only if the whole slug tree is absent, printed loudly; missing id in any session dir fails; S7b always runs it. Role/unit match and self-forgery stay an accepted limit (F9), stated. |
+
+Consistency checks:
+- Guard summary vs `files-scanned`: the LAST stdout line stays `guard-scope hits N files M`; step 5 `tail -n 1 | awk '{print $3}'` still reads N; the `awk '/^(pin|stamp|prose) /'` count does not match the `files-scanned` line. Consistent.
+- Spend numbers: $15.00 aggregate, $3.00 per sample, at most 2 re-runs (7 runs), `--max-budget-usd 0.25` and at most 2 fixture captures ($0.50) agree in ADR-lmr-004 section 8, architecture.md section 5 and changelog, ADR-lmr-005 step 9. The pre-check `spent + 3.00 > 15.00` is the binding limit in practice (7 x 3.00 is 21.00); "whichever hits first" covers it. Consistent.
+- Canary in ship gate: NOT consistent, see W2.
 
 ## Non-blocking warnings
 
-### W1. Vacuous pass: AC-3.1b passes when the guard script is broken or missing
-PRD AC-3.1b reads `subprocess.run([... '--list'], capture_output=True).stdout` and never checks `returncode`. If `scripts/check_model_pins.py` crashes, is renamed, or prints only to stderr, stdout is empty, `n = 0`. After S3 `frontmatter-only` count is also 0, so it prints `0 0` and passes with zero scanning. Concrete way to meet the AC and miss the requirement. Mitigation exists only indirectly (AC-1.2c and AC-1b would catch a broken script, but AC-3.1b itself proves nothing). Plan fix: assert returncode in {0,1}, assert the last stdout line matches `guard-scope hits \d+ files \d+`, and compare `n` to the summary count.
+### W1. 1c "inert" is prose, not a check
+A new function with a real body (no banned literals) passes 1c. Only the red run catches it, and only if a test exercises that function. Add to the Plan AC: new-function bodies must be a single `return <constant>` (or `json.load` for `load_baseline`) checked by AST, or say plainly that the red run is the sole control for new functions.
 
-### W2. Vacuous pass: guard that scans nothing looks identical to a clean tree
-Summary line `guard-scope hits 0 files 0` means zero files WITH hits, not zero scanned (ADR-lmr-002 D5). Nothing requires the scan to be non-empty or fail closed if `git ls-files` errors, cwd is wrong, or `isfile` filters everything. AC-1.2c, AC-1b, ship step 4 and S7b step 4 all print the same line for a scanner that saw no files. Step 5 (canonical count vs `--list` count) does not help because both are 0 in the same broken state. Pre-migration the 91 hits / 31 files count proves default mode works, but only at S1 close, not at ship or in the S7b fresh clone. Plan fix: add a canary AC (write a temp untracked `.md` with a synthetic pin in the repo, expect exit 1 and the file in `--list`, delete it), and state that the script exits non-zero if `git ls-files` fails. Add a `files scanned N` line if the PRD format allows.
+### W2. Canary is not wired into the gate steps it claims; `files-scanned` rule vs `--paths`
+- ADR-lmr-005 step 4 says the canary "runs in Block A and again in S7b", but Block A step 0 enumerates only AC-2.1, AC-2.5, AC-4.4, AC-5.9b, and S7b "re-runs steps 4, 5, 6 and 7". The canary appears in neither list, so an executor following the step lists skips it. Add it to both.
+- ADR-lmr-002 D9 exits 2 when K is 0. In `--paths` mode with only out-of-scope files staged (a `.json` baseline commit), K is 0, so the pre-commit hook gets rc 2 and blocks under `MODEL_PIN_STRICT=1`. State that the K=0 rule applies to default mode only. D5 (exit 0/1 only) is not updated to mention exit 2. There are also two headings named D9 in the ADR.
 
-### W3. Five identical streams pass the AC-5.5c text as written
-PRD AC-5.5c script re-hashes each file and checks init model and cost mean, but has no distinctness check. Five copies of one real stream (same hash, same `session_id`) pass. ADR-lmr-004 section 5 says init-baseline rejects duplicates and "AC-5.5c also checks it independently", but the PRD snippet does not, and the producer-side rejection is bypassed by a hand-built baseline, which is what AC-5.5c exists for. Second route: edit `session_id` in each trimmed init line so hashes differ; init trims to four keys so `session_id` is the only distinguishing field in the trimmed line. Plan fix: AC-5.5c adds distinct hashes and distinct `session_id` across 5 files, and also requires that the sets of `message.id` (or result `uuid`/`duration_ms`) in the verbatim assistant/result events do not overlap across samples, which a hand-edit of `session_id` alone cannot fake.
+### W3. AC-5.5c gaps
+The distinctness rule is not in Plan-carry item 3 (list omits it), and the PRD snippet is unchanged. `message.id` presence is UNVERIFIED (ADR-lmr-004 section 1 item 2 falls back to per-event); if real events carry no id, the disjoint-id check has nothing to compare and no fallback is stated. Add both to Plan-carry.
 
-### W4. AC-DISP transcript check is skippable and role-blind
-ADR-lmr-005 item 6: transcript check is "supporting", skipped with a note when the directory is absent, layout UNVERIFIED across CLI versions. Item 4a makes it mandatory only for `transcript-recovered` manifests. A manifest with invented ids (`qa<TAB>a1`, `architect<TAB>a2`) passes every rule (shape, N, distinct roles, distinct ids, roles in config list, ids unique across manifests). Also the transcript, when present, is only checked to exist, not to match the role or unit. A real agent id from an unrelated dispatch satisfies it. Accepted limit is stated (F9) but the checker should at least fail (not skip) when the session directory is present and an id has no file, and the recovered-form lookup must search all session directories of the project slug, since Stage 4 rounds may span sessions.
+### W4. Manifest recovered form rests on the transcript layout
+Layout observed on this CLI only; when a role was re-run in a later session the lookup must search all session dirs (stated). No change needed, note for the Plan checker.
 
-### W5. Producer manifest ambiguity blocks writing the AC-4.4 cross-check
-ADR-lmr-005 item 5 says a unit's producer dispatches "are not validators and are not listed". Item 6 says producer ids appear "under a developer role in the S5 producer manifest". Both cannot hold. The PRD AC-4.4 script itself only needs disjoint `Dispatch-Id` trailer sets (which does catch a shared producer/validator id), but the manifest cross-check that item 6 adds cannot be written until the ambiguity is resolved. Plan must pick one.
+### W5. Step 9 ordering
+ADR-lmr-005 step 9 says the spend check runs "again at step 1" though it is listed last, and it reads the S5b reports in `${TMPDIR:-/tmp}/smoke-out`, which may not persist between the S5b dispatch and the ship session. Copy the spend log into the S5b commit trailer or a tracked note, or state the dir must persist.
 
-### W6. Live-paid steps: owner and aggregate budget not pinned
-- S5a fixture capture (about $0.04) is authored by the validator dispatch per PRD FR-5.10, but no `--max-budget-usd` is required for that ad hoc capture. Only the runner path has the cap.
-- S5b (about $15, five samples at a $3 hard cap each) is placed in Stage 7 (P1, unresolved "needs Plan confirmation"). No role is named as the executor. UAT roles are qa, devops, po, tech-writer. The S5b manifest lists validators, not the executor.
-- $3 x 5 = $15 equals the NFR-2 envelope. `--init-baseline` aborts on any non-zero exit (loop-3 F9) and there is no cumulative ceiling or retry limit, so one abort plus a re-run overspends with no rule to stop it. The layer-2 post-check is per sample.
-- G5 closing ACs (5.4, 5.5, 5.5c, 5.6) move to UAT under this design; Stage 6 DoD cannot pass them. Plan must record that, or Stage 6 stalls.
-S7b is clean (devops, different dispatch, no live `claude`). Plan fix: name the S5b executor role, give a total spend ceiling and max attempts, require `--max-budget-usd` on the fixture capture, and state the human consent point for paid spend.
-
-### W7. Per-unit manifests do not enforce the stage cap the shipped prose states
-The S2 block rewrite says `dod_validators.<stage>` is "the cap: at most that many subagents per stage". ADR-lmr-005 bounds each manifest to `N <=` list length, but per-unit and per-round manifests multiply. Over-spawning across units in one stage (for example S5b + S7 + S7b in `07-uat`, each up to 4) is not detected. Reconcile the wording ("per DoD checkpoint") or add a per-stage total.
-
-### W8. Smaller items
-- Guard false positives ("on 6.8 kernels", "with 4.7 V rail", "the 4.7 uF cap", `claude-plugins-v2`) are documented as accepted, but no fixture pins them as known-hit, so a later pattern change flips them silently, and AC-1.2a has no must-pass string for hardware-team style prose. Add them as `known-fp` fixtures. S1 whole-tree run (P5) is the only check; the tree has none today so no rework is expected.
-- AC-1.6b tests only the `pin` category with the marker text. A marker exemption added to the `prose` or `stamp` rule would not be caught. Add one prose-shaped and one stamp-shaped bypass case.
-- AC-4.4 `validator_start` and `validator_end` come from `s5-separation.txt`, written by the orchestrator. Add a derived check: `validator_start` equals the parent of the first validator commit, and `validator_end` equals the last validator commit.
-- Loop-3 residuals R-1 (uniform `latest` stamp on 22 unreviewed files) and R-2 (non-`.md` version words pass Rule B) stay open and are owned by PO. Not verifiable by any AC. Confirmed acceptable as recorded.
-
-## Traceability check (PRD AC to design path)
-
-| Area | Verifiable path in design | Status |
-|---|---|---|
-| Guard AC-1.1..1.6b, 1b, 1.2c | ADR-lmr-002 D1-D8, fixtures both engines, hook temp-repo test (P4 to Plan) | OK, see W1, W2, W8 |
-| Stamps, prose, budgets AC-2.x, 3.x, 6 | ADR-lmr-003 line math with scratch simulation, ledgers, stagger | OK, R-1 stays |
-| Smoke AC-5.x, parser fix for `unknown` | ADR-lmr-004 sections 1-5, real-shape fixture, capture failure classes | OK except B1 and W3 |
-| Red-first, P0 stub AST check | ADR-lmr-004 section 6 | BLOCKED by B1 |
-| AC-DISP dispatch manifests | ADR-lmr-005 items 1-6 | Checkable, see W4, W5, W7 |
-| Ship gate steps 0-9, S7b | ADR-lmr-005 item 8, exit-status forms, out-of-tree log | OK; residual RR-1 detect-only, accepted with owner |
-| BINDING-4.5 separation | order plus trailers plus manifest ids | Enforceable as order and fusion control; authorship self-declared (accepted limit F9) |
-| S5a/S5b/S7b split | architecture.md section 5 | Ownership and budget gaps, W6 |
+### W6. Carried, unchanged
+R-1 (uniform `latest` stamp on 22 files), R-2 (non-`.md` version words) and P1, P2, P16, P21, P22 stay open with PO as owner. Stage 6 cannot pass G5 closing ACs if baseline capture sits in Stage 7 (recorded in Plan-carry 4). Accepted as recorded.
 
 ## Verdict
 
-NOT_DONE: 1 blocking (B1). After the small fix in ADR-lmr-004 section 2/6, the design is DONE for Stage 4 with W1-W8 carried to Plan as AC text.
+NOT_DONE: 1 blocking (B2). Text-only fix in ADR-lmr-004 section 6 item 1b and the P0 stub scope; after that the design is DONE for Stage 4, W1 to W6 carried to Plan as AC text.

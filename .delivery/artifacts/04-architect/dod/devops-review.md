@@ -1,15 +1,17 @@
 ---
 verdict: DONE
+round: 2
 role: devops
 stage: 4-architect
 run: run-2026-05-28-o48m
 backlog: BACKLOG-108
+reviewed_commit: 0bd698b
 blocking_issues: []
 ---
 
-# DevOps DoD review, Stage 4 (rev 3)
+# DevOps DoD review, Stage 4 (revision 4, round 2)
 
-Design operable. No blockers. Four warnings.
+Rev 4 snippets and guard rules work. Exit-status safe. No blockers. Three warnings.
 
 ## Blocking issues
 
@@ -17,29 +19,33 @@ None.
 
 ## Checks and evidence
 
+Scratch dir `$CLAUDE_JOB_DIR/tmp/r` (test scripts `t.sh`, `t2.sh`). The real guard script does not exist yet, so I used a stand-in that follows ADR-lmr-002 D9 exactly (`git ls-files --cached --others --exclude-standard -z`, `shell=False`, NUL split, skip non-regular files, `files-scanned K` before the summary, exit 2 on empty scope or listing failure).
+
 | Check | Result | Evidence |
 |---|---|---|
-| Guard triggers `push:main` + `pull_request` + `workflow_dispatch`, no `paths:` | OK | ADR-lmr-002 D7. Current file is `pull_request` + paths only (read). Rewrite needed and correct: direct push has no PR. |
-| `push:main` on `skill-line-budget.yml` (U12) | OK | Current file `on: pull_request` + paths (read). Checker reads `PR_BODY` via `os.environ.get` default empty (ADR-005 item 8). Existing `env:` use is not in `run:`. |
-| Push trigger collision with other workflows | OK | `version.yml` already `push: branches:[main]`; `release.yml` on `tags: v*`. Multiple push-main workflows already coexist. |
-| workflow-injection-lint compliance | OK | Lint scans `run:` blocks for `github.event.*` (workflow-injection-lint.yml lines 20, 60). New guard job runs one script, no event interpolation. |
-| No `claude` CLI in `.github/workflows/` | OK | `grep -rn "claude " .github/workflows` shows no invocation. Guard is static python scan, AC-1.3 forbids it. Smoke harness (`claude --print ...`) is local only (arch line 104). |
-| Ship gate exit logic | OK | Reproduced in scratch repo: `grep -c` form prints 0 with rc=1 (clean case would wrongly fail); `grep -q` negated form rc=1 on clean tree, so `! ... grep -q` succeeds. Design uses the `-q` form. `git rev-list --count HEAD..HEAD` prints 0 rc=0 (bare count always rc 0), so `test "$(...)" = 0` wrapper is required and is used. |
-| Pathspec `-- . ':!.claude/worktrees'` | OK | Scratch repo with nested worktree: raw status printed `?? .claude/worktrees/w1/`; pathspec form printed nothing; added stray file `b` then printed `?? b`. Matches ADR claim. |
-| Block A/B ordering | OK | A (per-commit trailers, `--is-ancestor`) must precede squash; B after final commit and squash, before push, in main checkout. Single teed log outside repo (no dirtying step 2). Logical. |
-| hooksPath install/log | OK | Existing `.githooks/pre-commit` header documents `git config core.hooksPath .githooks`. Design (P23, F14) requires install command plus `hooksPath=` log line, and states hooks inert otherwise. |
-| Hooks advisory unless `MODEL_PIN_STRICT=1` | OK | D8 reference code: `pin_rc=0; ... || pin_rc=$?` survives `set -euo pipefail`; blocks only when strict. Existing budget checks stay blocking (`.githooks/pre-commit` lines 28-45); new call goes before the final OK line. Pre-push is strict for main only, passes other refs. |
-| Live `--init-baseline` 5x budget | OK with W2 | 5 samples x `--max-budget-usd 3.00` = $15 ceiling (arch line 104). Aborts on any non-zero exit, so failed samples never averaged (ADR-004 s4/s5). Distinct session_id and hashes required. Baseline comparison disabled during init. Runs in Stage 7, after UAT plan confirmation. |
-| RR-1 detect-not-prevent | Accepted | Honest: pin can land on main; detection by S7b clean-clone re-run and push workflow, both post-push. Owner PO, revisit triggers stated, remedy fix-forward (no force-push). Fits BINDING-5.1 (no PR). |
+| `-z` with non-ASCII plus newline filename | OK | Name `café nu<LF>l.md`. Plain `git ls-files` prints it quoted as `"caf\303\251 nu\nl.md"` (would fail to open, so fail-closed exit 2 rather than silent skip). With `-z` it is one entry and was scanned (`files-scanned 3`). |
+| Non-UTF-8 filename | OK | `bad\xff.md` scanned via surrogateescape, rc 0. Unreadable or undecodable file CONTENT is the fail-closed case per D9. |
+| Nested worktree in scope | OK | `--others` lists `.claude/worktrees/w1/` as a directory entry; the non-regular-file skip drops it. `files-scanned` did not count it. Matches ADR-005 claim. |
+| Step 4 own-rc capture | OK | `( set -euo pipefail; rc=0; out=$(guard) \|\| rc=$?; ... )` printed `step=4 exit=0` and the summary regex `^guard-scope hits [0-9]+ files [0-9]+$` matched. `\|\| rc=$?` survives `set -e`. |
+| Step 5 extraction, clean tree | OK | `canonical_count` (`tail -n 1 \| awk '{print $3}'`) = `0`; `script_list_count` (`awk '/^(pin\|stamp\|prose) /{n++} END{print n+0}'`) = `0`, awk rc 0 on empty input. `files-scanned` and the summary line do not match the hit-line regex. |
+| Step 5 extraction, one hit | OK | `cc=1 sc=1`, guard rc 1 (allowed set 0 or 1). Field 3 of `guard-scope hits N files M` is N; correct. |
+| Canary | OK | Fresh `mktemp -d` clone plus untracked `canary.md` with synthetic pin: rc 1, `pin canary.md:1` listed, `files-scanned 4`. After delete: rc 0. Untracked file is caught because of `--others`. |
+| Scan-nothing | OK | Empty repo: rc 2, no summary printed. Run outside a repo: rc 2 with stderr. Missing script (`python3 nope.py`): rc 2 (127 only if python itself missing). Both fail step 4 by the rc rule. |
+| Hooks `-z` / `xargs -0` | OK | `git ls-files -z -- '*.md' \| xargs -0 -r wc -l` works on the odd-name repo. |
+| Workflow `permissions:` and `persist-credentials` | OK | `permissions: contents: read` at workflow level is valid (existing `stale-model-id-guard.yml` and 8 other workflows already do it). `persist-credentials: false` is a valid `with:` input of `actions/checkout@v4`. Parsed a sample YAML with `push`/`pull_request`/`workflow_dispatch` plus those keys: valid. Guard needs no token; only local `git ls-files`, so no credential is needed with the default depth 1. |
+| No `claude` in `.github/workflows/` | OK | `grep -rnE '(^\|[ ;\|&(])claude( \|$)' .github/workflows` = no hits. Only matches are `.claude-plugin/` paths and model-ID text in the old guard. Rev 4 ADR text adds only Python and shell steps; smoke harness stays local (feedback rule respected). |
+| Ship-gate hazard rules (rev 2/3 items) | OK, unchanged | `test "$(...)" = 0` wrappers and `grep -q` negation still present in steps 1, 2, 9. |
+| `MUST NOT exceed` vs PRD AC-2.5 | OK | Ran the AC-2.5 regexes on the 4 new block lines: `cond` True (When ... latest Opus, 48 chars gap, limit 80); `cap` True (line 3 has `dod_validators`, `at most`, `subagents`). Block stays 4 lines replacing shipped lines 273-276 (current text at SKILL.md 272-276), so 499 lines unchanged and Tier A budget (500) holds. |
+| `check_skill_budgets.py` and cache-prefix (ADR-lmr-001) | OK | Checker has no reference to `MUST`, `equal` or `dod_validators` (grep). No script consumes the prose. Edit sits past byte 2048, so the telemetry prefix hash (`PREFIX_READ_BYTES = 2048`) is unaffected; the whole-file `governance/cache-prefix-hash.txt` changes as designed and S6 recomputes it (rev 4 states no hash pinned by the reword). |
+| Round-1 warnings W2, W3, W4 | Resolved | W2: aggregate `spent <= 15.00` check plus operator go (ADR-005 step 9, ADR-004 s8). W3: no exception route on push; `known_debt[]` with `target_wave:` committed before ship. W4: squash to one push, never push S1-S3 alone. |
 
 ## Non-blocking warnings
 
-- **W1, hook bypass is total.** `--no-verify` and unset `core.hooksPath` skip both hooks; only S7b and push workflow remain, both post-push. This is RR-1 by design. Suggest adding `hooksPath=` value to the S7 log as required (already planned) and treating an empty value as a logged waiver, not a pass.
-- **W2, $15 is a per-sample cap, not an aggregate cap.** `--max-budget-usd` is checked between turns (P12, UNVERIFIED), so a sample can overshoot slightly; layer-2 post-check covers NFR-1 per run. Recommend the init flow also sum `total_cost_usd` and abort before sample n+1 if running total exceeds 5 x cap, and require an explicit go from the operator before the paid run. Non-blocking: worst case is a small overshoot of ~$15.
-- **W3, budget workflow push has no exception path.** `Budget-Exception:` lives in the PR body, absent on push. Correct for direct push, but any known-debt change made by direct push will show red. Zero exceptions needed today (ADR-005). Plan should state this.
-- **W4, WIP branch red.** From S1 to S4 the new guard workflow (pull_request and any pushed non-main branch is not triggered, since push is main only, but a PR would be) is red by design. Ship squashes S1 to S7 in one push, so main never goes red. Fine; keep that squash rule in the plan.
-- P19 (Makefile and `.githooks/*` outside guard scope) is a latent hole, owned by PO; not a DevOps blocker.
+- **W1, step 5 depends on `--list` hit-line prefixes.** The count regex hardcodes `pin `, `stamp `, `prose `. A new category name in the script silently drops out (count 0 vs summary N), which fails the equality check loudly, so it is safe, but the Plan AC should pin the three prefixes in a fixture test.
+- **W2, `spent` extraction not specified.** ADR-005 step 9 says sum `total_cost_usd` over reports but gives no snippet. Plan should give a python one-liner that fails on a missing or null field (missing = failure, not 0). Same exit-status trap class as `grep -c`.
+- **W3, workflow checkout tag is floating (`@v4`).** Consistent with all existing workflows; not a blocker. Optional: pin by SHA later.
+- Carry-over from round 1, unchanged: W1 hook bypass (RR-1, accepted), P19 Makefile/`.githooks/*` outside scope.
 
 ## Verdict
 
-DONE. 0 blocking issues, 4 warnings.
+DONE. 0 blocking issues, 3 new warnings.
