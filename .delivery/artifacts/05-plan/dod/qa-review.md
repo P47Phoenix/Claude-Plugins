@@ -1,55 +1,55 @@
 ---
-verdict: NOT_DONE
+verdict: DONE
 run: run-2026-05-28-o48m
 stage: 5
 role: qa
+round: 2
 reviewer_note: skill delivery-team:qa unknown in this session; role applied from brief
-blocking_count: 3
-warning_count: 7
+blocking: []
+blocking_count: 0
+warning_count: 8
 ---
-# QA DoD review, Stage 5 Plan (BACKLOG-108)
+# QA DoD review, Stage 5 Plan (BACKLOG-108), round 2
 
-Prose: caveman-lite. Read: plan.md, stage-summary.md, PRD, ADR-lmr-004 (P0 rules 1a..1d, red-first), ADR-lmr-005 (items 1..9).
+Prose: caveman-lite. Read: round-1 review, plan.md rev 2 (changelog, 5.9, PA-1..PA-27), ADR-lmr-004 lines 76 and 109.
 
 ## Verdict
-NOT_DONE. Plan is strong: id matrix complete, PA ACs mostly have observable results, red-first and P0 rules faithfully carried. Three gaps let a requirement go unmet while checks pass. All cheap to fix in plan text.
+DONE. B1, B2, B3 closed. No new blockers. Eight warnings, all fixable by Stage 6 validators or a one-line plan edit.
 
-## Blocking issues
+## Round-1 blockers
 
-B1. PA-15 (AC-5.5c) lets distinctness fail soft.
-- PA-15 says: no `message.id` and no `uuid` fallback -> "report WEAKENED, never silent". Plan gives WEAKENED no pass/fail consequence. S5b validator (qa) can PASS AC-5.5c with WEAKENED, so five identical or fabricated streams pass. PRD AC-5.5c is a hard check; plan thins it (D15 says PA supersedes).
-- Fix: WEAKENED = AC-5.5c FAIL at UAT unless PO writes a waiver in `07-uat/`; UAT DoD checks for that file.
+B1 PA-15 WEAKENED: CLOSED.
+- PA-15 now: WEAKENED = FAIL of AC-5.5c at UAT. Only exit is dated PO file `07-uat/ac-5.5c-waiver.md`; UAT DoD checks for the file. Command `check_distinct.py <baseline_or_streams>`: `AC-5.5c OK` rc 0, `WEAKENED` rc 1. Fail path is real.
+- Prototype (scratch): 5 streams with non-overlapping `message.id` sets -> disjoint True; 5 identical copies -> overlap detected (disjoint False). Logic is cheap and does what PA-15 claims.
+- W-A below asks for the negative case to be a required test.
 
-B2. Stage 6 skip list leaves baseline writer code untested until the paid run.
-- D1a defers AC-5.1, 5.4, 5.5, 5.5c, 5.6 to UAT. Stage 6 tests cover only parser, command, consistency failures (5.4b, 5.5b) and abort-on-nonzero (PA-18). No S5a AC runs `init_baseline` end to end on fixture streams (runner stubbed, no `claude`) and asserts the AC-5.1 keys (`tokens.cache_hit_ratio`, `model_usage.*`, no `unknown`), `model_requested`/`model_resolved`/`model_pin_env`/`host_context`, `samples[]` with `stream_sha256`, `hard_max` 3.0. First real exercise of that code is the $15 UAT run.
-- No re-entry path: if S5b fails, code defect found after Stage 6 DoD "DONE". Plan silent on returning to S5a (red-first, fresh validator, DoD re-run) and S6 re-freeze.
-- Fix: add PA (S5a) dry-run of `init_baseline` on the real-shape fixture x5 copies (mocked runner) with the AC-5.1/5.4/5.5c snippets pointed at the temp baseline, expected `OK`. Add a rule: S5b defect reopens S5a under 5.3 rules and repeats H2 only for re-runs.
+B2 baseline writer untested: CLOSED.
+- PA-24 runs `init_baseline` end to end on 5 validator-rewritten fixture copies, stub `claude` via PATH shim, temp baseline path, no spend (NFR-9 stated). Expected `DRYRUN OK` rc 0 with the AC-5.1/5.4/5.5c key list; injected non-zero outcome -> `DRYRUN ABORT_OK` and no file written; injected costs past ceiling -> `DRYRUN CEILING_OK` rc 3. Exercises abort and aggregate logic. Matches ADR-lmr-004 line 76 (a copied stream is rejected by init) and line 109 (ceiling rule).
+- Re-entry rule 5.9 closes the loop: fix story back in Stage 6 (red-first if S5a code), Stage 6 DoD re-run on touched files, cache re-freeze if SKILL.md changed, PA-24 re-run if baseline/runner/report changed, aborted runs still count toward $15.00 and 7 runs, re-run past 5 needs fresh H2, prose change invalidates baseline (P6). Complete.
+- Spend arithmetic prototype: `spent + 3.00 > 15.00` gives False at 12.00, True at 15.00 with 5 x 3.00 (so a 6th run is only legal when earlier runs cost less than cap; H2b text is true). Float sums of 0.1/2.9 combos showed no false stop, but see W-D.
 
-B3. PA ACs are not all concrete; numbering gap.
-- No PA-9 (list runs PA-8 -> PA-10). Either dropped AC or typo; carry item could be lost. Plan must say which.
-- Self-check (section 6, qa row) admits "PA text is prose, validators write the runnable snippets". Several have no command and no expected output: PA-8 (whole-tree run "lists hits", no pass value), PA-12 (points to a section, not a command; "real checker written by the validator"), PA-22 (no check for the max-7-runs or wall ceiling), PA-13 ("cross-checked" without stating the pass output).
-- Fix: for each PA give the command form and the exact expected line or rc, or state that Stage 6 QA must publish snippets in the S-unit report before the producer starts (and QA reviews them at the red step).
+B3 PA commands and gap: CLOSED.
+- PA-9 exists (hooksPath install + log, expected `.githooks`). Numbering is now contiguous PA-1..PA-27 plus PA-13b.
+- Commands with expected output present: PA-8, 9, 12, 13, 13b, 14 (`FIXTURE_HASH MATCH`), 15, 22, 23, 24, 25, 26, 27. Verified `comm -12 <(...) <(...) | wc -l` (bash) and `grep -vc` print counts as claimed.
+- PA-1..PA-7, 10, 11, 16..21 are AC statements with observable values but no literal command. Per brief, checker scripts and snippets are Stage 6 validator work; each is falsifiable (rc values, exact lines, counts). Not a blocker.
 
 ## Warnings
+W-A. PA-15/PA-24: add a required negative test. `check_distinct.py` on 5 identical copies (and on a stream set with no `message.id` and no `uuid`) must print `WEAKENED` rc 1. PA-24 only shows the OK path. Else a permissive checker passes.
+W-B. PA-7 files-scanned floor. "K equals the tracked scanned-file count pinned from the baseline" will fail legitimately: S1 adds scripts and hook files; S5a adds `.py` files (in scope extensions) after the baseline. Also PA-8 says `base-sha.txt` line 1 is a 40-hex sha but does not say where the count lives (line 2?). Fix: K must equal the live `git ls-files -z` filtered count at run time, and the base count is only a floor (K >= base). State the file line. Also PA-7 opens with odd prefix "(Guard hardening, see below; hook install is PA-9) Guard hardening:". "see below" points nowhere; cosmetic, delete it.
+W-C. PA-9 is not in the section 3.1 matrix row for S1 (only PA-6, PA-7 cited under FR-7.3) and no PRD FR owns it. Add PA-9 to an S1 row so the story-to-AC map stays complete.
+W-D. PA-22 spend arithmetic on floats. Use `Decimal` (or cents ints) in `spend_check.py`; float sums of cent-level costs can land at 15.000000000000002 and stop a legal run, or the reverse. Also `spend_check.py` (PA-22) and the harness snippet (PA-16) are two implementations; PA-24 `CEILING_OK` should call the same `spend_check.py`, not a separate path. State that.
+W-E. Checker location. PA-12/13/15/22/24 use `tests/...` with no root. Say `delivery-team/tests/smoke/tests/` and list `check_p0_gate.py`, `check_red_first.py`, `check_distinct.py`, `spend_check.py`, `dry_run_baseline.py` in the S5a validator file scope (currently only test_model_capture.py and fixture named). `spend_check.py` is consumed by S5b, so QA should publish it in the S5a report before H2.
+W-F. PA-24 exit-code contract: "`DRYRUN OK` rc 0", "`DRYRUN CEILING_OK` rc 3" for one script. Say one invocation runs all three sub-cases and returns 0 only if all print their expected token (or use `--case` flags). Otherwise the single command line in PA-24 cannot produce both rc 0 and rc 3.
+W-G. PA-21 in S7b: the fresh clone of `origin/main` has no `~/.claude/projects` transcripts and lacks the S7b manifest (H4 commit is after). Checker must take the transcript slug tree from the original project path and treat S7b's own manifest as written out of the clone. State this so `SKIPPED layout-drift` (= FAIL for S7b) is not tripped by topology.
+W-H. Carried round-1 W2/W3 residue: PA-12 negative self-test is present (fixed). PA-13 checker also has "its own negative self-test as PA-12". Fine. Note only: PA-27 greps saved prompt files, which the orchestrator writes; it is a floor, not proof the agent loaded the skill. Acceptable for light stage.
 
-W1. AC-DISP transcript check can pass on typed ids. PA-21/ADR-005 item 8: layout drift prints `TRANSCRIPT_CHECK=SKIPPED layout-drift <id>` and "never fails the ship on its own". Non-recovered manifests (Stages 5..7) are then unverified. Require: SKIPPED on any Stage 6/7 manifest needs PO note in S7b report, or fail S7b.
-W2. PA-1 `files-scanned K > 0` is a weak floor. A guard that scans 1 file passes. Add K equals count of tracked in-scope files (`git ls-files -z` filtered by the six extensions) or a floor.
-W3. Guard-gate checker for P0 (PA-12) authored by validator with no negative self-test required (PA-21 has one, PA-12 does not). A permissive checker passes any P0. Require the ADR experiments (computed key, method added, real impl in stub) as self-tests: each must FAIL the checker.
-W4. Producer/validator disjointness is enforced only for S5a (PA-13). Section 2 says "differs on every row" but no AC checks trailer sets for S1..S4, S6. Add one snippet: producer `Dispatch-Id` set disjoint from manifest ids per unit.
-W5. S1 file scope lists `scripts/model_pin_fixtures.json` under the producer, while the validator "independent fixtures" are also required. If the producer owns AC-1.2a fixtures (>= 25/10/15/12 strings) the guard passes its own tests. State who authors must-hit/must-pass strings; validator owns them.
-W6. Fixture genuineness. H1 capture is real, but nothing checks the committed `stream_real_shape.jsonl` is that capture (hand-edited files pass PA-14 and PA-15 presence). Add: sha256 in provenance equals file hash, and provenance carries the exact capture command; QA verifies at H1 time.
-W7. FR-1.4 and FR-2.4 close by "inspection" of the dispatch report (self-reported acknowledgement). Acceptable for light stage, but note as floor only; commit trailer or dispatch-prompt grep is cheap.
+## New contradictions from revision
+- None blocking. S8, H6, H4-FAIL, PA-25/26 consistent: H3 covers ship push, H6 covers corrective push, H4 only on S7b PASS; PA-26 `UNVERIFIED manual` = FAIL matches H4-FAIL branch.
+- H2 "up to 5 samples" vs 7 runs: consistent via PA-22 and section 5.6.
+- Section 6 self-check says PA-8/12/13/22 fixed and PA-9, 13b, 23..27 added: matches the plan body.
+- Gate protocol 1.4 vs PA-23: consistent (`operator_go:` line, `blocked_on: H<n>`).
 
-## Two ways a plan-level check passes while a requirement is unmet
-1. AC-5.5c: five identical copies of one real stream, no `message.id`, no `uuid`: PA-15 reports WEAKENED, S5b qa records "reported, not silent", UAT passes. NFR-6 (five independent samples) unmet. (B1)
-2. Stage 6 DoD DONE for G5: parser and fixture tests green, `init_baseline` never run end to end; a writer that omits `samples` or `model_pin_env` only shows at the paid run, after ship-readiness is declared. AC-5.1/5.5 are then judged on a baseline produced by the same untested code. (B2)
-3. AC-DISP: an executor types ids in a Stage 6 manifest; CLI layout changes; check prints SKIPPED layout-drift, ship proceeds. (W1)
-4. Guard: rc check and canary pass while `files-scanned 3` because a listing bug filters to 3 files; real pins elsewhere never seen. (W2)
-
-## Evidence (checked)
-- PRD AC ids vs plan matrix (grep): every PRD AC appears in plan sections 3.1/3.2. Parents `AC-2`, `AC-5`, `AC-1.6`, `AC-S3` are group or docstring ids, not gaps. `AC-3.x`, `AC-4.x` in the plan are shorthand for listed ids.
-- D1a skip list matches PRD reading: AC-5.1 (line 508) reads baseline; correct to defer; but see B2.
-- Red-first: PA-13 and section 5.3 match ADR-lmr-004 items 1a..1d and void-types list; hard-coded-constant case covered by "every test FAILED".
-- PRD AC-2.3b PASS-verdict requirement stays in force (plan does not amend it).
-- Story to validator to stage mapping: every story has a validator role differing from producer role; separation observable only for S5a (W4).
-- Stage 6/7 exit lists G5 partial then closed at UAT: consistent.
+## Evidence
+- Prototype (python3, scratch): distinctness on disjoint vs identical `message.id` sets; spend check arithmetic incl. Decimal comparison; bash `comm -12` and `grep -vc` behaviour.
+- ADR-lmr-004 line 76 (WEAKENED wording, copied-stream rejection) and line 109 (ceiling, 7 runs, extraction snippet) agree with PA-15, PA-16, PA-22, PA-24.
+- Plan changelog (section 7) matches actual edits for QA B1..B3.

@@ -1,0 +1,7 @@
+expected_validators: 5
+# provenance: transcript-recovered
+architect	acdab9327e49a8dff
+qa	a3d3b4f80eec56912
+developer	a6e5f40c962eee6e9
+devops	a828b2a1681637b4e
+security	a3ca9a348c0063237

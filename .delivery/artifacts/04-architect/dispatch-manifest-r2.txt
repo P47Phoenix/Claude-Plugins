@@ -1,0 +1,4 @@
+expected_validators: 2
+# provenance: transcript-recovered
+qa	af5ce7ab9d3f3ad9d
+devops	ad355f096ab6b60a2

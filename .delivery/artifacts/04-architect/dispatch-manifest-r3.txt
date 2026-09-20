@@ -1,0 +1,3 @@
+expected_validators: 1
+# provenance: transcript-recovered
+qa	a409151321bd87758
