@@ -1,6 +1,6 @@
 # ADR-lmr-001: Cache fingerprint scope and one-time re-freeze
 
-- **Status**: Proposed (flips to Accepted when Stage 4 DoD passes)
+- **Status**: Accepted (Stage 4 DoD passed 2026-09-20: architect, developer, devops, security, qa all DONE)
 - **Date**: 2026-09-20
 - **Run**: run-2026-05-28-o48m, BACKLOG-108 (latest-model references)
 - **Owner**: Solution Architect (PRD FR-6.2, BINDING-5.5, OQ-3)
@@ -88,4 +88,4 @@ Byte-arithmetic rule for the S6 developer: run the commands, do not estimate. Th
 
 ## Status rationale
 
-Proposed, not "Accepted (contingent...)". It becomes Accepted when the Stage 4 DoD validators pass; no contingency clause exists.
+Accepted (Stage 4 DoD passed 2026-09-20), not "Accepted (contingent...)"; no contingency clause exists.

@@ -1,6 +1,6 @@
 # ADR-lmr-003: Central tier alias, stamp convention, and line-neutral edit math
 
-- **Status**: Proposed (flips to Accepted when Stage 4 DoD passes)
+- **Status**: Accepted (Stage 4 DoD passed 2026-09-20: architect, developer, devops, security, qa all DONE)
 - **Date**: 2026-09-20
 - **Run**: run-2026-05-28-o48m, BACKLOG-108
 - **Owner**: Solution Architect (PRD FR-3.2, FR-3.3, FR-4.1, FR-4.6, FR-2.5, FR-2.6, convention items 1 to 4, OQ-11)
@@ -102,4 +102,4 @@ Rollout check (memory lesson: any ADR adding lines to ALL files must verify at-c
 
 ## Status rationale
 
-Proposed until Stage 4 DoD passes; then Accepted.
+Accepted (Stage 4 DoD passed 2026-09-20).

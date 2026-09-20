@@ -1,6 +1,6 @@
 # ADR-lmr-002: Model-pin guard design (single script, no exemptions, local gate)
 
-- **Status**: Proposed (flips to Accepted when Stage 4 DoD passes)
+- **Status**: Accepted (Stage 4 DoD passed 2026-09-20: architect, developer, devops, security, qa all DONE)
 - **Date**: 2026-09-20
 - **Run**: run-2026-05-28-o48m, BACKLOG-108
 - **Owner**: Solution Architect (PRD S1, FR-1.1 to FR-1.6, BINDING-0.3, BINDING-5.1, BINDING-5.2)
@@ -107,4 +107,4 @@ The PRD already decided the shape (Decisions Already Made: one script, five cons
 
 ## Status rationale
 
-Proposed until Stage 4 DoD passes; then Accepted. No contingency clauses.
+Accepted (Stage 4 DoD passed 2026-09-20). No contingency clauses.

@@ -1,88 +1,68 @@
 <!-- run: run-2026-05-28-o48m -->
 ---
-verdict: NOT_DONE
-round: 2
+verdict: DONE
+round: 3
 role: qa (DoD validator, fresh reviewer)
 stage: 4 Architect (light)
 run: run-2026-05-28-o48m
 backlog: BACKLOG-108
-blocking_count: 1
-warning_count: 6
-inputs: architecture.md rev 4, ADR-lmr-001..005, round-1 review, real lib/ sources
+blocking_count: 0
+warning_count: 4
+inputs: architecture.md rev 5, ADR-lmr-004 s2 and s6 (1a..1d), ADR-lmr-002 D9, ADR-lmr-005, round-2 review
 note: delivery-team:qa skill failed to load (unknown skill); role applied from the task brief.
-experiment: $CLAUDE_JOB_DIR/tmp/exp (gate.py, mk.py, setup.py, p0/tests/test_red.py, junit.py)
+experiment: $CLAUDE_JOB_DIR/tmp/exp (gate2.py, mk2.py, red2.py, re-run) and tmp/qa3/adv.py (my own adversarial P0s)
 ---
 
-# QA DoD review round 2: Stage 4 design, BACKLOG-108
+# QA DoD review round 3: Stage 4 design, BACKLOG-108
 
-Short version. B1 as I wrote it is fixed: a correct stub now passes the AST gate and gives the two allowed failure markers. But the rewritten rule 1b(ii) and the P0 stub scope do not match the real code, so one new blocking gap remains (B2, same defect class: P0 rule cannot carry what the tests need). Four "pass while unmet" holes are closed in design. Small fix again.
+Short version. B2 closed. No blocking gap found. Correct P0 passes gate and gives only permitted red markers. Wrong P0s I built either fail the gate or fail the red run. Gate has holes (decorator, module-level statement, signature default), but red run covers each one. Warnings only.
 
 ## Blocking issues
 
-### B2. P0 stub rule cannot carry `tokens.cache_hit_ratio` or the new `Metrics` fields (ADR-lmr-004 section 6 item 1b, section 2, section 1 item 6)
+None.
 
-Evidence from the experiment (real `lib/report.py` and `lib/metrics.py` copied to scratch; gate coded from 1a to 1c; pytest run against a gate-passing P0).
+## B2 closure check
 
-1. Rule 1b(ii) names "the single assignment `metrics["tokens.cache_hit_ratio"] = ...`". In the real `build_report` there is no such assignment target. `metrics` is the `Metrics` dataclass parameter, and the report is one returned dict literal with a nested `"tokens"` dict; `tokens.cache_hit_ratio` is resolved by `baseline._extract_metric` as `report["tokens"]["cache_hit_ratio"]`. Results:
-   - `A_top_only` (six pinned keys, constants): gate PASS. But `report["tokens"]["cache_hit_ratio"]` is absent, so a test that reads it fails with `KeyError`, which VOIDS the red evidence.
-   - `A_with_nested` (also adds `"cache_hit_ratio": 0.0` inside `tokens`, the only natural way to carry it): gate FAIL, `body differs after strip`. A correct P0 fails the gate.
-   - `B_assign` (literal `metrics["tokens.cache_hit_ratio"] = 0.0` as the rule says): gate PASS, but at runtime `Metrics` is not subscriptable: `TypeError: 'Metrics' object does not support item assignment`. A dev who follows the text literally breaks every `build_report` call.
-2. Section 1 item 6 adds `model_primary`, `models_observed` and `tokens.cache_hit_ratio` to `Metrics`. Nothing pins them at P0: not in the section 2 tables, not in the 1c new-symbol list (1c covers top-level names and functions, not fields of an existing class). Test `parse_stream(...).model_primary == ...` at `validator_start` fails with `AttributeError: 'Metrics' object has no attribute 'model_primary'` (run, junit message confirmed). `AttributeError` is on the void list.
-3. `model_pin_env` is a report key at P1 (section 2 `build_report` row) but is not in the pinned-key set the gate strips, so a stub adding it fails 1a.
+Re-ran architect's `gate2.py`: correct PASS; computed `session_id` FAIL; computed `cache_hit_ratio` FAIL; edited `cost_usd` FAIL; `metrics[...] = 0.0` assign FAIL; new-fn impl FAIL `not inert`; pre-existing fn body edit FAIL; class method FAIL; non-const field FAIL. Matches ADR text.
 
-What DID work (B1 proper, confirmed by run): with a gate-passing P0, value tests using bare `assert` failed as `AssertionError: ...`, and `pytest.raises(ModelCaptureError)` against an inert `check_model_capture` failed as `Failed: DID NOT RAISE <class ...>`; both are the two permitted markers, both as `<failure>` elements. So the failure-type rule and the "inert, no NotImplementedError" rule are sound.
+Re-ran `red2.py` on correct P0: rc 1, 6 failures, 0 errors. Markers: 5x `AssertionError`, 1x `Failed: DID NOT RAISE`. All permitted.
 
-Effect: Plan cannot write a passing AC for "P0 passes 1a to 1c AND red run clean" for any test touching cache-hit ratio or `Metrics` fields, unless the validator happens to use `.get`/`getattr` (I confirmed `.get(...)` gives `AssertionError`; not stated anywhere).
+Each B2 point:
+1. `tokens.cache_hit_ratio` is now the nested-dict entry (1b(ii)). Correct P0 passes; test reads `report["tokens"]["cache_hit_ratio"]` and fails `AssertionError`. Closed.
+2. `Metrics` fields pinned by 1d. `m.model_primary` and `m.models_observed` fail `AssertionError`, not `AttributeError`. Closed.
+3. `model_pin_env` is in the pinned-key set. Test on it fails `AssertionError`. Closed.
+Also checked ADR s2 table: only `build_report` changes body at P0. Signature-only changes (`_spawn_and_tee`, `compare`, `run_pipeline`) pass 1a because signature is excluded. No correct P0 element found that the gate rejects.
 
-Fix (architect, small, text only):
-- 1b(ii): replace with "the pinned key `cache_hit_ratio` inside the nested `tokens` dict literal, constant value (`0.0`)", and add `model_pin_env` to the pinned-key set.
-- P0 stub scope: list the `Metrics` field additions (`model_primary: str | None = None`, `models_observed: list = field(default_factory=list)`, `cache_hit_ratio: float = 0.0`) as allowed P0 class-body additions with constant defaults, or state the test-writing rule "read new attributes with `getattr(x, name, default)` / `dict.get`".
+## My adversarial P0s (tmp/qa3/adv.py, built on real lib copy, gate = gate2.py, red = 6 tests)
 
-## Attack on the AST gate (wrong P0 that should fail)
+| Variant | Gate | Red run (fails of 6) | Result |
+|---|---|---|---|
+| correct | PASS | 6 | baseline OK |
+| `model_resolved: ["m"]` (const equals test expectation) | PASS | 5, one test PASSES | caught by red |
+| decorator on `parse_stream` (inline lambda, sets `model_primary`) | PASS | 5 | caught by red |
+| module-level `parse_stream = (lambda f: ...)(parse_stream)` rebind | PASS | 4 | caught by red |
+| module-level `Metrics.model_primary = property(...)` (import-time patch, class body untouched) | PASS | 5 | caught by red |
+| `build_report = (lambda f: ...)(build_report)` at end of report.py | PASS | 5 | caught by red |
+| lambda default in `build_report` signature | PASS | 6 | inert, no effect on tests |
 
-| Variant | Gate result | Verdict |
-|---|---|---|
-| `session_id` computed from `metrics` (`metrics.tokens.get("input")`) | FAIL `nonconst pinned value` | caught |
-| existing key edited (`cost_usd ... or 0.1`) | FAIL `body differs after strip` | caught |
-| pre-existing `parse_stream`/`compare`/etc body change | FAIL by 1a (same mechanism) | caught |
-| `model_resolved: ["<fixture id>"]` hardcoded constant | PASS | gate cannot see it; the red run catches it because the value test then PASSES, which fails the "every test FAILED" rule. OK, but the red run, not the AST, is the real control here. |
-| real implementation smuggled into a NEW function (`check_model_capture` reading `metrics.models_observed`, `check_model_consistency` comparing `reports[i]["model_resolved"]`, raising `ModelCaptureError`) | PASS. 1c bans only `message`/`modelUsage`/`total_cost_usd` string literals and `NotImplementedError`; "return inert values" is prose, not an AST check. | see W1 |
-
-## Re-check of the four "pass while unmet" holes
-
-| Hole | Status | Evidence |
-|---|---|---|
-| AC-3.1b ignores rc | CLOSED (design) | ADR-lmr-002 D9 "AC-3.1b caller rules": rc in (0,1), last-line regex, `files-scanned` above 0, `n` equals summary `hits`. Ship step 4 judged on own rc. Plan must write the text (Plan-carry 3 lists it). |
-| Guard scans nothing looks clean | CLOSED (design), see W2 | `files-scanned <K>` line before summary, exit 2 when K is 0 or `git ls-files` fails, fail closed on unreadable files, canary AC. |
-| AC-5.5c five identical streams | CLOSED in ADR text, see W3 | ADR-lmr-004 section 5 and D9: distinct hash, distinct `session_id`, pairwise non-overlapping `message.id`; samples are now the full scrubbed stream so ids exist. |
-| AC-DISP forged ids | CLOSED for recovered manifests; residual accepted | Item 4a fails (no skip) on a missing transcript; item 6 skip only if the whole slug tree is absent, printed loudly; missing id in any session dir fails; S7b always runs it. Role/unit match and self-forgery stay an accepted limit (F9), stated. |
-
-Consistency checks:
-- Guard summary vs `files-scanned`: the LAST stdout line stays `guard-scope hits N files M`; step 5 `tail -n 1 | awk '{print $3}'` still reads N; the `awk '/^(pin|stamp|prose) /'` count does not match the `files-scanned` line. Consistent.
-- Spend numbers: $15.00 aggregate, $3.00 per sample, at most 2 re-runs (7 runs), `--max-budget-usd 0.25` and at most 2 fixture captures ($0.50) agree in ADR-lmr-004 section 8, architecture.md section 5 and changelog, ADR-lmr-005 step 9. The pre-check `spent + 3.00 > 15.00` is the binding limit in practice (7 x 3.00 is 21.00); "whichever hits first" covers it. Consistent.
-- Canary in ship gate: NOT consistent, see W2.
+Every smuggle that changes behaviour makes a red test pass, which violates "every test FAILED". So no wrong P0 passes both gate and red run for behaviour that a test covers. A leak no test covers cannot void red-first evidence for that behaviour.
 
 ## Non-blocking warnings
 
-### W1. 1c "inert" is prose, not a check
-A new function with a real body (no banned literals) passes 1c. Only the red run catches it, and only if a test exercises that function. Add to the Plan AC: new-function bodies must be a single `return <constant>` (or `json.load` for `load_baseline`) checked by AST, or say plainly that the red run is the sole control for new functions.
+### W1. Gate 1a/1c blind spots (red run is the sole catcher there)
+1a excludes decorators and signatures. Rule 1c says new top-level names are limited, but `gate2.py` implements no top-level check, and module-level statements (rebind, attribute patch, import-time side effect) are not gated at all. All four gate-PASS behavioural smuggles above were caught only by the red run. Plan AC should either add: decorator lists and module-level statements equal `base_sha` (plus the allowed new classes and stubs), or state plainly that red run is the control for these.
 
-### W2. Canary is not wired into the gate steps it claims; `files-scanned` rule vs `--paths`
-- ADR-lmr-005 step 4 says the canary "runs in Block A and again in S7b", but Block A step 0 enumerates only AC-2.1, AC-2.5, AC-4.4, AC-5.9b, and S7b "re-runs steps 4, 5, 6 and 7". The canary appears in neither list, so an executor following the step lists skips it. Add it to both.
-- ADR-lmr-002 D9 exits 2 when K is 0. In `--paths` mode with only out-of-scope files staged (a `.json` baseline commit), K is 0, so the pre-commit hook gets rc 2 and blocks under `MODEL_PIN_STRICT=1`. State that the K=0 rule applies to default mode only. D5 (exit 0/1 only) is not updated to mention exit 2. There are also two headings named D9 in the ADR.
+### W2. Architect's hardcode experiment was weak
+`mk2.py` hardcode uses `"claude-opus-fixture"` but the test expects `"m"`, so 6 tests failed there, not the "5 failed, 1 passed" the ADR quotes. My `["m"]` run gives 5 failed, 1 passed, so the claim holds; fix the citation when text is touched. Real validator tests take the expected id from the fixture, so a same-fixture-id hardcode is the case that matters.
 
-### W3. AC-5.5c gaps
-The distinctness rule is not in Plan-carry item 3 (list omits it), and the PRD snippet is unchanged. `message.id` presence is UNVERIFIED (ADR-lmr-004 section 1 item 2 falls back to per-event); if real events carry no id, the disjoint-id check has nothing to compare and no fallback is stated. Add both to Plan-carry.
+### W3. Carried from round 2, still open (Plan AC text)
+- Canary is not in the ADR-lmr-005 Block A step 0 list or the S7b re-run list (step 4 claims it is). Add it to both.
+- D9 `files-scanned` K=0 exit 2 must state default mode only; `--paths` with out-of-scope staged files would block a pre-commit under `MODEL_PIN_STRICT=1`. D5 exit-code list lacks 2; two headings named D9.
+- AC-5.5c distinct-hash/session/`message.id` rule missing from Plan-carry 3; no fallback stated if real events carry no `message.id`.
 
-### W4. Manifest recovered form rests on the transcript layout
-Layout observed on this CLI only; when a role was re-run in a later session the lookup must search all session dirs (stated). No change needed, note for the Plan checker.
-
-### W5. Step 9 ordering
-ADR-lmr-005 step 9 says the spend check runs "again at step 1" though it is listed last, and it reads the S5b reports in `${TMPDIR:-/tmp}/smoke-out`, which may not persist between the S5b dispatch and the ship session. Copy the spend log into the S5b commit trailer or a tracked note, or state the dir must persist.
-
-### W6. Carried, unchanged
-R-1 (uniform `latest` stamp on 22 files), R-2 (non-`.md` version words) and P1, P2, P16, P21, P22 stay open with PO as owner. Stage 6 cannot pass G5 closing ACs if baseline capture sits in Stage 7 (recorded in Plan-carry 4). Accepted as recorded.
+### W4. Carried, unchanged
+Step 9 spend-log ordering wording (now largely fixed by the durable `$SMOKE_OUT` and tracked `s5b-spend.txt`; recheck wording), manifest recovery depends on CLI transcript layout, R-1..R-6 and P1, P2, P16, P21, P22 stay accepted residuals with PO as owner.
 
 ## Verdict
 
-NOT_DONE: 1 blocking (B2). Text-only fix in ADR-lmr-004 section 6 item 1b and the P0 stub scope; after that the design is DONE for Stage 4, W1 to W6 carried to Plan as AC text.
+DONE. 0 blocking. W1 to W4 go to Plan as AC text.

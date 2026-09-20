@@ -1,6 +1,6 @@
 # ADR-lmr-005: Dispatch-manifest shape (OQ-4) and the ship gate
 
-- **Status**: Proposed (flips to Accepted when Stage 4 DoD passes)
+- **Status**: Accepted (Stage 4 DoD passed 2026-09-20: architect, developer, devops, security, qa all DONE)
 - **Date**: 2026-09-20
 - **Run**: run-2026-05-28-o48m, BACKLOG-108
 - **Owner**: Solution Architect (PRD FR-7.3, FR-7.4, AC-DISP, OQ-4; BINDING-5.1, BINDING-5.4; Architect DoD round-2 F5, F8; QA W5)
@@ -78,4 +78,4 @@ Evidence gathered in this stage (commands and files read):
 
 ## Status rationale
 
-Proposed until Stage 4 DoD passes; then Accepted.
+Accepted (Stage 4 DoD passed 2026-09-20).

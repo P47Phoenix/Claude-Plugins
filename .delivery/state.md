@@ -4,8 +4,8 @@ status: in_progress
 project_type: FEATURE
 detected_at: 2026-05-28
 force_type: FEATURE
-current_stage: 4
-stages_completed: [1, 2]
+current_stage: 5
+stages_completed: [1, 2, 4]
 stages_skipped: [3]
 human_checkpoints_passed: []
 final_verdict: null
@@ -30,6 +30,9 @@ artifacts:
   idea-brief: .delivery/artifacts/01-idea/po/idea-brief.md
   prd: .delivery/artifacts/02-refine/po/prd.md
   constraints: .delivery/artifacts/02-refine/po/constraints.yml
+  architecture: .delivery/artifacts/04-architect/solution/architecture.md
+  adrs: .delivery/artifacts/04-architect/adrs/ADR-lmr-001..005 (Accepted)
+  stage-4-summary: .delivery/artifacts/04-architect/stage-summary.md
 last_updated: 2026-09-20
 initiative: Latest-model references — remove version pinning repo-wide, adopt "latest version of model X", migrate stale 4.7 pins + smoke-test extension (BACKLOG-108)
 binding_notes:

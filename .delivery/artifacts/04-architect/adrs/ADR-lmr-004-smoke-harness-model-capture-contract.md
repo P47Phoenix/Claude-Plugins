@@ -1,6 +1,6 @@
 # ADR-lmr-004: Smoke harness model-capture contract (parser, interfaces, baseline schema, cost cap)
 
-- **Status**: Proposed (flips to Accepted when Stage 4 DoD passes)
+- **Status**: Accepted (Stage 4 DoD passed 2026-09-20: architect, developer, devops, security, qa all DONE)
 - **Date**: 2026-09-20
 - **Run**: run-2026-05-28-o48m, BACKLOG-108
 - **Owner**: Solution Architect (PRD S5: FR-5.1 to FR-5.10, FR-4.4, BINDING-4.5; Architect DoD round-2 findings F2, F3, F4, F6, F7)
@@ -138,4 +138,4 @@ Files that enter the tree from live runs: `stream_real_shape.jsonl`, `stream_rea
 
 ## Status rationale
 
-Proposed until Stage 4 DoD passes; then Accepted.
+Accepted (Stage 4 DoD passed 2026-09-20).
