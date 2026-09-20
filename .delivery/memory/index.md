@@ -1,7 +1,7 @@
 # Delivery Pipeline Memory Index
 
 - total_runs: 34
-- last_updated: 2026-05-13
+- last_updated: 2026-09-19
 - last_run_id: run-2026-05-13-tk5
 
 ## Stage Health (last 5 runs)
@@ -25,6 +25,7 @@
 
 ## Active Decisions
 - [topics/claude-plugins-repo.md](topics/claude-plugins-repo.md) — keystone files, repo surface facts, config gotchas
+- [topics/opus-5-migration.md](topics/opus-5-migration.md) — BACKLOG-108 ACTIVE: 24 binding rulings; model lineup, CI guard, full prose review, ship pattern, smoke-test, dispatch invariant
 
 ## Stages
 - [stages/idea.md](stages/idea.md) — plugin-dev skill routing MUST be in PO upfront context
@@ -42,6 +43,7 @@
 - [topics/human-preferences.md](topics/human-preferences.md) — user-facing preferences; lotr theme performance
 - [topics/defect-patterns.md](topics/defect-patterns.md) — defect-root-cause patterns
 - [topics/skill-token-economy.md](topics/skill-token-economy.md) — 5 binding rulings + per-skill model map + tiered budgets; Wave 0/1/2/caveman-lite/Wave-3 SHIPPED; INITIATIVE COMPLETE 5/5
+- [topics/opus-5-migration.md](topics/opus-5-migration.md) — BACKLOG-108 binding decisions: 24 rulings across Model IDs, Scope, Behavioral-Claims Protocol, Smoke-Test, Delivery; full prose review (no -frontmatter-only); squash-ship; One Role = One Agent invariant
 
 ## Archive
 - [archive/run-2026-05-13-tk5.md](archive/run-2026-05-13-tk5.md) — FEATURE delivery-team smoke-test runner: 3 stories/24 ACs/1 HIGH+3 LOW defects; PASS_WITH_NOTES (6/8 UAT gates green; 2 DEFERRED auth-bound); producer-validator two-dispatch pattern NEW; binding-decisions-in-memory validated:6

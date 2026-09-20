@@ -1,26 +1,57 @@
 # .delivery/artifacts/02-refine/po/constraints.yml
-# Problem-scoped constraints for BACKLOG-106 (delivery-team plugin smoke test)
-# Run: run-2026-05-13-tk5
+# Problem-scoped constraints for BACKLOG-108 (Opus 5 migration)
+# Run: run-2026-05-28-backlog-108
 
-problem_scope: smoke-test runner for delivery-team plugin
+problem_scope: migrate the whole repo from claude-opus-4-7 to claude-opus-5 (retargeted from claude-opus-4-8 on 2026-09-19)
+
+entities:
+  - SKILL.md model_awareness stamp
+  - model-ID literal (claude-opus-4-7 / claude-opus-5)
+  - CI stale-model-id guard
+  - smoke baseline JSON
+  - cache-prefix fingerprint
+  - dispatch manifest
+
+invariants:
+  - One Role = One Sub-Agent; dispatch count equals stage dod_validators length
+  - No claude-opus-4-7 or claude-opus-4-8 literal anywhere except the single provenance comment in agent_registry.py (CHANGELOG.md excluded)
+  - model_awareness stamps are applied only after prose review passes DoD
+  - No .github/workflows file invokes the claude CLI; no smoke-*.yml workflow
+  - Shipped behavioral claims about claude-opus-5 are doc-cited; no provisional text
+  - Each success gate is closed by exactly one story
 
 binding_constraints:
   - id: BC-01
-    rule: NO .github/workflows/smoke-*.yml — claude CLI not available in CI runners
-    source: /home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md
+    rule: SKILL.md edits route through plugin-dev:skill-development; hook/workflow edits route through plugin-dev:hook-development. Acknowledged before edit. No bypass.
+    source: CLAUDE.md key conventions
     bypass_allowed: false
   - id: BC-02
-    rule: Aggregator reads existing telemetry hooks output directly; no re-implementation
-    source: BACKLOG-106 reuse mandate (idea-brief Constraints section)
-    references:
-      - delivery-team/hooks/telemetry.py
-      - delivery-team/hooks/telemetry_run_summary.py
-      - governance/skill-budgets.json  # shape pattern for baseline JSON
-      - scripts/check_skill_budgets.py  # exit-code convention
-      - scripts/lint_known_debt.py      # exit-code convention
+    rule: Every behavioral claim about claude-opus-5 is doc-verified via WebFetch before it ships in prose. No provisional text. No training-data assertions. Adversarial reviewer independently re-fetches >= 3 load-bearing claims.
+    source: BINDING-3.1, BINDING-3.2, BINDING-3.3
+    primary_url: https://platform.claude.com/docs/en/about-claude/models/overview
+    secondary_urls:
+      - https://platform.claude.com/docs/en/about-claude/models/migration-guide
+      - https://platform.claude.com/docs/en/build-with-claude/effort
+    bypass_allowed: false
   - id: BC-03
-    rule: Meta-test fault-injection fixtures and lib/metrics.py + lib/baseline.py authored by SEPARATE Stage-6 Dev dispatches
-    source: producer-validator separation (binding from past waves; validated:5)
+    rule: No new CLI dependencies in any acceptance-criteria command. Bash builtins and python-stdlib only. No yq. Commands must run on a default host.
+    source: PO Refine memory lesson — developer-DoD commands must use no new CLI deps
+    bypass_allowed: false
+  - id: BC-04
+    rule: Local-only. No .github/workflows file shells out to the claude CLI. CI permitted for static guards only (YAML lint, model-ID allowlist grep, budget checks).
+    source: BINDING-5.2, BINDING-4.6, feedback_claude_code_local_only.md
+    bypass_allowed: false
+  - id: BC-05
+    rule: One Role = One Sub-Agent. Dispatch count equals the stage dod_validators list length. Fused role dispatches fail DoD regardless of artifact quality.
+    source: BINDING-5.4
+    bypass_allowed: false
+  - id: BC-06
+    rule: Positive-allowlist CI guard ships from day one. No dual-allow transition window where both claude-opus-4-7 and claude-opus-5 are permitted. Squash before merge so the guard never inspects a partial mid-merge state.
+    source: BINDING-2.1, BINDING-5.1
+    bypass_allowed: false
+  - id: BC-07
+    rule: Producer-validator separation. Smoke meta-test fixtures testing metrics.py / baseline.py are authored in a SEPARATE Agent dispatch from the producer-file authors. Observable invariant — git status during validator dispatch shows producer files unchanged.
+    source: BINDING-4.5
     applies_to:
       producer:
         - delivery-team/tests/smoke/lib/metrics.py
@@ -28,24 +59,54 @@ binding_constraints:
       validator:
         - delivery-team/tests/smoke/tests/test_meta.py
         - delivery-team/tests/smoke/tests/fixtures/
-  - id: BC-04
-    rule: Full scope (runner + metrics + baseline + regression diff + meta-tests) in one initiative; not staged across separate commits
-    source: idea-brief PO directive — route through delivery-flow
+    bypass_allowed: false
+  - id: BC-08
+    rule: Ship via squash-rebase + ff-merge + push origin/main. No PR.
+    source: BINDING-5.1
+    bypass_allowed: false
+
+line_budgets:
+  tier_a: 500
+  tier_b: 300
+  tier_c: 200
+  enforced_by: scripts/check_skill_budgets.py
+  exception_protocol: Budget-Exception line in commit body PLUS known_debt[] entry with target_wave
+
+model_ids:
+  allowlist:
+    heavy: claude-opus-5
+    mid: claude-sonnet-4-6
+    light: claude-haiku-4-5-20251001
+  retired:
+    - claude-opus-4-7
+    - claude-opus-4-8
+  retired_exception:
+    rule: one provenance comment permitted in agent_registry.py, on the line immediately above the heavy-tier model line
+    literal: "# prior: claude-opus-4-7 (retired 2026-09-19, BACKLOG-108)"
+    source: BINDING-2.4
+  exempt:
+    rule: prd-quality-gate-flow routing aliases are version-agnostic labels, not stale
+    source: BINDING-1.4
+
+stamp_target:
+  model_awareness: opus-5
+  pattern_library_version: 5-0-1
+  last_audited: 2026-09-19
+  applied: after prose review passes DoD (not before)
+  source: BINDING-2.3
 
 cost_limits:
-  per_run_usd: 3.00              # hard --cost-cap on single smoke run
-  baseline_capture_usd_envelope: 15.00  # 5 runs x $3 cap for --init-baseline
-  wall_clock_seconds: 1800       # 30 min hard ceiling per run
-  concurrency: 1                 # baseline capture enforces sequential
+  per_run_usd: 3.00
+  baseline_capture_usd_envelope: 15.00   # 5 runs x $3 cap for --init-baseline
+  wall_clock_seconds: 1800               # 30 min hard ceiling per run
+  concurrency: 1                         # baseline capture enforces sequential
 
-regression_thresholds:
-  hard_fail:
-    - outcome.success == false
-    - cost_usd > hard_max
-    - wall_clock_seconds > hard_max
-    - pipeline.stories_completed mismatch vs baseline
-    - pipeline.dispatch_count > hard_max
-  advisory_warn:
-    - tokens.* outside mean +/- 2 * stddev
-    - skill_loads.* outside mean +/- 2 * stddev
-  tightening_policy: advisory-only on tokens/skill_loads for first month; tighten after 20+ accumulated production runs
+smoke_metrics:
+  confirmed_observable:                   # track always (BINDING-4.1)
+    - tokens.cache_hit_ratio
+    - model_usage.<model>.dispatches
+  best_effort:                            # WARN not FAIL when absent (BINDING-4.2)
+    - thinking_tokens
+    - stop_details.refusal_code
+    - speed_or_fast_indicator
+  runner_effort: xhigh                    # BINDING-4.3

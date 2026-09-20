@@ -1,15 +1,15 @@
 ---
-pipeline_id: run-2026-05-13-tk5
-status: completed
+pipeline_id: run-2026-05-28-o48m
+status: in_progress
 project_type: FEATURE
-detected_at: 2026-05-13
+detected_at: 2026-05-28
 force_type: FEATURE
-current_stage: 7
-stages_completed: [1, 2, 4, 5, 6, 7]
+current_stage: 2
+stages_completed: [1]
 stages_skipped: [3]
 human_checkpoints_passed: []
-final_verdict: PASS_WITH_NOTES
-follow_up: BACKLOG-107 (D-tk5-04 auth-isolation fix + retry 5-sample baseline)
+final_verdict: null
+follow_up: null
 routing:
   idea: light
   refine: light
@@ -28,33 +28,26 @@ config_snapshot:
   pipeline.checkpoints: []
 artifacts:
   idea-brief: .delivery/artifacts/01-idea/po/idea-brief.md
-  prd: .delivery/artifacts/02-refine/po/prd.md
-  backlog: .delivery/backlog/BACKLOG-106-delivery-team-smoke-test.md
-  constraints: .delivery/artifacts/02-refine/po/constraints.yml
-  architecture: delivery-team/architecture/smoke-test-architecture.md
-  adr: .delivery/artifacts/04-architect/adrs/ADR-tk5-001-smoke-test-runner-architecture.md
-  stories: .delivery/artifacts/05-plan/po/stories.md
-  sequencing: .delivery/artifacts/05-plan/architect/sequencing.md
-  test_cases: .delivery/artifacts/05-plan/qa/test-cases.md
-  sprint_plan: .delivery/artifacts/05-plan/sm/sprint-plan.md
-last_updated: 2026-05-13
-initiative: delivery-team plugin smoke test (BACKLOG-106)
+last_updated: 2026-05-28
+initiative: Opus 5 migration — all plugins + smoke-test extension (BACKLOG-108)
 binding_notes:
+  - "One Role = One Sub-Agent (model-independent invariant; do not fuse roles); target model claude-opus-5; effort xhigh is a project choice (docs recommend high as start, see PRD OQ-5)"
   - "Local-only — no .github/workflows/smoke-*.yml (memory: feedback_claude_code_local_only.md)"
-  - "6th invocation of binding-decisions-in-memory pattern (validated:5 → validated:6 post-merge)"
-  - "Producer-validator separation: meta-test fault-injection fixtures CANNOT share author with parser code"
-  - "Post-merge: squash-rebase + ff-merge + push origin/main (no PR)"
+  - "Producer-validator separation: meta-test fixtures CANNOT share author with parser code"
+  - "Behavioral claims MUST be doc-verified via WebFetch; adversarial reviewer independently re-fetches >=3 load-bearing claims"
+  - "Post-merge: squash-rebase + ff-merge + push origin/main (no PR); Wave-N pattern"
+  - "topics/opus-5-migration.md authored pre-pipeline as binding-decisions file"
 ---
 
-# Pipeline State — run-2026-05-13-tk5
+# Pipeline State — run-2026-05-28-o48m
 
-Initiative: smoke test runner for delivery-team plugin.
+Initiative: Opus 5 migration — all plugins model awareness + CI guard + smoke-test extension (BACKLOG-108).
 
-Routing locked by PO (same shape as Wave 3, proven 5×):
+Routing (FEATURE, user-specified):
 - Stage 1 Idea: light
 - Stage 2 Refine: light
-- Stage 3 Design: SKIP (DX-only — internal test infrastructure, no end-user UX)
-- Stage 4 Architect: light (single ADR `ADR-tk5-001`)
-- Stage 5 Plan: light (8 WIs → 3 stories by file scope)
+- Stage 3 Design: SKIP (DX-only — no end-user UX surface)
+- Stage 4 Architect: light (single ADR-5-0-001)
+- Stage 5 Plan: light (file-scope stories S1-S7)
 - Stage 6 Development: full
-- Stage 7 UAT: full (includes live `--init-baseline` 5× execution — ~$5-10 API spend acknowledged)
+- Stage 7 UAT: full (includes live --init-baseline 5× on Opus 5; ~$15 budget acknowledged)

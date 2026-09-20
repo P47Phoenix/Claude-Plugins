@@ -1,19 +1,27 @@
 ---
 stage: 1
 stage_name: idea
-depth: light
-pipeline_id: run-2026-05-13-tk5
-status: DONE
-dod_rounds: 1
-dod_validators: [po, architect]
-artifacts:
-  primary: .delivery/artifacts/01-idea/po/idea-brief.md
-  input_seed: .delivery/artifacts/01-idea/_input/user-seed.md
-  dod:
-    po: .delivery/artifacts/01-idea/dod/po-review.md
-    architect: .delivery/artifacts/01-idea/dod/architect-review.md
+pipeline_id: run-2026-05-28-o48m
+verdict: DONE
+dod_rounds: 2
 ---
 
-# Stage 1 Summary — Idea (light) — run-2026-05-13-tk5
+# Stage 1: Idea — Summary
 
-Gandalf compressed BACKLOG-106 seed into 60-line idea-brief. PO 7/7 + Architect 5/5 first-try; no self-correction. Local-only binding (memory file cite) verified line-by-line by PO; telemetry-reuse boundary verified on disk by Architect via Glob. Scope: 8 WIs / 6.5 dev-day / FEATURE band; smoke-test runner + metrics + baseline + meta-tests + README/Makefile.
+**Pipeline**: run-2026-05-28-o48m | **Stage**: 1 Idea (LIGHT) | **Verdict**: DONE (DoD R2 PASS)
+
+## Agents Run
+- **PO (Gandalf)** — primary: authored idea-brief.md (Round 1) + revision (Round 2). STATUS: DONE
+- **PO DoD validator** — R1: NOT_DONE (count error, backlog ref); R2: DONE (all 8 criteria pass)
+- **Architect DoD validator (Celebrimbor)** — R1: NOT_DONE (guard exists not new; missing 4.7 literal sites); R2: DONE (all 7 criteria pass)
+
+## Key Decisions / Corrections
+- Stamp scope corrected: 34 SKILL.md total = 25 stamps UPDATED + 9 stamps CREATED (4 personas + 5 research-types). All in scope.
+- CI guard reframed: REWRITE of existing `stale-model-id-guard.yml` (currently allowlists 4.7), not a new file.
+- 5 live `claude-opus-4-7` literal sites enumerated: agent_registry.py:190, prompt-engineer/SKILL.md:368, conftest.py (4 hits), smoke-test-architecture.md:115.
+- Risk R5 added: missed literal trips guard at squash → mitigated by QA pre-squash grep sweep.
+
+## Artifact
+- `.delivery/artifacts/01-idea/po/idea-brief.md`
+
+## DoD: 2/2 validators DONE (dod_validators.idea = [po, architect], 2 separate Agent calls per round)

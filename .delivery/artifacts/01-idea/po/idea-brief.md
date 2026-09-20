@@ -1,60 +1,132 @@
-<!-- run: run-2026-05-13-tk5 -->
+<!-- run: run-2026-05-28-backlog-108 -->
 ## Idea Brief
 
 **Project Type**: FEATURE
-**Date**: 2026-05-13
-**Pipeline**: run-2026-05-13-tk5
-**Initiative**: delivery-team plugin smoke test (BACKLOG-106)
+**Date**: 2026-05-28
+**Pipeline**: run-2026-05-28-backlog-108
+**Initiative**: Opus 4.8 Migration (BACKLOG-108)
+**Stage 3 Design**: SKIP — DX-only, no UX surface
+**Backlog Reference**: BACKLOG-108-opus-4-8-migration.md — to be authored at Stage 2 (Refine). This is a forward reference. The file does not exist yet. Stage 2 creates it.
 
 *Spoken by Gandalf the Grey.*
 
-> A product owner is never late, nor early. They prioritize precisely when they mean to. The team has shipped five waves with no probe at its heel — today we forge the probe.
+> A wizard is never stale, nor current. He ships precisely the model the world now runs on. This session runs on Opus 4.8. The plugins still claim 4.7. That ends today.
+
+---
 
 ### Problem Statement
-The delivery-team plugin shipped 5/5 waves of the skill-token-economy initiative without an empirical regression test that invokes the team end-to-end. W3-18 telemetry hardening emits per-dispatch token data only when a pipeline runs; nothing answers "is the team still building hello-world?" on the next plugin change. This initiative builds that probe so token-economy, model-routing, and prompt-template regressions surface locally before merge.
 
-### Target Users
-- **Plugin maintainer (developer)**: needs empirical regression detection before merging plugin changes
-- **Future contributors**: need a fast local check that "the team still works" after edits
+The repo holds 34 SKILL.md files. Of those, 25 carry a `model_awareness:` stamp set to 4.7 (7 × `opus-4-7`, 19 × `opus-4-7-frontmatter-only`). The other 9 carry no stamp at all. Stamps are stale or absent.
 
-### Goals
-1. End-to-end smoke run completes in < 30 min wall-clock on a developer's machine, with hard `--cost-cap 3.00` per run and concurrency-of-1 enforcement.
-2. `report.json` captures ≥ 6 metric groups (`outcome.success`, `wall_clock_seconds`, `cost_usd`, `tokens.{input,output,cache_creation,cache_read}`, `model_usage` per-model, `pipeline.{stages_completed, stories_completed, dispatch_count, defects_logged}`, `skill_loads`, `git_sha`, `claude_cli_version`); `--init-baseline` writes mean+stddev per metric across a 5-sample baseline at `baselines/hello_world_spike.json`.
-3. 0 GitHub Actions workflows invoke `claude` (`.github/workflows/smoke-*.yml` does not exist); local-only constraint is recorded in `delivery-team/architecture/smoke-test-architecture.md` with a pointer to the binding memory file.
+Hard `claude-opus-4-7` model-ID strings live in FIVE source files, not one:
+- `agentic-flow-builder/scripts/agent_registry.py:190` — heavy-tier registry config
+- `prompt-engineer/SKILL.md:368` — `MODEL_ID = "claude-opus-4-7"` code literal inside a keystone SKILL.md
+- `delivery-team/tests/smoke/tests/conftest.py` — 4 fixture model strings (lines 105, 117, 129, 151)
+- `delivery-team/architecture/smoke-test-architecture.md:115` — example model string in a code fence
+
+A CI guard already gates these strings. `.github/workflows/stale-model-id-guard.yml` exists today and currently allowlists `claude-opus-4-7`. Once inverted, every 4.7 literal trips it.
+
+This session runs on `claude-opus-4-8`. 4.8 dispatches fewer sub-agents by default than 4.7. It follows instructions more literally. A multi-agent plugin suite that dispatches on behavioral assumptions baked for 4.7 ships degraded quality on the model the world actually uses.
+
+Stale stamps are a lie. Lies compound. Fix now.
+
+---
+
+### Proposed Solution
+
+Seven stories in strict dependency order (BINDING-2.5 governs keystone-first sequencing):
+
+| Story | Scope | What |
+|-------|-------|------|
+| S1 | CI guard | **Rewrite** existing `.github/workflows/stale-model-id-guard.yml` — invert the allowlist to permit only `claude-opus-4-8` / `claude-sonnet-4-6` / `claude-haiku-4-5-20251001`; make `claude-opus-4-7` a trigger |
+| S2 | Keystone prose | 3 keystone SKILL.md files: delivery-flow, prompt-engineer, product-delivery — full prose review + 4.8 dispatch guidance. Includes fixing `prompt-engineer/SKILL.md:368` `MODEL_ID` code literal (not stamp-only) |
+| S3 | Full prose sweep | Remaining 31 SKILL.md files — full prose review (no frontmatter-only pass; BINDING-2.2 is clear). 9 of these get a NEW `model_awareness` stamp created |
+| S4 | Code IDs | `agentic-flow-builder/scripts/agent_registry.py` heavy-tier update + provenance comment; smoke-test fixture/example sites (`conftest.py` 4 hits, `smoke-test-architecture.md` 1 hit) |
+| S5 | Smoke harness | Extend runner: add confirmed-observable metrics + best-effort fields; update `--effort xhigh` invocation |
+| S6 | Cache re-freeze | Re-fingerprint `governance/cache-prefix-hash.txt`; ADR-4-8-001 records scope decision |
+| S7 | Memory + changelog | Binding memory update; CHANGELOG entry; squash-rebase + ff-merge + push origin/main (no PR) |
+
+**Stamp accounting.** 34 files get a full prose review. 25 existing stamps get UPDATED to 4.8. 9 stamp-less sub-skill files (4 user-feedback personas + 5 research-types) get a NEW stamp CREATED. Stamping is in scope for all 34 — full prose review covers every file, so every file gets a stamp for consistency. None scoped out.
+
+The 9 currently-unstamped files:
+```
+delivery-team/skills/user-feedback/skills/personas/{demographic,enterprise,gamers,web-app}/SKILL.md
+research-agent/skills/research-types/{comparative,descriptive,evaluative,explanatory,exploratory}/SKILL.md
+```
+
+Stamps (`model_awareness: opus-4-8`, `pattern_library_version: 4-8-1`, `last_audited: 2026-05-28`) applied AFTER prose edits pass DoD — not before.
+
+**Plugin-dev skill routing** (CLAUDE.md binding):
+- SKILL.md edits → `plugin-dev:skill-development` must be acknowledged before any SKILL.md edit begins
+- Hook edits → `plugin-dev:hook-development` if any hook file is touched
+- This routing is non-optional; Developer DoD includes evidence of acknowledgment
+
+---
+
+### Success Criteria
+
+Seven measurable ACs — all must pass before squash commit:
+
+1. **CI guard rewritten and exits 0 on clean tree.** The inverted `stale-model-id-guard.yml` permits only 4.8/sonnet-4-6/haiku-4-5; `claude-opus-4-7` triggers failure. On the migrated tree, `grep -rn "claude-opus-4-7"` (excluding `.delivery/`) returns only the single permitted provenance comment in `agent_registry.py`. All five prior literal sites are migrated.
+2. **All 34 SKILL.md files carry `model_awareness: opus-4-8`.** Assert a COUNT, not just a value filter: `grep -rl "model_awareness: opus-4-8" . --include="SKILL.md" | wc -l` returns **34**. AND `grep -rh "model_awareness:" . --include="SKILL.md" | grep -v "opus-4-8" | wc -l` returns **0** (no stale or `-frontmatter-only` values remain). This proves both the 25 updates and the 9 creations landed.
+3. **All 34 SKILL.md prose reviewed.** No `-frontmatter-only` marker present anywhere. Each file shows evidence of a full prose pass in the commit diff.
+4. **`agent_registry.py` heavy-tier ID is `claude-opus-4-8`.** Provenance comment `# prior: claude-opus-4-7 (retired 2026-05-28, BACKLOG-108)` immediately follows — this is the one permitted 4.7 string the guard allows.
+5. **Smoke harness captures 5-sample baseline against `claude-opus-4-8`.** `baselines/hello_world_spike.json` shows `model: claude-opus-4-8`, `n_samples: 5`, `sample_status: active`, populated `last_captured_utc` and `last_captured_git_sha`.
+6. **Line budgets pass.** `python scripts/check_skill_budgets.py` exits 0. No tier violation introduced by prose additions.
+7. **Behavioral claims doc-verified.** Zero provisional behavioral text in shipped files. Adversarial reviewer independently re-fetches ≥3 load-bearing claims from `https://docs.anthropic.com/en/docs/about-claude/models/overview`.
+
+---
+
+### Scope
+
+**In scope:**
+- All 34 SKILL.md files — full prose review. 25 stamp updates + 9 stamp creations.
+- `.github/workflows/stale-model-id-guard.yml` — **rewrite existing guard** (invert allowlist). Not a new file.
+- `agentic-flow-builder/scripts/agent_registry.py:190` — heavy-tier model ID update + provenance comment
+- `prompt-engineer/SKILL.md:368` — `MODEL_ID = "claude-opus-4-7"` code literal fix (distinct from its frontmatter stamp)
+- `delivery-team/tests/smoke/tests/conftest.py` — 4 fixture model strings (lines 105, 117, 129, 151)
+- `delivery-team/architecture/smoke-test-architecture.md:115` — example model string in code fence
+- `delivery-team/tests/smoke/` — runner extension (confirmed-observable metrics + best-effort fields + `--effort xhigh`)
+- `baselines/hello_world_spike.json` — baseline invalidation and re-capture
+- `governance/cache-prefix-hash.txt` — re-fingerprint
+- ADR-4-8-001 — cache-prefix scope decision record
+- Binding memory update (`opus-4-8-migration.md`) and CHANGELOG entry
+
+**Out of scope:**
+- `prd-quality-gate-flow/` routing alias strings (version-agnostic labels; BINDING-1.4 exempts them)
+- `.github/workflows/smoke-*.yml` — CI runners lack `claude` CLI; smoke tests are local-only (BINDING-4.6)
+- Any PR — ship pattern is squash-rebase + ff-merge + push origin/main (BINDING-5.1)
+
+---
 
 ### Constraints
-- **LOCAL-ONLY (binding)**: `claude` CLI is not available in CI runners. Memory file `/home/meconnelly/.claude/projects/-var-home-meconnelly-Documents-GitHub-Claude-Plugins/memory/feedback_claude_code_local_only.md` binds this. Tooling that shells out to `claude` MUST NOT live in `.github/workflows/`. No bypass-with-ADR.
-- **Cost + time caps**: hard `--cost-cap 3.00` per run; 30-min wall-clock timeout; concurrency-of-1 enforcement.
-- **Reuse existing telemetry — do not re-invent**: `delivery-team/hooks/telemetry.py` (emits `.delivery/telemetry/skill-loads.jsonl`) read directly by aggregator with zero changes; `delivery-team/hooks/telemetry_run_summary.py` (per-pipeline summary JSON) may be invoked as fallback. Mirror `governance/skill-budgets.json` shape for baseline JSON (`last_baseline`, `last_baseline_run`, advisory vs hard); mirror `scripts/check_skill_budgets.py` + `scripts/lint_known_debt.py` exit-code conventions.
-- **Producer-validator separation**: meta-test fault-injection fixtures CANNOT share author with the parser (`lib/metrics.py`). Producer ≠ validator.
-- **Route through delivery-flow**: full scope (runner + metrics + baseline + regression diff + meta-tests) in one initiative; not staged across separate commits.
 
-### Initial Scope
-- **W6-1** [M] — `delivery-team/tests/smoke/run_smoke.py` + `lib/runner.py` + `lib/workspace.py` (workspace + subprocess runner; `--plugin-dir` capability-probe at startup with `HOME=<fake>` primary path, copy-into-fake-home fallback)
-- **W6-2** [M] — `lib/metrics.py` (stream-json → Metrics; pure functions; testable)
-- **W6-3** [S] — `lib/aggregator.py` (reads `.delivery/telemetry/skill-loads.jsonl` + state.md + run-summary JSON)
-- **W6-4** [S] — `lib/report.py` (JSON + Markdown writers; output to `delivery-team/tests/smoke/artifacts/<utc-timestamp>/{report.json, summary.md, stream.jsonl}`)
-- **W6-5** [M] — `lib/baseline.py` + `baselines/hello_world_spike.json` (5-sample baseline writer + regression detector: HARD-FAIL on outcome/cost/wall_clock/stories_completed/dispatch_count; ADVISORY-WARN on tokens.*/skill_loads.* outside mean ± 2·stddev)
-- **W6-6** [S] — `prompts/hello_world_spike.txt` + `fixtures/delivery_config_minimal.yml` (explicit "skip personas, skip UAT" + minimal-retrospective directive)
-- **W6-7** [M] — `tests/test_meta.py` + fixture workspaces (pytest meta-tests; no Claude calls; malformed-stream fault injection + baseline-comparison demo + aggregator-fixture parsing)
-- **W6-8** [S] — `delivery-team/tests/smoke/README.md` + root `Makefile` `smoke` target
-- **Cross-cutting** — `delivery-team/architecture/smoke-test-architecture.md` with Mermaid diagram + decision log + local-only constraint cite (pointer to memory file)
+1. **Plugin-dev skill routing** — CLAUDE.md is explicit. SKILL.md edits route through `plugin-dev:skill-development`. Hook edits route through `plugin-dev:hook-development`. No bypass.
+2. **Budget cap** — ~$15 total for 5-sample baseline capture (~$3 cap per sample). Smoke runner enforces `--cost-cap 3.00` per run.
+3. **Behavioral claims must be doc-verified** — BINDING-3.1 through BINDING-3.3 are non-negotiable. No provisional text ships. Source: `https://docs.anthropic.com/en/docs/about-claude/models/overview`.
+4. **Line budgets enforced** — Tier A=500, Tier B=300, Tier C=200. Prose additions must stay within tier. Violations require `Budget-Exception:` in commit body and `known_debt[]` entry with `target_wave:`.
+5. **One Role = One Sub-Agent** — BINDING-5.4. Fused role dispatches fail DoD regardless of artifact quality.
+6. **No dual-allow transition window** — CI guard ships on the allowlist pattern from day one. No period where both 4.7 and 4.8 are permitted simultaneously (BINDING-2.1).
+7. **Producer-validator separation** — smoke-test fixture authors cannot be the same dispatch as `metrics.py` / `baseline.py` authors (BINDING-4.5).
 
-### Out of Scope (initial)
-- Hardware-team / mtg-commander / other-plugin smoke tests (factor `lib/` for reuse; build delivery-team's first)
-- CI workflow (banned by memory directive — no `.github/workflows/smoke-*.yml`)
-- Cost-tracking dashboards beyond the per-run report (future BACKLOG)
+---
 
-### Success Signal
-A maintainer can run `python3 delivery-team/tests/smoke/run_smoke.py` after any plugin change and get a JSON+Markdown report (under `delivery-team/tests/smoke/artifacts/<utc-timestamp>/`) diffed against a 5-sample baseline, with **HARD-FAIL** on `outcome.success=false`, `cost > hard_max`, `wall_clock > hard_max`, `stories_completed` mismatch, or `dispatch_count > hard_max`, and **ADVISORY-WARN** on `tokens.*` and `skill_loads.*` outside mean ± 2·stddev. Meta-tests (malformed-stream fault injection, baseline-comparison demo, aggregator-fixture parsing) pass without invoking Claude.
+### Risks
 
-### Open Risks (PO acknowledged)
-- **Prompt drift**: orchestrator may dispatch beyond hello-world. Mitigation: `hard_max` on `dispatch_count` + explicit "skip personas, skip UAT" in prompt.
-- **`--plugin-dir` semantics**: primary path uses `HOME=<fake>` + `--plugin-dir <repo>/delivery-team`; fallback copies plugin into `<fake-home>/.claude/plugins/delivery-team/`. `runner.py` capability-probes at startup.
-- **Stop hook blocks**: existing Stop hook enforces retro/memory completion. Prompt requests minimal retrospective; runner captures stderr to detect.
-- **Variance > stddev budget**: 5-sample baseline may underestimate true variance. First month is advisory-only on `tokens.*` and `skill_loads.*`; tighten after 20+ runs.
+| # | Risk | Mitigation |
+|---|------|-----------|
+| R1 | **Self-referential dispatch** — pipeline runs on 4.8 while editing docs that warn 4.8 against under-dispatch; executor may under-dispatch per its own behavioral patterns | One Role = One Sub-Agent invariant (BINDING-5.4); QA validator enumerates role-dispatch correspondence explicitly; DoD fails on fused dispatch |
+| R2 | **Keystone prose accuracy** — 4.8 behavioral claims may diverge from doc at time of writing | Adversarial reviewer re-fetches ≥3 load-bearing claims independently (BINDING-3.2); no provisional text ships (BINDING-3.3) |
+| R3 | **Aggressive smoke fields unobservable** — `thinking_tokens`, `stop_details` refusal codes, speed indicators may not surface in all response shapes | Best-effort fields emit WARN (not FAIL) when absent (BINDING-4.2); confirmed-observable fields always present |
+| R4 | **Cache-prefix fingerprint scope** — full prose review of 34 SKILL.md files may expand fingerprint set beyond prior scope (delivery-flow only) | ADR-4-8-001 is the binding decision record (BINDING-5.5); Architect owns scope decision before re-fingerprint runs |
+| R5 | **Hidden 4-7 literals trip the rewritten guard at squash** — the guard rewrite plus five known literal sites means one missed site fails CI at ff-merge time | Pre-squash `grep -rn "claude-opus-4-7"` sweep (excluding `.delivery/`) that the QA validator runs independently before ff-merge; only the one permitted provenance comment may remain |
+
+---
 
 ### Stop-Rule
-Defects/story > 0.4 across any 3-PR window pauses subsequent work. Current rolling rate = 0.111 (well under threshold).
 
-— Gandalf, PO, run-2026-05-13-tk5. All we have to decide is what to build with the time that is given to us. And I decide we build the probe.
+Defects/story > 0.4 across any 3-story window pauses the initiative. Current rolling rate = 0.111 (well under threshold, inherited from run-2026-05-13-tk5).
+
+---
+
+— Gandalf, PO, run-2026-05-28-backlog-108. The model has moved on. The plugins have not yet. That is the only problem worth solving today.

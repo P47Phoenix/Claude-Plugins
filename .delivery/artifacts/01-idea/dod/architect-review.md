@@ -1,116 +1,63 @@
-<!-- run: run-2026-05-13-tk5 -->
-# Architect DoD Review — Stage 1 Idea
+<!-- run: run-2026-05-28-backlog-108 -->
+## Architect DoD Review — Idea Stage (Round 2, re-validation)
 
-**Reviewer**: Celebrimbor, master craftsman (Architect — Solution role)
-**Pipeline**: run-2026-05-13-tk5
-**Artifact under review**: `.delivery/artifacts/01-idea/po/idea-brief.md`
-**Date**: 2026-05-13
-**Task type**: dod-validation
-**Recommended model**: sonnet
+**Artifact**: `.delivery/artifacts/01-idea/po/idea-brief.md`
+**Role**: Architect DoD Validator (Celebrimbor, master craftsman of enduring systems)
+**Stage**: 1 — Idea (LIGHT depth), Round 2 after PO revision
+**Date**: 2026-05-28
+**Initiative**: Opus 4.8 Migration (BACKLOG-108)
+**Verdict**: **DONE** — all four Round-1 blockers resolved; every claim re-verified against disk-truth.
 
-> *"Let us forge something that will endure beyond the ages."*
-
----
-
-## Verdict Summary
-
-| # | Criterion | Result |
-|---|-----------|--------|
-| 1 | Buildable (no exotic deps) | **PASS** |
-| 2 | No obvious blockers at integration points | **PASS** |
-| 3 | Reuse boundaries correct (telemetry files exist) | **PASS** |
-| 4 | Scope sized for FEATURE (not GREENFIELD/SPIKE) | **PASS** |
-| 5 | Local-only-no-CI recorded as constraint, not goal | **PASS** |
-
-**Overall gate**: **PASS — DONE**. Me see no architectural blockers. Probe is feasible work, sized right, reuse map is sound.
+> *The boundaries are now true. The work will endure because the allowlist has finally seen every string it must judge.*
 
 ---
 
-## Per-Criterion Findings
+### Round-1 blocker closure (re-verified, not brief-trusted)
 
-### Criterion 1 — Buildable: PASS
+| R1 fix required | Round-2 brief | Disk truth | Closed? |
+|-----------------|---------------|------------|---------|
+| S1: "new guard" → **rewrite** existing, invert allowlist | S1 (L41) reads "**Rewrite** existing `stale-model-id-guard.yml`"; Scope L84 "**rewrite existing guard** … Not a new file"; Problem L27 "exists today and currently allowlists `claude-opus-4-7`" | Guard exists; header L23 says `claude-opus-4-7 (current)`; regex `[^7]` (L29) deliberately permits 4-7 — confirms it must be inverted, not created | **YES** |
+| Scope additions: conftest.py (4), smoke-test-architecture.md (1), prompt-engineer:368 MODEL_ID | Scope L86-88 lists all three with exact line numbers; S2 (L42) flags `prompt-engineer/SKILL.md:368` MODEL_ID as code-literal, not stamp-only; S4 (L44) carries conftest 4 hits + arch-doc 1 hit | grep confirms all 5 live literals: `agent_registry.py:190`, `prompt-engineer/SKILL.md:368`, `conftest.py:105/117/129/151`, `smoke-test-architecture.md:115` | **YES** |
+| AC2: assert count of 34, not value filter; 9 are stamp *additions* | AC2 (L71) asserts `wc -l` == **34** AND a zero-count for non-4-8 values; L49-55 names the 9 unstamped as NEW stamp creations | 34 SKILL.md total; 25 carry `model_awareness:` (7 × `opus-4-7`, 19 × `opus-4-7-frontmatter-only`); the exact 9 named files are confirmed unstamped | **YES** |
+| Add risk R5 (hidden literals trip guard → pre-squash grep sweep) | R5 (L122): "Hidden 4-7 literals trip the rewritten guard at squash"; mitigation = QA-run pre-squash `grep -rn` sweep before ff-merge | Matches the AC1 gating exposure exactly | **YES** |
 
-Scope is plain Python tools, no exotic stones:
-- `lib/runner.py` — subprocess wrapper around `claude` CLI (stdlib `subprocess` + env override; well-trodden ground).
-- `lib/metrics.py` — line-buffered JSON parser over stream-json (stdlib `json` + iterators).
-- `lib/aggregator.py` — reads existing `.delivery/telemetry/skill-loads.jsonl` (newline-delimited JSON; stdlib only).
-- `lib/baseline.py` — mean+stddev across 5 samples (stdlib `statistics`).
-- `tests/test_meta.py` — pytest only; no Claude calls (producer/validator separation enforced).
+---
 
-Nothing here demands new dependency management or unusual runtime. All deps fit the repo's existing Python diet.
+### Gate criteria results (Round 2)
 
-### Criterion 2 — No obvious blockers: PASS
+**1. Technical feasibility — PASS.** Every named surface exists on disk and is editable: the guard, all 5 literal sites, the 34 SKILL.md files, smoke harness, baseline JSON, `cache-prefix-hash.txt`. No missing primitive. Achievable within stated constraints.
 
-Three integration points all plausible against existing repo surface:
-- **Claude Code stream-json output** — runner invokes `claude --output-format stream-json`; consumer parses NDJSON. Standard CLI pattern; no novel protocol.
-- **telemetry.jsonl reader** — `delivery-team/hooks/telemetry.py` already writes `.delivery/telemetry/skill-loads.jsonl` per the brief's claim; aggregator just reads what producer already emits. Re-verified file presence below.
-- **Plugin loading via `--plugin-dir` / `HOME` override** — brief acknowledges semantic uncertainty and bakes a capability-probe at startup (primary: `HOME=<fake>` + `--plugin-dir <repo>/delivery-team`; fallback: copy plugin into `<fake-home>/.claude/plugins/delivery-team/`). Risk surfaced + mitigated; not a blocker.
+**2. Story decomposition S1-S7 dependency-coherent — PASS.** Spine unchanged and correct: guard rewrite (S1) → keystone prose (S2) → full sweep (S3) → code IDs (S4) → smoke harness (S5) → cache re-freeze (S6, after all SKILL.md edits per BINDING-5.3) → memory+changelog+squash (S7). Stamp-after-prose (L57) matches BINDING-2.3. No cycle, no inversion.
 
-Memory lesson applied (`hw01 adversarial`, confidence 2/5): cross-plugin invocation could bite. Brief defangs this with capability-probe up front rather than discover-at-runtime. Good craft.
+**3. Critical files/surfaces identified — PASS (was PARTIAL FAIL).** The guard is now correctly described as a **rewrite** of an existing file that currently allowlists 4.7 — verified against the guard's own `(current)` header and `[^7]` regex. All four live 4.7 literal sites beyond the registry are now enumerated with line numbers and confirmed on disk: `agent_registry.py:190`, `prompt-engineer/SKILL.md:368`, `conftest.py` (105/117/129/151), `smoke-test-architecture.md:115`. Nothing the rewritten guard will gate on is left out of scope.
 
-### Criterion 3 — Reuse boundaries correct: PASS (verified by file probe)
+**4. Risks real, mitigations credible — PASS.** R1 (self-referential dispatch → One-Role-One-Agent, BINDING-5.4) remains the correct top risk. R2 (doc-divergence → adversarial re-fetch, BINDING-3.2), R3 (best-effort WARN-not-FAIL, BINDING-4.2), R4 (fingerprint scope → ADR-4-8-001) all credible. **R5 is now present** and is the right control for the scope-completeness exposure: an independent QA pre-squash `grep -rn "claude-opus-4-7"` sweep before ff-merge, with only the one permitted provenance comment allowed to remain.
 
-Me run the command, not read about it:
+**5. No architectural contradiction with binding decisions — PASS (was FAIL).** The Round-1 contradiction (guard framed as "new" vs. BINDING-2.1) is resolved: the brief now describes the rewrite/inversion explicitly and matches the on-disk reality. AC1's clean-tree assertion (one permitted provenance comment in `agent_registry.py`, all 5 sites migrated) is consistent with BINDING-1.3, BINDING-2.1, and BINDING-2.4. No dual-allow window (Constraint 6, BINDING-2.1). Ship pattern (Scope L98) matches BINDING-5.1.
+
+**6. plugin-dev skill routing acknowledged — PASS.** L59-62 and Constraint 1 (L104) state SKILL.md edits route through `plugin-dev:skill-development`, hook edits through `plugin-dev:hook-development`, non-optional, with Developer DoD evidence. S1 edits a workflow YAML (not a hook) — correctly no plugin-dev routing claimed there.
+
+**7. Cache-prefix re-fingerprint sequencing sound — PASS.** S6 (L46) runs after S2/S3 and before S7's squash; ADR-4-8-001 owns the scope-expansion decision (R4, BINDING-5.5). Matches BINDING-5.3.
+
+---
+
+### Independent verification performed
 
 ```
--rw-r--r--. 1 meconnelly meconnelly 5604 May  9 13:39 delivery-team/hooks/telemetry.py
--rw-r--r--. 1 meconnelly meconnelly 4724 May  9 13:39 delivery-team/hooks/telemetry_run_summary.py
+find . -name SKILL.md -not -path "./.delivery/*" | wc -l           → 34
+grep -rl "model_awareness:" --include=SKILL.md | wc -l (non-.delivery) → 25
+model_awareness distribution → 7 opus-4-7, 19 opus-4-7-frontmatter-only
+9 named files (4 personas + 5 research-types) → all confirmed unstamped
+grep -rn "claude-opus-4-7" (*.py,*.md, non-.delivery) → 5 sites / 8 hits, all named in scope
+test -f .github/workflows/stale-model-id-guard.yml → EXISTS; header allowlists "claude-opus-4-7 (current)", regex [^7] permits 4-7
 ```
 
-Both stones present on the bench. Reuse map in brief (telemetry.py read directly; telemetry_run_summary.py as fallback) is grounded in real artifacts, not assumed surface. Mirror-shape directive for `governance/skill-budgets.json` and the `scripts/check_skill_budgets.py` exit-code convention is also concrete reuse, not hand-wave.
-
-### Criterion 4 — Scope sized for FEATURE: PASS
-
-- **8 work items** (W6-1 through W6-8) — within FEATURE band; not the 15+ that signals GREENFIELD, not the 1-3 of a SPIKE.
-- **Effort mix**: 4×M + 4×S. Me count batches with discipline (architect batching math):
-  - 4 M @ ~1 dev-day = 4 dev-days
-  - 4 S @ ~0.5 dev-day = 2 dev-days
-  - Cross-cutting architecture doc adds ~0.5 dev-day
-  - **Total ≈ 6.5 dev-days** — squarely in FEATURE range.
-- No L items, no XL items, no items requiring greenfield bootstrap. Builds on existing telemetry surface (Reuse, not Reinvent).
-- Single initiative routed through delivery-flow (constraint: "Route through delivery-flow") rather than fragmented across PRs — appropriate for FEATURE classification.
-
-Not a SPIKE: deliverables are durable artifacts (probe, baseline, regression diff, meta-tests, architecture doc), not learning notes.
-Not a GREENFIELD: builds on existing plugin + existing telemetry hooks; doesn't bootstrap a new domain.
-
-### Criterion 5 — Local-only is constraint, not goal: PASS
-
-Brief separates concerns cleanly:
-- **Constraints section** (line 26) explicitly lists `LOCAL-ONLY (binding)` with citation to the memory file. Phrased as *bounding* the design: "Tooling that shells out to `claude` MUST NOT live in `.github/workflows/`." No-bypass-with-ADR clause makes it architecturally binding.
-- **Goals section** (lines 21-23) does NOT name local-only as a deliverable. Goal 3 states "0 GitHub Actions workflows invoke `claude`" — this is an *enforcement assertion* (verifiable absence) wrapped around the constraint, not the constraint itself. The deliverable in Goal 3 is the documented constraint in `delivery-team/architecture/smoke-test-architecture.md` with memory-file pointer.
-- **Out of Scope** (line 45) restates the CI ban as scope exclusion, reinforcing it as a boundary rather than a feature.
-
-Constraint shapes the design (forces local-only runner architecture, forbids CI surface) without becoming an output artifact masquerading as a goal. Correct framing.
+Every load-bearing claim in the revised brief matches disk. The stamp accounting (25 updates + 9 creations = 34) is arithmetically and factually correct.
 
 ---
 
-## Trade-offs Noted (informational, no blocker)
+### Verdict
 
-- **Producer-validator separation as social constraint**: brief states meta-test fixtures CANNOT share author with `lib/metrics.py`. This is a team-process constraint, not an architectural one — architecture cannot enforce it; relies on PR review discipline. Worth flagging to PO for Plan-stage acceptance criteria, but does not block Stage 1.
-- **5-sample baseline variance budget**: brief acknowledges (Open Risks #4) that 5 samples may underestimate true variance; first-month advisory-only on `tokens.*` and `skill_loads.*` is the right hedge. Bake the "tighten after 20+ runs" rule into the regression detector config so it not lost.
+All four Round-1 required fixes are landed and independently confirmed. The dependency spine, risk framing (now including R5), plugin-dev routing, and re-fingerprint sequencing were already sound and remain so. The two blocking factual gaps (guard-is-new, AC2-value-vs-count) and the under-scoped literal sites are fully corrected. The Idea gate passes from the Architect's chair.
 
----
-
-## Assumptions
-
-- Existing telemetry producer (`telemetry.py`) emits the schema the aggregator expects without changes (brief asserts "zero changes" — Developer DoD will verify by running, not reading).
-- `claude` CLI honors `--plugin-dir` or `HOME=<fake>` as the brief assumes; capability-probe handles either outcome.
-- `stream-json` output format remains stable across `claude_cli_version` (worth pinning + recording in `report.json`, which brief already does via `claude_cli_version` field).
-
-## Risks (architect-flagged, beyond PO's list)
-
-- **None blocking**. PO already surfaced the four sharp risks (prompt drift, `--plugin-dir` semantics, Stop hook, variance budget). No architectural risk PO missed.
-
-## Open Questions
-
-- None blocking Stage 1 gate. `delivery-team/architecture/smoke-test-architecture.md` (cross-cutting item) is the appropriate vessel for Stage 3 Design decisions (Mermaid diagram, capability-probe state machine, baseline-shape decision).
-
----
-
-## Gate Decision
-
-**PASS — Stage 1 Idea DoD met from Architect lens.** Probe is buildable, integration points sound, reuse map verified against real files on disk, scope properly sized as FEATURE, local-only correctly framed as binding constraint.
-
-Forward to Stage 2 Refine.
-
-— Celebrimbor, master craftsman. *The work endures because the boundaries are true.*
+— Celebrimbor, Architect DoD Validator, run-2026-05-28-backlog-108. *The boundaries are true; all of them are now drawn.*
