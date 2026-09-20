@@ -1,12 +1,13 @@
 # .delivery/artifacts/02-refine/po/constraints.yml
-# Problem-scoped constraints for BACKLOG-108 (Opus 5 migration)
+# Problem-scoped constraints for BACKLOG-108 (latest-model references; Revision 4)
 # Run: run-2026-05-28-backlog-108
 
-problem_scope: migrate the whole repo from claude-opus-4-7 to claude-opus-5 (retargeted from claude-opus-4-8 on 2026-09-19)
+problem_scope: remove hard-pinned model version strings repo-wide and refer to the latest version of a model family; migrate today's stale 4.7 pins to that scheme (user decision 2026-09-20, supersedes the claude-opus-5 pin)
 
 entities:
   - SKILL.md model_awareness stamp
-  - model-ID literal (claude-opus-4-7 / claude-opus-5)
+  - pinned model-version literal (any claude-<family>-<digit> string)
+  - MODEL_TIER_ALIAS central alias dict
   - CI stale-model-id guard
   - smoke baseline JSON
   - cache-prefix fingerprint
@@ -14,10 +15,11 @@ entities:
 
 invariants:
   - One Role = One Sub-Agent; dispatch count equals stage dod_validators length
-  - No claude-opus-4-7 or claude-opus-4-8 literal anywhere except the single provenance comment in agent_registry.py (CHANGELOG.md excluded)
+  - No pinned model-version string, versioned stamp, or model-version prose mention (PIN_RE, STAMP_RE, PROSE_RE, BARE_RE) in py/md/yml/yaml/txt/sh outside CHANGELOG.md and .delivery/; NO comment, blockquote, heading or code-fence exemption; only per-line escape is the marker model-pin-ok
+  - Baselines record the concrete model observed at run time (model_resolved, primary = system/init model); never assumed; an unknown or empty model is a capture failure
   - model_awareness stamps are applied only after prose review passes DoD
   - No .github/workflows file invokes the claude CLI; no smoke-*.yml workflow
-  - Shipped behavioral claims about claude-opus-5 are doc-cited; no provisional text
+  - Shipped behavioral claims about the latest Opus are doc-cited and version-free; no provisional text
   - Each success gate is closed by exactly one story
 
 binding_constraints:
@@ -26,11 +28,11 @@ binding_constraints:
     source: CLAUDE.md key conventions
     bypass_allowed: false
   - id: BC-02
-    rule: Every behavioral claim about claude-opus-5 is doc-verified via WebFetch before it ships in prose. No provisional text. No training-data assertions. Adversarial reviewer independently re-fetches >= 3 load-bearing claims.
+    rule: Every behavioral claim about the latest Opus is doc-verified via WebFetch before it ships in prose. No provisional text. No training-data assertions. Adversarial reviewer independently re-fetches >= 3 load-bearing claims.
     source: BINDING-3.1, BINDING-3.2, BINDING-3.3
     primary_url: https://platform.claude.com/docs/en/about-claude/models/overview
     secondary_urls:
-      - https://platform.claude.com/docs/en/about-claude/models/migration-guide
+      - https://platform.claude.com/docs/en/models/opus-5/migration-guide
       - https://platform.claude.com/docs/en/build-with-claude/effort
     bypass_allowed: false
   - id: BC-03
@@ -38,7 +40,7 @@ binding_constraints:
     source: PO Refine memory lesson — developer-DoD commands must use no new CLI deps
     bypass_allowed: false
   - id: BC-04
-    rule: Local-only. No .github/workflows file shells out to the claude CLI. CI permitted for static guards only (YAML lint, model-ID allowlist grep, budget checks).
+    rule: Local-only. No .github/workflows file shells out to the claude CLI. CI permitted for static guards only (YAML lint, model-pin scan, budget checks). The pin guard runs on push to main, pull_request and workflow_dispatch, and the same script runs locally before ship.
     source: BINDING-5.2, BINDING-4.6, feedback_claude_code_local_only.md
     bypass_allowed: false
   - id: BC-05
@@ -46,7 +48,7 @@ binding_constraints:
     source: BINDING-5.4
     bypass_allowed: false
   - id: BC-06
-    rule: Positive-allowlist CI guard ships from day one. No dual-allow transition window where both claude-opus-4-7 and claude-opus-5 are permitted. Squash before merge so the guard never inspects a partial mid-merge state.
+    rule: Pin-forbidding CI guard ships from day one. Guard ships in its final pin-forbidding form from day one (no version allowlist, no dual-allow window). Squash before merge so the guard never inspects a partial mid-merge state.
     source: BINDING-2.1, BINDING-5.1
     bypass_allowed: false
   - id: BC-07
@@ -72,28 +74,30 @@ line_budgets:
   enforced_by: scripts/check_skill_budgets.py
   exception_protocol: Budget-Exception line in commit body PLUS known_debt[] entry with target_wave
 
-model_ids:
-  allowlist:
-    heavy: claude-opus-5
-    mid: claude-sonnet-4-6
-    light: claude-haiku-4-5-20251001
-  retired:
-    - claude-opus-4-7
-    - claude-opus-4-8
-  retired_exception:
-    rule: one provenance comment permitted in agent_registry.py, on the line immediately above the heavy-tier model line
-    literal: "# prior: claude-opus-4-7 (retired 2026-09-19, BACKLOG-108)"
-    source: BINDING-2.4
+model_refs:
+  scheme: refer to the latest version of a model family; never pin a version string in the tree
+  prose: name families only ("the latest Opus"); no version numbers in SKILL.md
+  stamps:
+    model_awareness: latest
+    pattern_library_version: rev-1
+    last_audited: date of the S3 DoD pass (time anchor; applied only to the 25 already-stamped files)
+    applied: after prose review passes DoD (not before)
+    source: BINDING-2.3
+  cli_aliases: [opus, sonnet, haiku]      # Claude Code aliases; opus and sonnet documented as latest, haiku wording UNVERIFIED
+  api: no evergreen alias exists for current models; code that calls the API reads ONE config value
+  central_definition: agentic-flow-builder/scripts/agent_registry.py MODEL_TIER_ALIAS
+  guard_patterns:            # single definition point: scripts/check_model_pins.py (PRD FR-1.2 has the exact strings)
+    PIN_RE: family-agnostic claude-<anything>-<digit> or claude-<anything>-latest, case-insensitive
+    STAMP_RE: any digit in a model_awareness value; pattern_library_version must be rev-<n>
+    PROSE_RE: Opus/Sonnet/Haiku/Fable/Mythos followed by a version digit (capitalised or upper case), or lowercase alias with hyphen-digit
+    BARE_RE: bare version numbers (4.7 style) in md prose after on/under/in/for/the/new/so/with/isolates
+    scope: tracked py, md, yml, yaml, txt, sh files; json is outside scope by design (baselines record observed IDs)
+  allowlisted_locations: [CHANGELOG.md, ".delivery/**", "lines carrying the marker model-pin-ok"]
+  frontmatter_tier_aliases:  # 9 lines in 9 SKILL.md (model: and phase_1_detector_model:); each value must be one of opus, sonnet, haiku
+    allowed_values: [opus, sonnet, haiku]
   exempt:
-    rule: prd-quality-gate-flow routing aliases are version-agnostic labels, not stale
+    rule: prd-quality-gate-flow routing aliases are version-agnostic labels, not pins
     source: BINDING-1.4
-
-stamp_target:
-  model_awareness: opus-5
-  pattern_library_version: 5-0-1
-  last_audited: 2026-09-19
-  applied: after prose review passes DoD (not before)
-  source: BINDING-2.3
 
 cost_limits:
   per_run_usd: 3.00
@@ -105,8 +109,10 @@ smoke_metrics:
   confirmed_observable:                   # track always (BINDING-4.1)
     - tokens.cache_hit_ratio
     - model_usage.<model>.dispatches
+    - model_resolved
   best_effort:                            # WARN not FAIL when absent (BINDING-4.2)
     - thinking_tokens
     - stop_details.refusal_code
     - speed_or_fast_indicator
   runner_effort: xhigh                    # BINDING-4.3
+  runner_model: opus                      # CLI alias; concrete model recorded as model_resolved

@@ -1,11 +1,62 @@
-# Opus 5 Migration — Binding Decisions
+# Latest-Model References — Binding Decisions
 # BACKLOG-108 | Initiative Memory File
-# Authored: 2026-05-28 (retargeted to Opus 5: 2026-09-19) | PO: Gandalf (Michael Connelly)
+# Authored: 2026-05-28 (retargeted to Opus 5: 2026-09-19; reframed to latest-version references: 2026-09-20) | PO: Gandalf (Michael Connelly)
 # Status: AUTHORITATIVE — every future pipeline stage reads this as binding context
+# File renamed from opus-5-migration.md on 2026-09-20 (Revision 3). Sections 1-6 below are the historical rulings;
+# Section 0 records what Revision 3 superseded. Where they conflict, Section 0 wins.
 
 ---
 
-## Section 1: Model IDs
+## Section 0: Revision 3 — latest-version references (user decision 2026-09-20, BINDING, supersedes pinning)
+
+**BINDING-0.1 — Say "latest version of model X", never a version string.**
+The repo stops hard-pinning model versions in prose, stamps and guards. It refers to the latest version of a family
+("latest Opus", "latest Sonnet"). Opus 5 is the effective current model on 2026-09-20; it appears only in dated citations
+and in observed baselines. BACKLOG-108 is reframed: remove version pinning, adopt latest-version references, migrate today's
+stale 4.7 pins to that scheme.
+
+**BINDING-0.2 — Scheme (PRD Revision 3, section 3 Convention).**
+- Prose names families only. Stamps: `model_awareness: latest`, `pattern_library_version: rev-1`, `last_audited: <date>`.
+  The 9 unstamped SKILL.md stay unstamped.
+- Tier labels in code use the Claude Code CLI aliases `opus`, `sonnet`, `haiku`, defined ONCE in `MODEL_TIER_ALIAS`
+  (`agentic-flow-builder/scripts/agent_registry.py`). Verified: https://code.claude.com/docs/en/model-config and local `claude --help`.
+- The Claude API has NO evergreen alias for current models (every ID is a pinned snapshot; https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions).
+  Code that must call the API reads ONE config value. No repo code calls the API today.
+- Tests and doc examples use synthetic IDs with no digit and no `-latest` suffix (for example `claude-opus-fixture`).
+- Baselines record the concrete model observed (`model_requested`, `model_resolved`, `model_pin_env`); a regression run WARNs on `model moved`.
+
+**BINDING-0.3 — Guard forbids pins (amended by Revision 4, 2026-09-20).** The patterns `PIN_RE`, `STAMP_RE`, `PROSE_RE`, `BARE_RE`
+live in ONE place, `scripts/check_model_pins.py` (no ID allowlist; the workflow only calls the script). PIN_RE is family-agnostic
+and case-insensitive. No comment, blockquote, heading or code-fence exemption. Allowlisted locations: `CHANGELOG.md`, `.delivery/**`,
+and a line carrying the marker `model-pin-ok` (forbidden at ship). Scope: tracked py, md, yml, yaml, txt, sh; `.json` excluded
+(baselines record observed IDs). The workflow triggers on push to main, pull_request and workflow_dispatch; because ship is a
+direct push, the blocking gate is the LOCAL run of the same script before the push (PRD FR-1.5, FR-7.3).
+
+**BINDING-0.4 — Observed model, never `unknown` (Revision 4).** Baselines record `model_resolved[0]` = the `system/init` model
+(observed top-level `model` on CLI 2.1.278). An `unknown` or empty model fails the capture. The smoke parser must read the real
+stream shape (`message.model`, `message.usage`, result `total_cost_usd`); the hand-written fixture shape was wrong.
+Caveats: serving infrastructure can change behaviour under a fixed ID; `claude -p` without `--bare` loads host context.
+
+**Superseded rulings**
+| Ruling | Status |
+|--------|--------|
+| BINDING-1.1, 1.2 (canonical heavy ID, positive allowlist of three IDs) | SUPERSEDED by 0.1 to 0.3: no ID is canonical in the tree; the lineup table is history |
+| BINDING-1.3 (4-7 / 4-8 retired, one provenance comment) | SUBSUMED: any versioned ID is rejected; the `#` provenance comments in `agent_registry.py` are NOT exempt under Revision 4 and are reworded (provenance moves to CHANGELOG) |
+| BINDING-1.4 (prd-quality-gate-flow aliases exempt) | UNCHANGED |
+| BINDING-2.1 (positive-allowlist guard, no dual-allow) | REPLACED by 0.3; "no dual-allow window / squash so the guard never sees a partial state" still holds |
+| BINDING-2.2 (full prose review, no `-frontmatter-only`) | RETAINED (PRD OQ-9 asks Michael whether to narrow); `-frontmatter-only` stamps are removed entirely |
+| BINDING-2.3 (stamps after prose DoD) | RETAINED with new stamp values |
+| BINDING-2.4 (registry `claude-opus-5` + provenance comment) | REPLACED by `MODEL_TIER_ALIAS` central dict |
+| BINDING-2.5, 3.x, 4.1 to 4.6, 5.x | RETAINED. 4.3 `--effort xhigh` stays a project choice; runner also gains `--model opus`. 4.4 baseline re-capture stays, now records observed model. 5.5 ADR name may be made version-free by the Architect |
+| Section 6 OPEN-2 (Sonnet tier) | MOOT: `sonnet` alias tracks latest; restated in PRD as the haiku-alias question (OQ-6) |
+| Section 6 OPEN-3 (CLI accepts `--model claude-opus-5`) | RESOLVED: CLI accepts alias `--model opus` (verified, `claude --help`, CLI 2.1.278) |
+
+Citations in Sections 3 and 6 are dated 2026-09-19 and describe Opus 5, the latest at that time; they inform S2 prose but are
+not shipped with a version number.
+
+---
+
+## Section 1: Model IDs (historical; superseded by Section 0)
 
 **BINDING-1.1 — Canonical model ID for heavy tier**
 `claude-opus-5` is the canonical model ID for heavy-tier dispatch.

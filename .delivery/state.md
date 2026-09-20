@@ -29,25 +29,25 @@ config_snapshot:
 artifacts:
   idea-brief: .delivery/artifacts/01-idea/po/idea-brief.md
 last_updated: 2026-05-28
-initiative: Opus 5 migration — all plugins + smoke-test extension (BACKLOG-108)
+initiative: Latest-model references — remove version pinning repo-wide, adopt "latest version of model X", migrate stale 4.7 pins + smoke-test extension (BACKLOG-108)
 binding_notes:
-  - "One Role = One Sub-Agent (model-independent invariant; do not fuse roles); target model claude-opus-5; effort xhigh is a project choice (docs recommend high as start, see PRD OQ-5)"
+  - "One Role = One Sub-Agent (model-independent invariant; do not fuse roles); refer to the latest version of a model family, never pin a version string (user decision 2026-09-20; Opus 5 is the effective current model, cited only in dated citations and observed baselines); effort xhigh is a project choice (docs recommend high as start, see PRD OQ-5)"
   - "Local-only — no .github/workflows/smoke-*.yml (memory: feedback_claude_code_local_only.md)"
   - "Producer-validator separation: meta-test fixtures CANNOT share author with parser code"
   - "Behavioral claims MUST be doc-verified via WebFetch; adversarial reviewer independently re-fetches >=3 load-bearing claims"
   - "Post-merge: squash-rebase + ff-merge + push origin/main (no PR); Wave-N pattern"
-  - "topics/opus-5-migration.md authored pre-pipeline as binding-decisions file"
+  - "topics/latest-model-references.md (renamed from opus-5-migration.md) is the binding-decisions file; Section 0 records the latest-version reframing"
 ---
 
 # Pipeline State — run-2026-05-28-o48m
 
-Initiative: Opus 5 migration — all plugins model awareness + CI guard + smoke-test extension (BACKLOG-108).
+Initiative: Latest-model references — version-free stamps and prose, pin-forbidding CI guard, central tier aliases, smoke-test extension recording the observed model (BACKLOG-108).
 
 Routing (FEATURE, user-specified):
 - Stage 1 Idea: light
 - Stage 2 Refine: light
 - Stage 3 Design: SKIP (DX-only — no end-user UX surface)
-- Stage 4 Architect: light (single ADR-5-0-001)
+- Stage 4 Architect: light (single cache-fingerprint ADR; name may be version-free, PRD FR-6.2)
 - Stage 5 Plan: light (file-scope stories S1-S7)
 - Stage 6 Development: full
-- Stage 7 UAT: full (includes live --init-baseline 5× on Opus 5; ~$15 budget acknowledged)
+- Stage 7 UAT: full (includes live --init-baseline 5× on the latest Opus via alias `opus`, resolved model recorded; ~$15 budget acknowledged)
