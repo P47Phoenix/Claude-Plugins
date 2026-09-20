@@ -660,7 +660,7 @@ class FlowOrchestrator:
 
         if agent_type == AgentType.GENERAL:
             # Use Claude API
-            # In production: call Claude API with agent.config['model']
+            # In production: the API call reads one configured model ID (never a literal). config.model is a CLI tier alias, not an API model ID.
             output_data = {
                 "goal": goal,
                 "agent_used": agent.name,

@@ -102,7 +102,7 @@ def valid_stream_events() -> list[dict]:
         {
             "type": "assistant",
             "timestamp_seconds": 1000.0,
-            "model": "claude-opus-4-7",
+            "model": "claude-opus-fixture",
             "usage": {
                 "input_tokens": 100,
                 "output_tokens": 200,
@@ -114,7 +114,7 @@ def valid_stream_events() -> list[dict]:
         {
             "type": "assistant",
             "timestamp_seconds": 1005.0,
-            "model": "claude-opus-4-7",
+            "model": "claude-opus-fixture",
             "usage": {
                 "input_tokens": 150,
                 "output_tokens": 250,
@@ -126,7 +126,7 @@ def valid_stream_events() -> list[dict]:
         {
             "type": "result",
             "timestamp_seconds": 1010.0,
-            "model": "claude-opus-4-7",
+            "model": "claude-opus-fixture",
             "usage": {
                 "input_tokens": 50,
                 "output_tokens": 75,
@@ -148,7 +148,7 @@ def malformed_stream_event() -> dict:
     return {
         "type": "assistant",
         "timestamp_seconds": 1007.5,
-        "model": "claude-opus-4-7",
+        "model": "claude-opus-fixture",
         "usage": "not-a-dict-this-is-broken",
     }
 

@@ -17,6 +17,9 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+# Claude Code CLI tier aliases (not API model IDs); resolve to the latest model per provider.
+MODEL_TIER_ALIAS = {"heavy": "opus", "mid": "sonnet", "light": "haiku"}
+
 
 class AgentType(Enum):
     """Types of agents available."""
@@ -145,8 +148,8 @@ class AgentRegistry:
                 "agent_type": "general",
                 "name": "claude-sonnet",
                 "description": "Claude Sonnet - Fast, balanced model for most tasks",
-                # canonical 2026-04-22 — opus-4-7 migration; prior: claude-sonnet-4-5-20250929 (retired)
-                "config": {"model": "claude-sonnet-4-6"},
+                # tier alias resolved via MODEL_TIER_ALIAS; earlier versioned IDs are recorded in CHANGELOG.md
+                "config": {"model": MODEL_TIER_ALIAS["mid"]},
                 "capabilities": [
                     {
                         "name": "general_reasoning",
@@ -170,8 +173,8 @@ class AgentRegistry:
                 "agent_type": "general",
                 "name": "claude-haiku",
                 "description": "Claude Haiku - Fast, cost-effective for simple tasks",
-                # canonical 2026-04-22 — opus-4-7 migration; prior: claude-haiku-4-20250514 (retired)
-                "config": {"model": "claude-haiku-4-5-20251001"},
+                # tier alias resolved via MODEL_TIER_ALIAS; earlier versioned IDs are recorded in CHANGELOG.md
+                "config": {"model": MODEL_TIER_ALIAS["light"]},
                 "capabilities": [
                     {
                         "name": "quick_tasks",
@@ -186,8 +189,8 @@ class AgentRegistry:
                 "agent_type": "general",
                 "name": "claude-opus",
                 "description": "Claude Opus - Most capable for complex tasks",
-                # canonical 2026-04-22 — opus-4-7 migration; prior: claude-opus-4-20250514 (retires 2026-06-15 per F-04)
-                "config": {"model": "claude-opus-4-7"},
+                # tier alias resolved via MODEL_TIER_ALIAS; earlier versioned IDs are recorded in CHANGELOG.md
+                "config": {"model": MODEL_TIER_ALIAS["heavy"]},
                 "capabilities": [
                     {
                         "name": "complex_reasoning",
