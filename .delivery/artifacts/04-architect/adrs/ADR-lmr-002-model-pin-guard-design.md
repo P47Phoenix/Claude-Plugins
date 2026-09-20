@@ -21,7 +21,7 @@ The PRD already decided the shape (Decisions Already Made: one script, five cons
 3. Else, for `.md` files only: blank `COUNT_RE` matches with a single space, then a match of `PROSE_RE` (case-sensitive) or `BARE_RE` (case-insensitive) is `prose`.
 4. One category per line; a file is counted once per hit line.
 
-**D3. Scope** = `git ls-files --cached --others --exclude-standard`, filtered to existing regular files (`os.path.isfile`), extensions `.py .md .yml .yaml .txt .sh`, excluding `CHANGELOG.md` and everything under `.delivery/`. It is the same file set as the canonical count, so the ship gate and the count cannot disagree. Untracked files count before `git add`. Nested git worktrees (this repo keeps some under `.claude/worktrees/`) appear as non-files and are skipped by `isfile`. `.json` is out of scope by design, because baselines record the observed model ID and the fixture file holds strings that are pins.
+**D3. Scope** = `git ls-files --cached --others --exclude-standard`, filtered to existing regular files (`os.path.isfile`), extensions `.py .md .yml .yaml .txt .sh`, excluding `CHANGELOG.md` and everything under `.delivery/`. It is the same file set as the canonical count, so the ship gate and the count cannot disagree. Untracked files count before `git add`. Nested git worktrees (this repo keeps some under `.claude/worktrees/`) appear as non-files and are skipped by `isfile`. `.json` is out of scope by design, because baselines record the observed model ID and the fixture file holds strings that are pins. **Out of scope by decision (revision 1, F10):** every extension outside the list above. Measured this stage (`git ls-files | grep -v '\.delivery/'` minus the six scanned extensions): 16 `.json`, `.githooks/pre-commit` (extensionless), `Makefile`, `LICENSE`, `.gitignore`, `.gitattributes`, `.gitkeep`, `mtg-commander/.mtg-commander.yml.example` (`.example`), `prd-quality-gate-flow/.gitignore`. Today none carries a pin (a `.json` grep for `"model|claude-|opus|sonnet|haiku` matched only the marketplace name). This is a latent hole accepted on purpose; widening the list is one edit to the extension tuple plus a fixture, decided when such a file first needs a model name.
 
 **D4. No exemptions of any kind.** No comment, blockquote, heading or code-fence exemption; no per-line marker. The string `model-pin-ok` is not honoured anywhere (AC-1.6a, AC-1.6b). A legitimate hit is reworded (PRD wording rule). Counts and durations are handled by `COUNT_RE` blanking only.
 
@@ -29,7 +29,7 @@ The PRD already decided the shape (Decisions Already Made: one script, five cons
 
 **D6. Fixtures** live in `scripts/model_pin_fixtures.json` (JSON is outside the scan). Five keys and provenance rules as in AC-1.2a. AC-1.2a runs every fixture through both engines (`re` and `grep -E`/`sed -E`), so the patterns must stay in the portable subset (no lookaheads, no `(?`, no POSIX classes, no `#` or single quote in a value).
 
-**D7. Workflow** `stale-model-id-guard.yml` is rewritten to: `on: push (branches: main), pull_request, workflow_dispatch`, no `paths:` filter; one job that checks out and runs `python3 scripts/check_model_pins.py`. It contains no ID, no pattern and no `${{ github.event.* }}` inside `run:` (keeps `workflow-injection-lint.yml` green). It adds no `pip install` (NFR-8) and no `claude` invocation (AC-1.3). Honest limit: on `push` the workflow detects after the push; it cannot block it.
+**D7. Workflow** `stale-model-id-guard.yml` is rewritten to: `on: push (branches: main), pull_request, workflow_dispatch`, no `paths:` filter; one job that checks out and runs `python3 scripts/check_model_pins.py`. It contains no ID, no pattern and no `${{ github.event.* }}` inside `run:` (keeps `workflow-injection-lint.yml` green). It adds no `pip install` (NFR-8) and no `claude` invocation (AC-1.3). Honest limit: on `push` the workflow detects after the push; it cannot block it. That is why the ship gate (ADR-lmr-005 item 8) adds a clean-tree check, an out-of-tree evidence log and an independent post-push re-run, and why the pre-push hook below exists.
 
 **D8. Local gates** (blocking gate = the local run):
 - **Pre-commit hook** (`.githooks/pre-commit`, opt-in via `core.hooksPath`): staged-file mode, advisory by default, blocking when `MODEL_PIN_STRICT=1`. The hook runs under `set -euo pipefail`, so the call is written to tolerate zero staged files, deleted paths, and a non-zero exit. Reference implementation (the developer may adapt style, not behaviour):
@@ -46,8 +46,27 @@ The PRD already decided the shape (Decisions Already Made: one script, five cons
   fi
   ```
   Placement: after the existing budget and known-debt checks, before the final `budget + lint OK.` line. Missing `python3` or script warns and skips, like the existing checks. The `[ -n "$staged" ]` test replaces GNU-only `xargs -r`, so it behaves the same on BSD. Known limit: `--paths` reads the working-tree file, not the index, so a partly staged file is judged by its full working copy (stricter, never looser).
-- **Ship gate** (S7, mandatory, strict): `python3 scripts/check_model_pins.py` must print `guard-scope hits 0 files 0` with `exit=0` before the push, and its `--list` line count must equal the canonical command's hit count (R12 equivalence).
-- **Recommended addition, needs PO confirmation at Plan (not silently added to the PRD)**: an opt-in `.githooks/pre-push` that runs the script strictly, so the ship-time control is mechanical for anyone who installed the hooks. Without it the S7 report line `check_model_pins.py exit=0` is the sole control (Architect DoD round-2 F5).
+- **Ship gate** (S7, mandatory, strict): defined in ADR-lmr-005 item 8. In short, the tree must be clean (`git status --porcelain --untracked-files=all` empty) so the working-tree scan equals the pushed commit (F2, this hook has the same limit for `--paths`, which reads the working file, not the index), then `python3 scripts/check_model_pins.py` must print `guard-scope hits 0 files 0` with `exit=0`, and its `--list` line count must equal the canonical command's hit count (R12 equivalence).
+- **Pre-push hook, part of S1's design (revision 1, F3).** `.githooks/pre-push`, opt-in via `core.hooksPath`, acts only when a pushed ref is `refs/heads/main`: it requires the pushed sha to equal `HEAD`, a clean tree, then runs `python3 scripts/check_model_pins.py` and `python3 scripts/check_skill_budgets.py` strictly. Other refs pass through untouched, so WIP branch pushes of S1 to S3 (tree red until S4, risk P14) are not blocked. Reference implementation, run in this stage against a stubbed `git` with seven cases (non-main push rc=0; main clean rc=0 with both checkers run; sha mismatch rc=1; dirty tree rc=1; guard failure rc=1; empty stdin rc=0; delete of main rc=0):
+  ```bash
+  #!/usr/bin/env bash
+  set -euo pipefail
+  cd "$(git rev-parse --show-toplevel)"
+  zero="0000000000000000000000000000000000000000"
+  while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$remote_ref" = "refs/heads/main" ] || continue
+    [ "$local_sha" != "$zero" ] || continue
+    if [ "$local_sha" != "$(git rev-parse HEAD)" ]; then
+      echo "pre-push: pushed commit is not HEAD; the guard scans the working tree, not that commit" >&2; exit 1
+    fi
+    if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+      echo "pre-push: working tree not clean; guard scope would differ from the pushed commit" >&2; exit 1
+    fi
+    python3 scripts/check_model_pins.py
+    python3 scripts/check_skill_budgets.py
+  done
+  ```
+  The developer may adapt style, not behaviour. The hook needs `python3` like the pre-commit hook. `git push --no-verify` bypasses it, so it is defence in depth: the independent post-push re-run (S7b, ADR-lmr-005 item 8) does not depend on the pusher. This is an addition beyond FR-1.5 (which names only pre-commit); it does not contradict any PRD requirement and the PO may strike it at Plan without breaking the other controls (flagged as U12 in architecture.md).
 
 **D9. Self-scan and documentation rule.** The script, the workflow and every `.md` written by S1 (governance notes, docstring examples, README text) must themselves pass the guard, so they contain no version examples; docstrings and docs use synthetic IDs (`claude-opus-fixture`). Checked: the five constants do not match their own source text (`PIN_RE` needs a digit or `-latest` directly after the `claude-` run, and the source has `[` there). S5 additions (`tests/test_model_capture.py`, smoke README) are inside the scan scope and must derive model strings from the fixture or use synthetic IDs, never literals.
 
@@ -71,7 +90,7 @@ The PRD already decided the shape (Decisions Already Made: one script, five cons
 - **Accepted loopholes**, recorded (the guard is a tripwire, not a proof): string concatenation of an ID; a pin inside a `.json` file; a version in words; a real version phrased in a COUNT_RE form ("Opus 4 agents"); and, from the QA round-2 probes, separator variants such as `claude_opus_4_7`, `OPUS_4_7`, `claude opus 5`, `claude.opus.5`, tab or NBSP between family and digit. The architect recommends leaving the patterns as the PRD wrote them (FR-1.2 says the developer copies them verbatim); PO decides at Plan whether to add `_` and `.` to the separator class and the underscore forms to the fixtures.
 - **Accepted false-positive classes** (remedy: reword): hyphen-digit tool names such as `claude-plugins-v2`, and bare decimals with major 4 to 9 after a context word ("on 6.8 kernels", "with 4.7 V rail", "the 4.7 uF cap"). Hardware-team prose is the likeliest source. Risk R4 is therefore Medium for `hardware-team/`, not Low; the S1 dispatch runs the guard over the whole tree and reports any such hit before S1 closes (the tree scan today shows none in `hardware-team/`, which is why the PRD count is 91 hits in 31 files).
 - S1 to S3 WIP commits touching unmigrated files would fail a strict hook, which is why the hook is advisory by default. From S1 until S4 the tree holds hits by design; the workflow on a pushed branch is expected red until S4 lands, which is why the ship squashes S1 to S7 into one push (BINDING-2.1).
-- The hook is opt-in, so a contributor without `core.hooksPath` gets no local signal. The ship gate does not depend on it.
+- The hooks are opt-in, so a contributor without `core.hooksPath` gets no local signal, and `--no-verify` bypasses them. The ship gate does not depend on them; the post-push S7b re-run and the push workflow are the backstops, and both detect only after the push.
 
 ## Status rationale
 

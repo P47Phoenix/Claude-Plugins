@@ -22,7 +22,9 @@ Verified facts this design rests on:
 
 **A2. The value is a Claude Code CLI alias, not an API model ID.** `config.model` holds `opus` and would be rejected by the API. Therefore `flow_orchestrator.py:663` is reworded (FR-4.5): the API call reads one configured model ID; `config.model` is a CLI tier alias. Convention: code that must call the Claude API reads one environment or config value and never a literal.
 
-**A3. Frontmatter aliases** (`model:` in 4 files, `phase_1_detector_model:` in 5) cannot import Python. They are held to the vocabulary `opus|sonnet|haiku` by AC-4.6 instead of a single location. NFR-12 counts exactly one Python definition plus these nine lines.
+**A1a. Scope of the single definition point (revision 1, F6).** "One Python definition" (NFR-12) covers `agentic-flow-builder/scripts/agent_registry.py` ONLY. `prd-quality-gate-flow/stage_definitions.py` holds a second, differently spelled tier vocabulary (`"model": "claude-sonnet"` at lines 51, 87, 154, 185 and `"claude-haiku"` at 119, 220, 247; also `prd-quality-gate-flow/README.md` line 306). Those labels contain no digit, so `PIN_RE` does not match them and S4 does not touch them: out of scope, guard-neutral, by decision. Nobody should read NFR-12 as repo-wide. If those files ever call the CLI, they should adopt the `opus|sonnet|haiku` vocabulary in a separate change.
+
+**A3. Frontmatter aliases** (`model:` in 4 files, `phase_1_detector_model:` in 5) cannot import Python. They are held to the vocabulary `opus|sonnet|haiku` by AC-4.6 instead of a single location. NFR-12 counts exactly one Python definition plus these nine lines. **The vocabulary is a deliberately closed set (F7).** The live CLI reference lists a fourth documented alias, `fable` (`claude --help` for `--model` prints `'fable', 'opus', or 'sonnet'` and the full-name example `claude-fable-5`; the guard's `PROSE_RE` already knows Fable and Mythos). `model: fable` in a frontmatter would fail AC-4.6 today, on purpose: no skill uses it. Widening the vocabulary is one edit to the AC-4.6 alternation (one place), made when a skill first needs it.
 
 **A4. Stamp convention** in the 25 stamped SKILL.md (26 `model_awareness` lines, 26 `pattern_library_version` lines): `model_awareness: latest`, `pattern_library_version: rev-1`, `last_audited: 2026-09-20` (the date of the S3 DoD pass, per FR-3.3; use the actual date), `fitness_review_due:` reset to a date after today and within 90 days (`governance/fitness-review.md` says advance by 90 days; for 2026-09-20 that is 2026-12-19) in the 11 files that carry it. Every edit replaces the VALUE on an existing line. No line is added or removed. The 9 unstamped SKILL.md stay unstamped.
 
@@ -32,7 +34,7 @@ Verified facts this design rests on:
 
 ## Line-budget batching math (required proof)
 
-Rule: the 25 stamp edits and the 3-file prose edits add zero lines. Numbers are from commands run 2026-09-20, `wc -l` before, and a scratch-copy simulation of the edits after (regex value replacement for stamps; the prose blocks in architecture.md section 5.2). Nothing in the working tree was modified.
+Rule: the 25 stamp edits and the 3-file prose edits add zero lines. Numbers are from commands run 2026-09-20, `wc -l` before, and a scratch-copy simulation of the edits after (regex value replacement for stamps; the prose blocks in architecture.md section 4, S2, "Exact delivery-flow rewrite"). Nothing in the working tree was modified.
 
 Budget-checked files (`python3 scripts/check_skill_budgets.py` on the current tree: `BUDGET CHECK PASSED: 17 file(s) checked, 0 known-debt, 0 exception(s).`, exit 0):
 
@@ -86,7 +88,7 @@ Rollout check (memory lesson: any ADR adding lines to ALL files must verify at-c
 ## Consequences
 
 - One Python definition point plus nine frontmatter lines; the guard cannot enforce a single location for the nine, so AC-4.6 must keep printing `violations 0`.
-- Registry rows already persisted in a user's local SQLite database keep whatever `config.model` they were inserted with: `_load_default_agents` returns early when a `general` agent already exists (verified in `agent_registry.py`, lines 135 to 139). No database is tracked in the repo (`git ls-files` shows none), so nothing in the repo is stale, but a developer with an old local database still holds the retired ID in that row. Nothing reads `config.model` today, so it is harmless; logged as risk U6 in architecture.md.
+- Registry rows already persisted in a user's local SQLite database keep whatever `config.model` they were inserted with: `_load_default_agents` returns early when a `general` agent already exists (verified in `agent_registry.py`, lines 135 to 139). No database is tracked in the repo (`git ls-files` shows none), so nothing in the repo is stale, but a developer with an old local database still holds the retired ID in that row. Nothing reads `config.model` today, so it is harmless; logged as risk P9 in architecture.md section 7.
 - The alias may resolve differently per provider (`sonnet` differs on every non-Anthropic provider per the PRD table); the scheme claims only "latest for your provider" (R9).
 - Guidance written as "latest Opus" can go stale silently (R7); the mitigation is the date anchor plus the quarterly review, and `fitness_review_due` is reset in this initiative.
 

@@ -17,19 +17,20 @@ $ cat governance/cache-prefix-hash.txt        # identical line (also identical o
 43067c9e07e0b988cd976432dd07d5bb3d2336c41ad08a1b0064fb2fbd0b8328  delivery-team/skills/delivery-flow/SKILL.md
 ```
 
-So the frozen fingerprint is a hash of the **whole file**, not of a prefix. Three descriptions of "the prefix" exist in the repo and they disagree. The byte arithmetic below was run for real (`wc -c`, `head -c`, `head -N | wc -c`, and a Python offset scan of the file) on 2026-09-20:
+So the frozen fingerprint is a hash of the **whole file**, not of a prefix. Four descriptions of "the prefix" exist in the repo and they disagree (revision 1 added row 4, found by adversarial review F1). The byte arithmetic below was run for real (`wc -c`, `head -c`, `head -N | wc -c`, and a Python offset scan of the file) on 2026-09-20:
 
 | Description | Source | Measured boundary | Hash of that region |
 |---|---|---|---|
 | Whole file | `governance/cache-prefix-hash.txt` (what AC-6.1 checks) | 28,616 bytes (`wc -c`), 499 lines (`wc -l`) | `43067c9e...b8328` (matches the file) |
 | "bytes 0..2048" | `ADR-tk2-001` section D (`head -c 2048 ... \| sha256sum`) and the `## Volatile` comment in the SKILL.md | byte 2048 falls inside line 40 (line 40 starts at byte 2018) | `8c2ebf97...37750` (does NOT match the governance file) |
 | "end of Phase 3" | the same `## Volatile` comment ("prefix boundary sits at the end of Phase 3") and the design brief for this stage | `## Phase 4` heading starts at byte 15,479 (`head -248 \| wc -c` = 15,479) | `ac03f1f2...c60d` (does NOT match) |
+| "first 2048 bytes", executable | `delivery-team/hooks/telemetry.py` line 21 `PREFIX_READ_BYTES = 2048`; `_compute_prefix_hash` returns `sha256(SKILL.md[:2048])[:8]`; documented in `delivery-team/references/telemetry-schema.md` line 23 and ADR-tk0e-001 | same boundary as row 2 (byte 2048, inside line 40) | `8c2ebf97` (8 hex chars) for delivery-flow today; written to every telemetry row as `prefix_hash` |
 
-The brief for this stage says the 2048-byte prefix "ends at the end of Phase 3". That is false by measurement: end of Phase 3 is byte 15,479, and byte 2048 is inside Phase 0 (`## Phase 0: Setup Wizard` starts at byte 1892). The SKILL.md comment claims both at once and is internally inconsistent. This ADR does not edit that comment (it is outside the PRD's scope and every SKILL.md edit spends line budget; see Consequences) but records the discrepancy so nobody derives a design from it.
+What is true, after revision 1: the phrase "2048-byte prefix ends at the end of Phase 3" is false by measurement (end of Phase 3 is byte 15,479; byte 2048 is inside Phase 0, whose heading starts at byte 1892), and the `## Volatile` comment in SKILL.md is internally inconsistent because it claims both boundaries. But the bytes-0..2048 notion itself is NOT a stale comment: it is an executable definition (row 4, `telemetry.py`), the only executable "prefix" in the repo. The whole-file governance hash (row 1) and the 2048-byte telemetry hash (row 4) are two live, independent fingerprints with different scopes. This ADR does not edit the SKILL.md comment (outside PRD scope; every SKILL.md edit spends line budget) but records the discrepancy so nobody derives a design from it.
 
-No script, workflow or hook consumes the hash file. `grep -rn cache-prefix-hash` over `*.md *.yml *.py` outside `.delivery/` finds only CHANGELOG lines. The only reader is the S7 ship step and AC-6.1.
+No script, workflow or hook consumes `governance/cache-prefix-hash.txt`. Re-run in revision 1 over all file types outside `.delivery/`: `grep -rIln 'cache-prefix-hash\|prefix_hash\|PREFIX_READ' .` lists `CHANGELOG.md`, `delivery-team/artifacts/06-dev/...` (two stale docs), `delivery-team/hooks/telemetry.py`, `delivery-team/references/telemetry-schema.md`, `delivery-team/skills/delivery-flow/SKILL.md` and `governance/fitness-review.md`. Only `telemetry.py` is code. The only reader of the governance hash is the S7 ship step and AC-6.1. The only code that hashes SKILL.md bytes is `telemetry.py`; `grep -rn prefix_hash delivery-team/tests` prints nothing, so no test pins any value and no downstream reader (dashboard, script) of `prefix_hash` exists in the repo.
 
-Which S2/S3 edits move bytes? Simulated on a scratch copy of the file (nothing in the tree was touched), applying the frontmatter stamp edits and a line-neutral rewrite of the two version blocks (lines 27 to 30 and 273 to 276; the exact text is in architecture.md section 5.2):
+Which S2/S3 edits move bytes? Simulated on a scratch copy of the file (nothing in the tree was touched), applying the frontmatter stamp edits and a line-neutral rewrite of the two version blocks (lines 27 to 30 and 273 to 276; the exact text is in architecture.md section 4, S2, "Exact delivery-flow rewrite"):
 
 | Region | Bytes before | Bytes after | Delta |
 |---|---|---|---|
@@ -45,6 +46,8 @@ Which S2/S3 edits move bytes? Simulated on a scratch copy of the file (nothing i
 Line count is unchanged (499 to 499), so the Tier-A budget is not affected (see ADR-lmr-003).
 
 Reading: the S2/S3 edits change bytes 0..2048 (first difference at byte 854), so the prefix-only fingerprint of ADR-tk2 would be re-frozen regardless. Any fingerprint scope, including "none", is invalidated by S2/S3. Re-freezing is therefore mandatory and deliberate, which is exactly the "one-time deliberate prefix change" that ADR-tk2-001 section D.5 says needs a new ADR citing cache-cost impact. This ADR is that record.
+
+**Telemetry `prefix_hash` blast radius (run, not estimated).** `telemetry.py` resolves only skills under `delivery-team/skills/` (`SKILL_ROOT`), 17 tracked SKILL.md files, of which 13 carry stamps. A scratch simulation of the S3 stamp edits alone (value replacement of `model_awareness`, `pattern_library_version`, `last_audited` on the 25 stamped files; nothing in the tree touched) shows the first stamp line starts at byte 927 or earlier in every file (25 of 25 below 2048) and `sha256(file[:2048])[:8]` changes for 25 of 25. So, at ship, the telemetry `prefix_hash` changes for all 13 stamped `delivery-team` skills, not only delivery-flow. This is expected, needs no code change and breaks nothing (no consumer), but a telemetry reader that groups rows by `prefix_hash` sees a new group per skill from the ship date. The same fact means the prompt-cache prefix of each of those 13 skills changes, so the one-time uncached-first-read cost applies to 13 skills, not one (size still UNVERIFIED).
 
 Cache-cost impact: the prompt cache is keyed on a byte-identical prefix, so a byte change at offset 854 means the first session after ship reads this skill uncached. The size of that one-time cost is **UNVERIFIED** (nothing was measured, and this ADR does not depend on it). The benefit that motivates the change: the new content contains no model version, so a future model release changes zero bytes of this file and forces no re-freeze.
 
@@ -62,6 +65,7 @@ Cache-cost impact: the prompt cache is keyed on a byte-identical prefix, so a by
 4. **Re-check at ship (S7 step 5)**, after the final rebase and after the CHANGELOG and memory edits. If it prints anything but `MATCH`, the S7 executor re-runs step 3 and records why in the S7 report. A rebase onto a `main` that advanced and touched this file is the expected cause.
 5. **Any later edit to delivery-flow/SKILL.md re-runs step 3.** No silent drift: the S7 check is the only consumer, so it is the only thing that would notice.
 6. The stale `## Volatile` comment ("bytes 0..2048", "end of Phase 3") is a known documentation defect. It is logged for a later wave; fixing it costs one in-place comment rewrite in an at-cap file and is not needed for this initiative.
+7. **S6 must also account for the telemetry hash (revision 1, F1).** Beside the governance re-freeze, the S6 report records before and after values of the 2048-byte hash for delivery-flow: `head -c 2048 delivery-team/skills/delivery-flow/SKILL.md | sha256sum | cut -c1-8` (before `8c2ebf97`, simulated after `66bcaa25`; the real after-value is recorded at S6) and states that all 13 stamped `delivery-team` skills will show a new telemetry `prefix_hash` at ship. The governance fingerprint stays whole-file; `telemetry.py` and its schema doc are NOT changed by this initiative (a change would alter the telemetry contract, ADR-tk0e-001, and no requirement asks for it). If a later wave wants one shared boundary, it must update the `PREFIX_READ_BYTES` constant, the schema doc and the SKILL.md comment together; that is a separate decision.
 
 Byte-arithmetic rule for the S6 developer: run the commands, do not estimate. The numbers in this ADR come from commands, and the Stage 6 developer validator must re-run the three commands above and paste output (memory lesson: cache-prefix ADRs need runs-the-command validation).
 
@@ -77,9 +81,9 @@ Byte-arithmetic rule for the S6 developer: run the commands, do not estimate. Th
 
 ## Consequences
 
-- One deliberate cache invalidation for the delivery-flow skill at first load after ship (cost UNVERIFIED). Every later model release costs zero bytes here, because the file carries no version.
+- One deliberate cache invalidation at first load after ship: delivery-flow (governance hash and prompt cache) plus the other 12 stamped `delivery-team` skills (telemetry `prefix_hash` and prompt cache), cost UNVERIFIED. Every later model release costs zero bytes in these files, because they carry no version.
 - The fingerprint is stronger than the prefix it claims to protect (whole file), at the price that every legitimate edit of this file forces an S6-style re-freeze. That was already true today.
-- The documentation defect in the `## Volatile` comment remains until a later wave. It is carried as a risk (architecture.md section 9, U3).
+- The documentation defect in the `## Volatile` comment remains until a later wave. It is carried as risk P10 (architecture.md section 7).
 - Line budget: this ADR adds no lines to any SKILL.md. The batching claim "S2 block rewrite plus S3 stamp edits keep delivery-flow at 499" is proved with numbers in ADR-lmr-003.
 
 ## Status rationale

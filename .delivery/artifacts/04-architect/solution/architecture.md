@@ -9,13 +9,31 @@ ADR-lmr-001 cache fingerprint scope; ADR-lmr-002 guard design; ADR-lmr-003 centr
 
 > The cache fingerprint is a stone we must lift once, and mark clearly, so the road is never repaved for every new release. (Elrond)
 
+## Revision 1 changelog (adversarial loop 1: `challenger/loop-1.md`, 10 findings plus one doc mismatch)
+
+| Finding | Class | Disposition | Where |
+|---|---|---|---|
+| F1 telemetry.py hashes first 2048 bytes; prefix framing incomplete | significant | FIXED. Fourth row added, "false" reframed (an executable prefix exists), blast radius measured (13 skills; 25 of 25 stamped files change in the first 2048 bytes), S6 must record before and after. No code change. | ADR-lmr-001 context, decision 7, consequences; section 4 S6; U2 |
+| F2 gate scans working tree, not pushed commit | significant | FIXED. Ship step 2 requires a clean tree (`git status --porcelain --untracked-files=all` empty, no assume-unchanged flags); pre-push checks pushed sha equals HEAD; S7b scans a fresh clone. | ADR-lmr-005 item 8; ADR-lmr-002 D8 |
+| F3 self-reported ship control; budgets unchecked on push | significant | FIXED in design; two parts flagged for PO (P16). Out-of-tree teed log with shell-computed verdict, pre-push hook in S1, independent post-push S7b dispatch, push trigger for `skill-line-budget.yml` (verified to run with empty `PR_BODY`); if the trigger is declined, "budgets unenforced on push" is stated. No PR introduced. | ADR-lmr-005 item 8; ADR-lmr-002 D7, D8; section 4 S1 |
+| F4 effort docs contradict OQ-5/OQ-8; `xhigh` on non-opus | minor | FIXED. `--effort` sent only for `opus`; OQ-5 and OQ-8 rewritten. | ADR-lmr-004 sections 2 and 4; section 6; U13 |
+| F5 in-loop cost kill dead on real streams; budget subtype unconfirmed | minor | FIXED. Stated as legacy-only; exit-2 mapping widened (`budget` subtype, `budget limit` text, `is_error` with cost at or above 0.99 x cap, cost above cap). | ADR-lmr-004 section 4 |
+| F6 third tier vocabulary outside `MODEL_TIER_ALIAS` | minor | FIXED (scope stated: `agent_registry.py` only; `prd-quality-gate-flow` labels are digit-free and guard-neutral). | ADR-lmr-003 A1a |
+| F7 alias set omits `fable` | minor | FIXED (closed set by decision, widened in AC-4.6 only). | ADR-lmr-003 A3 |
+| F8 broken cross-references and the `S5a --> S6` edge | minor | FIXED. ADR-001 cites section 7, P10; ADR-003 cites P9; ADR-004 and ADR-005 cite section 5; "section 5.2" cites replaced by "section 4, S2"; edge removed; two internal references in this file corrected (section 8, section 6). | all five ADRs; section 5 graph |
+| F9 producer/validator separation is order-provable only | minor | FIXED as far as possible, remainder ACCEPTED. Ids pasted from the Agent tool result; a subagent transcript file per id as a supporting check; limit named. | ADR-lmr-004 section 6 item 5; ADR-lmr-005 item 6 |
+| F10 guard blind spots (extensions, loopholes) | minor | FIXED by declaration. Out-of-scope extensions listed with measured counts; loopholes stay accepted; separator decision stays with the PO (P5). | ADR-lmr-002 D3; P17 |
+| Doc MISMATCH: effort default per model | doc | ACCEPTED as a PRD-assumption contradiction, flagged (U13); no requirement changes. Same edit as F4. | section 6 rows OQ-5, OQ-8 |
+
+No finding was rebutted, and none was deferred without a design answer. Three items need a human decision and carry a fallback each: pre-push hook and budget push trigger (P16), and the home of the S7b report (P15). All five ADRs stay Proposed (binary status); no ADR-lmr-006 was needed because every finding fits an existing decision record.
+
 ## 1. Impact-analysis gate
 
 `.delivery/features/` does not exist (`ls .delivery/features` returns "No such file or directory"). There are no Feature Knowledge Cards, so there are no card-level assumptions to conflict with this design. No assumption conflict exists; nothing to escalate. Existing stale Stage 4 files in `04-architect/` (ADR-001 through ADR-006 series, `architecture-tk3-caveman-lite.md`) belong to earlier runs and were not modified; only the format of `ADR-tk2-001` was consulted.
 
 ## 2. Prior Art Analysis
 
-**Summary.** The PRD (about 150 KB, Revision 6) already contains the design: a version-free convention, a guard script with five patterns, a central tier-alias dict, version-free stamps, a parser fix and real-shape fixture for the smoke harness, a cache re-freeze and a ship procedure. It is unusually well specified: patterns are given verbatim, ACs are runnable, and the failure modes discovered by earlier reviews are baked in. This stage validates feasibility against the code, fills the genuinely open questions (OQ-3, OQ-4, OQ-5, OQ-11, partly OQ-12), pins the S5 interface, and proves the line-budget and cache arithmetic with real commands. It changes no PRD requirement; items that look unsound are flagged in section 9 with evidence.
+**Summary.** The PRD (about 150 KB, Revision 6) already contains the design: a version-free convention, a guard script with five patterns, a central tier-alias dict, version-free stamps, a parser fix and real-shape fixture for the smoke harness, a cache re-freeze and a ship procedure. It is unusually well specified: patterns are given verbatim, ACs are runnable, and the failure modes discovered by earlier reviews are baked in. This stage validates feasibility against the code, fills the genuinely open questions (OQ-3, OQ-4, OQ-5, OQ-11, partly OQ-12), pins the S5 interface, and proves the line-budget and cache arithmetic with real commands. It changes no PRD requirement; items that look unsound are flagged in section 8 with evidence.
 
 **Classification** (Decision Already Made means the architect does not propose an alternative):
 
@@ -34,12 +52,12 @@ ADR-lmr-001 cache fingerprint scope; ADR-lmr-002 guard design; ADR-lmr-003 centr
 | Story order S1 to S7 | Decision Already Made | BINDING-2.5 |
 | Cache fingerprint scope | Open Question (OQ-3) | ADR-lmr-001 |
 | Where `dod_validators` counts live; AC-DISP stage list | Open Question (OQ-4) | ADR-lmr-005 |
-| `xhigh` vs `high` | Open Question (OQ-5) | section 7 |
+| `xhigh` vs `high` | Open Question (OQ-5) | section 6 |
 | `model: sonnet` in delivery-flow | Open Question (OQ-11) | ADR-lmr-003 A5 |
 | S5 function interfaces, `model_usage` dynamic keys, schema version, budget-stop mapping | Open Question (round-2 F2, F4, F6, F7) | ADR-lmr-004 |
 | Base ref for pre-ship ACs | Open Question (round-2 F8) | ADR-lmr-005 item 7 |
 
-**Deviation protocol**: no Decision Already Made is replaced. Two additions are proposed as recommendations for PO confirmation at Plan, not as changes: an optional `pre-push` hook (ADR-lmr-002 D8) and the multi-manifest form of AC-DISP (ADR-lmr-005). Both keep the PRD reading valid if declined.
+**Deviation protocol**: no Decision Already Made is replaced. Three additions are proposed for PO confirmation at Plan, not as changes to any requirement: the multi-manifest form of AC-DISP (ADR-lmr-005), and, from revision 1, a `pre-push` hook now designed into S1 (ADR-lmr-002 D8) and a `push` trigger for `skill-line-budget.yml` (ADR-lmr-005 item 8). All three keep the PRD reading valid if declined (U12).
 
 **Domain discovery**: satisfied by the PRD and Stage 2 (PO owns the problem; the Stage 4 stage is light). No discovery interview was re-run.
 
@@ -84,12 +102,12 @@ Data flow of the smoke harness: `run_smoke.py` builds `claude --print --output-f
 ## 4. Story-by-story design
 
 ### S1 Guard (ADR-lmr-002)
-Files: new `scripts/check_model_pins.py`, `scripts/model_pin_fixtures.json`; rewrite `.github/workflows/stale-model-id-guard.yml`; edit `.githooks/pre-commit`. Route hook and workflow edits through `plugin-dev:hook-development` (FR-1.4). The script copies the five PRD constants verbatim. The S1 developer also records `base_sha` (ADR-lmr-005 item 7). Any doc S1 writes about the guard contains no version examples (self-scan rule).
+Files: new `scripts/check_model_pins.py`, `scripts/model_pin_fixtures.json`, `.githooks/pre-push` (revision 1); rewrite `.github/workflows/stale-model-id-guard.yml`; edit `.githooks/pre-commit`; and, if the PO confirms, add a `push: branches: [main]` trigger to `.github/workflows/skill-line-budget.yml` (revision 1, F3). Route hook and workflow edits through `plugin-dev:hook-development` (FR-1.4). The script copies the five PRD constants verbatim. The S1 developer also records `base_sha` (ADR-lmr-005 item 7). Any doc S1 writes about the guard contains no version examples (self-scan rule).
 
 ### S2 Keystone prose (ADR-lmr-003, ADR-lmr-001)
 Three dispatches, one per keystone, file-disjoint: (a) `delivery-flow/SKILL.md` plus the mirror `orchestrator-doctrine.md`, (b) `prompt-engineer/SKILL.md`, (c) `product-delivery/SKILL.md` (no version mention; ledger only; note `product-delivery` is 300/300 so any prose edit there must be net zero).
 
-**5.2 Exact delivery-flow rewrite (proved line-neutral).** Simulated on a scratch copy (not applied). The two version blocks are 4 lines each and stay 4 lines each. Proposed text (the developer may reword, but must keep the four lines per block, the conditional phrase, and the cap sentence on one line; every rewritten line must differ from its source line, or AC-2.1 counts it as still present):
+**Exact delivery-flow rewrite (proved line-neutral; cited from ADR-lmr-001 and ADR-lmr-003 as "section 4, S2").** Simulated on a scratch copy (not applied). The two version blocks are 4 lines each and stay 4 lines each. Proposed text (the developer may reword, but must keep the four lines per block, the conditional phrase, and the cap sentence on one line; every rewritten line must differ from its source line, or AC-2.1 counts it as still present):
 
 Block 1, replaces lines 27 to 30:
 ```
@@ -144,10 +162,10 @@ Baseline JSON after capture (schema 2, illustrative; the value under `model_reso
 (The `mean` shown for cost is a placeholder; AC-5.4 requires the captured value to be above 0.)
 
 ### S6 Cache re-freeze (ADR-lmr-001)
-After S3 and any DoD rework, one command rewrites `governance/cache-prefix-hash.txt` and AC-6.1 must print `MATCH`. The hash changes because the frontmatter (first byte difference at 854) and two blocks change; that is deliberate and recorded.
+After S3 and any DoD rework, one command rewrites `governance/cache-prefix-hash.txt` and AC-6.1 must print `MATCH`. The hash changes because the frontmatter (first byte difference at 854) and two blocks change; that is deliberate and recorded. Revision 1 (F1): S6 also records the before and after 2048-byte hash used by `delivery-team/hooks/telemetry.py` (`prefix_hash`). It changes for all 13 stamped `delivery-team` skills at ship (measured: 25 of 25 stamped files change in the first 2048 bytes, since the stamps start by byte 927), expected, no code change, no consumer breaks (ADR-lmr-001 decision 7).
 
 ### S7 Memory, changelog, ship (ADR-lmr-005)
-`## Run outcome` in the memory topic, a CHANGELOG entry naming BACKLOG-108 (CHANGELOG may name retired IDs, it is excluded from the guard), then the ordered ship gate in ADR-lmr-005 item 8.
+`## Run outcome` in the memory topic, a CHANGELOG entry naming BACKLOG-108 (CHANGELOG may name retired IDs, it is excluded from the guard), then the ordered ship gate in ADR-lmr-005 item 8: clean-tree check, one out-of-tree evidence log, then push, then an independent post-push re-run on a fresh clone of `origin/main` by a different dispatch (S7b; revision 1, F2 and F3).
 
 ## 5. Sequencing, dependency graph and parallelism (BINDING-2.5, BINDING-4.5)
 
@@ -161,7 +179,6 @@ flowchart TD
   S3 --> S4
   S4 --> S5a["S5a harness code + tests + fixture (Stage 6)"]
   S3 --> S6["S6 cache re-freeze"]
-  S5a --> S6
   S6 --> S5b["S5b live --init-baseline x5 (Stage 7 UAT)"]
   S5b --> S7["S7 memory, changelog, ship"]
   S3 -. AC-1b needs S1-S3 .-> S4
@@ -170,7 +187,7 @@ flowchart TD
 The PRD order S1, S2, S3, S4, S5, S6, S7 is a valid topological order and stays the default. Findings:
 - S4 closes AC-1b (zero hits repo-wide), which needs S1, S2, S3 landed, so it is correctly after S3, although its edits are file-disjoint from S2 and S3.
 - S5a depends on S4 only through `conftest.py` (synthetic IDs, so `test_meta.py` stays green) and on S1 (new S5 files fall inside the guard scope).
-- S6 depends only on S3 for content, but stays after S5 by PRD order; it is safe because S5 changes no SKILL.md.
+- S6 depends only on S3 for content (the earlier drawing had an `S5a --> S6` edge; revision 1, F8, removed it). It stays after S5a by PRD order only, and that is safe because S5 changes no SKILL.md.
 - S5b is expensive and reads SKILL.md content indirectly; run it after S6 so the baseline measures the final prose (Architect F8).
 
 **Parallel windows** (only where files are disjoint; BINDING-5.4 and Dispatch-Id evidence still apply to each dispatch):
@@ -191,10 +208,10 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | OQ-2 | Still UNVERIFIED (no doc source located; not searched exhaustively at light depth). No shipped prose depends on it; keep it out. |
 | OQ-3 | ADR-lmr-001: keep whole-file `sha256sum`; `orchestrator-doctrine.md` OUT. |
 | OQ-4 | ADR-lmr-005: config `.delivery/config.yml` lines 56 to 63 is the source; stage list `02-refine, 04-architect, 05-plan, 06-development, 07-uat`; manifest per round and per story. |
-| OQ-5 | Keep `xhigh` (project choice, BINDING-4.3); it is recorded in the baseline. The docs say the API default is `high` and thinking cannot be disabled at `xhigh` or `max` (PRD section 8). Risk R6 (cost) stands; the cap fails loudly; fall back to `high` only by an explicit decision. Optional `effort moved` WARN. |
+| OQ-5 | Keep `xhigh` (project choice, BINDING-4.3, `opus` only); it is recorded in the baseline. Revision 1 correction (live model-config page, fetched 2026-09-20 by the reviewer): Claude Code documents `high` as the default on every model except Opus 4.7, where `xhigh` is the default. So `xhigh` is redundant on Opus 4.7 and non-default elsewhere; it stays for reproducibility, and ADR-lmr-004 sends `--effort` only when `model == "opus"`. The API-side default is `high` per PRD section 8, and thinking cannot be disabled at `xhigh` or `max`. Risk R6 (cost) stands; the cap fails loudly; fall back to `high` only by an explicit decision. Optional `effort moved` WARN. |
 | OQ-6 | Open, Developer S5: the registry haiku value is a label; the smoke runner uses `opus` only. |
 | OQ-7 | Resolved (PRD). |
-| OQ-8 | Open; the runner passes `--effort` explicitly so the Claude Code default is irrelevant. https://code.claude.com/docs/en/model-config (fetched 2026-09-20) discusses default effort held across sessions for named models but no fetched text states the default for the latest Opus. |
+| OQ-8 | Partly answered (revision 1). https://code.claude.com/docs/en/model-config (fetched 2026-09-20 by the reviewer) states the Claude Code default per NAMED version (`xhigh` on Opus 4.7, `high` on every other model). It still states nothing for "the latest Opus", so any claim about the latest default stays UNVERIFIED and no shipped prose makes one. The runner passes `--effort` explicitly (opus only), so the default is irrelevant to it. |
 | OQ-9 | Resolved NARROW (human). |
 | OQ-10 | Resolved by observation; the docs name no init field (https://code.claude.com/docs/en/headless); the fixture pins it. |
 | OQ-11 | Confirmed: `model: sonnet` unchanged (ADR-lmr-003 A5). |
@@ -217,14 +234,18 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | P11 | Cost of the first uncached read of the re-frozen skill is UNVERIFIED | Accept; not measured |
 | P12 | `--max-budget-usd` is checked between turns (UNVERIFIED), so a sample can exceed the cap slightly | Layer-2 post-check enforces NFR-1 |
 | P13 | Stage 6 review dispatch load: each story needs manifests and `Dispatch-Id` trailers; the orchestrator must write them as it dispatches | Checklist item in every Stage 6 dispatch prompt |
-| P14 | S1 to S3 leave the tree red on the guard workflow until S4; ship is one squashed push so main never sees it | Keep squash; do not push S1 alone |
+| P14 | S1 to S3 leave the tree red on the guard workflow until S4; ship is one squashed push so main never sees it | Keep squash; do not push S1 alone (the pre-push hook acts only on `refs/heads/main`, so branch pushes are not blocked) |
+| P15 | Ship-gate evidence and S7b: the S7b report lands in a post-ship docs-only commit (a second push of `.delivery/` files); Plan confirms that is acceptable or names another home (revision 1, F3) | Plan decision; recommendation in ADR-lmr-005 item 8 |
+| P16 | `skill-line-budget.yml` push trigger and `.githooks/pre-push` are additions to the PRD's S1 scope; PO confirms or strikes; if the trigger is struck, budgets are unenforced by CI on direct pushes (F3) | Plan decision |
+| P17 | Guard scope blind spots: extensions outside `.py .md .yml .yaml .txt .sh` (16 tracked `.json`, `.githooks/pre-commit`, `Makefile`, `.example`) are out of scope by decision; none carries a pin today (F10) | Accepted; ADR-lmr-002 D3 |
+| P18 | Telemetry `prefix_hash` changes for 13 skills at ship; a reader grouping by it sees new groups (F1) | Accepted; S6 records the delivery-flow before and after values |
 
 ## 8. PRD items found technically unsound (flagged, not changed)
 
 | # | PRD text | Problem, with evidence | Suggested handling |
 |---|---|---|---|
 | U1 | FR-7.4 / AC-DISP: one manifest per stage, roles distinct, N equals lines | A second DoD round or seven stories repeat roles. Evidence: `02-refine/dod/` and `04-architect/dod/` hold `-r2` files; `06-development/dod/` holds `S1-S2-*` and `S3-*`. A correct run would fail the AC. | ADR-lmr-005 |
-| U2 | OQ-3 and the SKILL.md comment: "prefix is bytes 0..2048" / "ends at end of Phase 3" | Measured: end of Phase 3 is byte 15,479; byte 2048 is inside line 40; governance hash is whole-file (`8c2ebf97...` for `head -c 2048` differs from `43067c9e...` in the file). The design brief's "2048-byte prefix ends at the end of Phase 3" is also false. | ADR-lmr-001 records the measurements |
+| U2 | OQ-3 and the SKILL.md comment: "prefix is bytes 0..2048" / "ends at end of Phase 3" | Measured: end of Phase 3 is byte 15,479; byte 2048 is inside line 40; governance hash is whole-file (`8c2ebf97...` for `head -c 2048` differs from `43067c9e...` in the file). The design brief's "2048-byte prefix ends at the end of Phase 3" is false, and the SKILL.md comment is inconsistent. Revision 1 correction (F1): the 2048-byte notion is NOT merely stale; `delivery-team/hooks/telemetry.py` (`PREFIX_READ_BYTES = 2048`) executes it as `prefix_hash`. Two live fingerprints exist with different scopes. | ADR-lmr-001 records the measurements and the telemetry consumer |
 | U3 | FR-5.7: "`_check_hard_rules` and `_check_advisory_rules` skip `model_usage.*`" | Already true (they only walk fixed keys and `skill_loads.*`); the actual gap is that nothing collects `model_usage.*` into `metrics`, so AC-5.1 can never pass. | ADR-lmr-004 section 3 |
 | U4 | FR-5.9 "does not double count the `result` aggregate" | Under-specified: `dispatch_count` and per-model dispatches also double count when one API message is split across several assistant events, and the current parser counts a legacy `result` as a dispatch, which `test_meta.py` relies on. | ADR-lmr-004 section 1 (two-mode parser) |
 | U5 | FR-5.6 / `_init_baseline_flow` | `_execute_single_run` loads the old baseline for every sample; with schema 2 and `load_baseline`, init would fail or compare against the invalidated file. | ADR-lmr-004 section 5 |
@@ -233,6 +254,8 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | U8 | R4 rated Low | QA probes (round 2) show `claude-plugins-v2`, `on 6.8 kernels`, `with 4.7 V rail`, `the 4.7 uF cap` flag; hardware-team prose makes Medium the honest rating. | ADR-lmr-002 consequences |
 | U9 | OQ-12 / R13 | Docs now say `--bare` will become the default for `-p`; the baseline's conditions can change on a CLI upgrade. | Recorded; `host_context` and fixture re-record |
 | U10 | AC-2.1, AC-2.5, AC-4.4, AC-5.9b use the moving `main` ref | Fragile if main advances (F8). | `base-sha.txt` |
+| U12 | PRD FR-1.5 / S1 scope names a pre-commit hook and a guard workflow only; the ship path is a direct push (BINDING-5.1) and `skill-line-budget.yml` is `pull_request`-only | Two controls have no PRD text: a pre-push hook and a push trigger for the budget workflow. Proposed as additions, not silent changes (P16). | ADR-lmr-002 D8, ADR-lmr-005 item 8 |
+| U13 | PRD OQ-5 / OQ-8 assume no documented Claude Code default effort for the latest Opus | Live docs document per-named-version defaults (`high` everywhere except Opus 4.7, where `xhigh`). Contradiction is partial: nothing for "latest". No requirement changes (the runner passes `--effort` explicitly). | Section 6 rows OQ-5 and OQ-8; ADR-lmr-004 |
 | U11 | Design brief and PRD both call Stage 4 "single cache-fingerprint ADR" | Five decisions are load-bearing; the ADR set is five files, not one. Not a defect, a scope note. | This document |
 
 ## 9. Non-functional traceability
@@ -262,6 +285,13 @@ Everything else is sequential. Live capture is never parallel (NFR-6: sequential
 | `grep -rn "model_awareness\|pattern_library_version"` (non-`.delivery`) | only `skill-md-header-warn.yml` presence check |
 | `claude --version`, `claude --help` (grep flags) | 2.1.278; `--model`, `--effort`, `--max-budget-usd`, `--bare`, `--fallback-model` present |
 | `ls .delivery/features` | No such file or directory |
+| Revision 1: `grep -rIln 'cache-prefix-hash\|prefix_hash\|PREFIX_READ' .` (outside `.delivery/`), `sed -n 15,60p delivery-team/hooks/telemetry.py`, `grep -rn prefix_hash delivery-team/tests` | code consumer is `telemetry.py` only; no test, no reader (F1) |
+| Revision 1: scratch simulation over the 25 stamped files (`python3 /tmp/lmr-pfx.py`, read-only) | `stamped 25 stamp-line offset<2048: 25 max offset 927 prefix_hash changes on stamp-only edit: 25`; 13 of the 25 are under `delivery-team/skills/` (F1) |
+| Revision 1: `git status --porcelain --untracked-files=all`, `git ls-files -v \| grep -c '^[a-zS]'`, a `--no-hardlinks` local clone of HEAD in `/tmp`, then budgets and hash there | dirty check printed the untracked challenger file; flag count `0`; clone HEAD `85db40f...` printed `BUDGET CHECK PASSED: 17 file(s) ...`, `MATCH`, 0 porcelain lines, challenger file absent (F2, F3) |
+| Revision 1: `env -u PR_BODY python3 scripts/check_skill_budgets.py`, `PR_BODY= python3 ...`; `sed -n 1,30p .github/workflows/skill-line-budget.yml` | exit 0 with empty `PR_BODY`; trigger is `pull_request` only (F3) |
+| Revision 1: `bash /tmp/lmr-hk/test.sh` (pre-push hook against a stubbed `git`) | 7 cases as expected: non-main rc=0, main clean rc=0, sha mismatch rc=1, dirty rc=1, guard fail rc=1, empty stdin rc=0, delete main rc=0 (F3) |
+| Revision 1: `claude --help \| grep -n -i -A2 'effort\|fable'`; `grep -n '_running_cost\|cost_cap' delivery-team/tests/smoke/lib/runner.py`; `grep -n '"model": "claude-' prd-quality-gate-flow/stage_definitions.py`; extension census of tracked files outside `.delivery/` | `--effort` levels low..max, alias `fable` documented; in-loop kill at runner.py lines 95 and 252; 7 digit-free labels in `stage_definitions.py`; 16 `.json` plus 8 other files outside the scan extensions (F4, F5, F6, F7, F10) |
+| Revision 1: `ls ~/.claude/projects/<slug>/<session>/subagents/` | `agent-<id>.jsonl` and `.meta.json` per subagent exist (F9) |
 | Reads of `runner.py`, `metrics.py`, `baseline.py`, `report.py`, `run_smoke.py`, `tests/conftest.py`, `tests/test_meta.py`, `agent_registry.py`, `.githooks/pre-commit`, `stale-model-id-guard.yml`, `skill-md-header-warn.yml`, `.delivery/config.yml`, `state.md`, `pipeline-stages.md`, `quality-gates.md` | facts cited in ADR-lmr-002 to 005 |
 
 ## 11. Citations and UNVERIFIED items
@@ -273,11 +303,15 @@ Fetched this stage (WebFetch, 2026-09-20):
 
 Carried from the PRD (fetched by other stages, not re-fetched here): API has no evergreen alias (platform.claude.com model-ids-and-versions and overview); the latest Opus "delegates to subagents more readily" and effort recalibration (platform.claude.com prompting-claude-opus-5, effort, migration-guide pages).
 
-**UNVERIFIED** (not relied on for a hard requirement): (1) `message.id` presence and split-event repetition on real assistant events; (2) exact budget-stop result subtype string (parser matches `budget` by substring); (3) whether the CLI stops exactly at the budget or between turns; (4) init-event field name beyond the local observation of top-level `model` on CLI 2.1.278; (5) size of the one-time cache cost after re-freeze; (6) OQ-2 doc source for "more literal instruction following"; (7) Claude Code default effort for the latest Opus; (8) `haiku` alias resolving to the latest Haiku (docs do not say "latest").
+Revision 1 (WebFetch by the challenger, 2026-09-20, https://code.claude.com/docs/en/model-config, effort table): `high` is "the default on every model except Opus 4.7"; `xhigh` is "the default on Opus 4.7"; the CLI reference says available `--effort` levels depend on the model, and that `--max-budget-usd` stops "before stopping (print mode only)" with subagent spawns failing with `Budget limit reached`. Carried from the reviewer's fetch, not re-fetched by this revision.
+
+**UNVERIFIED** (not relied on for a hard requirement): (1) `message.id` presence and split-event repetition on real assistant events; (2) exact budget-stop result subtype string (parser matches `budget` by substring); (3) whether the CLI stops exactly at the budget or between turns; (4) init-event field name beyond the local observation of top-level `model` on CLI 2.1.278; (5) size of the one-time cache cost after re-freeze; (6) OQ-2 doc source for "more literal instruction following"; (7) Claude Code default effort for the latest Opus (documented only per named version, revision 1); (8) `haiku` alias resolving to the latest Haiku (docs do not say "latest").
 
 ## 12. Handoff notes for Plan and Development
 
 - Dev DoD validators for S6 must re-run the three cache commands and paste the output (memory lesson: cache-prefix ADRs need runs-the-command).
 - Every dispatch prompt for a SKILL.md edit starts with the `plugin-dev:skill-development` acknowledgement; hook and workflow edits with `plugin-dev:hook-development` (BC-01).
 - Every producer and validator commit carries `Dispatch-Id`; the orchestrator writes the per-round manifests as it dispatches (P13).
+- The S7 executor runs steps 2 to 8 of ADR-lmr-005 item 8 as one teed block with the log outside the tree; a separate devops dispatch (S7b) re-runs on a fresh clone of `origin/main` after the push.
+- The S6 report records the telemetry-hash before and after values (ADR-lmr-001 decision 7).
 - The S2 developer runs `wc -l` on delivery-flow after the edit and pastes it; it must print 499 (500 is the cap).
