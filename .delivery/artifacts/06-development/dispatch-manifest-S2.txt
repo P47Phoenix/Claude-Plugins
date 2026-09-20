@@ -1,0 +1,4 @@
+expected_validators: 3
+architect	afcab787efc283126
+tech-writer	a12643ec9e60f1ec8
+qa	a3708e71fa6f798db
