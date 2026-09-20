@@ -1,0 +1,4 @@
+path	agent_id	verdict	note
+delivery-team/skills/delivery-flow/SKILL.md	ab8ec16bb938b9ac0	REVIEWED_CHANGED	S2(a) commit ab8ec16 replaced version-specific model-awareness blocks with family-relative latest-Opus wording; S3 set version-free stamps
+prompt-engineer/SKILL.md	a4404cf8b43fcd789	REVIEWED_CHANGED	S2(b) commits 1e36eb2 and 1304e2a made model guidance version-free and doc-anchored; S3 cleared the stamp example block
+delivery-team/skills/product-delivery/SKILL.md	s3-developer	NO_CHANGE_NEEDED	prose has no model/version mentions; only stamps at lines 5 and 7

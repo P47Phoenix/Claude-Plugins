@@ -7,9 +7,9 @@ description: >
   deck", "MTG deck", "commander deck", "EDH deck", "build me a deck",
   "100-card deck", "commander pipeline", "deck builder".
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 ---
 
 # MTG Commander Deck Builder

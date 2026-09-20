@@ -2,12 +2,12 @@
 name: presentation
 description: Presentation Composer — assembles delivery-team contributions into cohesive presentations via a 6-step flow. Supports 9 types (Sprint Review, Feature Pitch, Stakeholder Update, Technical Deep-Dive, Investor Pitch, Roadmap, Product Demo, Onboarding, Retrospective Summary) and 4 formats (structured-markdown, marp, paste-ready, pptx). Triggers on phrases like "create presentation", "sprint review", "pitch", "deep dive", "roadmap", "demo", "retro". Full per-type triggers in references/types/.
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: B
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-11-21
 context_budget: 300
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---

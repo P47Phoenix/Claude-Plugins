@@ -2,12 +2,12 @@
 name: ui
 description: UI/UX design agent for crafting user experiences, visual designs, and game interfaces. Auto-detects the designer role (UX Designer, UI Designer, Game UI Designer) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "user flow", "wireframe", "design system", "design tokens", "accessibility", "WCAG", "UI pattern", "HUD", "game menu", "inventory UI", "minimap". Full per-role triggers in references/roles/.
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: B
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-12-12
 context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]

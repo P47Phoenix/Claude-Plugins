@@ -2,12 +2,12 @@
 name: godot
 description: Godot 4.x game development agent. Use this skill when working on Godot projects — writing GDScript or C#, designing scenes and node hierarchies, implementing signals and event bus patterns, state machines, component architecture, or project structure. Triggers on mentions of Godot, GDScript, .tscn, .gd, @export, @onready, CharacterBody2D/3D, Area2D/3D, autoloads, PackedScene, or requests to build game features in Godot. Targets Godot 4.x / GDScript 2.0.
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: C
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-11-07
 context_budget: 200
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---

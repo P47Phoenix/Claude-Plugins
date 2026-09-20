@@ -2,12 +2,12 @@
 name: operations
 description: Operations agent for DevOps, release management, and technical writing. Auto-detects the operations role (DevOps, Release Manager, Technical Writer) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "CI/CD", "deployment", "Kubernetes", "monitoring", "release plan", "rollback", "feature flag", "SemVer", "API docs", "runbook", "release notes", "Diataxis". Full per-role triggers in references/roles/.
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: B
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-11-14
 context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]

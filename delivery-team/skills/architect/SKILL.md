@@ -2,12 +2,12 @@
 name: architect
 description: Architecture agent for technical design, ADRs, and technology governance across software and game development. Auto-detects 11 roles (Solution, Enterprise, Data, Security, Compliance, Privacy, Incident Response, Game Systems, Level/World, Network/Multiplayer, Graphics/Rendering) and spawns a role-scoped sub-agent. Triggers on phrases like "design architecture", "ADR", "threat model", "GDPR", "SOC 2", "DDD", "ECS", "netcode", "render pipeline". Full trigger list per role in references/roles/.
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: B
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-10-17
 context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]

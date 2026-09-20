@@ -2,14 +2,14 @@
 name: delivery-flow
 description: Delivery pipeline orchestrator that coordinates the full delivery team through 7 stages (Idea, Refine, Design, Architect, Plan, Development, UAT) with auto-detection of project type, self-correction loops, adversarial review, multi-perspective review boards, team Definition of Done validation, dynamic escalation, debate for contested decisions, consensus for cross-team alignment, and self-learning memory. Triggers on phrases like "delivery pipeline", "full delivery", "end-to-end delivery", "start project", "new project", "greenfield", "new feature", "bug fix", "spike", "POC", "proof of concept", "game project", "delivery flow", "run pipeline", "start pipeline", "deliver this", "build and ship", "start delivery", "kick off project".
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7
+model_awareness: latest
 model: sonnet
 extended_thinking: false
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: A
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-10-24
 context_budget: 500
 ---
 

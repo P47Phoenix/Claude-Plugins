@@ -2,9 +2,9 @@
 name: research-agent
 description: Production-grade research agent for systematic investigation. Auto-detects research type (Exploratory, Descriptive, Explanatory, Evaluative, Comparative) and dispatches to the matching sub-skill under skills/research-types/. Triggers on phrases like "research X", "investigate why", "compare options", "systematic review", "literature review", "evaluate impact", "root cause analysis", "how does X work", "what is known about X", "which should I choose".
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 ---
 
 # Research Agent

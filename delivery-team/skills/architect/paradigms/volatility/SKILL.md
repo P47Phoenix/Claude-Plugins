@@ -9,9 +9,9 @@ task_types:
   - decompose
   - design
 model: sonnet
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: C
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]
 ---

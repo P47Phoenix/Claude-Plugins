@@ -2,12 +2,12 @@
 name: product-delivery
 description: Product delivery agent with three specialized roles -- Product Owner, Scrum Bag, and Data Analyst. Auto-detects the relevant role and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "write user stories", "prioritize backlog", "acceptance criteria", "create PRD", "decompose epic", "sprint goal", "product roadmap", "definition of done", "MoSCoW", "RICE score", "product owner", "retrospective", "retro", "process improvement", "velocity", "burndown", "ceremony", "standup", "sprint review", "impediment", "team health", "agile maturity", "scrum master", "agile coach", "kanban", "WIP limit", "cycle time", "analytics", "metrics", "KPI", "dashboard", "A/B test", "experiment", "data quality", "reporting", "funnel", "cohort", "retention", "HEART framework", "AARRR", "OKR metrics".
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: B
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-11-28
 context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]

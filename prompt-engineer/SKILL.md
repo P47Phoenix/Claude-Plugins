@@ -3,9 +3,9 @@ name: prompt-engineer
 description: Expert prompt optimization for LLMs and AI systems. Use PROACTIVELY when building AI features, improving agent performance, or crafting system prompts. Masters prompt patterns and techniques.
 tools: Read, Write, Edit
 model: opus
-model_awareness: opus-4-7
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 ---
 
 # Prompt Engineer
@@ -412,9 +412,9 @@ Isolate latest-model guidance in a single named sub-section per model family (se
 Per ADR-006, every SKILL.md carries three frontmatter fields alongside the legacy `name` / `description`:
 
 ```yaml
-model_awareness: opus-4-7
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 ```
 
 - `model_awareness` — version-free stamp (`latest`): the skill tracks the latest model of its family; `last_audited` records when that was last checked.

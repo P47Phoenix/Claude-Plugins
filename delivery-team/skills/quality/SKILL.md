@@ -2,12 +2,12 @@
 name: quality
 description: QA Engineer agent for test planning, test case design, automation strategy, and quality metrics. Auto-detects the testing task type and spawns a scoped sub-agent so only the relevant reference loads. Triggers on phrases like "test strategy", "test cases", "test plan", "regression", "test data", "exploratory testing", "quality metrics", "automation strategy", "QA", "test coverage", "smoke test", "boundary testing", "edge cases". Output contracts in references/contracts/.
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-22
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 tier: B
 maintainer: delivery-team-leads
-fitness_review_due: 2026-08-09
+fitness_review_due: 2026-12-05
 context_budget: 300
 phase_1_detector_model: haiku
 allowed-tools: [Read, Edit, Write, Bash, Skill, ToolSearch]

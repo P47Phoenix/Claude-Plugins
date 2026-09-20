@@ -2,9 +2,9 @@
 name: hardware-flow
 description: Pipeline orchestrator that coordinates the hardware delivery team through 8 stages (Concept, Schematic, Layout, Prototype, DFM/DFA, Compliance, Pilot Run, Production Release) with sub-agent dispatch, validation gates, rework loops, human-execution stages, kicad-happy integration, state persistence, and self-learning memory. Triggers on phrases like "hardware pipeline", "run hardware", "hardware flow", "hw-setup", "start hardware project", "concept to production", "PCB pipeline", "hardware delivery", "resume hardware pipeline".
 license: Apache License 2.0 - See repository LICENSE file
-model_awareness: opus-4-7-frontmatter-only
-last_audited: 2026-04-23
-pattern_library_version: 4-7-1
+model_awareness: latest
+last_audited: 2026-09-20
+pattern_library_version: rev-1
 ---
 
 # Hardware Flow -- Pipeline Orchestrator
