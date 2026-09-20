@@ -15,10 +15,14 @@ Usage:
   python3 scripts/check_model_pins.py --canary        # inject pin in mktemp repo, expect rc 1
   python3 scripts/check_model_pins.py --help          # rc 0
 
-Scope (default): `git ls-files -z --cached --others --exclude-standard`, regular
-files only (symlinks and nested worktrees skipped), extensions .py .md .yml
+Scope (default): `git -C <toplevel> ls-files -z --cached --others --exclude-standard`
+where <toplevel> = `git rev-parse --show-toplevel`; the process chdirs there, so
+scope, printed paths and --paths args are toplevel-relative and independent of the
+invoking cwd. Regular files only (symlinks and nested worktrees skipped), extensions .py .md .yml
 .yaml .txt .sh, minus CHANGELOG.md (any dir) and everything under .delivery/.
---paths: same extension/CHANGELOG/.delivery filters; a file outside the repo is scanned.
+--paths: same filters; relative args resolve against the toplevel (not the invoking
+cwd); a file outside the repo is scanned; outside any repo, cwd is kept.
+--list escapes control characters in file names (as \\xNN) so each hit is one line.
 
 Rules (one category per line, in this order):
   pin    line matches PIN_RE (re.I)
@@ -34,7 +38,8 @@ Output (stdout):
 
 Exit: 0 clean | 1 hits (N > 0) | 2 default scope empty (K == 0), git listing
 failed, not in a repo, or an in-scope file unreadable/undecodable (fail closed,
-stderr names path). Explicit --paths with zero scannable files: prints
+stderr names path). An empty default scope still prints `files-scanned 0` and
+`guard-scope hits 0 files 0` but exits 2: callers must judge on rc, not on hits. Explicit --paths with zero scannable files: prints
 `files-scanned 0` + `guard-scope hits 0 files 0`, exit 0.
 
 --strict / MODEL_PIN_STRICT=1: consumed by the hooks (block vs advisory). The
@@ -110,11 +115,22 @@ def _in_scope_name(path):
     return norm.endswith(EXTS)
 
 
-def files():
-    """Default scope (repo-root relative paths, sorted). Raises GuardError."""
+def toplevel():
+    """Absolute repo toplevel or None when not in a repo."""
+    try:
+        r = subprocess.run(["git", "rev-parse", "--show-toplevel"], shell=False,
+                           check=True, capture_output=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    top = os.fsdecode(r.stdout).rstrip("\r\n")
+    return top or None
+
+
+def files(top):
+    """Default scope (toplevel-relative paths, sorted). Raises GuardError."""
     try:
         r = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            ["git", "-C", top, "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
             shell=False, check=True, capture_output=True,
         )
     except (OSError, subprocess.CalledProcessError) as e:
@@ -157,7 +173,8 @@ def run_scan(paths):
 
 
 def _display(p):
-    return p[2:] if p.startswith("./") else p
+    p = p[2:] if p.startswith("./") else p
+    return re.sub(r"[\x00-\x1f\x7f]", lambda m: "\\x%02x" % ord(m.group()), p)
 
 
 def load_fixtures():
@@ -241,6 +258,9 @@ def main(argv):
         print(__doc__)
         return 0
     listing = "--list" in argv
+    top = toplevel()
+    if top:
+        os.chdir(top)
     if "--check-fixtures" in argv:
         try:
             return check_fixtures()
@@ -268,7 +288,9 @@ def main(argv):
                 paths.append(p)
             paths = sorted(set(paths))
         else:
-            paths = files()
+            if not top:
+                raise GuardError("not in a git repository")
+            paths = files(top)
         hits = run_scan(paths)
     except GuardError as e:
         print("check_model_pins: %s" % e, file=sys.stderr)

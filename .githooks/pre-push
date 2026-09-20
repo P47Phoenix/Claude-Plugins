@@ -21,7 +21,7 @@ fail() {
   echo "pre-push: advisory only (set MODEL_PIN_STRICT=1 to block)." >&2
 }
 
-while read -r local_ref local_sha remote_ref remote_sha; do
+while read -r local_ref local_sha remote_ref remote_sha || [ -n "$local_ref" ]; do
   [ "$remote_ref" = "refs/heads/main" ] || continue
   [ "$local_sha" != "$zero" ] || continue
   if [ "$local_sha" != "$(git rev-parse HEAD)" ]; then
