@@ -36,16 +36,54 @@ class PipelineTimeout(Exception):
 
 
 def _running_cost(events: list[dict]) -> float:
+    """Cost so far. A real `result.total_cost_usd` replaces (never adds to) the
+    legacy per-event `usage.cost_usd` sum; before a result exists the sum is used.
+    """
     total = 0.0
+    result_total = None
     for evt in events:
-        usage = evt.get("usage") if isinstance(evt, dict) else None
+        if not isinstance(evt, dict):
+            continue
+        if evt.get("type") == "result" and evt.get("total_cost_usd") is not None:
+            try:
+                result_total = float(evt["total_cost_usd"])
+            except (TypeError, ValueError):
+                pass
+            continue
+        usage = evt.get("usage")
         if isinstance(usage, dict):
             cost = usage.get("cost_usd")
             try:
                 total += float(cost) if cost is not None else 0.0
             except (TypeError, ValueError):
                 continue
-    return total
+    return result_total if result_total is not None else total
+
+
+def _result_failure(events: list[dict], cost_cap: float) -> tuple[bool, int, str | None]:
+    """Classify the final result event. Returns (failed, exit_code, reason)."""
+    res = None
+    for evt in events:
+        if isinstance(evt, dict) and evt.get("type") == "result":
+            res = evt
+    if res is None:
+        return False, 0, None
+    subtype = str(res.get("subtype") or "")
+    is_error = bool(res.get("is_error"))
+    if subtype == "success" and not is_error:
+        return False, 0, None
+    if not subtype and not is_error:
+        return False, 0, None
+    text = str(res.get("result") or "").lower()
+    cost = res.get("total_cost_usd")
+    near_cap = False
+    try:
+        near_cap = is_error and cost is not None and float(cost) >= 0.99 * cost_cap
+    except (TypeError, ValueError):
+        pass
+    if "budget" in subtype or "budget limit" in text or near_cap:
+        return True, 2, COST_CAP_EXCEEDED_REASON
+    return True, 1, f"result-{subtype or 'error'}"
 
 
 def _tee_event(event: dict, stream_path: Path) -> None:
@@ -122,6 +160,11 @@ def _build_claude_command(
     # subprocess to exit 1 with "When using --print, --output-format=stream-json
     # requires --verbose" before emitting any stream events.
     cmd = ["claude", "--print", "--output-format", "stream-json", "--verbose"]
+    cmd.extend(["--model", model])
+    if model == "opus" and effort is not None:
+        cmd.extend(["--effort", effort])
+    if max_budget_usd is not None:
+        cmd.extend(["--max-budget-usd", f"{max_budget_usd:.2f}"])
     if workspace.plugin_load_strategy == PLUGIN_LOAD_PLUGIN_DIR:
         cmd.extend(["--plugin-dir", str(workspace.plugin_path)])
     return cmd
@@ -179,7 +222,9 @@ def _spawn_and_tee(
     model: str = "opus",
     effort: str | None = "xhigh",
 ) -> dict:
-    cmd = _build_claude_command(workspace, prompt_path)
+    cmd = _build_claude_command(
+        workspace, prompt_path, model=model, effort=effort, max_budget_usd=cost_cap
+    )
     env = workspace.subprocess_env()
     cwd = str(workspace.cwd_for_subprocess)
     stderr_path = _stderr_log_path(stream_path)
@@ -276,6 +321,14 @@ def _spawn_and_tee(
                     outcome_success = False
                     outcome_reason = f"subprocess-exit-{proc.returncode}"
                     exit_code = 1
+                else:
+                    failed, code, why = _result_failure(events, cost_cap)
+                    if failed:
+                        outcome_success, exit_code, outcome_reason = False, code, why
+                    elif _running_cost(events) > cost_cap:
+                        outcome_success = False
+                        outcome_reason = COST_CAP_EXCEEDED_REASON
+                        exit_code = 2
     finally:
         if proc.poll() is None:
             _terminate(proc)
@@ -341,4 +394,6 @@ def run_pipeline(
         cost_cap=cost_cap,
         timeout=timeout,
         prompt_path=prompt_path,
+        model=model,
+        effort=effort,
     )

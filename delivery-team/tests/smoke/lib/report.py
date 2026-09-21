@@ -7,10 +7,24 @@ import subprocess
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 
-from .metrics import Metrics, ModelUsage
+from .metrics import Metrics, ModelCaptureError, ModelUsage, check_model_capture
+
+MODEL_PIN_ENV_VARS = (
+    "ANTHROPIC_MODEL",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+)
+BEST_EFFORT_FIELDS = ("thinking_tokens", "stop_details.refusal_code", "speed_or_fast_indicator")
 
 
-SCHEMA_VERSION = "1"
+def _model_pin_env() -> dict:
+    """Presence only, never the value (a value can be an ARN or account id)."""
+    import os
+    return {name: ("set" if os.environ.get(name) else None) for name in MODEL_PIN_ENV_VARS}
+
+
+SCHEMA_VERSION = "2"
 
 
 def _git_sha(repo_root: Path) -> str | None:
@@ -70,21 +84,33 @@ def build_report(
     hard_failures: list[str] | None = None,
     stream_path: str | None = None,
     session_id: str | None = None,
+    model_requested: str | None = "opus",
+    effort: str | None = "xhigh",
+    bare: bool = False,
 ) -> dict:
-    """Assemble the schema-v1 report dict per architecture §5."""
+    """Assemble the schema-v2 report dict per architecture §5 / ADR-lmr-004."""
+    try:
+        model_resolved = check_model_capture(metrics)
+    except ModelCaptureError:
+        model_resolved = []
+    warns = list(advisory_warnings or [])
+    seen = set(getattr(metrics, "observed_fields", []) or [])
+    for name in BEST_EFFORT_FIELDS:
+        if name not in seen:
+            warns.append(f"WARN missing {name}")
     return {
         "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
         "git_sha": _git_sha(repo_root),
         "claude_cli_version": _claude_cli_version(),
         "plugin_load_strategy": plugin_load_strategy,
-        "model_requested": None,
-        "model_resolved": [],
-        "effort": None,
-        "host_context": {},
-        "session_id": None,
-        "stream_file": None,
-        "model_pin_env": {},
+        "model_requested": model_requested,
+        "model_resolved": model_resolved,
+        "effort": effort,
+        "host_context": {"bare": bool(bare), "claude_code_version": _claude_cli_version()},
+        "session_id": session_id or metrics.session_id,
+        "stream_file": stream_path,
+        "model_pin_env": _model_pin_env(),
         "outcome": {
             "success": bool(outcome.get("success", False)),
             "exit_code": int(outcome.get("exit_code", 0)),
@@ -97,7 +123,7 @@ def build_report(
             "output": int(metrics.tokens.get("output", 0)),
             "cache_creation": int(metrics.tokens.get("cache_creation", 0)),
             "cache_read": int(metrics.tokens.get("cache_read", 0)),
-            "cache_hit_ratio": 0.0,
+            "cache_hit_ratio": float(metrics.cache_hit_ratio),
         },
         "model_usage": _model_usage_dicts(metrics.model_usage),
         "pipeline": {
@@ -107,7 +133,7 @@ def build_report(
             "defects_logged": int(aggregator_dict.get("pipeline", {}).get("defects_logged", 0)),
         },
         "skill_loads": list(aggregator_dict.get("skill_loads", [])),
-        "advisory_warnings": list(advisory_warnings or []),
+        "advisory_warnings": warns,
         "hard_failures": list(hard_failures or []),
     }
 
@@ -139,6 +165,10 @@ def _render_summary_md(report: dict) -> str:
     lines.append(f"| git_sha | {report.get('git_sha')} |")
     lines.append(f"| claude_cli_version | {report.get('claude_cli_version')} |")
     lines.append(f"| plugin_load_strategy | {report.get('plugin_load_strategy')} |")
+    lines.append(f"| tokens.cache_hit_ratio | {tokens.get('cache_hit_ratio')} |")
+    lines.append(f"| model_requested | {report.get('model_requested')} |")
+    lines.append(f"| model_resolved | {', '.join(report.get('model_resolved') or [])} |")
+    lines.append(f"| effort | {report.get('effort')} |")
     lines.append("")
 
     skills = report.get("skill_loads") or []

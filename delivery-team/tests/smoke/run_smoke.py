@@ -36,6 +36,23 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Run scenario 5× sequentially and write baseline JSON.",
     )
     parser.add_argument(
+        "--model",
+        choices=["opus"],
+        default="opus",
+        help="Model alias passed to claude --model (smoke runner supports opus only).",
+    )
+    parser.add_argument(
+        "--effort",
+        choices=["low", "medium", "high", "xhigh", "max"],
+        default="xhigh",
+        help="Effort level; sent only when --model is opus.",
+    )
+    parser.add_argument(
+        "--strict-model",
+        action="store_true",
+        help="Fail (not warn) when the resolved model differs from the baseline's.",
+    )
+    parser.add_argument(
         "--cost-cap",
         type=float,
         default=3.00,
@@ -99,7 +116,8 @@ def _execute_single_run(args, run_out_dir: Path) -> tuple[int, dict]:
     from lib.aggregator import aggregate
     from lib.report import build_report, write_report
     from lib.workspace import Workspace
-    from lib.baseline import compare as compare_to_baseline
+    from lib.baseline import compare as compare_to_baseline, load_baseline, BaselineSchemaError
+    from lib.metrics import ModelCaptureError, check_model_capture
 
     run_out_dir.mkdir(parents=True, exist_ok=True)
     stream_path = run_out_dir / "stream.jsonl"
@@ -128,6 +146,8 @@ def _execute_single_run(args, run_out_dir: Path) -> tuple[int, dict]:
             stream_path=stream_path,
             stream_fixture=args.stream_fixture,
             prompt_path=args.prompt,
+            model=args.model,
+            effort=args.effort,
         )
 
         events = run_result.get("events", [])
@@ -149,10 +169,21 @@ def _execute_single_run(args, run_out_dir: Path) -> tuple[int, dict]:
         elif outcome.get("success") is False:
             exit_code = 1
 
-        baseline_dict: dict | None = None
-        if args.baseline.is_file():
+        if exit_code == 0 and args.stream_fixture is None:
             try:
-                baseline_dict = json.loads(args.baseline.read_text(encoding="utf-8"))
+                check_model_capture(metrics)
+            except ModelCaptureError as exc:
+                hard_failures.append(f"model capture failed: {exc}")
+                exit_code = 4
+
+        baseline_dict: dict | None = None
+        if not getattr(args, "init_mode", False) and args.baseline.is_file():
+            try:
+                baseline_dict = load_baseline(args.baseline)
+            except BaselineSchemaError as exc:
+                hard_failures.append(str(exc))
+                if exit_code == 0:
+                    exit_code = 4
             except (json.JSONDecodeError, OSError):
                 baseline_dict = None
 
@@ -165,10 +196,14 @@ def _execute_single_run(args, run_out_dir: Path) -> tuple[int, dict]:
             aggregator_dict=aggregator_dict,
             advisory_warnings=advisory_warnings,
             hard_failures=hard_failures,
+            stream_path=str(stream_path),
+            model_requested=args.model,
+            effort=args.effort if args.model == "opus" else None,
+            bare=False,
         )
 
         if baseline_dict is not None and exit_code == 0:
-            rr = compare_to_baseline(report, baseline_dict)
+            rr = compare_to_baseline(report, baseline_dict, strict_model=args.strict_model)
             if rr.hard_failures:
                 report["hard_failures"].extend(rr.hard_failures)
                 exit_code = 1
@@ -184,18 +219,20 @@ def _execute_single_run(args, run_out_dir: Path) -> tuple[int, dict]:
 def _init_baseline_flow(args) -> int:
     from lib.baseline import init_baseline
 
+    args.init_mode = True  # compare()/load_baseline are skipped; a fresh file is written
     reports: list[dict] = []
     for i in range(1, 6):
         ts = _utc_timestamp()
         run_dir = args.out_dir / f"{ts}-init-{i}"
         code, report = _execute_single_run(args, run_dir)
-        reports.append(report)
-        if code in (2, 3, 4):
+        if code != 0:
             print(
-                f"run_smoke: --init-baseline aborted on sample {i} (exit_code={code})",
+                f"run_smoke: --init-baseline aborted on sample {i} (exit_code={code}); "
+                "a failed sample is never averaged into a baseline",
                 file=sys.stderr,
             )
             return code
+        reports.append(report)
 
     try:
         init_baseline(reports, args.baseline)
