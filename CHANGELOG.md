@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes at this time._
+### BACKLOG-108 - Version-free model references
+
+**Changed**
+- All model references are now version-free. Prose says "latest of the family" (Opus, Sonnet, Haiku) and code uses tier aliases: `MODEL_TIER_ALIAS` in `agentic-flow-builder/scripts/agent_registry.py` maps heavy to `opus`, mid to `sonnet`, light to `haiku`.
+- Docs, tests and fixtures use synthetic fixture model IDs (for example `claude-opus-fixture`) instead of real versioned IDs.
+- Smoke harness moves to report and baseline `schema_version` "2": adds `model_requested`, `model_resolved[]`, `effort`, `model_pin_env`, `samples[]`; `--model opus`, `--effort`, `--strict-model` flags; exit code 4 now covers model capture failure, schema mismatch and model moved. A schema-1 baseline must be re-captured.
+
+**Added**
+- Guard `scripts/check_model_pins.py` (with pre-commit and pre-push hooks and a CI workflow) that fails on concrete model versions in the repo. This CHANGELOG is exempt from the guard scope, so it is the one place the retired IDs below are recorded.
+
+**Retired versioned model IDs** (recovered from the version history of `agentic-flow-builder/scripts/agent_registry.py`, removed in commit 24409b6):
+- Current at removal: claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-7
+- Earlier (already retired before the migration): claude-sonnet-4-5-20250929, claude-haiku-4-20250514, claude-opus-4-20250514
 
 ## Initiative — Skill Token-Economy (delivery-team plugin)
 

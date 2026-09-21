@@ -50,14 +50,14 @@ flowchart TB
 
     R1 --> CMP["lib/baseline.py<br/>(regression detector)"]
     BL["baselines/<br/>hello_world_spike.json"] --> CMP
-    CMP --> EX{"exit code<br/>0 / 1 / 2"}
+    CMP --> EX{"exit code<br/>0 / 1 / 2 / 3 / 4"}
 ```
 
 ## 3. Component Map
 
 | Module | Responsibility | WI | Notes |
 |---|---|---|---|
-| `run_smoke.py` | CLI entrypoint: parse flags (`--cost-cap`, `--timeout`, `--init-baseline`, `--dry-run`), wire components, write exit code | W6-1 | Thin — delegates to `lib/runner.py`. |
+| `run_smoke.py` | CLI entrypoint: parse flags (`--model opus` (only choice), `--effort` (default `xhigh`), `--strict-model`, `--cost-cap` (default `3.00` USD), `--timeout`, `--init-baseline`, `--dry-run`), wire components, write exit code | W6-1 | Thin — delegates to `lib/runner.py`. |
 | `lib/runner.py` | Spawn Claude Code subprocess; enforce `--cost-cap` + `--timeout`; tee stream-json to `stream.jsonl`; capture stderr; run capability probe to pick plugin-load path | W6-1 | Sequential only — `--init-baseline` enforces concurrency-of-1 here. |
 | `lib/workspace.py` | Create `mktemp` HOME; install plugin (primary `--plugin-dir`, fallback copy-into-`<tmp>/.claude/plugins/delivery-team/`); install minimal `.delivery/config.yml`; verify scrub on exit | W6-1 | The mktemp HOME is the entire isolation boundary — must never resolve to `$HOME`. |
 | `lib/metrics.py` | Pure functions: parse stream-json events into `Metrics` dataclass (`tokens.*`, `model_usage[]`, `cost_usd`, `wall_clock_seconds`, `dispatch_count`); malformed events warn, never crash | W6-2 | Producer side of producer-validator pair (BC-03). |
@@ -93,11 +93,18 @@ The probe is intentionally a help-text grep rather than a feature flag — it st
 
 ```json
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "run_id": "smoke-<utc-timestamp>",
   "git_sha": "<short sha of HEAD at run time>",
   "claude_cli_version": "<output of `claude --version`>",
   "plugin_load_strategy": "plugin-dir | copy-into-home",
+  "model_requested": "opus",
+  "model_resolved": ["claude-opus-fixture"],
+  "effort": "xhigh",
+  "host_context": {"bare": false, "claude_code_version": "<claude --version>"},
+  "session_id": "<session id from the stream>",
+  "stream_file": "<path to stream.jsonl>",
+  "model_pin_env": {"ANTHROPIC_DEFAULT_SONNET_MODEL": null, "ANTHROPIC_DEFAULT_HAIKU_MODEL": "set"},
   "outcome": {
     "success": true,
     "exit_code": 0,
@@ -130,7 +137,7 @@ The probe is intentionally a help-text grep rather than a feature flag — it st
 }
 ```
 
-The `skill_loads[]` array is derived from `.delivery/telemetry/skill-loads.jsonl` (one row per Skill invocation; placeholder rows excluded per W3-18 semantics in `telemetry.py`). The `model_usage[]` array is derived from the stream-json `usage` events. The `pipeline.*` block is derived jointly from `state.md` (stages, stories, defects) and the run-summary JSON (dispatch count).
+The `skill_loads[]` array is derived from `.delivery/telemetry/skill-loads.jsonl` (one row per Skill invocation; placeholder rows excluded per W3-18 semantics in `telemetry.py`). The `model_usage[]` array is derived from `message.model` per distinct `message.id` in the stream-json assistant events (one dispatch is one distinct `message.id`; when a message is split across events the last `usage` wins). `model_resolved` lists the models observed this way; if none can be captured the run exits 4. `model_pin_env` records presence only (`"set"` or `null`), never the value, for the `ANTHROPIC_DEFAULT_*_MODEL` override variables. Best-effort fields absent from the stream (`thinking_tokens`, `stop_details.refusal_code`, `speed_or_fast_indicator`) produce a `WARN missing <name>` advisory warning. The `pipeline.*` block is derived jointly from `state.md` (stages, stories, defects) and the run-summary JSON (dispatch count).
 
 Fields that cannot be measured (e.g. `claude_cli_version` if `claude --version` fails) are emitted as `null` rather than omitted, so downstream tooling can rely on the schema shape.
 
@@ -140,9 +147,15 @@ Shape mirrors `governance/skill-budgets.json` per BC-02. Each metric carries `me
 
 ```json
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "scenario": "hello_world_spike",
+  "sample_status": "active",
   "n_samples": 5,
+  "model_requested": "opus",
+  "model_resolved": ["claude-opus-fixture"],
+  "model_pin_env": {"ANTHROPIC_DEFAULT_SONNET_MODEL": null},
+  "effort": "xhigh",
+  "samples": [{"stream_file": "<path>", "stream_sha256": "<hash>"}],
   "last_captured_utc": "2026-05-13T15:42:00Z",
   "last_captured_git_sha": "<short sha at capture time>",
   "last_captured_cli_version": "<claude --version at capture time>",
@@ -161,6 +174,8 @@ Shape mirrors `governance/skill-budgets.json` per BC-02. Each metric carries `me
   }
 }
 ```
+
+`samples[]` holds one `{stream_file, stream_sha256}` row per captured run. Capture rejects copied streams (same hash, same `session_id`, or overlapping `message.id`) and aborts if `model_resolved[0]` differs between samples ("model moved", exit 4). `load_baseline` rejects any `schema_version` other than `"2"` (exit 4); a schema-1 baseline must be re-captured.
 
 The `outcome.success` metric is not in this map because it is checked structurally (must equal `true`) rather than statistically. The detector treats `outcome.success == false` as hard-fail by definition.
 
@@ -182,7 +197,7 @@ Two classes, evaluated in this order. First class to trigger sets the exit code;
 - `tokens.cache_read` outside `mean ± 2·stddev`
 - any `skill_loads.<skill>` outside `mean ± 2·stddev`
 
-Exit-code convention mirrors `scripts/check_skill_budgets.py`: `0` = pass, `1` = hard fail, `2` = config/usage error (e.g. baseline file missing, JSON malformed). Advisory warnings DO NOT change exit code — they are reporting-only for the first month per BC-05 / NFR-Reproducibility, tightening to 1.5σ after 20 accumulated production runs.
+Exit-code convention mirrors `scripts/check_skill_budgets.py`: `0` = pass, `1` = hard fail, `2` = cost cap exceeded mid-stream, `3` = wall-clock timeout, `4` = plumbing or model-integrity failure (model capture failure, baseline schema mismatch, model moved between baseline samples, baseline write failure). A resolved model that differs from the baseline's warns by default and hard-fails (exit 1) with `--strict-model`. Advisory warnings DO NOT change exit code — they are reporting-only for the first month per BC-05 / NFR-Reproducibility, tightening to 1.5σ after 20 accumulated production runs.
 
 A metric not present in the baseline is logged as `unknown_metric` in `report.json` but does not fail the run. A metric present in the baseline but missing from the report is hard-failed only if `classification == "hard"`; advisory-class missing metrics warn.
 

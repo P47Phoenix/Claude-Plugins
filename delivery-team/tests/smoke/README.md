@@ -56,6 +56,9 @@ Inherited from `run_smoke.py --help`:
 | Flag | Default | Purpose |
 |------|---------|---------|
 | `--init-baseline` | off | Run the scenario 5× sequentially, then write baseline JSON from the captured reports. |
+| `--model` | `opus` | Model alias passed to `claude --model`; `opus` is the only accepted value. |
+| `--effort` | `xhigh` | Effort level (`low`, `medium`, `high`, `xhigh`, `max`); sent only with `--model opus`. |
+| `--strict-model` | off | Hard-fail (exit 1) instead of warn when the resolved model differs from the baseline's. |
 | `--cost-cap` | `3.00` | Hard cumulative cost cap in USD; subprocess terminates if cumulative `cost_usd` would exceed this. |
 | `--timeout` | `1800` | Wall-clock timeout in seconds; the subprocess is killed with SIGTERM when this is exceeded. |
 | `--baseline` | `baselines/hello_world_spike.json` | Path to baseline JSON for regression comparison; missing file = compare step is skipped. |
@@ -90,12 +93,16 @@ appended to the report but do not change exit code.
 Each run writes three artifacts under
 `artifacts/<utc-timestamp>/`:
 
-- **`report.json`** — schema-v1 structured report (see architecture §5).
+- **`report.json`** — schema-v2 structured report (see architecture §5).
   Top-level keys: `schema_version`, `run_id`, `git_sha`,
-  `claude_cli_version`, `plugin_load_strategy`, `outcome.*`,
+  `claude_cli_version`, `plugin_load_strategy`, `model_requested`,
+  `model_resolved[]`, `effort`, `host_context.*`, `session_id`,
+  `stream_file`, `model_pin_env` (presence only, never values), `outcome.*`,
   `wall_clock_seconds`, `cost_usd`, `tokens.*`, `model_usage[]`,
   `pipeline.*`, `skill_loads[]`, `advisory_warnings[]`,
-  `hard_failures[]`. Unmeasurable fields emit `null` (not omitted).
+  `hard_failures[]`. `model_usage[]` is derived from `message.model` per
+  distinct `message.id`. The baseline file (also schema `"2"`) adds
+  `samples[]` (stream file + sha256 per run). Unmeasurable fields emit `null` (not omitted).
 - **`summary.md`** — human-readable rendering of `report.json`, with a
   PASS/FAIL banner, the metric table, and the skill-loads / advisory /
   hard-failure sections inline.
@@ -110,7 +117,7 @@ Exit codes:
 | 1    | Hard-fail (outcome.success=false OR regression hard-rule violated). |
 | 2    | Cost-cap exceeded mid-stream. |
 | 3    | Wall-clock timeout. |
-| 4    | Plumbing failure (missing input, write failure, etc.). |
+| 4    | Plumbing or model-integrity failure: missing input, write failure, model capture failure, baseline schema mismatch (a schema-1 baseline must be re-captured), or model moved between baseline samples. |
 
 ## Running the meta-tests
 
