@@ -119,9 +119,11 @@ Exit codes:
 | 3    | Wall-clock timeout. |
 | 4    | Plumbing or model-integrity failure: missing input, write failure, model capture failure, baseline schema mismatch (a schema-1 baseline must be re-captured), or model moved between baseline samples. |
 
+Note: the shipped `baselines/hello_world_spike.json` is schema 1, so regression runs exit 4 until the S5b re-capture. `--cost-cap` must be > 0; the per-run cap is also the CLI `--max-budget-usd` (rounded down), and a baseline capture is bounded by samples x per-run cap (the aggregate ceiling is procedural, ADR-lmr-004).
+
 ## Running the meta-tests
 
-The smoke harness ships with three pytest meta-tests that exercise
+The smoke harness ships with pytest meta-tests (`test_meta.py` 3, `test_model_capture.py` 33, `test_fixture_genuineness.py` 2) that exercise
 `lib/metrics.py`, `lib/baseline.py`, and `lib/aggregator.py` without ever
 invoking Claude:
 

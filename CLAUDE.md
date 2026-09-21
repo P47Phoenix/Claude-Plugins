@@ -44,6 +44,7 @@ For per-skill rosters, hook tables, and pipeline internals, follow the `Detail` 
 - `workflow-injection-lint.yml` — fails PRs that interpolate `${{ github.event.* }}` directly inside workflow `run:` blocks (DEFECT-004 regression guard).
 - `skill-line-budget.yml` — enforces SKILL.md line budgets (`scripts/check_skill_budgets.py`, `governance/skill-budgets.json`).
 - `fitness-review.yml` — weekly scan of `fitness_review_due:` frontmatter; opens reminder issues per `governance/fitness-review.md`.
+- `stale-model-id-guard.yml` — runs `scripts/check_model_pins.py` (concrete model versions are forbidden). Local hook `MODEL_PIN_STRICT=1` on pre-commit/pre-push, opt-in via `git config core.hooksPath .githooks`.
 
 ## Running Scripts
 

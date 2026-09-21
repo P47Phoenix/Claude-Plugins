@@ -44,3 +44,7 @@ git config --unset core.hooksPath
 .githooks/pre-commit            # dry-run as a smoke test (won't commit)
 echo "exit=$?"                  # 0 = clean, 1 = block
 ```
+
+## Model-pin guard hooks
+
+`.githooks/pre-commit` and `.githooks/pre-push` run `scripts/check_model_pins.py` (advisory; set `MODEL_PIN_STRICT=1` to block). Same opt-in as above (`git config core.hooksPath .githooks`). Stamp convention for skills: `model_awareness: latest`, `pattern_library_version: rev-1` (no concrete model versions).

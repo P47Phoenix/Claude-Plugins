@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Changed**
 - All model references are now version-free. Prose says "latest of the family" (Opus, Sonnet, Haiku) and code uses tier aliases: `MODEL_TIER_ALIAS` in `agentic-flow-builder/scripts/agent_registry.py` maps heavy to `opus`, mid to `sonnet`, light to `haiku`.
 - Docs, tests and fixtures use synthetic fixture model IDs (for example `claude-opus-fixture`) instead of real versioned IDs.
-- Smoke harness moves to report and baseline `schema_version` "2": adds `model_requested`, `model_resolved[]`, `effort`, `model_pin_env`, `samples[]`; `--model opus`, `--effort`, `--strict-model` flags; exit code 4 now covers model capture failure, schema mismatch and model moved. A schema-1 baseline must be re-captured.
+- Smoke harness moves to report and baseline `schema_version` "2": adds `model_requested`, `model_resolved[]`, `effort`, `model_pin_env`, `samples[]`; `--model opus`, `--effort`, `--strict-model` flags; exit code 4 now covers model capture failure, schema mismatch and model moved between baseline samples (with `--init-baseline`); on a regression run a resolved-model mismatch is a WARN, or exit 1 with `--strict-model`. A schema-1 baseline must be re-captured.
+- The shipped `baselines/hello_world_spike.json` is still schema 1, so regression runs exit 4 until the S5b re-capture.
+- `agent_registry` default agents now store the tier alias (`opus`/`sonnet`/`haiku`) in `config.model`.
 
 **Added**
 - Guard `scripts/check_model_pins.py` (with pre-commit and pre-push hooks and a CI workflow) that fails on concrete model versions in the repo. This CHANGELOG is exempt from the guard scope, so it is the one place the retired IDs below are recorded.
