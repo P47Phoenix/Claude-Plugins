@@ -20,6 +20,8 @@ where <toplevel> = `git rev-parse --show-toplevel`; the process chdirs there, so
 scope, printed paths and --paths args are toplevel-relative and independent of the
 invoking cwd. Regular files only (symlinks and nested worktrees skipped), extensions .py .md .yml
 .yaml .txt .sh, minus CHANGELOG.md (any dir) and everything under .delivery/.
+Not scanned (out of scope by design): .json .jsonl .log .toml files, CHANGELOG.md,
+and .delivery/ - EXTS excludes those extensions, so a pin there is NOT detected.
 --paths: same filters; relative args resolve against the toplevel (not the invoking
 cwd); a file outside the repo is scanned; outside any repo, cwd is kept.
 --list escapes control characters in file names (as \\xNN) so each hit is one line.

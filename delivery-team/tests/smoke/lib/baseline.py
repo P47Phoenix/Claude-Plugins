@@ -47,11 +47,13 @@ def _primary(report: dict) -> str | None:
 
 def check_model_consistency(reports: list[dict]) -> None:
     """Raise ModelMovedError, naming both models, when model_resolved[0] differs."""
+    seeded = False
     first: str | None = None
     for rpt in reports:
         cur = _primary(rpt)
-        if first is None:
+        if not seeded:
             first = cur
+            seeded = True
             continue
         if cur != first:
             raise ModelMovedError(
@@ -226,7 +228,8 @@ def _check_distinct_samples(reports: list[dict]) -> list[dict]:
         if ids & seen_ids:
             raise ValueError(f"init_baseline: sample {i} shares message.id values with an earlier sample (copied stream)")
         seen_ids |= ids
-        samples.append({"stream_file": str(sf), "stream_sha256": digest})
+        # Repo-independent: "<run-dir>/<stream>" only, never an absolute home path.
+        samples.append({"stream_file": "/".join(path.parts[-2:]), "stream_sha256": digest})
     return samples
 
 

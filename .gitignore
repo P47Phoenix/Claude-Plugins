@@ -188,3 +188,6 @@ cython_debug/
 
 # Skill telemetry (runtime accumulation; W0-1 hook auto-creates this dir)
 .delivery/telemetry/
+
+# Smoke-test run artifacts (stderr.log, absolute paths, raw streams, resolved model ids)
+delivery-team/tests/smoke/artifacts/

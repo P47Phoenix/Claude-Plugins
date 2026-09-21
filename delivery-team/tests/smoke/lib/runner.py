@@ -16,6 +16,7 @@ import sys
 import threading
 import time
 import warnings
+from decimal import ROUND_DOWN, Decimal
 from pathlib import Path
 from typing import Optional
 
@@ -164,7 +165,10 @@ def _build_claude_command(
     if model == "opus" and effort is not None:
         cmd.extend(["--effort", effort])
     if max_budget_usd is not None:
-        cmd.extend(["--max-budget-usd", f"{max_budget_usd:.2f}"])
+        # Round DOWN so the CLI budget never exceeds the cap; floor at 0.01.
+        budget = Decimal(str(max_budget_usd)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        budget = max(budget, Decimal("0.01"))
+        cmd.extend(["--max-budget-usd", f"{budget:.2f}"])
     if workspace.plugin_load_strategy == PLUGIN_LOAD_PLUGIN_DIR:
         cmd.extend(["--plugin-dir", str(workspace.plugin_path)])
     return cmd
@@ -281,6 +285,18 @@ def _spawn_and_tee(
     )
     stderr_thread.start()
 
+    # Watchdog: enforce --timeout even when the subprocess emits no stdout
+    # lines (the for-loop below only checks time when a line arrives).
+    timed_out = threading.Event()
+
+    def _on_timeout() -> None:
+        timed_out.set()
+        _terminate(proc)
+
+    watchdog = threading.Timer(timeout, _on_timeout)
+    watchdog.daemon = True
+    watchdog.start()
+
     try:
         if proc.stdin is not None:
             proc.stdin.write(prompt)
@@ -308,6 +324,10 @@ def _spawn_and_tee(
                 _terminate(proc)
                 break
 
+        if outcome_success and timed_out.is_set():
+            outcome_success = False
+            outcome_reason = TIMEOUT_REASON
+            exit_code = 3
         if outcome_success:
             try:
                 proc.wait(timeout=max(1, timeout - int(time.monotonic() - start)))
@@ -330,6 +350,7 @@ def _spawn_and_tee(
                         outcome_reason = COST_CAP_EXCEEDED_REASON
                         exit_code = 2
     finally:
+        watchdog.cancel()
         if proc.poll() is None:
             _terminate(proc)
         # Give the stderr drain a brief window to flush after the

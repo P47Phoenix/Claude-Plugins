@@ -247,6 +247,8 @@ def _init_baseline_flow(args) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+    if not args.cost_cap > 0:
+        parser.error("--cost-cap must be greater than 0")
 
     args.out_dir = Path(args.out_dir).resolve()
     args.baseline = Path(args.baseline).resolve()
