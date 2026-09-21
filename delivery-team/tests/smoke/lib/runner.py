@@ -287,15 +287,7 @@ def _spawn_and_tee(
 
     # Watchdog: enforce --timeout even when the subprocess emits no stdout
     # lines (the for-loop below only checks time when a line arrives).
-    timed_out = threading.Event()
-
-    def _on_timeout() -> None:
-        timed_out.set()
-        _terminate(proc)
-
-    watchdog = threading.Timer(timeout, _on_timeout)
-    watchdog.daemon = True
-    watchdog.start()
+    watchdog, timed_out = _start_watchdog(proc, timeout)
 
     try:
         if proc.stdin is not None:
@@ -366,6 +358,26 @@ def _spawn_and_tee(
         },
         "elapsed_seconds": time.monotonic() - start,
     }
+
+
+def _start_watchdog(proc, timeout):
+    """Start a timer that terminates ``proc`` at ``timeout`` seconds.
+
+    Returns (timer, timed_out_event). The event is set only when the process
+    was still running at fire time, so a clean exit racing the timer is never
+    reported as a timeout.
+    """
+    timed_out = threading.Event()
+
+    def _on_timeout() -> None:
+        if proc.poll() is None:
+            timed_out.set()
+            _terminate(proc)
+
+    timer = threading.Timer(timeout, _on_timeout)
+    timer.daemon = True
+    timer.start()
+    return timer, timed_out
 
 
 def _terminate(proc: "subprocess.Popen") -> None:

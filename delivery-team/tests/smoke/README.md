@@ -119,7 +119,7 @@ Exit codes:
 | 3    | Wall-clock timeout. |
 | 4    | Plumbing or model-integrity failure: missing input, write failure, model capture failure, baseline schema mismatch (a schema-1 baseline must be re-captured), or model moved between baseline samples. |
 
-Note: the shipped `baselines/hello_world_spike.json` is schema 1, so regression runs exit 4 until the S5b re-capture. `--cost-cap` must be > 0; the per-run cap is also the CLI `--max-budget-usd` (rounded down), and a baseline capture is bounded by samples x per-run cap (the aggregate ceiling is procedural, ADR-lmr-004).
+Note: the shipped `baselines/hello_world_spike.json` is schema 1, so regression runs exit 4 until the S5b re-capture. `--cost-cap` must be >= 0.01; the per-run cap is also the CLI `--max-budget-usd` (rounded down). Streams under `artifacts/` are gitignored, so the `check_distinct.py` re-check of a committed baseline needs the local artifacts (`samples[].stream_file` is relative to the baseline file's directory). And a baseline capture is bounded by samples x per-run cap (the aggregate ceiling is procedural, ADR-lmr-004).
 
 ## Running the meta-tests
 

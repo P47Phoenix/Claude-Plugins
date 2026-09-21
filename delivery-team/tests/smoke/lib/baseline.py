@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import statistics
 import subprocess
 from dataclasses import dataclass, field
@@ -202,7 +203,7 @@ def _message_ids(path: Path) -> set[str]:
     return ids
 
 
-def _check_distinct_samples(reports: list[dict]) -> list[dict]:
+def _check_distinct_samples(reports: list[dict], base_dir: Path | None = None) -> list[dict]:
     """Reject copied streams (same hash, session_id or overlapping message.id); return samples[]."""
     import hashlib
 
@@ -228,8 +229,13 @@ def _check_distinct_samples(reports: list[dict]) -> list[dict]:
         if ids & seen_ids:
             raise ValueError(f"init_baseline: sample {i} shares message.id values with an earlier sample (copied stream)")
         seen_ids |= ids
-        # Repo-independent: "<run-dir>/<stream>" only, never an absolute home path.
-        samples.append({"stream_file": "/".join(path.parts[-2:]), "stream_sha256": digest})
+        # Repo-independent: POSIX path relative to the baseline file's directory
+        # (e.g. ../artifacts/<run>/stream.jsonl), never an absolute home path.
+        if base_dir is not None:
+            rel = os.path.relpath(path.resolve(), Path(base_dir).resolve()).replace(os.sep, "/")
+        else:
+            rel = "/".join(path.parts[-2:])
+        samples.append({"stream_file": rel, "stream_sha256": digest})
     return samples
 
 
@@ -255,7 +261,7 @@ def init_baseline(reports: list[dict], out_path: Path) -> None:
         raise ValueError("init_baseline: at least one report required")
 
     check_model_consistency(reports)
-    samples = _check_distinct_samples(reports)
+    samples = _check_distinct_samples(reports, Path(out_path).parent)
 
     n = len(reports)
     bucketed = _collect_metric_values(reports)

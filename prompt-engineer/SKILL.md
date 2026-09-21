@@ -356,7 +356,7 @@ This sub-section isolates latest-Opus guidance so future model migrations can re
 - `max` — escalation-only: multi-hour root-cause work, hard architectural trade-offs, contested debates. Expect latency cost.
 - Start from the API default effort (`high`) and tune on your own evals; do not copy a per-model recommended level from prompts or docs of prior models.
 
-**Sampling levers (temp / top_p / top_k).** Leave them at API defaults: on current models, non-default `temperature`, `top_p`, or `top_k` values return a 400 error. Steer style through the prompt and `effort` instead.
+**Sampling levers (temp / top_p / top_k).** Leave them at API defaults: on the latest Opus and later models, non-default `temperature`, `top_p`, or `top_k` values return a 400 error. Steer style through the prompt and `effort` instead.
 
 **Delegation and verification on the latest Opus:** it delegates to subagents more readily than prior models, so state the delegation scope and a spawn cap in the prompt. Explicit verification instructions cause over-verification, so do not add them. Pick an `effort` level and leave sampling alone.
 
