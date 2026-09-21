@@ -1,0 +1,12 @@
+fixture: stream_real_shape.jsonl
+sha256: cdc50e7b4adce8fe750eea874153d70caa69c675e93dec97083d8dbc92ad9365
+capture_date_utc: 2026-09-21
+claude_code_version: 2.1.278 (Claude Code)
+command: claude -p "reply with the single word ok" --model haiku --output-format stream-json --verbose --max-turns 1 --max-budget-usd 0.25
+cwd: /tmp (no repo context)
+attempt: 1 of max 2 (H1 ceiling 0.50 USD)
+cost_usd: 0.0391269
+events: 5 (system/init, assistant x2, rate_limit_event, result)
+assistant_events_with_message_id: 2 of 2 (both share one message id: one API message streamed as two events)
+operator_go: H1 2026-09-21 user direct turn "do it" approving up to 2 fixture-capture runs at 0.25 USD each
+scrub: line 1 (system/init) trimmed to keys type, subtype, model, session_id (FR-5.10) to drop host paths, plugin list and memory paths; lines 2-5 verbatim from the CLI stdout. Stderr was empty of stream data. No edits after capture.
