@@ -122,6 +122,9 @@ def test_real_shape_dispatch_count_and_tokens():
     assert m.dispatch_count == len(ids), f"dispatch_count {m.dispatch_count} != distinct message.id {len(ids)}"
     t = m.tokens
     assert t["input"] + t["cache_creation"] + t["cache_read"] > 0, "real stream usage nested under message was not read (tokens 0)"
+    by_model = {u.model: u.dispatches for u in m.model_usage}
+    model = next(e["message"]["model"] for e in events if e.get("type") == "assistant")
+    assert by_model.get(model) == len(ids), f"per-model dispatches {by_model}: expected {model!r} -> {len(ids)} (dispatches landed in `unknown`)"
     ru = [e for e in events if e.get("type") == "result"][-1]["usage"]
     assert t["input"] == ru["input_tokens"] and t["output"] == ru["output_tokens"], (
         f"tokens {t} != result.usage input {ru['input_tokens']} output {ru['output_tokens']} "
