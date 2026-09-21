@@ -4,8 +4,8 @@ status: in_progress
 project_type: FEATURE
 detected_at: 2026-05-28
 force_type: FEATURE
-current_stage: 6
-stages_completed: [1, 2, 4, 5]
+current_stage: 7
+stages_completed: [1, 2, 4, 5, 6]
 stages_skipped: [3]
 human_checkpoints_passed: []
 final_verdict: null

@@ -1,41 +1,19 @@
----
-stage: 6
-stage_name: development
-depth: full
-pipeline_id: run-2026-05-13-tk5
-status: DONE
-dod_rounds: 1
-stories: [S1, S2, S3]
-dispatches:
-  - id: A
-    stories: [S1, S2]
-    files: 12
-  - id: B (fresh — producer-validator separation)
-    stories: [S3]
-    files: 8 (+ Makefile created)
-artifacts:
-  notes:
-    S1_S2: .delivery/artifacts/06-development/developer/S1-S2-implementation-notes.md
-    S3: .delivery/artifacts/06-development/developer/S3-implementation-notes.md
-  qa_evaluator:
-    S1_S2: .delivery/artifacts/06-development/qa-evaluator/S1-S2-round-1.md
-    S3: .delivery/artifacts/06-development/qa-evaluator/S3-round-1.md
-  dod:
-    S1_S2_developer: .delivery/artifacts/06-development/dod/S1-S2-developer-review.md
-    S1_S2_qa: .delivery/artifacts/06-development/dod/S1-S2-qa-review.md
-    S1_S2_architect: .delivery/artifacts/06-development/dod/S1-S2-architect-review.md
-    S3_developer: .delivery/artifacts/06-development/dod/S3-developer-review.md
-    S3_qa: .delivery/artifacts/06-development/dod/S3-qa-review.md
-    S3_architect: .delivery/artifacts/06-development/dod/S3-architect-review.md
-notable:
-  - "Two dispatches honored producer-validator separation: meta-tests author (B) never touched lib/*.py (A)"
-  - "AST parse passes on all 9 Python source files (S1+S2 dispatch verification)"
-  - "pytest 3 tests pass in 0.02s (30x under 5s budget)"
-  - "All 24 story ACs satisfied; 11 dev-DoD checks PASS; 6 QA-DoD checks PASS; 9 architect-conformance checks PASS"
-  - "Zero `.github/workflows/smoke-*.yml` (BC-01 honored across both dispatches)"
-  - "Three soft notes carried to Stage 7 as known-debt: (a) S1+S2 stop-hook stderr text capture partial; (b) lockfile TC not implemented; (c) missing-baseline UX message TC not implemented"
----
+# Stage 6 Development summary (run-2026-05-28-o48m)
 
-# Stage 6 Summary — Development (full) — run-2026-05-13-tk5
+All code stories done with validators DONE (manifests dispatch-manifest-S1..S6 and S2-r2, S5a in this folder).
 
-Two-dispatch implementation honoring producer-validator separation. Dispatch A (Gimli, S1+S2) forged 12 files: runner.py + 6 lib modules + prompt + minimal config + baselines/.gitkeep. AST clean; --help exit 0; module imports OK; cost-cap and stddev-zero guards verified. Dispatch B (fresh Gimli, S3) forged 8 files: 3 meta-test scenarios + fixture workspace + README + Makefile. pytest 3/3 PASS in 0.02s; autouse fixture blocks any claude subprocess spawn; producer-validator boundary git-clean. Stage 6 DoD all PASS first-try (no R2 loops needed).
+| Story | Result | Key evidence |
+|---|---|---|
+| S1 Guard | DONE | scripts/check_model_pins.py, hooks (inert), workflow; mutation 10/10 |
+| S2 Keystone prose | DONE (2 DoD rounds) | doc-verified claims; AC-2.x pass |
+| S3 Stamps | DONE | 25 SKILL.md version-free; ledgers 3 + 22 |
+| S4 Pins | DONE | MODEL_TIER_ALIAS; guard hits 0 |
+| S5a Smoke harness | DONE | P0 stub, red-first (33 red), P1 green (38 passed), one real fixture ($0.0391 of H1 $0.50) |
+| S6 Cache re-freeze | DONE | whole-file 43067c9e... -> 31ad503d...; telemetry prefix 8c2ebf97 -> 9402fd57 |
+
+Guard on tree: `guard-scope hits 0 files 0`. Budgets pass. Nothing pushed to main.
+
+Open for Stage 7 (human gates still closed):
+- S5b live baseline: gate H2 (5 x $3, aggregate hard $15.00; needs `operator_go: H2` from a human turn).
+- S7 ship gate: gate H3 (push to origin/main), hooks install handoff (A-1), docs and CHANGELOG owed by tech-writer (A-7), S7b (H4), S8 conditional (H6).
+- Baselines/hello_world_spike.json is schema 1 until S5b re-captures it (exit 4 on normal runs).
