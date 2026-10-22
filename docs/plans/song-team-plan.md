@@ -1,6 +1,6 @@
 # song-team — Implementation Plan
 
-> Status: **PROPOSED, revision 2** (after delivery-team review: Architect, Product Owner, QA, Tech Writer) · Author: Claude (with Michael Connelly) · Date: 2026-10-22
+> Status: **PROPOSED, revision 3** (after two rounds of delivery-team review: Architect, Product Owner, QA, Tech Writer) · Author: Claude (with Michael Connelly) · Date: 2026-10-22
 > Target plugin directory: `song-team/` · Marketplace ID: `song-team`
 > Patterns borrowed from: `delivery-team/` (orchestrator + role-scoped workers + hooks), `mtg-commander/` (adversarial challengers, config-driven loops), `hardware-team/` (domain pipeline over a tool layer).
 > Lifecycle: this plan is superseded by `song-team/ARCHITECTURE.md` once Wave 5 lands; until then it is the design source of truth.
@@ -175,9 +175,10 @@ song-team/
     ├── unit/                       # one test module per script; run: python -I -m unittest discover tests/unit
     ├── fixtures/
     │   ├── prosody-gold/           # >= 200 hand-labelled original lines (syllables + stress)
+    │   ├── briefs/                 # one brief per routing row (8) for detection tests
     │   ├── songs/<type>/           # one complete passing .song/<slug>/ artifact set per song type
-    │   └── negative/               # malformed ABC, mismatched tags, empty lyrics, wrong-key chords, with expected JSON
-    └── smoke/                      # 7-sample baseline (6 types + 1 refusal); baseline.json
+    │   └── negative/               # malformed ABC, mismatched tags, empty lyrics, wrong-key chords, w: misalignment, with expected JSON
+    └── smoke/                      # 7-sample baseline (6 types + 1 refusal; REVISE excluded, needs a prior run); baseline.json
 ```
 
 Each `skills/<name>/` directory follows:
@@ -248,7 +249,7 @@ Standalone invocation of a worker skill outside `song-flow` **warns** that gates
 |------|-------------|-----------|-----------|
 | `hook-judge` | after Stage 2 (Concept) | `roles/hook-judge.md`, `contracts/critique.md` | `rubrics/hook-rubric.md`, `techniques/hook-craft.md` |
 | `prosody-judge` | after Stage 4 (Lyrics) | `roles/prosody-judge.md`, `contracts/critique.md` | `rubrics/lyric-rubric.md`, `techniques/prosody.md` |
-| `structure-judge` | after Stages 3 and 6 | `roles/structure-judge.md`, `contracts/critique.md` | `rubrics/arrangement-rubric.md`, `techniques/form-templates.md` |
+| `structure-judge` | after Stages 3 and 6 | `roles/structure-judge.md`, `contracts/critique.md` | Stage 3: `rubrics/structure-rubric.md`, `techniques/form-templates.md`; Stage 6: `rubrics/arrangement-rubric.md`, `techniques/form-templates.md` |
 | `music-judge` | after Stage 5 (Music) | `roles/music-judge.md`, `contracts/critique.md` | `rubrics/melody-rubric.md`, `techniques/melodic-contour.md` |
 | `listener-panel` | Stage 7a; review-board pattern | `roles/listener-panel.md`, `contracts/panel-report.md` | `personas/<3 selected>.md` |
 | `challenger` | Stage 7b; adversarial pass | `roles/challenger.md`, `contracts/challenge-report.md` | `shared/originality-policy.md`, `shared/blocked-targets.txt`, `shared/cliche-list.txt` |
@@ -300,7 +301,7 @@ flowchart TD
 1. Orchestrator reads `.song/config.yml` (created in Stage 1 if absent) and `.song/<slug>/state.json`.
 2. Orchestrator builds a sub-agent prompt from the worker's `agent-prompts/<task>.md` template, embedding only the files permitted by the allowance manifest, and dispatches with `subagent_type` set to the matching `agents/*.md` definition.
 3. Sub-agent writes the artifact to `.song/<slug>/<artifact>` and returns the Appendix B hand-back (first line `SKILL_LOADED:`, then STATUS / ARTIFACT / SUMMARY).
-4. Orchestrator runs the stage's gate script(s) via `gate_common.py` and records the JSON result in `state.json.gates[<stage>]`. This is the **only** gate decision point. On FAIL it dispatches the stage's critic role with the script output as evidence, then re-dispatches the worker with the critique, incrementing `state.json.loops_used[<stage>]`. On SKIPPED (non-English gates) it proceeds as PASS and logs the skip.
+4. **Gate decision (single runner).** The orchestrator reads `state.json.gates[<stage>]`. If the `SubagentStop` hook pre-populated it in this dispatch and the recorded `artifact_sha256` matches the artifact on disk, the orchestrator reuses that result; otherwise (hook disabled, crashed, standalone invocation, or hash mismatch) it runs the gate script(s) itself via `gate_common.py` and writes the result. Either way this step is the **only** gate decision point. On FAIL it dispatches the stage's critic role with the script output as evidence, then re-dispatches the worker with the critique, incrementing `state.json.loops_used[<stage>]`. On SKIPPED (non-English gates) it proceeds as PASS and logs the skip.
 5. On reaching `loops.<stage>`, apply `escalation.on_loop_exhaustion`:
    - `ask_user`: show the last three attempts and the gate diff; the user picks accept, override (recorded in `state.json.gate_overrides[]` and `decisions.md`), or supply guidance (resets the stage counter once).
    - `accept_best`: keep the attempt with the best gate metrics, record `accepted_best: true` for the stage, proceed.
@@ -357,7 +358,7 @@ All artifacts are Markdown or plain-text so hooks can lint them. Specs live in `
 |----------|------------------------|-------------------|
 | Brief | `brief.md` | YAML front-matter: `theme, pov, audience, genre, mood, language, target_length_sec, must_include[], must_avoid[], song_type, user_asserts_original_input` |
 | Concept | `concept.md` | `title`, `hook_line`, `central_image`, `arc: [start, turn, end]`, `title_rationale`; `motif` replaces `hook_line` for INSTRUMENTAL |
-| Structure | `structure.md` | table: `section, label, bars, meter_spec (syllables per line + stress pattern), rhyme_scheme`; plus `key, mode, bpm, time_sig, form_template` |
+| Structure | `structure.md` | table: `section, label, bars, meter_spec (syllables per line + stress pattern), rhyme_scheme`; plus `key, mode, bpm, time_sig, form_template`. `rhyme_scheme` letters are scoped per section; `x` marks an unconstrained line (e.g. `AxAx`) |
 | Lyrics | `lyrics.md` | `[Verse 1]`, `[Chorus]` … tags exactly matching `structure.md`; one line per lyric line; `# ` comments allowed |
 | Chords | `chords.md` | per section: Roman numerals + concert chords, one bar per `\|` cell, e.g. `\| I \| V \| vi \| IV \|` |
 | Melody | `melody.abc` | ABC 2.1, one voice, `w:` lyric lines when `lyrics.md` exists, `K:` and `M:` matching `structure.md` |
@@ -366,7 +367,9 @@ All artifacts are Markdown or plain-text so hooks can lint them. Specs live in `
 | Panel report | `panel-report.md` | one block per persona: verdict (KEEP / SKIP), top note, one question; majority line at the end |
 | Challenge report | `challenge-report.md` | **parseable severity table**: `\| severity \| location \| finding \| suggested fix \|` with severity ∈ {BLOCKER, MAJOR, MINOR}; `challenge_gate.py` reads it |
 | Package | `package/` | `lyric-sheet.md`, `lead-sheet.abc`, `song.mid`, `one-pager.md`, `release-notes.md` |
-| State | `state.json` | `stage, song_type, status, loops_used{}, gates{}, gate_overrides[], accepted_best{}, owners{}, started, updated` |
+| State | `state.json` | `run_id, stage, song_type, status, loops_used{}, gates{<stage>: {status, metrics, violations, artifact_sha256}}, gate_overrides[], accepted_best{}, owners{}, started, updated` |
+| Active pointer | `.song/active` | single line: the slug of the run in progress; written by `song-flow` at Stage 1 and at REVISE entry; read by hooks |
+| Retrospective | `retrospective.md` | frontmatter `run_id` matching `state.json.run_id`; body per `song-memory/references/retrospective-template.md` |
 | Decisions | `decisions.md` | debate outcomes and user overrides, append-only |
 
 Output contracts (`skills/*/references/contracts/*.md`) each specify: required headings, forbidden content (artist names, quoted existing lyrics), max length, and the exact gate script that will be run against the output.
@@ -383,7 +386,7 @@ Source of truth: `song-team/references/shared/config-schema.md`. Extension proto
 schema_version: 1
 
 routing:
-  force_type: null            # FULL_SONG | LYRICS_ONLY | INSTRUMENTAL | TOPLINE | REWRITE | JINGLE
+  force_type: null            # FULL_SONG | LYRICS_ONLY | INSTRUMENTAL | TOPLINE | REWRITE | JINGLE (REVISE is detected only, never forced)
   default_genre: null         # used when brief omits genre
   default_language: en
 
@@ -433,7 +436,7 @@ The setup wizard (in `song-brief`) infers what it can from the brief and asks on
 
 ## 11. Hooks
 
-`song-team/hooks/hooks.json`. All scripts are stdlib-only Python built with `plugin-dev:hook-development` loaded. **Hook I/O contract** follows Claude Code's protocol, not a custom one: read the tool payload from stdin as JSON; exit 0 to allow; exit 2 with the reason on stderr to block; for `PreToolUse`, a JSON object on stdout with `hookSpecificOutput.permissionDecision` (`allow` / `deny` / `ask`) and `permissionDecisionReason`. Paths are normalised with `pathlib.PurePath(path).as_posix()` before any matching so Windows backslash paths behave.
+`song-team/hooks/hooks.json`. All scripts are **self-contained** stdlib-only Python (no shared `lib/` import; the repo `.gitignore` ignores `lib/` directories, which is why delivery-team's `hooks/lib/hook_utils.py` is absent from git and six delivery-team hooks currently fail at import; a backlog item is noted in [Appendix C](#appendix-c--review-log)). Each hook has a unit test that pipes a sample stdin payload. Built with `plugin-dev:hook-development` loaded. **Hook I/O contract** follows Claude Code's protocol, not a custom one: read the tool payload from stdin as JSON; exit 0 to allow; exit 2 with the reason on stderr to block; for `PreToolUse`, a JSON object on stdout with `hookSpecificOutput.permissionDecision` (`allow` / `deny` / `ask`) and `permissionDecisionReason`. Paths are normalised with `pathlib.PurePath(path).as_posix()` before any matching so Windows backslash paths behave.
 
 | Event | Matcher | Hook | Purpose | Wave |
 |-------|---------|------|---------|------|
@@ -441,8 +444,8 @@ The setup wizard (in `song-brief`) infers what it can from the brief and asks on
 | `PreToolUse` | `Skill` | prompt hook | If `song-team:lyricist` / `composer` / `arranger` is invoked without `.song/config.yml`, warn (not deny) that gates will not run; "skip pipeline" bypasses | 4 |
 | `PreToolUse` | `Agent` | `audit_agent_prompt.py` | Deny when: the prompt embeds more `references/` files than `prompt-allowances.json` allows for the named role; the originality clause is missing; or the prompt contains an entry from `blocked-targets.txt` as a style target. Case-insensitive whole-phrase match | 4 |
 | `PostToolUse` | `Write\|Edit` | `validate_artifacts.py` | If the normalised path ends with `.song/<slug>/lyrics.md`, `chords.md`, `melody.abc`, `structure.md`, or `arrangement.md`: run the matching lint and print findings as hook output. Advisory only (exit 0) | 4 |
-| `SubagentStop` | `lyricist\|composer\|arranger` | `gate_subagent.py` | Run the current stage's gate script and write the result to `state.json.gates[<stage>]`. Advisory: exit 0 always. The orchestrator reads this result in protocol step 4 instead of re-running the script, so loops are counted once | 4 |
-| `Stop` | `*` | prompt hook | If any `.song/<slug>/state.json` has `stage >= 7` and `status != failed` and no `retrospective.md` exists beside it, block with "Post-pipeline protocol not completed" | 4 |
+| `SubagentStop` | `lyricist\|composer\|arranger` | `gate_subagent.py` | Resolve the active slug from `.song/active`, run the current stage's gate script, and pre-populate `state.json.gates[<stage>]` with the JSON result plus `artifact_sha256`. Writes via temp file + atomic rename and touches only `gates[]`. Advisory: exit 0 always; the orchestrator decides in protocol step 4 | 4 |
+| `Stop` | `*` | prompt hook | Read the slug from `.song/active`. If its `state.json` has `stage >= 7` and `status != failed` and no `retrospective.md` beside it carries `run_id` equal to `state.json.run_id`, block with "Post-pipeline protocol not completed". A REVISE run gets a new `run_id`, so a stale retrospective does not satisfy it | 4 |
 | `PreToolUse` | `Skill` | `telemetry.py` | Skill-load telemetry, copied from delivery-team | 5 (optional) |
 | `PostToolUse` | `Agent` | `verify_skill_load.py` | Check that the sub-agent's first five output lines contain `SKILL_LOADED:` and that the listed paths match the dispatched allowance; warn on mismatch | 5 (optional) |
 
@@ -467,11 +470,11 @@ Threshold precedence: explicit flag > `quality.genre_overrides.<genre>` > `quali
 | Script | Input | Rule (normative) | Used by |
 |--------|-------|------------------|---------|
 | `prosody_check.py` | `lyrics.md`, `structure.md` | Syllables: vowel-group count with a 200-entry exception table. Stress: content words (noun/verb/adj/adv by a 300-word function-word stoplist) carry stress on their first syllable unless in the exception table. Per section, mismatch ratio = mismatched stressed positions ÷ positions in meter spec; FAIL if any section > `prosody_tolerance`. `--hook` mode counts syllables of `concept.md` hook line; FAIL if > `hook_max_syllables`. SKIPPED when `language != en` | Stages 2, 4 |
-| `rhyme_check.py` | `lyrics.md`, `structure.md` | Rhyme = identical final vowel group plus all following consonants. Slant rhyme = identical final vowel group only, or identical final consonant cluster with different vowel. Per section, lines mapped to the `rhyme_scheme` letters must rhyme (or slant-rhyme when allowed). FAIL on any unmatched pair. SKIPPED when non-English | Stage 4 |
+| `rhyme_check.py` | `lyrics.md`, `structure.md` | Rhyme = identical final vowel group plus all following consonants. Slant rhyme = identical final vowel group only, or identical final consonant cluster with different vowel. Scheme letters are scoped per section; `x` = unconstrained line. Within a section, every pair of lines sharing a letter must rhyme (or slant-rhyme when allowed). FAIL on any unmatched pair. SKIPPED when non-English | Stage 4 |
 | `structure_check.py` | `structure.md` [+ `lyrics.md`, `chords.md`, `melody.abc`, `arrangement.md`] | Section labels and order must match the named form template; bar counts within the template's min/max; lyric line counts per section must equal meter spec lines. `--consistency`: key, mode, bpm, time sig identical across all present artifacts; melody pitch range within `vocal_range`; section lists identical. FAIL on any diff | Stages 3, 6, REVISE |
 | `arrangement_check.py` | `arrangement.md` | `chorus_rising` (default): each chorus energy ≥ previous chorus energy; the global maximum occurs in the final chorus or the bridge; the final section energy < global maximum unless the final section is the last chorus; every verse energy < the following chorus energy. `strict_rising`: non-decreasing until the global maximum, then non-increasing. `free`: no check | Stage 6 |
 | `chord_tools.py` | `chords.md`, key from `structure.md` | Parse Roman numerals; diatonic ratio = diatonic chords ÷ all chords; FAIL if < `diatonic_min_ratio`. Emits concert-pitch spellings and warns (not fails) on parallel-fifth voice leading between adjacent root-position triads and on a section ending without a cadence | Stage 5 |
-| `abc_validate.py` | `melody.abc` [+ `lyrics.md`] | Must parse as ABC 2.1 with single `V:`; `K:` and `M:` must equal `structure.md`; no interval > `max_melodic_leap`; all pitches within `vocal_range`. When `lyrics.md` exists, the syllable count of each `w:` line must equal the note count of its bar group. Lyric alignment is skipped for INSTRUMENTAL | Stage 5 |
+| `abc_validate.py` | `melody.abc` [+ `lyrics.md`] | Must parse as ABC 2.1 with single `V:`; `K:` and `M:` must equal `structure.md`; no interval > `max_melodic_leap`; all pitches within `vocal_range`. When `lyrics.md` exists, lyric alignment applies ABC 2.1 `w:` rules: `-` splits a word into syllable tokens, `_` extends the previous syllable over the next note (no new token), `*` skips a note, `~` joins two words into one token, `\|` advances to the next bar; after applying them, the token count must equal the number of non-rest note heads in the corresponding bars, and the de-hyphenated `w:` text per section must equal the `lyrics.md` section text. Alignment is skipped for INSTRUMENTAL | Stage 5 |
 | `midi_export.py` | `melody.abc`, `chords.md` | Writes a type-1 MIDI file: track 0 tempo/time sig, track 1 melody, track 2 block chords one per bar. Round-trip test parses the header and both track lengths | Stage 7 |
 | `cliche_scan.py` | any lyric or concept text | Case-insensitive whole-phrase hits against `cliche-list.txt` per 100 words; FAIL if > `cliche_max_per_100_words` | Stages 2, 4, challenger |
 | `resemblance_check.py` | lyric text + `originality.resemblance_corpus` | Word 5-gram overlap ratio = matching 5-grams ÷ total 5-grams; FAIL if > `ngram_max_overlap`. SKIPPED when the corpus list is empty | Stage 7b |
@@ -488,7 +491,7 @@ Everything a sub-agent might read. Each file ≤ 150 lines; genre files ≤ 100;
 
 ### `references/shared/` (orchestrator-visible)
 
-`orchestrator-doctrine.md`, `stage-gates.md`, `config-schema.md`, `song-types.md`, `prompt-allowances.json`, `originality-policy.md`, `blocked-targets.txt` (seeded with ~500 widely known artist names and song titles; extendable), `artifact-formats.md`, `cliche-list.txt` (≥ 150 phrases), `glossary.md`.
+`orchestrator-doctrine.md`, `stage-gates.md`, `config-schema.md`, `song-types.md`, `prompt-allowances.json`, `originality-policy.md`, `blocked-targets.txt` (seeded with ≥ 100 widely known artist names and song titles in Wave 0, grown to ≥ 500 by Wave 5; the policy clause and the challenger remain the primary control), `artifact-formats.md`, `cliche-list.txt` (≥ 150 phrases), `glossary.md`.
 
 ### `skills/lyricist/references/`
 
@@ -502,7 +505,7 @@ Everything a sub-agent might read. Each file ≤ 150 lines; genre files ≤ 100;
 
 - `roles/`: `harmony.md`, `melody.md`, `groove.md`
 - `contracts/`: `chord-chart.md`, `melody-abc.md`, `structure.md`
-- `techniques/`: `functional-harmony.md`, `borrowed-chords.md`, `melodic-contour.md`, `range-and-tessitura.md`, `rhythmic-feel.md`, `abc-notation-primer.md` (the strict ABC subset the validator accepts), `modal-color.md`, `form-templates.md` (plain copy of song-critic's; listed as a duplicate)
+- `techniques/`: `functional-harmony.md`, `borrowed-chords.md`, `melodic-contour.md` (includes range and tessitura guidance), `rhythmic-feel.md`, `abc-notation-primer.md` (the strict ABC subset the validator accepts, including the `w:` alignment rules), `modal-color.md`, `form-templates.md` (plain copy of song-critic's; listed as a duplicate)
 - `genres/`: same ten (each: common progressions in Roman numerals, tempo bands, feel, typical keys, melodic idioms, `diatonic_min_ratio` override if any)
 - `agent-prompts/`: `harmony.md`, `melody.md`, `groove.md`
 
@@ -518,7 +521,7 @@ Everything a sub-agent might read. Each file ≤ 150 lines; genre files ≤ 100;
 
 - `roles/`: `hook-judge.md`, `prosody-judge.md`, `structure-judge.md`, `music-judge.md`, `listener-panel.md`, `challenger.md`
 - `contracts/`: `critique.md`, `panel-report.md`, `challenge-report.md`
-- `rubrics/`: `hook-rubric.md`, `lyric-rubric.md`, `melody-rubric.md`, `arrangement-rubric.md` (each 5 criteria × 1–5 scale; the rubric informs the critique, the script decides the gate)
+- `rubrics/`: `hook-rubric.md`, `lyric-rubric.md`, `structure-rubric.md`, `melody-rubric.md`, `arrangement-rubric.md` (each 5 criteria × 1–5 scale; the rubric informs the critique, the script decides the gate)
 - `personas/`: 12 listener personas (`casual-radio-listener.md`, `lyric-first-listener.md`, `dancefloor.md`, `musician-peer.md`, `sync-licensing-supervisor.md`, `parent-of-young-kids.md`, `worship-leader.md`, `playlist-curator.md`, `live-audience.md`, `karaoke-singer.md`, `film-music-editor.md`, `teen-listener.md`); each: what they notice, what makes them skip, the questions they ask
 - `techniques/`: `form-templates.md` (VCVCBC, AABA, verse-refrain, jingle, EDM build-drop, through-composed), `prosody.md` (plain copy of lyricist's; listed as a duplicate), `hook-craft.md` (plain copy), `melodic-contour.md` (plain copy)
 
@@ -589,13 +592,13 @@ Each wave is a separate PR (six PRs). Stories are sized for one session and each
 - **W0-1** Create `song-team/` skeleton (every directory in [§4](#4-plugin-layout), empty SKILL.md stubs with frontmatter, `agents/*.md` stubs, LICENSE, README stub, ARCHITECTURE stub), marketplace registration, CLAUDE.md row.
   AC: `plugin-dev:plugin-validator` passes; marketplace JSON parses; all eight SKILL.md have `tier:` frontmatter.
 - **W0-2** Write `references/shared/*`: doctrine, `stage-gates.md` with every normative rule from [§12](#12-scripts), config-schema v1, `song-types.md` with the routing matrix from [§7](#7-song-type-auto-detection-and-routing-matrix), `prompt-allowances.json`, originality policy, `blocked-targets.txt` (≥ 500 entries), artifact formats, glossary, `cliche-list.txt` (≥ 150 phrases).
-  AC: every file has frontmatter; `prompt-allowances.json` validates against the shape in [§3](#3-progressive-disclosure-model); a contributor can write any gate test from `stage-gates.md` alone.
+  AC: every file has frontmatter; `prompt-allowances.json` validates against the shape in [§3](#3-progressive-disclosure-model); `blocked-targets.txt` ≥ 100 entries; a contributor can write any gate test from `stage-gates.md` alone.
 - **W0-3** Extend `scripts/check_skill_budgets.py` walker to a plugin list; add `check_reference_caps.py` and its CI workflow.
   AC: budget CI reports song-team SKILL.md files; reference-caps CI fails on a deliberately oversized fixture file and passes after removal.
 
 ### Wave 1 — Fixtures and lyric gates (3 stories)
 
-- **W1-0** Fixtures: `prosody-gold/` (≥ 200 original hand-labelled lines with syllable and stress marks, provenance noted), `songs/<type>/` complete passing artifact sets for `FULL_SONG` and `LYRICS_ONLY` (others added in their waves), `negative/` (malformed ABC, mismatched section tags, empty `lyrics.md`, chords in a non-matching key, non-English lyrics) each with expected JSON.
+- **W1-0** Fixtures: `prosody-gold/` (≥ 200 original hand-labelled lines with syllable and stress marks, provenance noted), `briefs/` (one brief per routing row, eight in all), `songs/<type>/` complete passing artifact sets for `FULL_SONG` and `LYRICS_ONLY` (others added in W3-1), `negative/` (malformed ABC, mismatched section tags, empty `lyrics.md`, chords in a non-matching key, non-English lyrics, a `w:` line whose token count mismatches its bar) each with expected JSON.
   AC: every fixture has an `expected.json`; a README in `tests/fixtures/` explains the labelling convention.
 - **W1-1** `gate_common.py`, `prosody_check.py` (incl. `--hook`), `rhyme_check.py` + unit tests.
   AC: gold-set syllable accuracy ≥ 90%, stress ≥ 85%; SKIPPED on the non-English fixture; Windows-path test passes.
@@ -605,25 +608,25 @@ Each wave is a separate PR (six PRs). Stories are sized for one session and each
 ### Wave 2 — Lyric-side skills and the thin vertical slice (5 stories)
 
 - **W2-1** `song-brief` SKILL.md + references + wizard; config creation from the example; detection of all types from the matrix; PARODY_ADAPT refusal.
-  AC: five fixture briefs classify correctly; a missing config is created and announced; the refusal creates no `.song/<slug>/` directory.
+  AC: all eight `tests/fixtures/briefs/` classify to their routing row; a missing config is created and announced; the refusal creates no `.song/<slug>/` directory.
 - **W2-2** `lyricist` hook slice: SKILL.md, `hook-writer` role + contract + agent-prompt, `pop.md` genre, `hook-craft.md` + `prosody.md` techniques, `agents/lyricist.md`.
   AC: given fixture `brief.md`, a single `hook-writer` dispatch writes `concept.md` that passes `cliche_scan.py` and `prosody_check.py --hook` on first run for 4 of 5 fixture briefs.
 - **W2-3** `lyricist` verse slice: `verse-writer` + `lyric-editor` roles, contracts, prompts, remaining techniques, `country.md` + `folk.md` genres.
   AC: given fixture `brief.md` + `structure.md`, a single `verse-writer` dispatch writes `lyrics.md` whose section tags pass `structure_check.py`; a `lyric-editor` dispatch given a failing `prosody_check.py` report reduces the mismatch ratio.
-- **W2-4** `song-critic` lyric slice: SKILL.md, `hook-judge` + `prosody-judge` + `structure-judge` roles, `critique.md` contract, hook/lyric/arrangement rubrics, `form-templates.md`, four personas, `agents/song-critic.md`.
+- **W2-4** `song-critic` lyric slice: SKILL.md, `hook-judge` + `prosody-judge` + `structure-judge` roles, `critique.md` contract, hook/lyric/structure rubrics, `form-templates.md`, four personas, `agents/song-critic.md`.
   AC: each judge, given a failing gate JSON, returns a critique whose every item cites a `violations[].location`.
-- **W2-5** **Thin-slice orchestrator**: minimal `song-flow` SKILL.md that runs the `LYRICS_ONLY` path (Stages 1, 2, 3-light, 4, 7-light) with the stage protocol, loop caps, `ask_user` escalation only, `state.json`, and a lyric-sheet package. No hooks yet.
-  AC: a pop lyric ships end-to-end from the fixture brief with no user intervention; `state.json.gates` shows every gate PASS; loops_used ≤ caps.
+- **W2-5** **Thin-slice orchestrator**: minimal `song-flow` SKILL.md that runs the `LYRICS_ONLY` path (Stages 1, 2, 3-light, 4, 7-light) with the stage protocol, loop caps, `ask_user` and `accept_best` escalation, quick mode, `state.json`, `.song/active`, and a lyric-sheet package. Because `composer` does not exist until W3-2, Stage 3-light is produced here by a **stub `groove` dispatch**: the orchestrator fills `structure.md` from the chosen `form-templates.md` entry with that template's default meter spec, tempo band midpoint, and key of C; W3-2 replaces the stub with the real role and the stub is deleted. No hooks yet.
+  AC: a pop lyric ships end-to-end from the fixture brief with no user intervention; the same brief in quick mode completes with every `loops_used` = 1 or less; `state.json.gates` shows every gate PASS; `structure_check.py` passes the stubbed `structure.md`.
 
 ### Wave 3 — Music-side scripts and skills (4 stories)
 
-- **W3-1** `chord_tools.py`, `abc_validate.py`, `arrangement_check.py`, `midi_export.py` + unit tests; `songs/INSTRUMENTAL/` and `songs/TOPLINE/` fixtures.
-  AC: ABC → MIDI round-trip test passes; `abc_validate.py` skips lyric alignment when no `lyrics.md`; `arrangement_check.py` passes the Appendix A curve and fails a flat curve.
-- **W3-2** `composer` SKILL.md, three roles, contracts, techniques incl. the ABC primer, pop/country/folk genres, `agents/composer.md`.
+- **W3-1** `chord_tools.py`, `abc_validate.py`, `arrangement_check.py`, `midi_export.py` + unit tests; `songs/INSTRUMENTAL/`, `songs/TOPLINE/`, `songs/JINGLE/`, `songs/REWRITE/` (with the asserted-original input lyric) fixtures; a melisma case added to `songs/FULL_SONG/melody.abc`.
+  AC: ABC → MIDI round-trip test passes; `abc_validate.py` skips lyric alignment when no `lyrics.md`, passes the melisma fixture, and fails the `w:` mismatch negative fixture; `arrangement_check.py` passes the Appendix A curve and fails a flat curve.
+- **W3-2** `composer` SKILL.md, three roles, contracts, techniques incl. the ABC primer, pop/country/folk genres, `agents/composer.md`; removes the W2-5 groove stub.
   AC: a `melody` dispatch against fixture `lyrics.md` + `structure.md` yields a `melody.abc` that parses on first run for 3 of 5 fixtures and within two retries for all.
 - **W3-3** `arranger` SKILL.md, three roles, contracts, techniques, same three genres, `agents/arranger.md`.
   AC: `arrangement.md` passes `arrangement_check.py` and `structure_check.py --consistency` against the fixture set on first run for 4 of 5.
-- **W3-4** `song-critic` music slice: `music-judge`, `listener-panel`, `challenger` roles, melody rubric, panel and challenge contracts, remaining eight personas.
+- **W3-4** `song-critic` music slice: `music-judge`, `listener-panel`, `challenger` roles, melody and arrangement rubrics, panel and challenge contracts, remaining eight personas.
   AC: a challenger run against a fixture containing a planted well-known lyric line produces a BLOCKER row that `challenge_gate.py` catches.
 
 ### Wave 4 — Full orchestrator, hooks, release, revise (5 stories)
@@ -631,12 +634,12 @@ Each wave is a separate PR (six PRs). Stories are sized for one session and each
 - **W4-1** `song-flow` full: all seven stages, full routing matrix, debate and consensus, all three escalation policies, release-loop semantics, quick mode.
   AC: `FULL_SONG`, `INSTRUMENTAL`, `TOPLINE`, `JINGLE` fixture runs complete; `accept_best` and `fail` policies verified by forcing a loop cap of 0.
 - **W4-2** Hooks: `hooks.json` plus `check_config.py`, `audit_agent_prompt.py`, `validate_artifacts.py`, `gate_subagent.py`, the two prompt hooks; built with `plugin-dev:hook-development`.
-  AC: audit hook denies a prompt naming a blocked target, denies an over-allowance prompt, allows a conforming one; `gate_subagent.py` result in `state.json` equals a direct script run; Stop hook blocks when `retrospective.md` is missing.
+  AC: every hook is self-contained (no `lib/` import) and has a stdin-payload unit test; audit hook denies a prompt naming a blocked target, denies an over-allowance prompt, allows a conforming one; `gate_subagent.py` result in `state.json` equals a direct script run and carries the artifact hash; the orchestrator re-runs the script when the hash mismatches; Stop hook blocks when `retrospective.md` is missing or carries a stale `run_id`.
 - **W4-3** `song-release` + `song-memory` skills; post-pipeline protocol end-to-end.
   AC: `package/` contains all five files; `song.mid` parses; memory file written; lessons block appears in the next run's Stage 2 prompt.
 - **W4-4** `REVISE` song type: re-entry at a chosen stage from existing `state.json`, downstream invalidation via `--consistency`.
   AC: "make the chorus punchier" on a finished fixture re-runs Stage 4 for the chorus only, then Stage 7; "change the key" re-runs 5, 6, 7.
-- **W4-5** Smoke baseline: seven samples (one brief per non-parody type, one PARODY_ADAPT refusal). Acceptance: every run completes with no `ask_user` escalation under default caps; per-script first-attempt gate-pass rate ≥ 60%; loops_used ≤ caps; the refusal returns the policy sentence and writes nothing. Results recorded to `tests/smoke/baseline.json`; later runs compare with a ±15 percentage-point tolerance. Reuses delivery-team's smoke-runner pattern (BACKLOG-106/107).
+- **W4-5** Smoke baseline: seven samples (one brief for each of `FULL_SONG`, `LYRICS_ONLY`, `INSTRUMENTAL`, `TOPLINE`, `REWRITE`, `JINGLE`, plus one PARODY_ADAPT refusal; `REVISE` is excluded because it needs a prior run and is covered by W4-4's AC). Acceptance: every run completes with no `ask_user` escalation under default caps; per-script first-attempt gate-pass rate ≥ 60%; loops_used ≤ caps; the refusal returns the policy sentence and writes nothing. Results recorded to `tests/smoke/baseline.json`; later runs compare with a ±15 percentage-point tolerance. Reuses delivery-team's smoke-runner pattern (BACKLOG-106/107).
   AC: baseline file committed; runner exits non-zero on a regression beyond tolerance.
 
 ### Wave 5 — Breadth, optional hooks, polish (4 stories)
@@ -645,8 +648,8 @@ Each wave is a separate PR (six PRs). Stories are sized for one session and each
   AC: each ≤ 100 lines, frontmatter present, `hook-writer` fixture run passes for two newly added genres.
 - **W5-2** Remaining seven genre files for `composer` and `arranger`.
   AC: as W5-1 for `melody` and `instrumentation` dispatches.
-- **W5-3** Optional hooks `telemetry.py` and `verify_skill_load.py`; `ARCHITECTURE.md` final diagrams; `CROSS-SKILL-REFERENCES.md`; README example sessions; `docs/skills/` entry.
-  AC: `verify_skill_load.py` warns on a hand-back missing `SKILL_LOADED:`; ARCHITECTURE diagrams render on GitHub.
+- **W5-3** Optional hooks `telemetry.py` and `verify_skill_load.py` (self-contained, with stdin tests); `blocked-targets.txt` grown to ≥ 500; `ARCHITECTURE.md` final diagrams; `CROSS-SKILL-REFERENCES.md`; README example sessions; `docs/skills/` entry.
+  AC: `verify_skill_load.py` warns on a hand-back missing `SKILL_LOADED:`; ARCHITECTURE diagrams render on GitHub; blocked-targets count ≥ 500.
 - **W5-4** `plugin-dev:skill-reviewer` on all eight SKILL.md and `plugin-dev:plugin-validator`; fitness-review dates; CHANGELOG; version bump.
   AC: no HIGH findings from the reviewer; validator passes; CI green.
 
@@ -658,12 +661,12 @@ Estimated total: **24 stories**, six PRs. A lyric-only song is producible after 
 
 | Wave | DoD |
 |------|-----|
-| 0 | Validator passes; budget CI covers song-team; reference-caps CI runs; every shared reference has frontmatter; `stage-gates.md` states every rule in [§12](#12-scripts); cliche-list ≥ 150, blocked-targets ≥ 500 |
+| 0 | Validator passes; budget CI covers song-team; reference-caps CI runs; every shared reference has frontmatter; `stage-gates.md` states every rule in [§12](#12-scripts); cliche-list ≥ 150, blocked-targets ≥ 100 |
 | 1 | Every script honours the `gate_common.py` contract (`--help`, `--json`, `--config`, exit 0/1/2/3); unit tests pass under `python -I -m unittest discover tests/unit`; prosody gold accuracy ≥ 90% syllables / ≥ 85% stress; all negative fixtures produce expected JSON |
-| 2 | Each SKILL.md within budget; every role file ≤ 150 lines; per-story ACs met; **`LYRICS_ONLY` run ships a lyric sheet end-to-end from the pop fixture with no user intervention** |
+| 2 | Each SKILL.md within budget; every role file ≤ 150 lines; per-story ACs met; **`LYRICS_ONLY` run ships a lyric sheet end-to-end from the pop fixture with no user intervention, in both default and quick mode** |
 | 3 | Music scripts pass unit tests; `composer` and `arranger` per-story ACs met; `FULL_SONG` fixture artifact set passes every gate script when run manually in sequence |
-| 4 | All six non-parody types complete via `song-flow`; hooks behave per their ACs; Stop hook enforces retrospective; `REVISE` works; smoke baseline committed and runner passes |
-| 5 | All ten genres present in all three worker skills; duplicates byte-identical; skill-reviewer has no HIGH findings; README examples reproduce; ARCHITECTURE.md supersedes this plan |
+| 4 | All six smoke-tested types complete via `song-flow`, plus `REVISE` per W4-4; hooks behave per their ACs; Stop hook enforces retrospective per `run_id`; smoke baseline committed and runner passes |
+| 5 | All ten genres present in all three worker skills; duplicates byte-identical; blocked-targets ≥ 500; skill-reviewer has no HIGH findings; README examples reproduce; ARCHITECTURE.md supersedes this plan |
 
 ---
 
@@ -783,3 +786,20 @@ Revision 2 incorporates the delivery-team review of PR #89 (four reviewers, all 
 - **Optional hooks inflate Wave 4** → telemetry and verify_skill_load moved to Wave 5 (PO 9).
 - **Tech Writer nits** → PR count six, §19/W0 lint reference aligned, §7 link, blank lines after headings, fence languages, `docs/index.md` link (Tech Writer 5, 6, 8, 9, 10).
 - **Listener panel as a gate** contradicted determinism → made advisory (new, from Principle 5 audit).
+
+Revision 3 incorporates the second round (Architect APPROVE, Tech Writer APPROVE, Product Owner and QA REQUEST_CHANGES on new items only). Resolved:
+
+- **Gate runner had two sources of truth** (§6 step 4 vs §11) → step 4 rewritten: hook pre-populates with `artifact_sha256`, orchestrator reuses on hash match else runs the script; hook writes atomically and touches only `gates[]` (Architect NEW-1, QA NEW-1).
+- **ABC `w:` alignment rule** would false-FAIL on melismas → rule restated per ABC 2.1 token semantics; melisma and mismatch fixtures added to W1-0/W3-1 (QA NEW-2).
+- **Thin slice depended on `composer:groove`** not built until W3-2 → W2-5 uses a documented groove stub filled from the form template; W3-2 removes it (PO N1).
+- **Quick mode arrived too late** → folded into W2-5 scope and Wave 2 DoD (PO N2).
+- **Detection AC covered five of eight rows** → `tests/fixtures/briefs/` with one brief per routing row, W2-1 AC updated (PO N3).
+- **Blocked-targets ≥ 500 in Wave 0** too heavy → ≥ 100 in Wave 0, ≥ 500 by W5-3 (PO N4).
+- **Arrangement rubric built before its consumer** → moved to W3-4; `structure-rubric.md` added for Stage 3 (PO N5, Architect NEW-4).
+- **Smoke count vs REVISE** → REVISE explicitly excluded from the smoke set; §4, W4-5, §18 agree on 7 samples (Tech Writer N1, QA NEW-3).
+- **`force_type` enum** → REVISE marked detected-only (Tech Writer N2).
+- **Orphaned `range-and-tessitura.md`** → folded into `melodic-contour.md` (Tech Writer N3).
+- **Hooks copied from delivery-team would fail at import** → hooks are self-contained with stdin tests; verified that `.gitignore` line 17 (`lib/`) excludes `delivery-team/hooks/lib/hook_utils.py` from git, so six delivery-team hooks are broken for fresh clones. **Backlog item for delivery-team**: add a `!delivery-team/hooks/lib/` exception and commit the file (Architect NEW-2).
+- **Active slug and stale retrospective** → `.song/active` pointer and `run_id` matching in the Stop rule (Architect NEW-3).
+- **JINGLE/REWRITE fixture sets unassigned** → W3-1 (QA NEW-4).
+- **Rhyme-scheme notation ambiguous** → `x` unconstrained, letters per section, in §9 and §12 (QA NEW-5).
