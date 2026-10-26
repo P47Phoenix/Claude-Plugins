@@ -121,7 +121,7 @@ Header: `| severity | location | finding | suggested fix |`. Example row: `| MIN
   "started": "2026-10-26T14:02:11Z", "updated": "2026-10-26T14:31:40Z" }
 ```
 
-Types: `run_id` string (ISO timestamp plus slug; unique per run and per REVISE); `stage` integer 1-7; `song_type` string; `status` one of `in_progress`, `complete`, `failed`; `quick` boolean; `loops_used` map of `concept`, `structure`, `lyrics`, `music`, `arrangement`, `release` to integer; `gates` map stage-name to `{status, metrics, violations, artifact_sha256, skipped}`; `gate_overrides` list of `{stage, run_id, reason, timestamp}`; `accepted_best` map stage-name to boolean; `owners` map artifact filename to role; `started` / `updated` ISO 8601 UTC. `gate_subagent.py` writes only `gates[]`, via temp file and atomic rename.
+Types: `run_id` string (ISO timestamp plus slug; unique per run and per REVISE); `stage` integer 1-7; `song_type` string; `status` one of `in_progress`, `complete`, `failed`; `quick` boolean; `loops_used` map of `concept`, `structure`, `lyrics`, `music`, `arrangement`, `release` to integer; `gates` map stage-name to `{status, metrics, violations, artifact_sha256, skipped}`; `gate_overrides` list of `{stage, run_id, reason, timestamp}`; `accepted_best` map stage-name to boolean; `owners` map artifact filename to role; `started` / `updated` ISO 8601 UTC. `attempts` (additive, optional) map of stage-name to a list of `{n, sha256, violations, worst_ratio}` kept by the orchestrator for `accept_best`; attempt copies live at `.song/<slug>/attempts/<artifact>.<n>`. `gate_subagent.py` writes only `gates[]`, via temp file and atomic rename.
 
 ## .song/active
 
