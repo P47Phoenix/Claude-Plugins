@@ -114,14 +114,16 @@ Header: `| severity | location | finding | suggested fix |`. Example row: `| MIN
 ```json
 { "run_id": "2026-10-26T14-02-11Z-nobody-knows", "stage": 4, "song_type": "FULL_SONG", "status": "in_progress",
   "quick": false, "loops_used": { "concept": 1, "structure": 0, "lyrics": 1 },
-  "gates": { "lyrics": { "status": "FAIL", "metrics": { "verse_2_mismatch_ratio": 0.22 },
+  "gates": { "lyrics": { "status": "FAIL", "metrics": { "verse_2_mismatch_ratio": 0.22, "pairs_checked": 12 },
              "violations": [ { "location": "Verse 2:3", "reason": "stress mismatch", "observed": 0.22, "limit": 0.15 } ],
-             "artifact_sha256": "<hex>", "skipped": false } },
+             "artifact_sha256": "<hex>", "skipped": false, "scripts": ["prosody_check", "rhyme_check"],
+             "results": { "prosody_check": { "status": "FAIL", "metrics": { "verse_2_mismatch_ratio": 0.22 }, "violations": [ { "location": "Verse 2:3", "reason": "stress mismatch", "observed": 0.22, "limit": 0.15 } ] },
+                          "rhyme_check": { "status": "PASS", "metrics": { "pairs_checked": 12 }, "violations": [] } } } },
   "gate_overrides": [], "accepted_best": {}, "owners": { "concept.md": "hook-writer", "structure.md": "groove" },
   "started": "2026-10-26T14:02:11Z", "updated": "2026-10-26T14:31:40Z" }
 ```
 
-Types: `run_id` string (ISO timestamp plus slug; unique per run and per REVISE); `stage` integer 1-7; `song_type` string; `status` one of `in_progress`, `complete`, `failed`; `quick` boolean; `loops_used` map of `concept`, `structure`, `lyrics`, `music`, `arrangement`, `release` to integer; `gates` map stage-name to `{status, metrics, violations, artifact_sha256, skipped}`; `gate_overrides` list of `{stage, run_id, reason, timestamp}`; `accepted_best` map stage-name to boolean; `owners` map artifact filename to role; `started` / `updated` ISO 8601 UTC. `gate_subagent.py` writes only `gates[]`, via temp file and atomic rename.
+Types: `run_id` string (ISO timestamp plus slug; unique per run and per REVISE); `stage` integer 1-7; `song_type` string; `status` one of `in_progress`, `complete`, `failed`, or the transitional `blocked_wave` (Waves 2-3: a song type the current wave cannot run; Stage 1 brief saved, nothing else runs); `quick` boolean; `loops_used` map of `concept`, `structure`, `lyrics`, `music`, `arrangement`, `release` to integer; `gates` map stage-name to `{status, metrics, violations, artifact_sha256, skipped, scripts, results}` where `status`/`metrics`/`violations` are the merged view across the stage's scripts (worst status in the order `ERROR > FAIL > SKIPPED > PASS`), `scripts` is the list of invocation strings (`"prosody_check --hook"`), and `results` maps each invocation string to that script's own `{status, metrics, violations}`; `gate_overrides` list of `{stage, run_id, reason, timestamp}`; `accepted_best` map stage-name to boolean; `owners` map artifact filename to role; `started` / `updated` ISO 8601 UTC. `attempts` (additive, optional) map of stage-name to a list of `{n, sha256, violations, worst_ratio}` kept by the orchestrator for `accept_best`; attempt copies live at `.song/<slug>/attempts/<artifact>.<n>`. `gate_subagent.py` writes only `gates[]`, via temp file and atomic rename.
 
 ## .song/active
 
@@ -133,6 +135,6 @@ Front-matter `run_id` equal to `state.json.run_id` (the Stop hook compares them)
 
 ## decisions.md
 
-Append-only; never rewrite earlier entries. Each entry: `## <ISO timestamp> <kind>` where kind is `debate`, `override`, or `accept_best`, then `stage:`, `decision:`, `rationale:`, and for debates the five rubric scores per option.
+Append-only; never rewrite earlier entries. Each entry: `## <ISO timestamp> <kind>` where kind is `debate`, `override`, `accept_best`, or `hook_line` (the lyric-editor changed Chorus line 1; `concept.md.hook_line` updated and Stage 2 gates re-run), then `stage:`, `decision:`, `rationale:`, and for debates the five rubric scores per option.
 
 Example: `## 2026-10-26T14:40:02Z override` / `stage: lyrics` / `decision: user accepted Verse 2 at mismatch 0.19` / `rationale: heuristic false positive on "every" (two syllables in performance)`.

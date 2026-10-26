@@ -12,6 +12,9 @@
 # remains the primary control. Grown to >= 500 entries by Wave 5.
 #
 # --- Pop ---
+# Entries are multi-word or distinctive names; single common English words (e.g. a song
+# titled with one ordinary word) are excluded because the hook matches whole phrases anywhere
+# in a prompt. Such titles remain covered by clause 1 of originality-policy.md and the challenger.
 Taylor Swift
 Ariana Grande
 Billie Eilish
@@ -26,7 +29,6 @@ Bruno Mars
 Adele
 Michael Jackson
 Madonna
-Prince
 Whitney Houston
 Mariah Carey
 Britney Spears
@@ -41,17 +43,14 @@ Bad Guy
 Shape of You
 Rolling in the Deep
 Billie Jean
-Thriller
 Poker Face
 Uptown Funk
 Blinding Lights
-Firework
 Drivers License
 # --- Rock ---
 The Beatles
 The Rolling Stones
 Led Zeppelin
-Queen
 Pink Floyd
 Nirvana
 Radiohead
@@ -77,8 +76,6 @@ Hotel California
 Hey Jude
 Let It Be
 Wonderwall
-Creep
-Yellow
 Mr. Brightside
 Sweet Child O' Mine
 # --- Country ---
@@ -122,24 +119,18 @@ HUMBLE.
 Hotline Bling
 Sicko Mode
 God's Plan
-Juicy
 # --- R&B / Soul ---
 Beyonce
 Rihanna
 Frank Ocean
 SZA
-Usher
 Alicia Keys
 Stevie Wonder
 Aretha Franklin
 Marvin Gaye
 John Legend
 H.E.R.
-Halo
-Umbrella
 All of Me
-Superstition
-Respect
 Let's Stay Together
 # --- Electronic / Dance ---
 Daft Punk
@@ -153,10 +144,7 @@ Zedd
 Diplo
 Fred again..
 Get Lucky
-Levels
 Wake Me Up
-Clarity
-Titanium
 # --- Folk / Singer-songwriter ---
 Bob Dylan
 Joni Mitchell
@@ -169,7 +157,6 @@ Noah Kahan
 James Taylor
 Tracy Chapman
 Blowin' in the Wind
-Hallelujah
 The Sound of Silence
 Fast Car
 Big Yellow Taxi
@@ -182,10 +169,8 @@ Rodgers and Hammerstein
 Hamilton
 Les Miserables
 The Phantom of the Opera
-Wicked
 Defying Gravity
 My Shot
-Memory
 Don't Cry for Me Argentina
 Seasons of Love
 Let It Go

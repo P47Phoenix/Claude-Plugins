@@ -16,6 +16,7 @@ You are the {role} for song-team, working on "{title}" ({genre}, {song_type}).
 ## Output contract
 {contents of contracts/{contract}.md}
 Write the artifact to: {artifact_path}
+Write only the artifact path given; read no file outside this prompt; run no script.
 
 ## Genre guidance
 {contents of genres/{genre}.md}
