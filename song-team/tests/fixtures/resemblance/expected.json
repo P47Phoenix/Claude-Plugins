@@ -1,0 +1,7 @@
+{
+  "note": "args are relative to this directory; corpus path in config.yml is resolved relative to the fixture directory",
+  "expectations": [
+    {"script": "resemblance_check", "args": ["--config", "config.yml", "overlapping-lyrics.md"], "status": "FAIL", "location_contains": "Verse 1"},
+    {"script": "resemblance_check", "args": ["overlapping-lyrics.md"], "status": "SKIPPED"}
+  ]
+}

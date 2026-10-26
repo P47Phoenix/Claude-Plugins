@@ -1,0 +1,6 @@
+{
+  "expectations": [
+    {"script": "prosody_check", "args": ["lyrics.md", "structure.md", "brief.md"], "status": "SKIPPED"},
+    {"script": "rhyme_check", "args": ["lyrics.md", "structure.md", "brief.md"], "status": "SKIPPED"}
+  ]
+}

@@ -1,0 +1,42 @@
+# Original throwaway lyric text written for this test set, 2026-10-26.
+# Acts as a user-supplied do-not-resemble corpus for resemblance_check.py.
+The kettle clicks before the alarm does
+I read the weather off the neighbour's washing line
+Two spoons of sugar and a bus I always miss
+The cat has claimed the only chair with sun
+I keep the receipts in a biscuit tin
+The river carries all the town's umbrellas
+Nobody fixed the gate so now it sings
+Monday wears the same coat as the week before
+I leave the porch light on for the moths
+The landlord's radio plays only weather
+We painted the kitchen the colour of a bruise
+The library stamps the date a day too early
+A tram bell rings somewhere behind the rain
+I measure the winter in jars of soup
+The scaffolding came down and took the view
+Our street is one long argument with pigeons
+I count the stairs because the light is broken
+The bakery opens a window and not a door
+Your handwriting is a hedge I cannot see over
+I fold the letter smaller than it needs to be
+The florist's dog guards nothing but the step
+Every bus in this town turns left at the church
+I keep a spare key in a coat I never wear
+The tide rewrites the timetable twice a day
+The council planted trees that will outlive the road
+A gull on the railing watches me eat
+I dry my boots on the radiator's last warmth
+The mirror in the hall has started lying
+The postman knows my name before I do
+I leave the hallway lamp on for the cat
+The windows sweat whenever I cook rice
+Somebody chalked a hopscotch on the frost
+I learn the names of streets by getting lost
+The school bell rings for people who are grown
+I hang my coat where someone else's hung
+The ferry horn apologises to the fog
+My neighbour grows tomatoes in a sink
+I keep the stub of every single ticket
+The stairwell smells of someone else's dinner
+And every door I knock on knows a different me

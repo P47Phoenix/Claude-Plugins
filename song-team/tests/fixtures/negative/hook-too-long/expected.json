@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "prosody_check", "args": ["--hook", "concept.md"], "status": "FAIL"}
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "challenge_gate", "args": ["challenge-report.md"], "status": "ERROR"}
+  ]
+}

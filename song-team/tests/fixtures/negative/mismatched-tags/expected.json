@@ -1,0 +1,6 @@
+{
+  "expectations": [
+    {"script": "structure_check", "args": ["structure.md", "lyrics.md"], "status": "FAIL", "location_contains": "Verse 2"},
+    {"script": "prosody_check", "args": ["lyrics.md", "structure.md"], "status": "ERROR", "location_contains": "Verse 2"}
+  ]
+}

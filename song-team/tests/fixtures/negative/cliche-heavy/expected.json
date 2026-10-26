@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "cliche_scan", "args": ["lyrics.md"], "status": "FAIL"}
+  ]
+}

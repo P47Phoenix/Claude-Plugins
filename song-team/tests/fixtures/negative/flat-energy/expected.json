@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "arrangement_check", "args": ["arrangement.md"], "status": "FAIL", "location_contains": "Verse 1"}
+  ]
+}
