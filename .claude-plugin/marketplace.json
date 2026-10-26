@@ -85,6 +85,22 @@
         "./hardware-team/skills/compliance-engineer",
         "./hardware-team/skills/test-engineer"
       ]
+    },
+    {
+      "name": "song-team",
+      "description": "Song-creation team with 8 skills: song-flow (7-stage pipeline orchestrator with song-type auto-detection, deterministic script gates, evaluator-optimizer loops, listener panel, adversarial challenger, memory), song-brief (intake wizard), lyricist, composer (chords + ABC melody), arranger, song-critic (rubric judges, personas, challenger), song-release (package + MIDI export), song-memory (retrospective). Originality guardrails refuse parody and named-artist imitation.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./song-team/skills/song-flow",
+        "./song-team/skills/song-brief",
+        "./song-team/skills/lyricist",
+        "./song-team/skills/composer",
+        "./song-team/skills/arranger",
+        "./song-team/skills/song-critic",
+        "./song-team/skills/song-release",
+        "./song-team/skills/song-memory"
+      ]
     }
   ]
 }

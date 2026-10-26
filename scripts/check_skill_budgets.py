@@ -2,7 +2,7 @@
 """
 check_skill_budgets.py — SKILL.md line-budget CI gate (W0-2)
 
-Walks delivery-team SKILL.md files, parses YAML frontmatter for `tier:` field,
+Walks SKILL.md files of every plugin in BUDGETED_PLUGINS, parses YAML frontmatter for `tier:` field,
 compares line count to tier budget. Exits non-zero on violation.
 
 Tier budgets (exactly these three values, TIER_LIMITS):
@@ -183,12 +183,18 @@ def scan_permissive_language(path: str) -> list[tuple[int, str, str]]:
     return hits
 
 
+# Plugins whose SKILL.md files are subject to the tier budget gate.
+# Extend this list (not the glob) when a new budgeted plugin is added.
+BUDGETED_PLUGINS: list[str] = ["delivery-team", "song-team"]
+
+
 def find_skill_files(base: str = ".") -> list[str]:
-    """Walk delivery-team for all SKILL.md files."""
+    """Walk every budgeted plugin for all SKILL.md files."""
     results = []
     base_path = Path(base)
-    for p in base_path.glob("delivery-team/**/SKILL.md"):
-        results.append(str(p))
+    for plugin in BUDGETED_PLUGINS:
+        for p in base_path.glob(f"{plugin}/**/SKILL.md"):
+            results.append(str(p))
     return sorted(results)
 
 
@@ -250,7 +256,7 @@ def main() -> int:
     parser.add_argument(
         "--check",
         metavar="PATH",
-        help="Check a single SKILL.md file instead of walking delivery-team/",
+        help="Check a single SKILL.md file instead of walking the budgeted plugins",
     )
     parser.add_argument(
         "--tier",

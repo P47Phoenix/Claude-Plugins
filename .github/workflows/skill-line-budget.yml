@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - 'delivery-team/**/SKILL.md'
+      - 'song-team/**/SKILL.md'
       - 'governance/skill-budgets.json'
+      - 'scripts/check_skill_budgets.py'
 
 permissions:
   contents: read
