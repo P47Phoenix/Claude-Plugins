@@ -1,0 +1,3519 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Comprehensive documentation for the delivery-team plugin — a full delivery pipeline with 11 skills, 7 stages, and 13 alias themes.">
+      
+      
+      
+        <link rel="canonical" href="https://p47phoenix.github.io/Claude-Plugins/plans/music-team-plan/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>music-team — Implementation Plan - Claude Plugins - Delivery Team</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#music-team-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Claude Plugins - Delivery Team" class="md-header__button md-logo" aria-label="Claude Plugins - Delivery Team" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Claude Plugins - Delivery Team
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              music-team — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/P47Phoenix/Claude-Plugins" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    P47Phoenix/Claude-Plugins
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user-guide/pipeline/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../skills/" class="md-tabs__link">
+          
+  
+  
+  Skills
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/hooks/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../contributing/" class="md-tabs__link">
+          
+  
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Claude Plugins - Delivery Team" class="md-nav__button md-logo" aria-label="Claude Plugins - Delivery Team" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Claude Plugins - Delivery Team
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/P47Phoenix/Claude-Plugins" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    P47Phoenix/Claude-Plugins
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Stages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/project-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/collaboration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collaboration Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skills
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Skills
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/delivery-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Delivery Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/product-delivery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Product Delivery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/developer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/architect/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI/UX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/user-feedback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Feedback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/godot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Godot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/alias-creator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alias Creator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../skills/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/aliases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alias Themes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-goals-and-non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Goals and Non-Goals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Goals and Non-Goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Design Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-progressive-disclosure-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Progressive Disclosure Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-plugin-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Plugin Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-skill-roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Skill Roster
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Skill Roster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#role-tables-per-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role tables per worker
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-the-music-flow-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. The music-flow Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. The music-flow Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-execution-protocol-identical-for-every-stage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage execution protocol (identical for every stage)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-song-type-auto-detection-and-routing-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Song Type Auto-Detection and Routing Matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-collaboration-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Collaboration Patterns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-artifacts-and-output-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Artifacts and Output Contracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-configuration-schema-songconfigyml-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Configuration Schema (.song/config.yml v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Hooks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Scripts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-reference-library-progressive-disclosure-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Reference Library (Progressive Disclosure Content)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. Reference Library (Progressive Disclosure Content)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#referencesshared-orchestrator-visible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        references/shared/ (orchestrator-visible)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillslyricistreferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/lyricist/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillscomposerreferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/composer/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillsarrangerreferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/arranger/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillssong-criticreferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/song-critic/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillsmusic-briefreferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/music-brief/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillsmusic-releasereferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/music-release/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skillsmusic-memoryreferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skills/music-memory/references/
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-memory-and-self-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Memory and Self-Learning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-guardrails-originality-and-copyright" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Guardrails: Originality and Copyright
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-governance-obligations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Governance Obligations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-implementation-waves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Implementation Waves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17. Implementation Waves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delivery-status-music-team-rebuild" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delivery status (music-team rebuild)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wave-0-scaffold-and-governance-3-stories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wave 0 — Scaffold and governance (3 stories)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wave-1-fixtures-and-lyric-gates-3-stories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wave 1 — Fixtures and lyric gates (3 stories)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wave-2-lyric-side-skills-and-the-thin-vertical-slice-5-stories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wave 2 — Lyric-side skills and the thin vertical slice (5 stories)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wave-3-music-side-scripts-and-skills-4-stories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wave 3 — Music-side scripts and skills (4 stories)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wave-4-full-orchestrator-hooks-release-revise-5-stories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wave 4 — Full orchestrator, hooks, release, revise (5 stories)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wave-5-breadth-optional-hooks-polish-4-stories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wave 5 — Breadth, optional hooks, polish (4 stories)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-definition-of-done-per-wave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Definition of Done per Wave
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-risks-and-mitigations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. Risks and Mitigations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20-open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20. Open Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-a-example-session-walkthrough" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A — Example Session Walkthrough
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-b-sub-agent-prompt-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix B — Sub-Agent Prompt Template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-c-review-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix C — Review Log
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="music-team-implementation-plan">music-team — Implementation Plan<a class="headerlink" href="#music-team-implementation-plan" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Status: <strong>PROPOSED, revision 4 (renamed from song-team; waves 2–5 superseded — see §17 note)</strong> (after two rounds of delivery-team review: Architect, Product Owner, QA, Tech Writer) · Author: Claude (with Michael Connelly) · Date: 2026-10-22
+Target plugin directory: <code>music-team/</code> · Marketplace ID: <code>music-team</code>
+Patterns borrowed from: <code>delivery-team/</code> (orchestrator + role-scoped workers + hooks), <code>mtg-commander/</code> (adversarial challengers, config-driven loops), <code>hardware-team/</code> (domain pipeline over a tool layer).
+Lifecycle: this plan is superseded by <code>music-team/ARCHITECTURE.md</code> once Wave 5 lands; until then it is the design source of truth.</p>
+</blockquote>
+<p>This document is the complete, self-contained plan for building a song-creation agent plugin. Every component, file, stage, hook, script, and governance obligation is specified here so a contributor can implement it wave by wave without re-deriving the design.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#1-goals-and-non-goals">Goals and Non-Goals</a></li>
+<li><a href="#2-design-principles">Design Principles</a></li>
+<li><a href="#3-progressive-disclosure-model">Progressive Disclosure Model</a></li>
+<li><a href="#4-plugin-layout">Plugin Layout</a></li>
+<li><a href="#5-skill-roster">Skill Roster</a></li>
+<li><a href="#6-the-music-flow-pipeline">The <code>music-flow</code> Pipeline</a></li>
+<li><a href="#7-song-type-auto-detection-and-routing-matrix">Song Type Auto-Detection and Routing Matrix</a></li>
+<li><a href="#8-collaboration-patterns">Collaboration Patterns</a></li>
+<li><a href="#9-artifacts-and-output-contracts">Artifacts and Output Contracts</a></li>
+<li><a href="#10-configuration-schema-songconfigyml-v1">Configuration Schema (<code>.song/config.yml</code> v1)</a></li>
+<li><a href="#11-hooks">Hooks</a></li>
+<li><a href="#12-scripts">Scripts</a></li>
+<li><a href="#13-reference-library-progressive-disclosure-content">Reference Library (Progressive Disclosure Content)</a></li>
+<li><a href="#14-memory-and-self-learning">Memory and Self-Learning</a></li>
+<li><a href="#15-guardrails-originality-and-copyright">Guardrails: Originality and Copyright</a></li>
+<li><a href="#16-governance-obligations">Governance Obligations</a></li>
+<li><a href="#17-implementation-waves">Implementation Waves</a></li>
+<li><a href="#18-definition-of-done-per-wave">Definition of Done per Wave</a></li>
+<li><a href="#19-risks-and-mitigations">Risks and Mitigations</a></li>
+<li><a href="#20-open-questions">Open Questions</a></li>
+<li><a href="#appendix-a--example-session-walkthrough">Appendix A — Example Session Walkthrough</a></li>
+<li><a href="#appendix-b--sub-agent-prompt-template">Appendix B — Sub-Agent Prompt Template</a></li>
+<li><a href="#appendix-c--review-log">Appendix C — Review Log</a></li>
+</ol>
+<hr />
+<h2 id="1-goals-and-non-goals">1. Goals and Non-Goals<a class="headerlink" href="#1-goals-and-non-goals" title="Permanent link">&para;</a></h2>
+<h3 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Deliver a <strong>full song</strong> (title, lyric sheet, chord chart, melody sketch, arrangement notes, production brief) from a one-line brief, through a staged pipeline with quality gates.</li>
+<li>Mirror the delivery-team architecture so contributors already familiar with <code>delivery-flow</code> can navigate <code>music-flow</code> immediately: one orchestrator, role-scoped worker skills, sub-agents with isolated context, hooks, config, memory.</li>
+<li>Load song-craft knowledge <strong>progressively</strong>: genre, role, and task references enter a sub-agent's context only when that sub-agent needs them. Never load the whole craft library at once.</li>
+<li>Produce <strong>machine-checkable</strong> artifacts where possible (ABC notation for melody, a structured lyric sheet with section tags, a chord chart in Roman numerals plus concert pitch) so hooks and scripts can validate rather than merely eyeball.</li>
+<li>Be <strong>deterministic at the gates</strong>: pass/fail decisions on prosody, rhyme scheme, structure, energy curve, challenger severity, and originality are rule-based (scripts), not vibes.</li>
+<li>Ship <strong>user value early</strong>: a lyric-only song is producible end-to-end by the third PR (see <a href="#17-implementation-waves">§17</a>, story W2-5).</li>
+</ul>
+<h3 id="non-goals">Non-Goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Audio rendering, mixing, or mastering. The pipeline ends at a production brief plus a MIDI/ABC sketch. DAW work is out of scope.</li>
+<li>Reproducing or closely imitating specific copyrighted songs or artists' lyrics. See <a href="#15-guardrails-originality-and-copyright">§15</a>.</li>
+<li>Music-theory tutoring as a primary purpose. Theory references exist to serve the pipeline, not as a standalone course.</li>
+<li>Replacing <code>delivery-team</code>. <code>music-team</code> is a sibling plugin, not a sub-skill of delivery-flow.</li>
+<li><strong>Non-English lyrics at v1.</strong> The syllable, stress, and rhyme heuristics are English-only. Other languages run the pipeline with those gates reporting <code>SKIPPED</code>, not <code>FAIL</code>. See <a href="#12-scripts">§12</a> and <a href="#20-open-questions">§20</a>.</li>
+</ul>
+<hr />
+<h2 id="2-design-principles">2. Design Principles<a class="headerlink" href="#2-design-principles" title="Permanent link">&para;</a></h2>
+<p>These are lifted from <code>delivery-team/references/shared/orchestrator-doctrine.md</code> and adapted.</p>
+<ol>
+<li><strong>Orchestrator never writes the song.</strong> <code>music-flow</code> coordinates stages and gates. Every lyric line, chord, and melody note is produced by a worker skill running as a sub-agent.</li>
+<li><strong>Context isolation by role and genre.</strong> A lyricist sub-agent working on a country ballad loads <code>lyricist/references/genres/country.md</code> and nothing about hip-hop. A composer sub-agent for the same song loads <code>composer/references/genres/country.md</code> and nothing about lyrics.</li>
+<li><strong>Evaluator-optimizer at every creative stage.</strong> A worker produces, a critic evaluates against an explicit rubric, the worker revises. Loop caps are configurable; exhaustion follows the configured escalation policy.</li>
+<li><strong>Adversarial re-verification before release.</strong> A challenger sub-agent with a clean context attempts to break the song (cliché density, prosody collisions, structural monotony, accidental resemblance to known works) before the final gate.</li>
+<li><strong>Deterministic gates.</strong> Scripts decide pass/fail on measurable properties. Sub-agents interpret and improve; they never self-certify and never override a gate. Only the user may override, and the override is recorded.</li>
+<li><strong>One gate runner.</strong> The orchestrator's stage protocol (step 4) is the only place a gate decides a loop. Hooks that run gate scripts are advisory and feed the same result; they never block independently.</li>
+<li><strong>Everything on disk.</strong> Every stage writes to <code>.song/&lt;song-slug&gt;/</code> so a session can resume, a retrospective can read it, and memory can learn from it.</li>
+<li><strong>Budgeted SKILL.md files.</strong> Tier A/B/C line budgets apply exactly as in <code>governance/skill-budgets.json</code>. Depth lives in <code>references/</code>.</li>
+</ol>
+<hr />
+<h2 id="3-progressive-disclosure-model">3. Progressive Disclosure Model<a class="headerlink" href="#3-progressive-disclosure-model" title="Permanent link">&para;</a></h2>
+<p>Four levels, each loaded strictly later than the previous.</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>What loads</th>
+<th>When</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L0 — Metadata</td>
+<td>Plugin + skill names, descriptions, trigger phrases</td>
+<td>Always (marketplace index)</td>
+<td><code>.claude-plugin/marketplace.json</code></td>
+</tr>
+<tr>
+<td>L1 — Skill body</td>
+<td><code>SKILL.md</code> of the triggered skill (orchestrator or worker)</td>
+<td>When the skill triggers</td>
+<td><code>music-team/skills/&lt;skill&gt;/SKILL.md</code></td>
+</tr>
+<tr>
+<td>L2 — Role / task reference</td>
+<td>One role file + one output contract</td>
+<td>When the worker dispatches a sub-agent for a specific task</td>
+<td><code>skills/&lt;skill&gt;/references/roles/</code>, <code>references/contracts/</code></td>
+</tr>
+<tr>
+<td>L3 — Genre / technique reference</td>
+<td>Genre, technique, persona, or rubric files per the role's allowance</td>
+<td>Loaded inside the sub-agent prompt only</td>
+<td><code>skills/&lt;skill&gt;/references/genres/</code>, <code>techniques/</code>, <code>personas/</code>, <code>rubrics/</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Prompt allowance manifest.</strong> Each role has an explicit allowance in <code>references/shared/prompt-allowances.json</code> listing which reference directories it may embed and how many files from each. The default allowance for creative roles is: one role file, one contract, one genre file, at most two technique files. <code>listener-panel</code> is allowed three persona files; <code>challenger</code> is allowed the originality policy, the blocked-targets list, and the cliché list. The memory lessons block (<a href="#14-memory-and-self-learning">§14</a>) and the originality clause (<a href="#15-guardrails-originality-and-copyright">§15</a>) are exempt from counting. <code>audit_agent_prompt.py</code> enforces the manifest (<a href="#11-hooks">§11</a>).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"schema_version"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"defaults"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"roles"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"contracts"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"genres"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"personas"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"rubrics"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"shared"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"roles"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">"listener-panel"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"personas"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"genres"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">"challenger"</span><span class="p">:</span><span class="w">     </span><span class="p">{</span><span class="w"> </span><span class="nt">"shared"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"genres"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">"hook-judge"</span><span class="p">:</span><span class="w">     </span><span class="p">{</span><span class="w"> </span><span class="nt">"rubrics"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">"music-judge"</span><span class="p">:</span><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"rubrics"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">"prosody-judge"</span><span class="p">:</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nt">"rubrics"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">"structure-judge"</span><span class="p">:{</span><span class="w"> </span><span class="nt">"rubrics"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"techniques"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="nt">"exempt_blocks"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"originality-policy"</span><span class="p">,</span><span class="w"> </span><span class="s2">"memory-lessons"</span><span class="p">]</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>Shared references</strong> (<code>music-team/references/shared/</code>) are the only files the orchestrator itself may load, and only the doctrine, stage-gate table, routing matrix, and config schema.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>flowchart LR
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    L0[L0 marketplace.json&lt;br/&gt;names + triggers] --&gt; L1[L1 SKILL.md&lt;br/&gt;orchestrator or worker]
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    L1 --&gt; L2[L2 role file +&lt;br/&gt;output contract]
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    L2 --&gt; L3[L3 genre / technique /&lt;br/&gt;persona / rubric per allowance]
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    L3 --&gt; SA((sub-agent&lt;br/&gt;isolated context))
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    SA --&gt;|artifact only| L1
+</code></pre></div>
+<hr />
+<h2 id="4-plugin-layout">4. Plugin Layout<a class="headerlink" href="#4-plugin-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>music-team/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>├── README.md                       # user-facing: install, triggers, example sessions
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>├── ARCHITECTURE.md                 # contributor-facing: Mermaid diagrams, dispatch tables
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>├── CROSS-SKILL-REFERENCES.md       # which skill may load which shared reference; duplicated files listed
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>├── LICENSE.txt
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>├── .song.config.yml.example        # template copied to user repo as .song/config.yml by music-brief
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>├── agents/                         # named sub-agent definitions so SubagentStop matchers fire
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>│   ├── lyricist.md
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>│   ├── composer.md
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>│   ├── arranger.md
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>│   └── song-critic.md
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>├── hooks/
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>│   ├── hooks.json
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>│   ├── check_config.py             # SessionStart: warn if .song/config.yml missing/stale
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>│   ├── audit_agent_prompt.py       # PreToolUse(Agent): allowance manifest + originality clause + blocked targets
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>│   ├── validate_artifacts.py       # PostToolUse(Write|Edit): lint .song artifacts, advisory
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>│   ├── gate_subagent.py            # SubagentStop: run stage gate, write result to state.json, advisory
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>│   ├── telemetry.py                # PreToolUse(Skill): skill-load telemetry (Wave 5, optional)
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>│   └── verify_skill_load.py        # PostToolUse(Agent): SKILL_LOADED marker check (Wave 5, optional)
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>├── scripts/
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>│   ├── gate_common.py              # shared CLI/JSON/exit-code contract used by every gate script
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>│   ├── prosody_check.py            # syllable + stress alignment vs. section meter spec; --hook mode
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>│   ├── rhyme_check.py              # rhyme-scheme conformance, slant-rhyme tolerance
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>│   ├── structure_check.py          # section order/length vs. form template; --consistency mode
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>│   ├── arrangement_check.py        # energy-curve rule
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>│   ├── chord_tools.py              # key/scale validation, Roman &lt;-&gt; concert pitch, cadence lint
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>│   ├── abc_validate.py             # ABC notation parser + range/interval sanity; lyric alignment when lyrics exist
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>│   ├── midi_export.py              # ABC -&gt; .mid (stdlib-only byte writer)
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>│   ├── cliche_scan.py              # phrase-frequency scan against references/shared/cliche-list.txt
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>│   ├── resemblance_check.py        # n-gram overlap against user-supplied "do-not-resemble" corpus
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>│   ├── challenge_gate.py           # parses challenge-report severity table; fails on BLOCKER &gt; 0
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>│   └── check_reference_caps.py     # plugin-local lint: references/** line caps + duplicated-file drift
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>├── references/
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>│   └── shared/
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>│       ├── orchestrator-doctrine.md
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>│       ├── stage-gates.md          # gate table + the exact rules every script implements
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>│       ├── config-schema.md        # single source of truth for .song/config.yml (v1)
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>│       ├── song-types.md           # detection signals + the routing matrix
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>│       ├── prompt-allowances.json  # per-role reference allowance (see §3)
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>│       ├── originality-policy.md   # the copyright guardrail, quoted verbatim in every prompt
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a>│       ├── blocked-targets.txt     # artist names and song titles that may not be style targets
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>│       ├── artifact-formats.md     # lyric sheet, chord chart, ABC, production brief, challenge report specs
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>│       ├── cliche-list.txt
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>│       └── glossary.md
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a>├── skills/
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a>│   ├── music-flow/                  # Tier A — orchestrator
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a>│   ├── music-brief/                 # Tier C — intake + concept; writes config if absent
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a>│   ├── lyricist/                   # Tier B — roles: hook-writer, verse-writer, lyric-editor
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a>│   ├── composer/                   # Tier B — roles: harmony, melody, groove
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a>│   ├── arranger/                   # Tier B — roles: instrumentation, dynamics, production-brief
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a>│   ├── song-critic/                # Tier B — roles: hook-judge, prosody-judge, structure-judge, music-judge, listener-panel, challenger
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a>│   ├── music-release/               # Tier C — assembles final package, exports MIDI, writes release notes
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a>│   └── music-memory/                # Tier C — retrospective + memory write (post-pipeline protocol)
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a>└── tests/
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a>    ├── unit/                       # one test module per script; run: python -I -m unittest discover tests/unit
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a>    ├── fixtures/
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a>    │   ├── prosody-gold/           # &gt;= 200 hand-labelled original lines (syllables + stress)
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a>    │   ├── briefs/                 # one brief per routing row (8) for detection tests
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a>    │   ├── songs/&lt;type&gt;/           # one complete passing .song/&lt;slug&gt;/ artifact set per song type
+<a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a>    │   └── negative/               # malformed ABC, mismatched tags, empty lyrics, wrong-key chords, w: misalignment, with expected JSON
+<a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a>    └── smoke/                      # 7-sample baseline (6 types + 1 refusal; REVISE excluded, needs a prior run); baseline.json
+</code></pre></div>
+<p>Each <code>skills/&lt;name&gt;/</code> directory follows:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>skills/&lt;name&gt;/
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>├── SKILL.md
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>└── references/
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    ├── roles/            # one file per role (L2)
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    ├── contracts/        # output contracts, one per task type (L2)
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    ├── genres/           # one file per genre (L3)
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    ├── techniques/       # craft techniques (L3)
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    ├── rubrics/          # song-critic only (L3)
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    ├── personas/         # song-critic only (L3)
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    └── agent-prompts/    # sub-agent prompt templates per task type
+</code></pre></div>
+<p><strong>Agent definitions.</strong> <code>agents/*.md</code> are thin named agents (frontmatter <code>name</code>, <code>description</code>, <code>tools</code>) whose body is the Appendix B skeleton. The orchestrator dispatches with <code>subagent_type</code> set to one of them so the <code>SubagentStop</code> matcher in <a href="#11-hooks">§11</a> fires. Role and reference content is still injected per dispatch; the agent file carries no craft knowledge.</p>
+<hr />
+<h2 id="5-skill-roster">5. Skill Roster<a class="headerlink" href="#5-skill-roster" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Skill</th>
+<th>Tier</th>
+<th>Budget</th>
+<th>Role</th>
+<th>Dispatches sub-agents?</th>
+<th>Primary triggers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>music-flow</code></td>
+<td>A</td>
+<td>500</td>
+<td>Orchestrator; runs the 7-stage pipeline, owns gates and loops</td>
+<td>Yes (all workers)</td>
+<td>"write a song", "song pipeline", "make me a song", "compose a song", "full song", "song from scratch", "revise the song"</td>
+</tr>
+<tr>
+<td><code>music-brief</code></td>
+<td>C</td>
+<td>200</td>
+<td>Intake wizard; writes config if absent; produces the Brief artifact; detects song type</td>
+<td>No (runs inline)</td>
+<td>"song brief", "song idea", "what should the song be about"</td>
+</tr>
+<tr>
+<td><code>lyricist</code></td>
+<td>B</td>
+<td>300</td>
+<td>Hook, verse, pre-chorus, bridge lyrics; editing passes</td>
+<td>Yes, role-scoped</td>
+<td>"write lyrics", "chorus lyrics", "verse", "rewrite this lyric", "hook line", "rhyme this"</td>
+</tr>
+<tr>
+<td><code>composer</code></td>
+<td>B</td>
+<td>300</td>
+<td>Chord progressions, melody (ABC), groove/tempo</td>
+<td>Yes, role-scoped</td>
+<td>"chord progression", "write a melody", "key and tempo", "harmonize", "topline"</td>
+</tr>
+<tr>
+<td><code>arranger</code></td>
+<td>B</td>
+<td>300</td>
+<td>Instrumentation, section dynamics, production brief</td>
+<td>Yes, role-scoped</td>
+<td>"arrangement", "instrumentation", "production notes", "build the drop", "string arrangement"</td>
+</tr>
+<tr>
+<td><code>song-critic</code></td>
+<td>B</td>
+<td>300</td>
+<td>Rubric-driven critique, listener personas, adversarial challenger</td>
+<td>Yes, role-scoped</td>
+<td>"critique this song", "is this lyric good", "prosody check", "listener feedback", "song review"</td>
+</tr>
+<tr>
+<td><code>music-release</code></td>
+<td>C</td>
+<td>200</td>
+<td>Assembles the final package; runs exports; writes release notes</td>
+<td>No</td>
+<td>"export the song", "finalize song", "song package", "lead sheet"</td>
+</tr>
+<tr>
+<td><code>music-memory</code></td>
+<td>C</td>
+<td>200</td>
+<td>Retrospective + memory write; enforced by Stop hook</td>
+<td>No</td>
+<td>"song retrospective", "what did we learn"</td>
+</tr>
+</tbody>
+</table>
+<p>Each worker SKILL.md contains exactly: frontmatter (same keys as delivery-team: <code>tier</code>, <code>context_budget</code>, <code>fitness_review_due</code>, <code>maintainer</code>, <code>allowed-tools</code>), a <strong>Design Principle</strong> block, a <strong>Role Detection</strong> table, a <strong>Dispatch Protocol</strong> (which reference files to embed for which role, matching the allowance manifest), the <strong>Output Contract</strong> pointer, and a <strong>Hand-off</strong> section. Everything else lives in <code>references/</code>.</p>
+<p>Standalone invocation of a worker skill outside <code>music-flow</code> <strong>warns</strong> that gates will not run (it does not deny; see <a href="#20-open-questions">§20</a> item 5).</p>
+<h3 id="role-tables-per-worker">Role tables per worker<a class="headerlink" href="#role-tables-per-worker" title="Permanent link">&para;</a></h3>
+<p><strong>lyricist</strong></p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Detect when</th>
+<th>Loads (L2)</th>
+<th>Loads (L3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hook-writer</code></td>
+<td>task is chorus/hook/title line</td>
+<td><code>roles/hook-writer.md</code>, <code>contracts/hook.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/hook-craft.md</code>, <code>techniques/prosody.md</code></td>
+</tr>
+<tr>
+<td><code>verse-writer</code></td>
+<td>task is verse/pre-chorus/bridge</td>
+<td><code>roles/verse-writer.md</code>, <code>contracts/section-lyric.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/imagery-and-specificity.md</code>, <code>techniques/rhyme-schemes.md</code></td>
+</tr>
+<tr>
+<td><code>lyric-editor</code></td>
+<td>task is revise/tighten/fix-prosody</td>
+<td><code>roles/lyric-editor.md</code>, <code>contracts/revision.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/prosody.md</code>, <code>techniques/cliche-avoidance.md</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>composer</strong></p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Detect when</th>
+<th>Loads (L2)</th>
+<th>Loads (L3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>harmony</code></td>
+<td>task is chords/progression/key</td>
+<td><code>roles/harmony.md</code>, <code>contracts/chord-chart.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/functional-harmony.md</code>, <code>techniques/borrowed-chords.md</code></td>
+</tr>
+<tr>
+<td><code>melody</code></td>
+<td>task is melody/topline</td>
+<td><code>roles/melody.md</code>, <code>contracts/melody-abc.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/melodic-contour.md</code>, <code>techniques/abc-notation-primer.md</code></td>
+</tr>
+<tr>
+<td><code>groove</code></td>
+<td>task is tempo/feel/rhythm/form</td>
+<td><code>roles/groove.md</code>, <code>contracts/structure.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/rhythmic-feel.md</code>, <code>techniques/form-templates.md</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>arranger</strong></p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Detect when</th>
+<th>Loads (L2)</th>
+<th>Loads (L3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>instrumentation</code></td>
+<td>task is instruments/palette</td>
+<td><code>roles/instrumentation.md</code>, <code>contracts/arrangement-map.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/section-contrast.md</code></td>
+</tr>
+<tr>
+<td><code>dynamics</code></td>
+<td>task is energy curve/build/drop</td>
+<td><code>roles/dynamics.md</code>, <code>contracts/arrangement-map.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/energy-curve.md</code></td>
+</tr>
+<tr>
+<td><code>production-brief</code></td>
+<td>task is notes for a producer/DAW</td>
+<td><code>roles/production-brief.md</code>, <code>contracts/production-brief.md</code></td>
+<td><code>genres/&lt;g&gt;.md</code>, <code>techniques/reference-track-language.md</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>song-critic</strong></p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Detect when</th>
+<th>Loads (L2)</th>
+<th>Loads (L3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hook-judge</code></td>
+<td>after Stage 2 (Concept)</td>
+<td><code>roles/hook-judge.md</code>, <code>contracts/critique.md</code></td>
+<td><code>rubrics/hook-rubric.md</code>, <code>techniques/hook-craft.md</code></td>
+</tr>
+<tr>
+<td><code>prosody-judge</code></td>
+<td>after Stage 4 (Lyrics)</td>
+<td><code>roles/prosody-judge.md</code>, <code>contracts/critique.md</code></td>
+<td><code>rubrics/lyric-rubric.md</code>, <code>techniques/prosody.md</code></td>
+</tr>
+<tr>
+<td><code>structure-judge</code></td>
+<td>after Stages 3 and 6</td>
+<td><code>roles/structure-judge.md</code>, <code>contracts/critique.md</code></td>
+<td>Stage 3: <code>rubrics/structure-rubric.md</code>, <code>techniques/form-templates.md</code>; Stage 6: <code>rubrics/arrangement-rubric.md</code>, <code>techniques/form-templates.md</code></td>
+</tr>
+<tr>
+<td><code>music-judge</code></td>
+<td>after Stage 5 (Music)</td>
+<td><code>roles/music-judge.md</code>, <code>contracts/critique.md</code></td>
+<td><code>rubrics/melody-rubric.md</code>, <code>techniques/melodic-contour.md</code></td>
+</tr>
+<tr>
+<td><code>listener-panel</code></td>
+<td>Stage 7a; review-board pattern</td>
+<td><code>roles/listener-panel.md</code>, <code>contracts/panel-report.md</code></td>
+<td><code>personas/&lt;3 selected&gt;.md</code></td>
+</tr>
+<tr>
+<td><code>challenger</code></td>
+<td>Stage 7b; adversarial pass</td>
+<td><code>roles/challenger.md</code>, <code>contracts/challenge-report.md</code></td>
+<td><code>shared/originality-policy.md</code>, <code>shared/blocked-targets.txt</code>, <code>shared/cliche-list.txt</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-the-music-flow-pipeline">6. The <code>music-flow</code> Pipeline<a class="headerlink" href="#6-the-music-flow-pipeline" title="Permanent link">&para;</a></h2>
+<p>Seven stages, mirroring delivery-flow's count so the mental model transfers. Which stages run, and at what depth, is decided by the routing matrix in <a href="#7-song-type-auto-detection-and-routing-matrix">§7</a>. Every gate names its script and its config threshold; the exact rules are written in <code>references/shared/stage-gates.md</code> (W0-2) and implemented by the scripts in <a href="#12-scripts">§12</a>.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Stage</th>
+<th>Owner role(s)</th>
+<th>Critic role</th>
+<th>Produces</th>
+<th>Gate script(s)</th>
+<th>Threshold key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Brief</strong></td>
+<td><code>music-brief</code> (inline)</td>
+<td>—</td>
+<td><code>brief.md</code>; <code>.song/config.yml</code> if absent</td>
+<td>brief validation (theme required; song type detected; language set)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Concept</strong></td>
+<td><code>lyricist:hook-writer</code></td>
+<td><code>hook-judge</code></td>
+<td><code>concept.md</code> (title, hook line, central image, arc)</td>
+<td><code>cliche_scan.py</code>; <code>prosody_check.py --hook</code></td>
+<td><code>quality.cliche_max_per_100_words</code>, <code>quality.hook_max_syllables</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Structure</strong></td>
+<td><code>composer:groove</code></td>
+<td><code>structure-judge</code></td>
+<td><code>structure.md</code> (form, bar counts, tempo, key, time sig, per-section meter spec)</td>
+<td><code>structure_check.py</code></td>
+<td>form template in <code>techniques/form-templates.md</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Lyrics</strong></td>
+<td><code>lyricist:verse-writer</code> then <code>lyricist:lyric-editor</code></td>
+<td><code>prosody-judge</code></td>
+<td><code>lyrics.md</code></td>
+<td><code>prosody_check.py</code>, <code>rhyme_check.py</code>, <code>cliche_scan.py</code></td>
+<td><code>quality.prosody_tolerance</code>, <code>quality.slant_rhyme_allowed</code>, <code>quality.cliche_max_per_100_words</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Music</strong></td>
+<td><code>composer:harmony</code> then <code>composer:melody</code></td>
+<td><code>music-judge</code></td>
+<td><code>chords.md</code>, <code>melody.abc</code></td>
+<td><code>chord_tools.py</code>, <code>abc_validate.py</code></td>
+<td><code>quality.diatonic_min_ratio</code>, <code>quality.max_melodic_leap</code>, <code>quality.vocal_range</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Arrangement</strong></td>
+<td><code>arranger</code> (instrumentation → dynamics → production-brief)</td>
+<td><code>structure-judge</code></td>
+<td><code>arrangement.md</code>, <code>production-brief.md</code></td>
+<td><code>arrangement_check.py</code>, <code>structure_check.py --consistency</code></td>
+<td><code>quality.energy_curve</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Release</strong></td>
+<td><code>song-critic:listener-panel</code> → <code>song-critic:challenger</code> → <code>music-release</code></td>
+<td>—</td>
+<td><code>panel-report.md</code>, <code>challenge-report.md</code>, <code>package/</code></td>
+<td><code>challenge_gate.py</code>, <code>resemblance_check.py</code> (when corpus configured)</td>
+<td><code>originality.ngram_max_overlap</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>flowchart TD
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    U([User brief]) --&gt; S1[1 Brief&lt;br/&gt;music-brief]
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    S1 --&gt; S2[2 Concept&lt;br/&gt;lyricist:hook-writer]
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    S2 &lt;--&gt;|evaluator-optimizer| C2[song-critic:hook-judge]
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    S2 --&gt; S3[3 Structure&lt;br/&gt;composer:groove]
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    S3 &lt;--&gt; C3[song-critic:structure-judge]
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    S3 --&gt; S4[4 Lyrics&lt;br/&gt;lyricist:verse-writer → lyric-editor]
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    S4 &lt;--&gt; C4[song-critic:prosody-judge]
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    S4 --&gt; S5[5 Music&lt;br/&gt;composer:harmony → melody]
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    S5 &lt;--&gt; C5[song-critic:music-judge]
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    S5 --&gt; S6[6 Arrangement&lt;br/&gt;arranger]
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    S6 &lt;--&gt; C6[song-critic:structure-judge]
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    S6 --&gt; S7a[7a Listener panel]
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    S7a --&gt; S7b[7b Challenger&lt;br/&gt;adversarial, clean context]
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    S7b --&gt;|BLOCKER: release loop| S4
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    S7b --&gt;|clean| S7c[7c music-release&lt;br/&gt;package + MIDI]
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    S7c --&gt; M[music-memory&lt;br/&gt;retrospective]
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    G[(scripts/ gates)] -.-&gt;|pass/fail| S2
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    G -.-&gt; S3
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    G -.-&gt; S4
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    G -.-&gt; S5
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    G -.-&gt; S6
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>    G -.-&gt; S7b
+</code></pre></div>
+<h3 id="stage-execution-protocol-identical-for-every-stage">Stage execution protocol (identical for every stage)<a class="headerlink" href="#stage-execution-protocol-identical-for-every-stage" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Orchestrator reads <code>.song/config.yml</code> (created in Stage 1 if absent) and <code>.song/&lt;slug&gt;/state.json</code>.</li>
+<li>Orchestrator builds a sub-agent prompt from the worker's <code>agent-prompts/&lt;task&gt;.md</code> template, embedding only the files permitted by the allowance manifest, and dispatches with <code>subagent_type</code> set to the matching <code>agents/*.md</code> definition.</li>
+<li>Sub-agent writes the artifact to <code>.song/&lt;slug&gt;/&lt;artifact&gt;</code> and returns the Appendix B hand-back (first line <code>SKILL_LOADED:</code>, then STATUS / ARTIFACT / SUMMARY).</li>
+<li><strong>Gate decision (single runner).</strong> The orchestrator reads <code>state.json.gates[&lt;stage&gt;]</code>. If the <code>SubagentStop</code> hook pre-populated it in this dispatch and the recorded <code>artifact_sha256</code> matches the artifact on disk, the orchestrator reuses that result; otherwise (hook disabled, crashed, standalone invocation, or hash mismatch) it runs the gate script(s) itself via <code>gate_common.py</code> and writes the result. Either way this step is the <strong>only</strong> gate decision point. On FAIL it dispatches the stage's critic role with the script output as evidence, then re-dispatches the worker with the critique, incrementing <code>state.json.loops_used[&lt;stage&gt;]</code>. On SKIPPED (non-English gates) it proceeds as PASS and logs the skip.</li>
+<li>On reaching <code>loops.&lt;stage&gt;</code>, apply <code>escalation.on_loop_exhaustion</code>:</li>
+<li><code>ask_user</code>: show the last three attempts and the gate diff; the user picks accept, override (recorded in <code>state.json.gate_overrides[]</code> and <code>decisions.md</code>), or supply guidance (resets the stage counter once).</li>
+<li><code>accept_best</code>: keep the attempt with the best gate metrics, record <code>accepted_best: true</code> for the stage, proceed.</li>
+<li><code>fail</code>: stop the run and write <code>state.json.status = "failed"</code>.</li>
+<li>Orchestrator updates <code>state.json</code> and proceeds to the next stage the routing matrix allows.</li>
+</ol>
+<p><strong>Release loop semantics.</strong> A Stage 7b BLOCKER returns to Stage 4 (or Stage 5 if the blocker is musical). Each return increments <code>loops_used.release</code> and resets <code>loops_used.lyrics</code> (or <code>.music</code>) to zero. When <code>loops_used.release</code> reaches <code>loops.release</code>, <code>escalation.on_blocker</code> applies with the same three policies.</p>
+<hr />
+<h2 id="7-song-type-auto-detection-and-routing-matrix">7. Song Type Auto-Detection and Routing Matrix<a class="headerlink" href="#7-song-type-auto-detection-and-routing-matrix" title="Permanent link">&para;</a></h2>
+<p>Documented in <code>references/shared/song-types.md</code>, which mirrors delivery-team's <code>project-types.md</code>. Detection runs in Stage 1 from the brief text and is logged; <code>routing.force_type</code> in config pins it (banner announced each run). Both this table and the orchestrator derive from the matrix below; there is no second routing table.</p>
+<p>Legend: <strong>F</strong> full stage with loops · <strong>L</strong> light (single dispatch, gate still runs, no critic loop) · <strong>I</strong> input (artifact supplied by user, validated not generated) · <strong>–</strong> skipped.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Signals</th>
+<th>1 Brief</th>
+<th>2 Concept</th>
+<th>3 Structure</th>
+<th>4 Lyrics</th>
+<th>5 Music</th>
+<th>6 Arrangement</th>
+<th>7 Release</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FULL_SONG</code></td>
+<td>default</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td></td>
+</tr>
+<tr>
+<td><code>LYRICS_ONLY</code></td>
+<td>"just lyrics", "words only", no chords/melody mentioned</td>
+<td>F</td>
+<td>F</td>
+<td>L</td>
+<td>F</td>
+<td>–</td>
+<td>–</td>
+<td>L</td>
+<td>Stage 3 still produces the meter spec that Stage 4 gates need; Release packages lyric sheet only</td>
+</tr>
+<tr>
+<td><code>INSTRUMENTAL</code></td>
+<td>"instrumental", "no vocals", "beat", "theme music"</td>
+<td>F</td>
+<td>L</td>
+<td>F</td>
+<td>–</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>Concept produces a <em>motif</em> description instead of a hook; <code>abc_validate.py</code> skips lyric alignment</td>
+</tr>
+<tr>
+<td><code>TOPLINE</code></td>
+<td>user supplies chords or a track; "write over this", "topline"</td>
+<td>F</td>
+<td>F</td>
+<td>I</td>
+<td>F</td>
+<td>L</td>
+<td>–</td>
+<td>L</td>
+<td>Stage 3 derives form and meter spec from the supplied chords; Stage 5 runs melody role only, harmony is validated input</td>
+</tr>
+<tr>
+<td><code>REWRITE</code></td>
+<td>user supplies an original lyric; "fix", "tighten", "second draft"</td>
+<td>F</td>
+<td>–</td>
+<td>L</td>
+<td>F</td>
+<td>–</td>
+<td>–</td>
+<td>L</td>
+<td>Stage 3 infers the meter spec from the input lyric; Stage 4 runs lyric-editor only; originality check runs on the input first</td>
+</tr>
+<tr>
+<td><code>JINGLE</code></td>
+<td>"jingle", "ad", "30 seconds", brand name present</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>F</td>
+<td>L</td>
+<td>F</td>
+<td>Hard length cap; form template <code>jingle</code></td>
+</tr>
+<tr>
+<td><code>REVISE</code></td>
+<td>existing <code>.song/&lt;slug&gt;/state.json</code> and "make the chorus punchier", "slower bridge", "change the key"</td>
+<td>–</td>
+<td>per request</td>
+<td>per request</td>
+<td>per request</td>
+<td>per request</td>
+<td>per request</td>
+<td>F</td>
+<td>Re-enters at the earliest stage the request touches; downstream stages re-run as L unless their artifact is invalidated by <code>structure_check.py --consistency</code></td>
+</tr>
+<tr>
+<td><code>PARODY_ADAPT</code></td>
+<td>"parody", "to the tune of", "in the style of <named song or artist>"</td>
+<td>refused</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>One-sentence refusal plus an offer to write an original on the same theme; no <code>.song/&lt;slug&gt;/</code> directory is created. See <a href="#15-guardrails-originality-and-copyright">§15</a>. "In the style of <genre>" is fine and routes to <code>FULL_SONG</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quick mode.</strong> <code>quick: true</code> in config, or the phrase "quick song", caps every stage loop at 1, sets <code>on_loop_exhaustion: accept_best</code>, and limits the wizard to the questions the brief leaves unanswered (max 2). Time-to-first-song is then bounded by one dispatch per stage.</p>
+<hr />
+<h2 id="8-collaboration-patterns">8. Collaboration Patterns<a class="headerlink" href="#8-collaboration-patterns" title="Permanent link">&para;</a></h2>
+<p>Reused from delivery-team; each has a defined trigger, participants, and exit.</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Trigger</th>
+<th>Participants</th>
+<th>Exit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Evaluator-optimizer</td>
+<td>every F stage</td>
+<td>worker role ↔ the stage's critic role</td>
+<td>gate script passes or loop cap</td>
+</tr>
+<tr>
+<td>Adversarial review</td>
+<td>Stage 7b always; Stage 4 also if <code>quality.adversarial_lyrics: true</code></td>
+<td>challenger (clean context, never saw drafts)</td>
+<td><code>challenge_gate.py</code> reports zero BLOCKER rows</td>
+</tr>
+<tr>
+<td>Review board</td>
+<td>Stage 7a</td>
+<td>3 listener personas chosen by genre + audience from <code>song-critic/references/personas/</code></td>
+<td>panel report with majority verdict (advisory to the user, not a gate)</td>
+</tr>
+<tr>
+<td>Debate</td>
+<td>key/tempo disagreement between harmony and melody roles; hook A/B tie</td>
+<td>two advocates + orchestrator as judge using the rubric in <code>shared/stage-gates.md</code></td>
+<td>written decision with rationale in <code>decisions.md</code></td>
+</tr>
+<tr>
+<td>Decision ownership</td>
+<td>every stage artifact has one owning role recorded in <code>state.json.owners</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Consensus</td>
+<td>Stage 6 instrumentation must agree with Stage 3 tempo/key and Stage 5 range</td>
+<td><code>structure_check.py --consistency</code> compares <code>structure.md</code>, <code>chords.md</code>, <code>melody.abc</code>, <code>arrangement.md</code></td>
+<td>diff empty</td>
+</tr>
+</tbody>
+</table>
+<p>Escalation ladder: retry → critic-guided retry → debate (if two roles) → <code>escalation.*</code> policy.</p>
+<hr />
+<h2 id="9-artifacts-and-output-contracts">9. Artifacts and Output Contracts<a class="headerlink" href="#9-artifacts-and-output-contracts" title="Permanent link">&para;</a></h2>
+<p>All artifacts are Markdown or plain-text so hooks can lint them. Specs live in <code>references/shared/artifact-formats.md</code>. Summary:</p>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Path (<code>.song/&lt;slug&gt;/</code>)</th>
+<th>Format essentials</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Brief</td>
+<td><code>brief.md</code></td>
+<td>YAML front-matter: <code>theme, pov, audience, genre, mood, language, target_length_sec, must_include[], must_avoid[], song_type, user_asserts_original_input</code></td>
+</tr>
+<tr>
+<td>Concept</td>
+<td><code>concept.md</code></td>
+<td><code>title</code>, <code>hook_line</code>, <code>central_image</code>, <code>arc: [start, turn, end]</code>, <code>title_rationale</code>; <code>motif</code> replaces <code>hook_line</code> for INSTRUMENTAL</td>
+</tr>
+<tr>
+<td>Structure</td>
+<td><code>structure.md</code></td>
+<td>table: <code>section, label, bars, meter_spec (syllables per line + stress pattern), rhyme_scheme</code>; plus <code>key, mode, bpm, time_sig, form_template</code>. <code>rhyme_scheme</code> letters are scoped per section; <code>x</code> marks an unconstrained line (e.g. <code>AxAx</code>)</td>
+</tr>
+<tr>
+<td>Lyrics</td>
+<td><code>lyrics.md</code></td>
+<td><code>[Verse 1]</code>, <code>[Chorus]</code> … tags exactly matching <code>structure.md</code>; one line per lyric line; <code>#</code> comments allowed</td>
+</tr>
+<tr>
+<td>Chords</td>
+<td><code>chords.md</code></td>
+<td>per section: Roman numerals + concert chords, one bar per <code>\|</code> cell, e.g. <code>\| I \| V \| vi \| IV \|</code></td>
+</tr>
+<tr>
+<td>Melody</td>
+<td><code>melody.abc</code></td>
+<td>ABC 2.1, one voice, <code>w:</code> lyric lines when <code>lyrics.md</code> exists, <code>K:</code> and <code>M:</code> matching <code>structure.md</code></td>
+</tr>
+<tr>
+<td>Arrangement</td>
+<td><code>arrangement.md</code></td>
+<td>table: <code>section, energy(1-10), instruments_in, instruments_out, texture_note</code></td>
+</tr>
+<tr>
+<td>Production brief</td>
+<td><code>production-brief.md</code></td>
+<td>reference-free language (no "sounds like <artist>"), tempo map, vocal treatment, mix priorities</td>
+</tr>
+<tr>
+<td>Panel report</td>
+<td><code>panel-report.md</code></td>
+<td>one block per persona: verdict (KEEP / SKIP), top note, one question; majority line at the end</td>
+</tr>
+<tr>
+<td>Challenge report</td>
+<td><code>challenge-report.md</code></td>
+<td><strong>parseable severity table</strong>: <code>\| severity \| location \| finding \| suggested fix \|</code> with severity ∈ {BLOCKER, MAJOR, MINOR}; <code>challenge_gate.py</code> reads it</td>
+</tr>
+<tr>
+<td>Package</td>
+<td><code>package/</code></td>
+<td><code>lyric-sheet.md</code>, <code>lead-sheet.abc</code>, <code>song.mid</code>, <code>one-pager.md</code>, <code>release-notes.md</code></td>
+</tr>
+<tr>
+<td>State</td>
+<td><code>state.json</code></td>
+<td><code>run_id, stage, song_type, status, loops_used{}, gates{&lt;stage&gt;: {status, metrics, violations, artifact_sha256}}, gate_overrides[], accepted_best{}, owners{}, started, updated</code></td>
+</tr>
+<tr>
+<td>Active pointer</td>
+<td><code>.song/active</code></td>
+<td>single line: the slug of the run in progress; written by <code>music-flow</code> at Stage 1 and at REVISE entry; read by hooks</td>
+</tr>
+<tr>
+<td>Retrospective</td>
+<td><code>retrospective.md</code></td>
+<td>frontmatter <code>run_id</code> matching <code>state.json.run_id</code>; body per <code>music-memory/references/retrospective-template.md</code></td>
+</tr>
+<tr>
+<td>Decisions</td>
+<td><code>decisions.md</code></td>
+<td>debate outcomes and user overrides, append-only</td>
+</tr>
+</tbody>
+</table>
+<p>Output contracts (<code>skills/*/references/contracts/*.md</code>) each specify: required headings, forbidden content (artist names, quoted existing lyrics), max length, and the exact gate script that will be run against the output.</p>
+<hr />
+<h2 id="10-configuration-schema-songconfigyml-v1">10. Configuration Schema (<code>.song/config.yml</code> v1)<a class="headerlink" href="#10-configuration-schema-songconfigyml-v1" title="Permanent link">&para;</a></h2>
+<p>Source of truth: <code>music-team/references/shared/config-schema.md</code>. Extension protocol identical to delivery-team's: bump minor for additive keys, major for breaking, document migration in the schema file.</p>
+<p><strong>Creation.</strong> <code>music-brief</code> copies <code>.song.config.yml.example</code> to <code>.song/config.yml</code> when the file is absent, announces that it did so, and proceeds. <code>check_config.py</code> only warns at session start; it never creates the file.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">schema_version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nt">routing</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">force_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">            </span><span class="c1"># FULL_SONG | LYRICS_ONLY | INSTRUMENTAL | TOPLINE | REWRITE | JINGLE (REVISE is detected only, never forced)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">default_genre</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">         </span><span class="c1"># used when brief omits genre</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nt">default_language</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">en</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="nt">quick</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">                  </span><span class="c1"># true: every loop cap = 1, on_loop_exhaustion = accept_best, wizard asks &lt;= 2 questions</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="nt">loops</span><span class="p">:</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="nt">concept</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span><span class="nt">structure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span><span class="nt">lyrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span><span class="nt">music</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">  </span><span class="nt">arrangement</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">  </span><span class="nt">release</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">                  </span><span class="c1"># number of 7b -&gt; 4/5 returns allowed before escalation.on_blocker applies</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="nt">quality</span><span class="p">:</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">  </span><span class="nt">cliche_max_per_100_words</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">  </span><span class="nt">hook_max_syllables</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">  </span><span class="nt">prosody_tolerance</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.15</span><span class="w">     </span><span class="c1"># fraction of stressed-syllable mismatches allowed per section</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">  </span><span class="nt">slant_rhyme_allowed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">  </span><span class="nt">diatonic_min_ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.6</span><span class="w">     </span><span class="c1"># fraction of chords that must be diatonic</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">  </span><span class="nt">max_melodic_leap</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span><span class="w">        </span><span class="c1"># semitones</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">  </span><span class="nt">vocal_range</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">55</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">79</span><span class="p p-Indicator">]</span><span class="w">       </span><span class="c1"># MIDI note numbers, G3..G5 default</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">  </span><span class="nt">energy_curve</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chorus_rising</span><span class="w"> </span><span class="c1"># chorus_rising | strict_rising | free (see stage-gates.md)</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="w">  </span><span class="nt">adversarial_lyrics</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">   </span><span class="c1"># run challenger after Stage 4 too, not only Stage 7</span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="w">  </span><span class="nt">listener_panel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="w">  </span><span class="nt">genre_overrides</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span><span class="w">         </span><span class="c1"># e.g. hip-hop: { hook_max_syllables: 16, diatonic_min_ratio: 0.4 }</span>
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="nt">originality</span><span class="p">:</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="w">  </span><span class="nt">resemblance_corpus</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span><span class="w">      </span><span class="c1"># OPT-IN: paths to user-supplied lyric files the song must not resemble</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="w">  </span><span class="nt">ngram_max_overlap</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span><span class="w">     </span><span class="c1"># applied only when resemblance_corpus is non-empty</span>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="w">  </span><span class="nt">block_artist_references</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="nt">escalation</span><span class="p">:</span>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="w">  </span><span class="nt">on_loop_exhaustion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ask_user</span><span class="w">   </span><span class="c1"># ask_user | accept_best | fail</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="w">  </span><span class="nt">on_blocker</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ask_user</span><span class="w">           </span><span class="c1"># ask_user | accept_best | fail</span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="nt">memory</span><span class="p">:</span>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.song/memory/</span>
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a>
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a><span class="nt">telemetry</span><span class="p">:</span>
+<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">              </span><span class="c1"># Wave 5 feature</span>
+</code></pre></div>
+<p>The setup wizard (in <code>music-brief</code>) infers what it can from the brief and asks only what is missing, from this ordered list of at most <strong>6 questions</strong>: genre, mood, theme, audience, length, anything-to-avoid. In quick mode it asks at most 2.</p>
+<hr />
+<h2 id="11-hooks">11. Hooks<a class="headerlink" href="#11-hooks" title="Permanent link">&para;</a></h2>
+<p><code>music-team/hooks/hooks.json</code>. All scripts are <strong>self-contained</strong> stdlib-only Python (no shared <code>lib/</code> import; the repo <code>.gitignore</code> ignores <code>lib/</code> directories, which is why delivery-team's <code>hooks/lib/hook_utils.py</code> is absent from git and six delivery-team hooks currently fail at import; a backlog item is noted in <a href="#appendix-c--review-log">Appendix C</a>). Each hook has a unit test that pipes a sample stdin payload. Built with <code>plugin-dev:hook-development</code> loaded. <strong>Hook I/O contract</strong> follows Claude Code's protocol, not a custom one: read the tool payload from stdin as JSON; exit 0 to allow; exit 2 with the reason on stderr to block; for <code>PreToolUse</code>, a JSON object on stdout with <code>hookSpecificOutput.permissionDecision</code> (<code>allow</code> / <code>deny</code> / <code>ask</code>) and <code>permissionDecisionReason</code>. Paths are normalised with <code>pathlib.PurePath(path).as_posix()</code> before any matching so Windows backslash paths behave.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Matcher</th>
+<th>Hook</th>
+<th>Purpose</th>
+<th>Wave</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SessionStart</code></td>
+<td><code>*</code></td>
+<td><code>check_config.py</code></td>
+<td>Warn if <code>.song/config.yml</code> missing or <code>schema_version</code> behind; never block, never create</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>PreToolUse</code></td>
+<td><code>Skill</code></td>
+<td>prompt hook</td>
+<td>If <code>music-team:lyricist</code> / <code>composer</code> / <code>arranger</code> is invoked without <code>.song/config.yml</code>, warn (not deny) that gates will not run; "skip pipeline" bypasses</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>PreToolUse</code></td>
+<td><code>Agent</code></td>
+<td><code>audit_agent_prompt.py</code></td>
+<td>Deny when: the prompt embeds more <code>references/</code> files than <code>prompt-allowances.json</code> allows for the named role; the originality clause is missing; or the prompt contains an entry from <code>blocked-targets.txt</code> as a style target. Case-insensitive whole-phrase match</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>PostToolUse</code></td>
+<td><code>Write\|Edit</code></td>
+<td><code>validate_artifacts.py</code></td>
+<td>If the normalised path ends with <code>.song/&lt;slug&gt;/lyrics.md</code>, <code>chords.md</code>, <code>melody.abc</code>, <code>structure.md</code>, or <code>arrangement.md</code>: run the matching lint and print findings as hook output. Advisory only (exit 0)</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>SubagentStop</code></td>
+<td><code>lyricist\|composer\|arranger</code></td>
+<td><code>gate_subagent.py</code></td>
+<td>Resolve the active slug from <code>.song/active</code>, run the current stage's gate script, and pre-populate <code>state.json.gates[&lt;stage&gt;]</code> with the JSON result plus <code>artifact_sha256</code>. Writes via temp file + atomic rename and touches only <code>gates[]</code>. Advisory: exit 0 always; the orchestrator decides in protocol step 4</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>Stop</code></td>
+<td><code>*</code></td>
+<td>prompt hook</td>
+<td>Read the slug from <code>.song/active</code>. If its <code>state.json</code> has <code>stage &gt;= 7</code> and <code>status != failed</code> and no <code>retrospective.md</code> beside it carries <code>run_id</code> equal to <code>state.json.run_id</code>, block with "Post-pipeline protocol not completed". A REVISE run gets a new <code>run_id</code>, so a stale retrospective does not satisfy it</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>PreToolUse</code></td>
+<td><code>Skill</code></td>
+<td><code>telemetry.py</code></td>
+<td>Skill-load telemetry, copied from delivery-team</td>
+<td>5 (optional)</td>
+</tr>
+<tr>
+<td><code>PostToolUse</code></td>
+<td><code>Agent</code></td>
+<td><code>verify_skill_load.py</code></td>
+<td>Check that the sub-agent's first five output lines contain <code>SKILL_LOADED:</code> and that the listed paths match the dispatched allowance; warn on mismatch</td>
+<td>5 (optional)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12-scripts">12. Scripts<a class="headerlink" href="#12-scripts" title="Permanent link">&para;</a></h2>
+<p>All in <code>music-team/scripts/</code>, stdlib-only, <code>python -I</code>-safe. Every gate script imports <code>gate_common.py</code> and honours this contract so tests are uniform:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>usage: &lt;script&gt;.py [--config .song/config.yml] [--json] [--genre &lt;g&gt;] &lt;artifact paths...&gt;
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>exit codes: 0 PASS | 1 FAIL | 2 SKIPPED (gate not applicable, e.g. non-English) | 3 ERROR (unparseable input)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>--json stdout schema:
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>{ "script": "&lt;name&gt;", "status": "PASS|FAIL|SKIPPED|ERROR",
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  "thresholds": { "&lt;key&gt;": &lt;value from config or flag&gt; },
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  "metrics": { "&lt;name&gt;": &lt;number&gt; },
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  "violations": [ { "location": "&lt;section&gt;:&lt;line&gt;", "reason": "&lt;text&gt;", "observed": &lt;v&gt;, "limit": &lt;v&gt; } ] }
+</code></pre></div>
+<p>Threshold precedence: explicit flag &gt; <code>quality.genre_overrides.&lt;genre&gt;</code> &gt; <code>quality.&lt;key&gt;</code> &gt; built-in default. The exact rules below are the normative text that <code>references/shared/stage-gates.md</code> carries; tests assert them.</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Input</th>
+<th>Rule (normative)</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prosody_check.py</code></td>
+<td><code>lyrics.md</code>, <code>structure.md</code></td>
+<td>Syllables: vowel-group count with a 200-entry exception table. Stress: content words (noun/verb/adj/adv by a 300-word function-word stoplist) carry stress on their first syllable unless in the exception table. Per section, mismatch ratio = mismatched stressed positions ÷ positions in meter spec; FAIL if any section &gt; <code>prosody_tolerance</code>. <code>--hook</code> mode counts syllables of <code>concept.md</code> hook line; FAIL if &gt; <code>hook_max_syllables</code>. SKIPPED when <code>language != en</code></td>
+<td>Stages 2, 4</td>
+</tr>
+<tr>
+<td><code>rhyme_check.py</code></td>
+<td><code>lyrics.md</code>, <code>structure.md</code></td>
+<td>Rhyme = identical final vowel group plus all following consonants. Slant rhyme = identical final vowel group only, or identical final consonant cluster with different vowel. Scheme letters are scoped per section; <code>x</code> = unconstrained line. Within a section, every pair of lines sharing a letter must rhyme (or slant-rhyme when allowed). FAIL on any unmatched pair. SKIPPED when non-English</td>
+<td>Stage 4</td>
+</tr>
+<tr>
+<td><code>structure_check.py</code></td>
+<td><code>structure.md</code> [+ <code>lyrics.md</code>, <code>chords.md</code>, <code>melody.abc</code>, <code>arrangement.md</code>]</td>
+<td>Section labels and order must match the named form template; bar counts within the template's min/max; lyric line counts per section must equal meter spec lines. <code>--consistency</code>: key, mode, bpm, time sig identical across all present artifacts; melody pitch range within <code>vocal_range</code>; section lists identical. FAIL on any diff</td>
+<td>Stages 3, 6, REVISE</td>
+</tr>
+<tr>
+<td><code>arrangement_check.py</code></td>
+<td><code>arrangement.md</code></td>
+<td><code>chorus_rising</code> (default): each chorus energy ≥ previous chorus energy; the global maximum occurs in the final chorus or the bridge; the final section energy &lt; global maximum unless the final section is the last chorus; every verse energy &lt; the following chorus energy. <code>strict_rising</code>: non-decreasing until the global maximum, then non-increasing. <code>free</code>: no check</td>
+<td>Stage 6</td>
+</tr>
+<tr>
+<td><code>chord_tools.py</code></td>
+<td><code>chords.md</code>, key from <code>structure.md</code></td>
+<td>Parse Roman numerals; diatonic ratio = diatonic chords ÷ all chords; FAIL if &lt; <code>diatonic_min_ratio</code>. Emits concert-pitch spellings and warns (not fails) on parallel-fifth voice leading between adjacent root-position triads and on a section ending without a cadence</td>
+<td>Stage 5</td>
+</tr>
+<tr>
+<td><code>abc_validate.py</code></td>
+<td><code>melody.abc</code> [+ <code>lyrics.md</code>]</td>
+<td>Must parse as ABC 2.1 with single <code>V:</code>; <code>K:</code> and <code>M:</code> must equal <code>structure.md</code>; no interval &gt; <code>max_melodic_leap</code>; all pitches within <code>vocal_range</code>. When <code>lyrics.md</code> exists, lyric alignment applies ABC 2.1 <code>w:</code> rules: <code>-</code> splits a word into syllable tokens, <code>_</code> extends the previous syllable over the next note (no new token), <code>*</code> skips a note, <code>~</code> joins two words into one token, <code>\|</code> advances to the next bar; after applying them, syllable tokens + <code>_</code> extensions + <code>*</code> skips must equal the number of non-rest note heads in the corresponding bars, and the de-hyphenated <code>w:</code> text per section must equal the <code>lyrics.md</code> section text. Alignment is skipped for INSTRUMENTAL</td>
+<td>Stage 5</td>
+</tr>
+<tr>
+<td><code>midi_export.py</code></td>
+<td><code>melody.abc</code>, <code>chords.md</code></td>
+<td>Writes a type-1 MIDI file: track 0 tempo/time sig, track 1 melody, track 2 block chords one per bar. Round-trip test parses the header and both track lengths</td>
+<td>Stage 7</td>
+</tr>
+<tr>
+<td><code>cliche_scan.py</code></td>
+<td>any lyric or concept text</td>
+<td>Case-insensitive whole-phrase hits against <code>cliche-list.txt</code> per 100 words; FAIL if &gt; <code>cliche_max_per_100_words</code></td>
+<td>Stages 2, 4, challenger</td>
+</tr>
+<tr>
+<td><code>resemblance_check.py</code></td>
+<td>lyric text + <code>originality.resemblance_corpus</code></td>
+<td>Word 5-gram overlap ratio = matching 5-grams ÷ total 5-grams; FAIL if &gt; <code>ngram_max_overlap</code>. SKIPPED when the corpus list is empty</td>
+<td>Stage 7b</td>
+</tr>
+<tr>
+<td><code>challenge_gate.py</code></td>
+<td><code>challenge-report.md</code></td>
+<td>Parse the severity table; FAIL if any row has severity BLOCKER; ERROR if the table is missing or malformed</td>
+<td>Stage 7b</td>
+</tr>
+<tr>
+<td><code>check_reference_caps.py</code></td>
+<td><code>music-team/**/references/**</code></td>
+<td>Every reference file ≤ 150 lines (genre files ≤ 100); files listed as duplicates in <code>CROSS-SKILL-REFERENCES.md</code> must be byte-identical. Plugin-local lint run in CI; does not touch the shared <code>check_skill_budgets.py</code></td>
+<td>CI</td>
+</tr>
+</tbody>
+</table>
+<p>Unit tests live in <code>tests/unit/test_&lt;script&gt;.py</code> and run with <code>python -I -m unittest discover tests/unit</code>. Each test module covers: one PASS fixture, one FAIL fixture, the SKIPPED path where defined, one ERROR fixture from <code>tests/fixtures/negative/</code>, and a Windows-style path argument. The prosody gold set target is ≥ 90% line-level syllable accuracy and ≥ 85% stress accuracy.</p>
+<hr />
+<h2 id="13-reference-library-progressive-disclosure-content">13. Reference Library (Progressive Disclosure Content)<a class="headerlink" href="#13-reference-library-progressive-disclosure-content" title="Permanent link">&para;</a></h2>
+<p>Everything a sub-agent might read. Each file ≤ 150 lines; genre files ≤ 100; enforced by <code>check_reference_caps.py</code>.</p>
+<h3 id="referencesshared-orchestrator-visible"><code>references/shared/</code> (orchestrator-visible)<a class="headerlink" href="#referencesshared-orchestrator-visible" title="Permanent link">&para;</a></h3>
+<p><code>orchestrator-doctrine.md</code>, <code>stage-gates.md</code>, <code>config-schema.md</code>, <code>song-types.md</code>, <code>prompt-allowances.json</code>, <code>originality-policy.md</code>, <code>blocked-targets.txt</code> (seeded with ≥ 100 widely known artist names and song titles in Wave 0, grown to ≥ 500 by Wave 5; the policy clause and the challenger remain the primary control), <code>artifact-formats.md</code>, <code>cliche-list.txt</code> (≥ 150 phrases), <code>glossary.md</code>.</p>
+<h3 id="skillslyricistreferences"><code>skills/lyricist/references/</code><a class="headerlink" href="#skillslyricistreferences" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>roles/</code>: <code>hook-writer.md</code>, <code>verse-writer.md</code>, <code>lyric-editor.md</code></li>
+<li><code>contracts/</code>: <code>hook.md</code>, <code>section-lyric.md</code>, <code>revision.md</code></li>
+<li><code>techniques/</code>: <code>prosody.md</code>, <code>rhyme-schemes.md</code>, <code>hook-craft.md</code>, <code>imagery-and-specificity.md</code>, <code>cliche-avoidance.md</code>, <code>point-of-view.md</code>, <code>narrative-arc.md</code></li>
+<li><code>genres/</code>: <code>pop.md</code>, <code>rock.md</code>, <code>country.md</code>, <code>folk.md</code>, <code>hip-hop.md</code>, <code>rnb.md</code>, <code>electronic.md</code>, <code>musical-theatre.md</code>, <code>childrens.md</code>, <code>worship.md</code> (each: lyric conventions, typical rhyme density, taboo moves, section lengths, <code>hook_max_syllables</code> override if any)</li>
+<li><code>agent-prompts/</code>: <code>hook.md</code>, <code>section.md</code>, <code>revision.md</code></li>
+</ul>
+<h3 id="skillscomposerreferences"><code>skills/composer/references/</code><a class="headerlink" href="#skillscomposerreferences" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>roles/</code>: <code>harmony.md</code>, <code>melody.md</code>, <code>groove.md</code></li>
+<li><code>contracts/</code>: <code>chord-chart.md</code>, <code>melody-abc.md</code>, <code>structure.md</code></li>
+<li><code>techniques/</code>: <code>functional-harmony.md</code>, <code>borrowed-chords.md</code>, <code>melodic-contour.md</code> (includes range and tessitura guidance), <code>rhythmic-feel.md</code>, <code>abc-notation-primer.md</code> (the strict ABC subset the validator accepts, including the <code>w:</code> alignment rules), <code>modal-color.md</code>, <code>form-templates.md</code> (plain copy of song-critic's; listed as a duplicate)</li>
+<li><code>genres/</code>: same ten (each: common progressions in Roman numerals, tempo bands, feel, typical keys, melodic idioms, <code>diatonic_min_ratio</code> override if any)</li>
+<li><code>agent-prompts/</code>: <code>harmony.md</code>, <code>melody.md</code>, <code>groove.md</code></li>
+</ul>
+<h3 id="skillsarrangerreferences"><code>skills/arranger/references/</code><a class="headerlink" href="#skillsarrangerreferences" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>roles/</code>: <code>instrumentation.md</code>, <code>dynamics.md</code>, <code>production-brief.md</code></li>
+<li><code>contracts/</code>: <code>arrangement-map.md</code>, <code>production-brief.md</code></li>
+<li><code>techniques/</code>: <code>section-contrast.md</code>, <code>energy-curve.md</code> (restates the <code>arrangement_check.py</code> rule in craft terms), <code>reference-track-language.md</code> (how to describe a sound without naming artists), <code>vocal-production.md</code></li>
+<li><code>genres/</code>: same ten (each: palette, typical energy curve, production tropes)</li>
+<li><code>agent-prompts/</code>: <code>arrangement.md</code>, <code>production-brief.md</code></li>
+</ul>
+<h3 id="skillssong-criticreferences"><code>skills/song-critic/references/</code><a class="headerlink" href="#skillssong-criticreferences" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>roles/</code>: <code>hook-judge.md</code>, <code>prosody-judge.md</code>, <code>structure-judge.md</code>, <code>music-judge.md</code>, <code>listener-panel.md</code>, <code>challenger.md</code></li>
+<li><code>contracts/</code>: <code>critique.md</code>, <code>panel-report.md</code>, <code>challenge-report.md</code></li>
+<li><code>rubrics/</code>: <code>hook-rubric.md</code>, <code>lyric-rubric.md</code>, <code>structure-rubric.md</code>, <code>melody-rubric.md</code>, <code>arrangement-rubric.md</code> (each 5 criteria × 1–5 scale; the rubric informs the critique, the script decides the gate)</li>
+<li><code>personas/</code>: 12 listener personas (<code>casual-radio-listener.md</code>, <code>lyric-first-listener.md</code>, <code>dancefloor.md</code>, <code>musician-peer.md</code>, <code>sync-licensing-supervisor.md</code>, <code>parent-of-young-kids.md</code>, <code>worship-leader.md</code>, <code>playlist-curator.md</code>, <code>live-audience.md</code>, <code>karaoke-singer.md</code>, <code>film-music-editor.md</code>, <code>teen-listener.md</code>); each: what they notice, what makes them skip, the questions they ask</li>
+<li><code>techniques/</code>: <code>form-templates.md</code> (VCVCBC, AABA, verse-refrain, jingle, EDM build-drop, through-composed), <code>prosody.md</code> (plain copy of lyricist's; listed as a duplicate), <code>hook-craft.md</code> (plain copy), <code>melodic-contour.md</code> (plain copy)</li>
+</ul>
+<p>Duplicated files exist so that each skill's context stays independent. <code>CROSS-SKILL-REFERENCES.md</code> lists every duplicate pair and <code>check_reference_caps.py</code> fails CI if they drift. No symlinks anywhere in the plugin.</p>
+<h3 id="skillsmusic-briefreferences"><code>skills/music-brief/references/</code><a class="headerlink" href="#skillsmusic-briefreferences" title="Permanent link">&para;</a></h3>
+<p><code>intake-questions.md</code>, <code>brief-template.md</code>, <code>routing-matrix.md</code> (pointer to <code>shared/song-types.md</code>).</p>
+<h3 id="skillsmusic-releasereferences"><code>skills/music-release/references/</code><a class="headerlink" href="#skillsmusic-releasereferences" title="Permanent link">&para;</a></h3>
+<p><code>package-layout.md</code>, <code>lead-sheet-conventions.md</code>, <code>release-notes-template.md</code>.</p>
+<h3 id="skillsmusic-memoryreferences"><code>skills/music-memory/references/</code><a class="headerlink" href="#skillsmusic-memoryreferences" title="Permanent link">&para;</a></h3>
+<p><code>retrospective-template.md</code>, <code>memory-schema.md</code>.</p>
+<p>Every reference file begins with a 3-line frontmatter: <code>loaded_by:</code> (which role), <code>level:</code> (L2/L3), <code>last_reviewed:</code>.</p>
+<hr />
+<h2 id="14-memory-and-self-learning">14. Memory and Self-Learning<a class="headerlink" href="#14-memory-and-self-learning" title="Permanent link">&para;</a></h2>
+<p>Pattern copied from <code>.delivery/memory/</code>.</p>
+<ul>
+<li><code>music-memory</code> runs after Stage 7 (enforced by the Stop hook). It writes <code>.song/memory/&lt;date&gt;-&lt;slug&gt;.md</code> containing: genre, song type, loops used per stage, which gate failed most, what critique recurred, user overrides, and three "next time" notes.</li>
+<li>At Stage 1, <code>music-flow</code> reads the last five memory files for the same genre and injects a ≤ 10-line "lessons" block into the Stage 2 and Stage 4 sub-agent prompts. The block is exempt from the allowance manifest and is labelled <code>&lt;!-- memory-lessons --&gt;</code> so the audit hook recognises it.</li>
+<li>Memory never stores lyric text, only observations about process.</li>
+</ul>
+<hr />
+<h2 id="15-guardrails-originality-and-copyright">15. Guardrails: Originality and Copyright<a class="headerlink" href="#15-guardrails-originality-and-copyright" title="Permanent link">&para;</a></h2>
+<p>Documented verbatim in <code>references/shared/originality-policy.md</code> and embedded in every creative sub-agent prompt. <code>audit_agent_prompt.py</code> denies any Agent prompt missing the clause.</p>
+<ol>
+<li>Never reproduce, closely paraphrase, or "write in the exact style of" an identifiable existing song or artist. Genre and era are fine; named artists and song titles as targets are not. <code>blocked-targets.txt</code> is the machine-checked list; the clause covers names not on the list.</li>
+<li><code>PARODY_ADAPT</code> requests are refused with a one-sentence explanation and an offer to write an original song on the same theme.</li>
+<li>Production briefs describe sound with technical language, not "sounds like <artist>".</li>
+<li>The <strong>default</strong> originality control is the challenger role, which reports any line it recognises as a well-known lyric as a BLOCKER row that <code>challenge_gate.py</code> catches. <code>resemblance_check.py</code> is an <strong>opt-in</strong> second control that runs only when the user configures <code>originality.resemblance_corpus</code>; the README says so explicitly.</li>
+<li>User-supplied input for <code>REWRITE</code> / <code>TOPLINE</code> must be asserted by the user as their own original work; the wizard asks once and records <code>user_asserts_original_input: true</code> in <code>brief.md</code>.</li>
+</ol>
+<hr />
+<h2 id="16-governance-obligations">16. Governance Obligations<a class="headerlink" href="#16-governance-obligations" title="Permanent link">&para;</a></h2>
+<p>Checklist to be satisfied before the plugin is registered.</p>
+<ul>
+<li>[ ] Register in <code>.claude-plugin/marketplace.json</code> with all eight skill paths; bump marketplace <code>metadata.version</code> minor.</li>
+<li>[ ] Set <code>tier:</code> frontmatter on all eight SKILL.md files per <a href="#5-skill-roster">§5</a>. Extend <code>scripts/check_skill_budgets.py</code> so its walker iterates a plugin list (<code>delivery-team</code>, <code>music-team</code>) instead of the hard-coded <code>delivery-team/**/SKILL.md</code> glob (own story W0-3; the budget CI job then covers music-team). No <code>known_debt</code> entries at launch.</li>
+<li>[ ] Add <code>check_reference_caps.py</code> to a <code>music-team-reference-caps.yml</code> CI workflow.</li>
+<li>[ ] Set <code>fitness_review_due</code> in each SKILL.md to launch date + 90 days.</li>
+<li>[ ] <code>music-team/ARCHITECTURE.md</code> with at least: component diagram, pipeline diagram, dispatch sequence diagram, hook table, script table, routing matrix.</li>
+<li>[ ] <code>music-team/README.md</code> with install, triggers, the wizard, quick mode, two example sessions, and the originality policy summary including the opt-in nature of the resemblance corpus.</li>
+<li>[ ] <code>CLAUDE.md</code> plugin table row and <code>docs/skills/</code> index entry; this plan is already linked from <code>docs/index.md</code>.</li>
+<li>[ ] <code>CHANGELOG.md</code> entry.</li>
+<li>[ ] CI: <code>skill-line-budget.yml</code> passes with the extended walker; <code>workflow-injection-lint.yml</code> untouched.</li>
+<li>[ ] Run <code>plugin-dev:skill-reviewer</code> on every SKILL.md and <code>plugin-dev:plugin-validator</code> on the plugin before the PR is marked ready.</li>
+<li>[ ] <code>tests/smoke/</code> 7-sample baseline per W4-5.</li>
+</ul>
+<hr />
+<h2 id="17-implementation-waves">17. Implementation Waves<a class="headerlink" href="#17-implementation-waves" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>Note: waves 2–5 below are superseded by the music-team plan in the repo's delivery backlog (renamed from song-team).</p>
+</blockquote>
+<p>Each wave is a separate PR (six PRs). Stories are sized for one session and each carries its own acceptance criteria (AC) in addition to the wave DoD in <a href="#18-definition-of-done-per-wave">§18</a>. Dependency order is top to bottom.</p>
+<h3 id="delivery-status-music-team-rebuild">Delivery status (music-team rebuild)<a class="headerlink" href="#delivery-status-music-team-rebuild" title="Permanent link">&para;</a></h3>
+<p>Waves are numbered as in the rebuild backlog (not the story groups below). Delivered on branch <code>worktree-net-music-plugin</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Wave</th>
+<th>Scope</th>
+<th>Commit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R</td>
+<td>Rename song-team to music-team, no behaviour change</td>
+<td>e7b172a</td>
+</tr>
+<tr>
+<td>2</td>
+<td>THEORY, ADAPT_GENRE, AUGMENT_LYRICS song types</td>
+<td>63a06f5</td>
+</tr>
+<tr>
+<td>3</td>
+<td>music-brief intake and music-flow orchestrator</td>
+<td>0a2e1ed</td>
+</tr>
+<tr>
+<td>4</td>
+<td>12 genre profiles with per-role sections</td>
+<td>78eb2ac</td>
+</tr>
+<tr>
+<td>5</td>
+<td>composer skill (theorist role), chord_tools, abc_validate</td>
+<td>82110ed</td>
+</tr>
+<tr>
+<td>6</td>
+<td>lyricist skill (hook-writer, verse-writer, lyric-editor, augmenter)</td>
+<td>269791a</td>
+</tr>
+<tr>
+<td>7</td>
+<td>adapter skill and agent, adapt_check</td>
+<td>b5bc454</td>
+</tr>
+<tr>
+<td>8</td>
+<td>arranger skill, arrangement_check, stdlib MIDI export</td>
+<td>5c5766c</td>
+</tr>
+<tr>
+<td>9</td>
+<td>song-critic, music-release, music-memory, plugin hooks</td>
+<td>ec3d105</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Documentation (ARCHITECTURE, README, CHANGELOG, registry text)</td>
+<td>this change (uncommitted at time of writing)</td>
+</tr>
+</tbody>
+</table>
+<p>Not built: <code>validate_artifacts.py</code> (artist-name lint for production-brief.md).</p>
+<h3 id="wave-0-scaffold-and-governance-3-stories">Wave 0 — Scaffold and governance (3 stories)<a class="headerlink" href="#wave-0-scaffold-and-governance-3-stories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>W0-1</strong> Create <code>music-team/</code> skeleton (every directory in <a href="#4-plugin-layout">§4</a>, empty SKILL.md stubs with frontmatter, <code>agents/*.md</code> stubs, LICENSE, README stub, ARCHITECTURE stub), marketplace registration, CLAUDE.md row.
+  AC: <code>plugin-dev:plugin-validator</code> passes; marketplace JSON parses; all eight SKILL.md have <code>tier:</code> frontmatter.</li>
+<li><strong>W0-2</strong> Write <code>references/shared/*</code>: doctrine, <code>stage-gates.md</code> with every normative rule from <a href="#12-scripts">§12</a>, config-schema v1, <code>song-types.md</code> with the routing matrix from <a href="#7-song-type-auto-detection-and-routing-matrix">§7</a>, <code>prompt-allowances.json</code>, originality policy, <code>blocked-targets.txt</code> (≥ 100 entries at launch, grown to ≥ 500 in W5-3), artifact formats, glossary, <code>cliche-list.txt</code> (≥ 150 phrases).
+  AC: every file has frontmatter; <code>prompt-allowances.json</code> validates against the shape in <a href="#3-progressive-disclosure-model">§3</a>; <code>blocked-targets.txt</code> ≥ 100 entries; a contributor can write any gate test from <code>stage-gates.md</code> alone.</li>
+<li><strong>W0-3</strong> Extend <code>scripts/check_skill_budgets.py</code> walker to a plugin list; add <code>check_reference_caps.py</code> and its CI workflow.
+  AC: budget CI reports music-team SKILL.md files; reference-caps CI fails on a deliberately oversized fixture file and passes after removal.</li>
+</ul>
+<h3 id="wave-1-fixtures-and-lyric-gates-3-stories">Wave 1 — Fixtures and lyric gates (3 stories)<a class="headerlink" href="#wave-1-fixtures-and-lyric-gates-3-stories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>W1-0</strong> Fixtures: <code>prosody-gold/</code> (≥ 200 original hand-labelled lines with syllable and stress marks, provenance noted), <code>briefs/</code> (one brief per routing row, eight in all), <code>songs/&lt;type&gt;/</code> complete passing artifact sets for <code>FULL_SONG</code> and <code>LYRICS_ONLY</code> (others added in W3-1), <code>negative/</code> (malformed ABC, mismatched section tags, empty <code>lyrics.md</code>, chords in a non-matching key, non-English lyrics, a <code>w:</code> line whose token count mismatches its bar) each with expected JSON.
+  AC: every fixture has an <code>expected.json</code>; a README in <code>tests/fixtures/</code> explains the labelling convention.</li>
+<li><strong>W1-1</strong> <code>gate_common.py</code>, <code>prosody_check.py</code> (incl. <code>--hook</code>), <code>rhyme_check.py</code> + unit tests.
+  AC: gold-set syllable accuracy ≥ 90%, stress ≥ 85%; SKIPPED on the non-English fixture; Windows-path test passes.</li>
+<li><strong>W1-2</strong> <code>structure_check.py</code> (incl. <code>--consistency</code>), <code>cliche_scan.py</code>, <code>resemblance_check.py</code>, <code>challenge_gate.py</code> + unit tests.
+  AC: each PASS/FAIL/ERROR fixture produces the expected JSON; <code>resemblance_check.py</code> returns SKIPPED on empty corpus.</li>
+</ul>
+<h3 id="wave-2-lyric-side-skills-and-the-thin-vertical-slice-5-stories">Wave 2 — Lyric-side skills and the thin vertical slice (5 stories)<a class="headerlink" href="#wave-2-lyric-side-skills-and-the-thin-vertical-slice-5-stories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>W2-1</strong> <code>music-brief</code> SKILL.md + references + wizard; config creation from the example; detection of all types from the matrix; PARODY_ADAPT refusal.
+  AC: all eight <code>tests/fixtures/briefs/</code> classify to their routing row; a missing config is created and announced; the refusal creates no <code>.song/&lt;slug&gt;/</code> directory.</li>
+<li><strong>W2-2</strong> <code>lyricist</code> hook slice: SKILL.md, <code>hook-writer</code> role + contract + agent-prompt, <code>pop.md</code> genre, <code>hook-craft.md</code> + <code>prosody.md</code> techniques, <code>agents/lyricist.md</code>.
+  AC: given fixture <code>brief.md</code>, a single <code>hook-writer</code> dispatch writes <code>concept.md</code> that passes <code>cliche_scan.py</code> and <code>prosody_check.py --hook</code> on first run for 4 of 5 fixture briefs.</li>
+<li><strong>W2-3</strong> <code>lyricist</code> verse slice: <code>verse-writer</code> + <code>lyric-editor</code> roles, contracts, prompts, remaining techniques, <code>country.md</code> + <code>folk.md</code> genres.
+  AC: given fixture <code>brief.md</code> + <code>structure.md</code>, a single <code>verse-writer</code> dispatch writes <code>lyrics.md</code> whose section tags pass <code>structure_check.py</code>; a <code>lyric-editor</code> dispatch given a failing <code>prosody_check.py</code> report reduces the mismatch ratio.</li>
+<li><strong>W2-4</strong> <code>song-critic</code> lyric slice: SKILL.md, <code>hook-judge</code> + <code>prosody-judge</code> + <code>structure-judge</code> roles, <code>critique.md</code> contract, hook/lyric/structure rubrics, <code>form-templates.md</code>, four personas, <code>agents/song-critic.md</code>.
+  AC: each judge, given a failing gate JSON, returns a critique whose every item cites a <code>violations[].location</code>.</li>
+<li><strong>W2-5</strong> <strong>Thin-slice orchestrator</strong>: minimal <code>music-flow</code> SKILL.md that runs the <code>LYRICS_ONLY</code> path (Stages 1, 2, 3-light, 4, 7-light) with the stage protocol, loop caps, <code>ask_user</code> and <code>accept_best</code> escalation, quick mode, <code>state.json</code>, <code>.song/active</code>, and a lyric-sheet package. Because <code>composer</code> does not exist until W3-2, Stage 3-light is produced here by a <strong>stub <code>groove</code> dispatch</strong>: the orchestrator fills <code>structure.md</code> from the chosen <code>form-templates.md</code> entry with that template's default meter spec, tempo band midpoint, and key of C; W3-2 replaces the stub with the real role and the stub is deleted. No hooks yet.
+  AC: a pop lyric ships end-to-end from the fixture brief with no user intervention; the same brief in quick mode completes with every <code>loops_used</code> = 1 or less; <code>state.json.gates</code> shows every gate PASS; <code>structure_check.py</code> passes the stubbed <code>structure.md</code>.</li>
+</ul>
+<h3 id="wave-3-music-side-scripts-and-skills-4-stories">Wave 3 — Music-side scripts and skills (4 stories)<a class="headerlink" href="#wave-3-music-side-scripts-and-skills-4-stories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>W3-1</strong> <code>chord_tools.py</code>, <code>abc_validate.py</code>, <code>arrangement_check.py</code>, <code>midi_export.py</code> + unit tests; <code>songs/INSTRUMENTAL/</code>, <code>songs/TOPLINE/</code>, <code>songs/JINGLE/</code>, <code>songs/REWRITE/</code> (with the asserted-original input lyric) fixtures; a melisma case added to <code>songs/FULL_SONG/melody.abc</code>.
+  AC: ABC → MIDI round-trip test passes; <code>abc_validate.py</code> skips lyric alignment when no <code>lyrics.md</code>, passes the melisma fixture, and fails the <code>w:</code> mismatch negative fixture; <code>arrangement_check.py</code> passes the Appendix A curve and fails a flat curve.</li>
+<li><strong>W3-2</strong> <code>composer</code> SKILL.md, three roles, contracts, techniques incl. the ABC primer, pop/country/folk genres, <code>agents/composer.md</code>; removes the W2-5 groove stub.
+  AC: a <code>melody</code> dispatch against fixture <code>lyrics.md</code> + <code>structure.md</code> yields a <code>melody.abc</code> that parses on first run for 3 of 5 fixtures and within two retries for all.</li>
+<li><strong>W3-3</strong> <code>arranger</code> SKILL.md, three roles, contracts, techniques, same three genres, <code>agents/arranger.md</code>.
+  AC: <code>arrangement.md</code> passes <code>arrangement_check.py</code> and <code>structure_check.py --consistency</code> against the fixture set on first run for 4 of 5.</li>
+<li><strong>W3-4</strong> <code>song-critic</code> music slice: <code>music-judge</code>, <code>listener-panel</code>, <code>challenger</code> roles, melody and arrangement rubrics, panel and challenge contracts, remaining eight personas.
+  AC: a challenger run against a fixture containing a planted well-known lyric line produces a BLOCKER row that <code>challenge_gate.py</code> catches.</li>
+</ul>
+<h3 id="wave-4-full-orchestrator-hooks-release-revise-5-stories">Wave 4 — Full orchestrator, hooks, release, revise (5 stories)<a class="headerlink" href="#wave-4-full-orchestrator-hooks-release-revise-5-stories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>W4-1</strong> <code>music-flow</code> full: all seven stages, full routing matrix, debate and consensus, all three escalation policies, release-loop semantics, quick mode.
+  AC: <code>FULL_SONG</code>, <code>INSTRUMENTAL</code>, <code>TOPLINE</code>, <code>JINGLE</code> fixture runs complete; <code>accept_best</code> and <code>fail</code> policies verified by forcing a loop cap of 0.</li>
+<li><strong>W4-2</strong> Hooks: <code>hooks.json</code> plus <code>check_config.py</code>, <code>audit_agent_prompt.py</code>, <code>validate_artifacts.py</code>, <code>gate_subagent.py</code>, the two prompt hooks; built with <code>plugin-dev:hook-development</code>.
+  AC: every hook is self-contained (no <code>lib/</code> import) and has a stdin-payload unit test; audit hook denies a prompt naming a blocked target, denies an over-allowance prompt, allows a conforming one; <code>gate_subagent.py</code> result in <code>state.json</code> equals a direct script run and carries the artifact hash; the orchestrator re-runs the script when the hash mismatches; Stop hook blocks when <code>retrospective.md</code> is missing or carries a stale <code>run_id</code>.</li>
+<li><strong>W4-3</strong> <code>music-release</code> + <code>music-memory</code> skills; post-pipeline protocol end-to-end.
+  AC: <code>package/</code> contains all five files; <code>song.mid</code> parses; memory file written; lessons block appears in the next run's Stage 2 prompt.</li>
+<li><strong>W4-4</strong> <code>REVISE</code> song type: re-entry at a chosen stage from existing <code>state.json</code>, downstream invalidation via <code>--consistency</code>.
+  AC: "make the chorus punchier" on a finished fixture re-runs Stage 4 for the chorus only, then Stage 7; "change the key" re-runs 5, 6, 7.</li>
+<li><strong>W4-5</strong> Smoke baseline: seven samples (one brief for each of <code>FULL_SONG</code>, <code>LYRICS_ONLY</code>, <code>INSTRUMENTAL</code>, <code>TOPLINE</code>, <code>REWRITE</code>, <code>JINGLE</code>, plus one PARODY_ADAPT refusal; <code>REVISE</code> is excluded because it needs a prior run and is covered by W4-4's AC). Acceptance: every run completes with no <code>ask_user</code> escalation under default caps; per-script first-attempt gate-pass rate ≥ 60%; loops_used ≤ caps; the refusal returns the policy sentence and writes nothing. Results recorded to <code>tests/smoke/baseline.json</code>; later runs compare with a ±15 percentage-point tolerance. Reuses delivery-team's smoke-runner pattern (BACKLOG-106/107).
+  AC: baseline file committed; runner exits non-zero on a regression beyond tolerance.</li>
+</ul>
+<h3 id="wave-5-breadth-optional-hooks-polish-4-stories">Wave 5 — Breadth, optional hooks, polish (4 stories)<a class="headerlink" href="#wave-5-breadth-optional-hooks-polish-4-stories" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>W5-1</strong> Remaining seven genre files for <code>lyricist</code>.
+  AC: each ≤ 100 lines, frontmatter present, <code>hook-writer</code> fixture run passes for two newly added genres.</li>
+<li><strong>W5-2</strong> Remaining seven genre files for <code>composer</code> and <code>arranger</code>.
+  AC: as W5-1 for <code>melody</code> and <code>instrumentation</code> dispatches.</li>
+<li><strong>W5-3</strong> Optional hooks <code>telemetry.py</code> and <code>verify_skill_load.py</code> (self-contained, with stdin tests); <code>blocked-targets.txt</code> grown to ≥ 500; <code>ARCHITECTURE.md</code> final diagrams; <code>CROSS-SKILL-REFERENCES.md</code>; README example sessions; <code>docs/skills/</code> entry.
+  AC: <code>verify_skill_load.py</code> warns on a hand-back missing <code>SKILL_LOADED:</code>; ARCHITECTURE diagrams render on GitHub; blocked-targets count ≥ 500.</li>
+<li><strong>W5-4</strong> <code>plugin-dev:skill-reviewer</code> on all eight SKILL.md and <code>plugin-dev:plugin-validator</code>; fitness-review dates; CHANGELOG; version bump.
+  AC: no HIGH findings from the reviewer; validator passes; CI green.</li>
+</ul>
+<p>Estimated total: <strong>24 stories</strong>, six PRs. A lyric-only song is producible after PR 3 (Wave 2).</p>
+<hr />
+<h2 id="18-definition-of-done-per-wave">18. Definition of Done per Wave<a class="headerlink" href="#18-definition-of-done-per-wave" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Wave</th>
+<th>DoD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Validator passes; budget CI covers music-team; reference-caps CI runs; every shared reference has frontmatter; <code>stage-gates.md</code> states every rule in <a href="#12-scripts">§12</a>; cliche-list ≥ 150, blocked-targets ≥ 100</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Every script honours the <code>gate_common.py</code> contract (<code>--help</code>, <code>--json</code>, <code>--config</code>, exit 0/1/2/3); unit tests pass under <code>python -I -m unittest discover tests/unit</code>; prosody gold accuracy ≥ 90% syllables / ≥ 85% stress; all negative fixtures produce expected JSON</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Each SKILL.md within budget; every role file ≤ 150 lines; per-story ACs met; <strong><code>LYRICS_ONLY</code> run ships a lyric sheet end-to-end from the pop fixture with no user intervention, in both default and quick mode</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Music scripts pass unit tests; <code>composer</code> and <code>arranger</code> per-story ACs met; <code>FULL_SONG</code> fixture artifact set passes every gate script when run manually in sequence</td>
+</tr>
+<tr>
+<td>4</td>
+<td>All six smoke-tested types complete via <code>music-flow</code>, plus <code>REVISE</code> per W4-4; hooks behave per their ACs; Stop hook enforces retrospective per <code>run_id</code>; smoke baseline committed and runner passes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>All ten genres present in all three worker skills; duplicates byte-identical; blocked-targets ≥ 500; skill-reviewer has no HIGH findings; README examples reproduce; ARCHITECTURE.md supersedes this plan</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="19-risks-and-mitigations">19. Risks and Mitigations<a class="headerlink" href="#19-risks-and-mitigations" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heuristic syllable/stress counting is noisy</td>
+<td>False gate failures, loop exhaustion</td>
+<td>Tolerance knob; exception table grows from the gold set; <code>prosody-judge</code> may flag a suspected heuristic false positive in its critique, and the user decides at escalation. Judges never override a gate</td>
+</tr>
+<tr>
+<td>ABC melody output from a language model is frequently malformed</td>
+<td>Stage 5 loops</td>
+<td><code>abc-notation-primer.md</code> defines the strict subset the validator accepts; <code>abc_validate.py</code> returns line-precise violations fed back into the loop</td>
+</tr>
+<tr>
+<td>Sub-agents drift into naming artists</td>
+<td>Policy violation</td>
+<td>Hook denial via <code>blocked-targets.txt</code> + the clause + challenger BLOCKER + <code>block_artist_references</code> default true</td>
+</tr>
+<tr>
+<td>Reference library balloons past budgets</td>
+<td>Context bloat defeats progressive disclosure</td>
+<td>Plugin-local <code>check_reference_caps.py</code> in CI (150-line cap, 100 for genres); the shared budget script is only extended to walk the plugin, not to lint references</td>
+</tr>
+<tr>
+<td>Duplicated technique files drift apart</td>
+<td>Inconsistent craft guidance between skills</td>
+<td><code>CROSS-SKILL-REFERENCES.md</code> lists pairs; <code>check_reference_caps.py</code> fails CI on byte difference</td>
+</tr>
+<tr>
+<td>Genre files become opinionated and stale</td>
+<td>Poor output in some genres</td>
+<td>Each genre file carries <code>last_reviewed</code>; fitness review covers them</td>
+</tr>
+<tr>
+<td>Seven stages feel heavy for a quick lyric</td>
+<td>Users bypass the pipeline</td>
+<td><code>LYRICS_ONLY</code> and <code>REWRITE</code> paths run 3–4 stages; quick mode bounds loops; standalone worker invocation warns rather than denies</td>
+</tr>
+<tr>
+<td>Smoke baseline is non-deterministic</td>
+<td>Flaky CI</td>
+<td>Baseline is a tolerance comparison, not an exact match; it runs on demand, not on every PR</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="20-open-questions">20. Open Questions<a class="headerlink" href="#20-open-questions" title="Permanent link">&para;</a></h2>
+<p>Decisions the author took by default; flag if you disagree.</p>
+<ol>
+<li><strong>Plugin name</strong> <code>music-team</code> (vs. <code>song-creator</code>, <code>songwriter</code>). Chosen for parallelism with <code>delivery-team</code> / <code>hardware-team</code>.</li>
+<li><strong>ABC notation</strong> as the melody format (vs. MusicXML or MIDI-only). Chosen because it is text, lintable, and representable by a language model; <code>midi_export.py</code> bridges to binary.</li>
+<li><strong>Ten launch genres.</strong> Expandable; the list is a judgment call.</li>
+<li><strong>No audio.</strong> Confirmed non-goal; could become a later wave via an external MCP server if one exists.</li>
+<li><strong>Standalone worker invocation warns rather than denies</strong> (delivery-team denies for implementation skills). Songwriting is lower-stakes than shipping code, so friction is reduced.</li>
+<li><strong>English-only gates at v1.</strong> Non-English lyrics run with prosody and rhyme gates SKIPPED. A per-language syllable module is the obvious v2 extension point.</li>
+<li><strong>Quick mode defaults</strong> (loop cap 1, accept_best, ≤ 2 wizard questions). The thresholds are a guess at "casual user patience" and should be tuned from smoke-baseline timing.</li>
+<li><strong>Listener panel is advisory, not a gate.</strong> Its verdict is shown to the user and recorded; only the challenger and scripts gate release.</li>
+</ol>
+<hr />
+<h2 id="appendix-a-example-session-walkthrough">Appendix A — Example Session Walkthrough<a class="headerlink" href="#appendix-a-example-session-walkthrough" title="Permanent link">&para;</a></h2>
+<p>User: <em>"Write me an upbeat indie-pop song about moving to a new city and not knowing anyone yet."</em></p>
+<ol>
+<li><code>music-flow</code> triggers. <code>.song/config.yml</code> is absent, so <code>music-brief</code> copies it from the example and says so. The wizard infers genre <code>pop</code> (sub-tag <code>indie</code>), mood <code>upbeat</code>, and theme from the brief, and asks the three missing questions (audience: 20s–30s; length: ~3:00; avoid: "no specific city names"). Writes <code>brief.md</code> with <code>language: en</code>, detects <code>FULL_SONG</code>.</li>
+<li>Concept: <code>lyricist:hook-writer</code> sub-agent (dispatched as <code>agents/lyricist.md</code>) loads <code>roles/hook-writer.md</code>, <code>contracts/hook.md</code>, <code>genres/pop.md</code>, <code>techniques/hook-craft.md</code>, <code>techniques/prosody.md</code>, the originality clause, and a 6-line memory lessons block. Returns title <em>"Nobody Knows My Name Here (Yet)"</em> with hook line and arc. <code>cliche_scan.py</code> reports 0.9/100 and <code>prosody_check.py --hook</code> counts 9 syllables: PASS.</li>
+<li>Structure: <code>composer:groove</code> sets 118 bpm, 4/4, key D major, form template <code>VCVCBC</code> expanded to <code>V1 PC C V2 PC C B C C</code>, meter spec per section. <code>structure_check.py</code> PASS.</li>
+<li>Lyrics: <code>verse-writer</code> drafts; <code>prosody_check.py</code> flags a 22% stress mismatch in Verse 2 (tolerance 15%): FAIL. <code>prosody-judge</code> critiques citing the two violation locations; <code>lyric-editor</code> revises; second run 9%: PASS. <code>rhyme_check.py</code> PASS with two slant rhymes allowed.</li>
+<li>Music: <code>harmony</code> writes <code>| I | V | vi | IV |</code> verse and a <code>| IV | I | V | V |</code> pre-chorus lift (diatonic ratio 1.0). <code>melody</code> writes ABC with <code>w:</code> lyric alignment. <code>abc_validate.py</code> flags one leap of 14 semitones (limit 12): FAIL; <code>music-judge</code> critiques; one loop; PASS.</li>
+<li>Arrangement: energy curve V1 3, PC 5, C 7, V2 4, PC 6, C 8, B 5, C 9, C(out) 9. <code>arrangement_check.py</code> in <code>chorus_rising</code> mode: choruses 7 → 8 → 9 → 9 non-decreasing, global max 9 in the final chorus, every verse below its following chorus: PASS. <code>structure_check.py --consistency</code> PASS.</li>
+<li>Release: three personas (casual-radio, playlist-curator, lyric-first) return KEEP / KEEP / SKIP with notes. The challenger's severity table has one MINOR row (bridge rhyme too predictable) and zero BLOCKER rows; <code>challenge_gate.py</code> PASS; <code>resemblance_check.py</code> SKIPPED (no corpus). <code>music-release</code> assembles <code>package/</code> and exports <code>song.mid</code>. <code>music-memory</code> writes the retrospective; the Stop hook approves.</li>
+</ol>
+<hr />
+<h2 id="appendix-b-sub-agent-prompt-template">Appendix B — Sub-Agent Prompt Template<a class="headerlink" href="#appendix-b-sub-agent-prompt-template" title="Permanent link">&para;</a></h2>
+<p>Every <code>agent-prompts/*.md</code> follows this skeleton. The orchestrator substitutes the bracketed parts. The body of each <code>agents/*.md</code> definition is this skeleton with no content filled in.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>You are the {role} for music-team, working on "{title}" ({genre}, {song_type}).
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>## Originality policy (verbatim, non-negotiable)
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>&lt;!-- originality-policy --&gt;
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>{contents of references/shared/originality-policy.md}
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>## Your role
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>{contents of roles/{role}.md}
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>## Output contract
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>{contents of contracts/{contract}.md}
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>Write the artifact to: {artifact_path}
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>## Genre guidance
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>{contents of genres/{genre}.md}
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>## Techniques (per allowance)
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>{contents of techniques/{t1}.md}
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>{contents of techniques/{t2}.md}
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>## Inputs from earlier stages
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>{brief.md} {structure.md} {previous artifact if revising}
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>## Critique to address (if any)
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>{critique text and gate script JSON}
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>&lt;!-- memory-lessons --&gt;
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>## Lessons from memory (&lt;=10 lines)
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>{lessons block}
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>## Return
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>Reply in exactly this shape so hooks can parse it:
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>SKILL_LOADED: &lt;comma-separated list of every references/ path embedded above&gt;
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>STATUS: DONE | BLOCKED
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>ARTIFACT: &lt;path written&gt;
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>SUMMARY: &lt;=15 lines: what you produced and any decision you want the orchestrator to record
+</code></pre></div>
+<hr />
+<h2 id="appendix-c-review-log">Appendix C — Review Log<a class="headerlink" href="#appendix-c-review-log" title="Permanent link">&para;</a></h2>
+<p>Revision 2 incorporates the delivery-team review of PR #89 (four reviewers, all REQUEST_CHANGES on revision 1). Resolved:</p>
+<ul>
+<li><strong>Energy-curve gate</strong> had no owning script and the example failed its own rule → <code>arrangement_check.py</code> with the normative <code>chorus_rising</code> rule, config key <code>quality.energy_curve</code>, example recomputed (Architect 5, QA 2, Tech Writer 2).</li>
+<li><strong>Missing critic roles</strong> for Stages 2 and 5 → <code>hook-judge</code> and <code>music-judge</code> added with rubric loads (Architect 4, Tech Writer 1).</li>
+<li><strong>Rule-of-two</strong> conflicted with personas, challenger, and memory block → per-role allowance manifest <code>prompt-allowances.json</code>, exempt blocks labelled (Architect 6, Tech Writer 4).</li>
+<li><strong>Routing tables disagreed</strong> between §6 and §7 → single F/L/I/– matrix in §7, <code>song-types.md</code> as source (Architect 7).</li>
+<li><strong>SubagentStop matcher</strong> could not fire without named agents; gate hook double-counted loops → <code>agents/*.md</code> definitions; <code>gate_subagent.py</code> advisory, orchestrator is the single gate runner (Architect 1, 2; QA 7).</li>
+<li><strong>Hook protocol</strong> misstated → restated per Claude Code (exit 2, <code>hookSpecificOutput.permissionDecision</code>); <code>hook_utils.py</code> claim from the Architect review was checked and found not to exist in delivery-team, so no shared lib is referenced (Architect 9, QA 7).</li>
+<li><strong>Budget CI</strong> does not cover music-team → W0-3 extends the walker; reference caps are a plugin-local lint (Architect 3, 12; QA 9).</li>
+<li><strong>Challenger gate was AI-judged</strong> → parseable severity table + <code>challenge_gate.py</code> (Architect 10).</li>
+<li><strong>Script contracts, rules, fixtures unspecified</strong> → <code>gate_common.py</code> contract, normative rule column, <code>tests/unit/</code>, W1-0 fixtures story (QA 1, 6; Tech Writer 9 lint).</li>
+<li><strong>Loop exhaustion contradictory; release loop undefined</strong> → protocol step 5 applies the policy; release-loop semantics defined; <code>loops.release</code> kept (QA 4; Architect 11).</li>
+<li><strong>Hook syllable gate had no key/script</strong> → <code>quality.hook_max_syllables</code>, <code>prosody_check.py --hook</code>, <code>genre_overrides</code> (QA 3; Architect 11).</li>
+<li><strong>Non-English, empty brief, INSTRUMENTAL alignment</strong> → <code>language</code> field, SKIPPED exit code, theme required, conditional alignment (QA 8; PO 10).</li>
+<li><strong>Windows paths and symlinks</strong> → <code>as_posix()</code> normalisation with a test; plain copies with drift check (QA 9; Architect 12; Tech Writer 7; PO 10).</li>
+<li><strong>Config creation undefined</strong> → <code>music-brief</code> creates it; Appendix A updated (Tech Writer 3).</li>
+<li><strong>No thin vertical slice; oversized stories; untestable Wave 2 DoD</strong> → W2-5 thin-slice orchestrator ships a lyric by PR 3; W2-2/W2-3 and W5-1/W5-2 split; per-story ACs; Wave 2 DoD rewritten (PO 1, 3, 4).</li>
+<li><strong>Music scripts before their producers</strong> → moved to Wave 3 (PO 2).</li>
+<li><strong>No post-release iteration</strong> → <code>REVISE</code> type, story W4-4 (PO 5).</li>
+<li><strong>Smoke count wrong, no acceptance</strong> → 7 samples with explicit criteria and <code>baseline.json</code> tolerance (PO 6; QA 5).</li>
+<li><strong>Time-to-first-song unbounded</strong> → quick mode and inferred wizard defaults (PO 7).</li>
+<li><strong>Resemblance gate a no-op by default</strong> → documented as opt-in; challenger is the default control (PO 8).</li>
+<li><strong>Optional hooks inflate Wave 4</strong> → telemetry and verify_skill_load moved to Wave 5 (PO 9).</li>
+<li><strong>Tech Writer nits</strong> → PR count six, §19/W0 lint reference aligned, §7 link, blank lines after headings, fence languages, <code>docs/index.md</code> link (Tech Writer 5, 6, 8, 9, 10).</li>
+<li><strong>Listener panel as a gate</strong> contradicted determinism → made advisory (new, from Principle 5 audit).</li>
+</ul>
+<p>Revision 3 incorporates the second round (Architect APPROVE, Tech Writer APPROVE, Product Owner and QA REQUEST_CHANGES on new items only). Resolved:</p>
+<ul>
+<li><strong>Gate runner had two sources of truth</strong> (§6 step 4 vs §11) → step 4 rewritten: hook pre-populates with <code>artifact_sha256</code>, orchestrator reuses on hash match else runs the script; hook writes atomically and touches only <code>gates[]</code> (Architect NEW-1, QA NEW-1).</li>
+<li><strong>ABC <code>w:</code> alignment rule</strong> would false-FAIL on melismas → rule restated per ABC 2.1 token semantics; melisma and mismatch fixtures added to W1-0/W3-1 (QA NEW-2).</li>
+<li><strong>Thin slice depended on <code>composer:groove</code></strong> not built until W3-2 → W2-5 uses a documented groove stub filled from the form template; W3-2 removes it (PO N1).</li>
+<li><strong>Quick mode arrived too late</strong> → folded into W2-5 scope and Wave 2 DoD (PO N2).</li>
+<li><strong>Detection AC covered five of eight rows</strong> → <code>tests/fixtures/briefs/</code> with one brief per routing row, W2-1 AC updated (PO N3).</li>
+<li><strong>Blocked-targets ≥ 500 in Wave 0</strong> too heavy → ≥ 100 in Wave 0, ≥ 500 by W5-3 (PO N4).</li>
+<li><strong>Arrangement rubric built before its consumer</strong> → moved to W3-4; <code>structure-rubric.md</code> added for Stage 3 (PO N5, Architect NEW-4).</li>
+<li><strong>Smoke count vs REVISE</strong> → REVISE explicitly excluded from the smoke set; §4, W4-5, §18 agree on 7 samples (Tech Writer N1, QA NEW-3).</li>
+<li><strong><code>force_type</code> enum</strong> → REVISE marked detected-only (Tech Writer N2).</li>
+<li><strong>Orphaned <code>range-and-tessitura.md</code></strong> → folded into <code>melodic-contour.md</code> (Tech Writer N3).</li>
+<li><strong>Hooks copied from delivery-team would fail at import</strong> → hooks are self-contained with stdin tests; verified that <code>.gitignore</code> line 17 (<code>lib/</code>) excludes <code>delivery-team/hooks/lib/hook_utils.py</code> from git, so six delivery-team hooks are broken for fresh clones. <strong>Backlog item for delivery-team</strong>: add a <code>!delivery-team/hooks/lib/</code> exception and commit the file (Architect NEW-2).</li>
+<li><strong>Active slug and stale retrospective</strong> → <code>.song/active</code> pointer and <code>run_id</code> matching in the Stop rule (Architect NEW-3).</li>
+<li><strong>JINGLE/REWRITE fixture sets unassigned</strong> → W3-1 (QA NEW-4).</li>
+<li><strong>Rhyme-scheme notation ambiguous</strong> → <code>x</code> unconstrained, letters per section, in §9 and §12 (QA NEW-5).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
