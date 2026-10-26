@@ -26,6 +26,10 @@ from typing import Any
 
 _EVENT_NAME: str | None = None
 
+# Events whose protocol defines a hookSpecificOutput object. Stop/SubagentStop
+# carry only continue/stopReason/systemMessage.
+_EVENTS_WITH_SPECIFIC_OUTPUT = {"PreToolUse", "PostToolUse", "UserPromptSubmit", "SessionStart"}
+
 
 # ---------------------------------------------------------------------------
 # Input
@@ -34,9 +38,9 @@ def read_hook_input() -> dict[str, Any]:
     """Parse the hook payload from stdin. Returns {} on any failure."""
     global _EVENT_NAME
     try:
-        raw = sys.stdin.read()
+        raw = sys.stdin.read() if sys.stdin is not None else ""
         data = json.loads(raw) if raw and raw.strip() else {}
-    except (json.JSONDecodeError, OSError, ValueError):
+    except Exception:  # never raise on a malformed payload; fail open
         data = {}
     if not isinstance(data, dict):
         data = {}
@@ -126,7 +130,7 @@ def emit_response(
         if not continue_:
             payload["stopReason"] = message
     specific: dict[str, Any] = {}
-    if _EVENT_NAME:
+    if _EVENT_NAME in _EVENTS_WITH_SPECIFIC_OUTPUT:
         specific["hookEventName"] = _EVENT_NAME
         if message:
             specific["additionalContext"] = message
@@ -147,11 +151,23 @@ def exit_success() -> None:
 
 
 def exit_block(reason: str) -> None:
-    """Block the tool call: reason on stderr, exit code 2."""
+    """Exit 2 with the reason on stderr.
+
+    Exit 2 blocks the action for PreToolUse, UserPromptSubmit, Stop and
+    SubagentStop; for PostToolUse the tool has already run and the reason is
+    fed back to the model instead. Encodes with replacement so a non-ASCII
+    path or tool output cannot turn the block into a traceback on a cp1252
+    Windows console.
+    """
     try:
-        sys.stderr.write(reason)
+        encoding = getattr(sys.stderr, "encoding", None) or "utf-8"
+        buffer = getattr(sys.stderr, "buffer", None)
+        if buffer is not None:
+            buffer.write(reason.encode(encoding, "replace"))
+        else:
+            sys.stderr.write(reason.encode(encoding, "replace").decode(encoding, "replace"))
         sys.stderr.flush()
-    except OSError:
+    except Exception:
         pass
     sys.exit(2)
 

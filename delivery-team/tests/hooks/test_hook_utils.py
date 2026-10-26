@@ -97,6 +97,30 @@ class EmitTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, 2)
         self.assertEqual(err.getvalue(), "nope")
 
+    def test_exit_block_non_ascii_does_not_raise(self):
+        proc = subprocess.run(
+            [sys.executable, "-I", "-X", "utf8=0", "-c",
+             "import sys; sys.path.insert(0, sys.argv[1]); from lib.hook_utils import exit_block; exit_block('path \\u2192 caf\\u00e9 \\u4e2d')",
+             str(HOOKS_DIR)],
+            input=b"", capture_output=True, timeout=30,
+            env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+        )
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertNotIn(b"Traceback", proc.stderr)
+
+    def test_stop_event_has_no_hook_specific_output(self):
+        sys.stdin = io.StringIO('{"hook_event_name": "SubagentStop"}')
+        try:
+            hu.read_hook_input()
+        finally:
+            sys.stdin = sys.__stdin__
+        out = io.StringIO()
+        with redirect_stdout(out):
+            hu.emit_response(message="m")
+        payload = json.loads(out.getvalue())
+        self.assertNotIn("hookSpecificOutput", payload)
+        self.assertEqual(payload["systemMessage"], "m")
+
 
 class HookImportSmokeTests(unittest.TestCase):
     """Every hook that imports lib.hook_utils must start and exit 0 on a benign payload."""
