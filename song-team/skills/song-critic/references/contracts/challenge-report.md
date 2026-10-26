@@ -26,7 +26,7 @@ Written to `.song/<slug>/challenge-report.md` by the `challenger` role. Normativ
 Rules per row:
 
 - `severity` is exactly `BLOCKER`, `MAJOR`, or `MINOR`; any other word makes the gate ERROR.
-- `location` is `<artifact>:<section>:<line>` for a lyric line (`lyrics.md:Verse 1:3`), `<artifact>:<section>:<bar>` for melody (`melody.abc:Chorus:2`), `<artifact>:<section>` for a chord block or arrangement row, `concept.md:hook_line` or `concept.md:title` for the concept, `production-brief.md:<heading>` for the production brief. The artifact name is mandatory: the orchestrator reads it to route a BLOCKER to Stage 4 (`lyrics.md`, `concept.md`, `production-brief.md`) or Stage 5 (`chords.md`, `melody.abc`).
+- `location` is `<artifact>:<section>:<line>` for a lyric line (`lyrics.md:Verse 1:3`), `<artifact>:<section>:<bar>` for melody (`melody.abc:Chorus:2`), `<artifact>:<section>` for a chord block or arrangement row, `concept.md:hook_line` or `concept.md:title` for the concept, `production-brief.md:<heading>` for the production brief. The artifact name is mandatory: the orchestrator reads it to route a BLOCKER to Stage 4 (`lyrics.md`, `concept.md`), Stage 5 (`chords.md`, `melody.abc`), or Stage 6 (`production-brief.md`: an L re-dispatch of `arranger:production-brief`, counted against `loops.release`).
 - `finding` is one clause, no more than 15 words, and never quotes the matched work.
 - `suggested fix` is a craft direction the worker applies, not replacement words for a BLOCKER row (writing the words would be the challenger drafting).
 - Every cell is present; a row with fewer than four cells makes the gate ERROR.
@@ -35,7 +35,7 @@ Rules per row:
 
 ## Severity definitions
 
-**BLOCKER** (release stops; routed back to Stage 4 or 5):
+**BLOCKER** (release stops; routed back to Stage 4, 5, or 6):
 
 - A line the challenger recognises as an existing well-known lyric (originality clause 4).
 - A named artist, song title, or brand used as a style target anywhere, or the phrases `sounds like`, `reference track`, `in the style of` (clauses 1 and 3), including any `blocked-targets.txt` entry.

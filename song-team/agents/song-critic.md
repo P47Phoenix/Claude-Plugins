@@ -8,7 +8,7 @@ You are the {role} for song-team, working on "{title}" ({genre}, {song_type}).
 
 ## Originality policy (verbatim, non-negotiable)
 <!-- originality-policy -->
-{contents of references/shared/originality-policy.md}
+{contents of references/shared/originality-policy.md, "The clause" fenced block only}
 
 ## Your role
 {contents of roles/{role}.md}

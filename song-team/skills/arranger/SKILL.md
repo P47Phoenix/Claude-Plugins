@@ -75,7 +75,7 @@ The orchestrator normally performs these steps; a standalone invocation performs
 
 1. **Detect the role** per the table above. Record it in the declaration line.
 2. **Resolve the genre.** Read `genre:` from `.song/<slug>/brief.md`. Lower-case it and hyphenate spaces (`hip hop` becomes `hip-hop`). When `brief.md` is absent or `genre` is empty, use `pop`. When `genres/<g>.md` does not exist, use `genres/pop.md` and say so in the declaration line.
-3. **Read only the allowed files.** Exactly one role file, one contract, one genre file, and at most two technique files, as the Role Detection table lists for the detected role. This matches `defaults` in `references/shared/prompt-allowances.json` (`roles: 1, contracts: 1, genres: 1, techniques: 2`). Reading a third technique file, a second genre, or any rubric or persona is a protocol violation; `audit_agent_prompt.py` denies the dispatch when it lands.
+3. **Read only the allowed files.** Exactly one role file, one contract, one genre file, and at most two technique files, as the Role Detection table lists for the detected role. This matches `defaults` in `references/shared/prompt-allowances.json` (`roles: 1, contracts: 1, genres: 1, techniques: 2`). Reading a third technique file, a second genre, or any rubric or persona is a protocol violation; `audit_agent_prompt.py` will deny the dispatch once the hook lands in W4-2.
 4. **Build the prompt** from `references/agent-prompts/<task>.md`, where `<task>` is `arrangement` (for `instrumentation` and `dynamics`) or `production-brief`. Substitute every `{placeholder}` with file contents or values, including `{project_root}` (the absolute path of the directory that holds `.song/`). Leave no bracket unfilled.
 5. **Embed the originality clause.** Paste the fenced block from `references/shared/originality-policy.md` verbatim directly under the `<!-- originality-policy -->` marker. This block is exempt from the allowance count and is never summarised.
 6. **Embed memory lessons** when `song-flow` supplies them: paste the lessons block (at most 10 lines) under the `<!-- memory-lessons -->` marker. When none are supplied, write `(none)` under the marker. Never read `.song/memory/` directly.
@@ -93,7 +93,7 @@ Stage 6 runs three dispatches in a fixed order: `instrumentation` -> `dynamics` 
 | 2 `dynamics` | the `energy` column only, finalised against the `quality.energy_curve` rule; deletes the provisional comment | every other cell byte-for-byte |
 | 3 `production-brief` | `production-brief.md` | `arrangement.md` entirely |
 
-The gates run once, after dispatch 2, on the finalised file. A `dynamics` sub-agent that finds no `arrangement.md` (an L stage, a standalone call, or a lost file) writes the whole table itself; its role file covers both cases.
+The gates run once, after dispatch 2, on the finalised file. `song-flow` verifies the `# energy: provisional` comment is present after dispatch 1 and absent after dispatch 2 (a mismatch re-dispatches that role once), hashes `arrangement.md` for `state.json.gates.arrangement.artifact_sha256` only after dispatch 2, and sets `owners["arrangement.md"] = "dynamics"`. A `dynamics` sub-agent that finds no `arrangement.md` (an L stage, a standalone call, or a lost file) writes the whole table itself; its role file covers both cases.
 
 **Light stage (JINGLE, REVISE re-runs).** The routing matrix runs Stage 6 as L: a single dispatch, gate still runs, no critic loop. In L mode `song-flow` dispatches `dynamics` once with `agent-prompts/arrangement.md` to produce the complete `arrangement.md` (all columns, energy final), then `production-brief` once. `instrumentation` is not dispatched separately in L mode.
 
@@ -132,12 +132,12 @@ The sub-agent's hand-back goes to `song-flow`, which runs the stage protocol (`s
 | After | song-flow runs | On FAIL, critic | Re-dispatch role |
 |-------|----------------|-----------------|------------------|
 | `instrumentation` (Stage 6, dispatch 1) | nothing yet; proceeds straight to `dynamics` | - | - |
-| `dynamics` (Stage 6, dispatch 2) | `arrangement_check.py arrangement.md`; `structure_check.py --consistency structure.md lyrics.md chords.md melody.abc arrangement.md` | `song-critic:structure-judge` with `rubrics/arrangement-rubric.md` (lands W3-4) | `dynamics` with the critique; `instrumentation` only when the critique names the palette or a section-list diff |
-| `production-brief` (Stage 6, dispatch 3) | no gate script; `validate_artifacts.py` (W4-2) lints it as an advisory `PostToolUse` hook and reports any blocked-targets hit, "sounds like", or "reference track" | `song-critic:challenger` reports a name or comparison as a BLOCKER at Stage 7b | `production-brief` with the finding |
+| `dynamics` (Stage 6, dispatch 2) | `arrangement_check.py arrangement.md`; `structure_check.py --consistency structure.md lyrics.md chords.md melody.abc arrangement.md` | `song-critic:structure-judge` with `rubrics/arrangement-rubric.md` | `dynamics` with the critique; `instrumentation` only when the critique names the palette or a section-list diff |
+| `production-brief` (Stage 6, dispatch 3) | no gate script; `validate_artifacts.py` (W4-2) lints it as an advisory `PostToolUse` hook and reports any blocked-targets hit, "sounds like", or "reference track" | `song-critic:challenger` reports a name or comparison as a BLOCKER at Stage 7b | `production-brief` with the finding, as an L re-dispatch counted against `loops.release` (never `.arrangement`) |
 
 A stage passes only when every script returns PASS or SKIPPED. Neither Stage 6 script is ever SKIPPED. Severity order when statuses are combined: `ERROR > FAIL > SKIPPED > PASS`.
 
-**What a critique looks like on re-dispatch.** `song-flow` pastes two things under `## Critique to address`: the critic's prose (every item cites a `violations[].location` such as `Verse 2` or `Chorus:3`) and the raw gate JSON:
+**What a critique looks like on re-dispatch.** `song-flow` fills the single `{critique}` slot under `## Critique to address` with one block: the gate line, the raw gate JSON, and the critic's findings (every item cites a `violations[].location` such as `Verse 2` or `Chorus:3`). The JSON looks like:
 
 ```json
 { "script": "arrangement_check", "status": "FAIL",
@@ -150,7 +150,7 @@ The `dynamics` role changes only the `energy` cells it must, keeps every other c
 
 **Loop exhaustion.** When `loops_used.arrangement` reaches `loops.arrangement`, `song-flow` applies `escalation.on_loop_exhaustion` (`ask_user`, `accept_best`, or `fail`). The arranger takes no part in that decision and never argues for an override.
 
-**Downstream consumers.** `song-critic:listener-panel` reads `arrangement.md` and `production-brief.md` at Stage 7a; `song-critic:challenger` scans both at Stage 7b for names and comparisons; `song-release` copies the energy column into `package/one-pager.md` and reads `instruments_in` when `midi_export.py` picks program numbers. Every one of them depends on the `section` column matching `structure.md` exactly, which is why the contracts treat a label mismatch as a hard error rather than a style note.
+**Downstream consumers.** `song-critic:listener-panel` reads `arrangement.md` (never `production-brief.md`) at Stage 7a; `song-critic:challenger` scans `production-brief.md` (never `arrangement.md`) at Stage 7b for names and comparisons; `song-release` copies the energy column into `package/one-pager.md` and reads `instruments_in` when `midi_export.py` picks program numbers. Every one of them depends on the `section` column matching `structure.md` exactly, which is why the contracts treat a label mismatch as a hard error rather than a style note.
 
 ---
 

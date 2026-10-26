@@ -32,15 +32,15 @@ Five criteria, each scored 1-5. Anchors are given for 1, 3, and 5; score 2 and 4
 - **3**: fields agree; the texture notes ignore what the melody does (a "wide, doubled" chorus under a melody that sits in the bottom of the range).
 - **5**: fields agree; instrument choices follow the chord chart's register (bass under a low melody, pad above a high one); the `texture_note` for each section names the melodic peak or the lyric turn it supports.
 
-## 5. Production-brief language
+## 5. Texture-note consistency
 
-- **1**: `production-brief.md` names an artist, song, or brand, or writes "sounds like" / "reference track"; or any of the four headings is missing.
-- **3**: technical language throughout; the `## Section notes` repeat the arrangement table without adding mix decisions.
-- **5**: every section note states one mix priority (what sits forward), one vocal treatment, and one tempo-map or dynamic cue, all in technical terms a producer can act on without a reference.
+- **1**: `texture_note` cells are empty or `-` in most rows, or a note contradicts its own row (a "stripped" note on a section whose `instruments_in` adds three parts).
+- **3**: every row has a note, but the notes describe instruments already listed in the row without saying what the texture does for the section.
+- **5**: every `texture_note` names one job (space, width, drive, lift) in technical terms, agrees with the row's energy and instrument changes, and no two adjacent sections carry the same note.
 
 ## Scoring notes
 
-- Score the arrangement and the production brief as written; the melody and chords are closed.
+- Score `arrangement.md` only, as written; the melody and chords are closed. `production-brief.md` is never read here; the challenger owns it at Stage 7b.
 - Criteria 1 and 4 reflect the gate; a 4 or 5 on a FAIL is a `## Suspected false positives` candidate (name the section row).
-- Criterion 5 at 1 is a craft finding at `rubric:sections` for the `production-brief` role even when the gate passed; the challenger will raise the same hit as a BLOCKER at Stage 7b.
+- Criterion 5 at 1 is a craft finding at `rubric:sections` for the `dynamics` role even when the gate passed.
 - Total 10 or below on a PASS gate: recommend one optional quality loop before Stage 7; the orchestrator decides.

@@ -5,7 +5,8 @@
 
 usage: midi_export.py [--json] [--out PATH] melody.abc chords.md [structure.md]
 
-Track 0: tempo (from ``Q:``) and time signature (from ``M:``). Track 1: the
+Track 0: tempo (from ``Q:``, honouring its beat unit: ``Q:3/8=50`` is 75
+quarter notes per minute) and time signature (from ``M:``). Track 1: the
 melody on channel 0, ABC durations scaled by ``L:`` (tied notes merge into one
 event). Track 2: one root-position block triad per bar on channel 1, built from
 the concert chord names on the ``>`` lines of chords.md in section order (bars
@@ -31,7 +32,7 @@ MELODY_CHANNEL, CHORD_CHANNEL = 0, 1
 MELODY_VELOCITY, CHORD_VELOCITY = 96, 72
 CHORD_OCTAVE_BASE = 48  # C3
 
-_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+_PC = ac.PC
 _CHORD_RE = re.compile(r"^([A-Ga-g])([#b]?)(.*)$")
 
 
@@ -40,7 +41,9 @@ _CHORD_RE = re.compile(r"^([A-Ga-g])([#b]?)(.*)$")
 # ---------------------------------------------------------------------------
 def chord_to_pitches(name: str) -> list[int]:
     """``D`` -> [50, 54, 57]; ``Bm`` minor third; ``dim``/``aug``; ``sus2``/``sus4``;
-    ``7`` adds a minor seventh, ``maj7`` a major seventh. A slash bass is ignored."""
+    ``7`` adds a minor seventh, ``maj7`` a major seventh, ``dim7``/``°7``/``o7`` a
+    diminished seventh, ``m7b5``/``ø`` a minor seventh over a diminished triad.
+    A slash bass is ignored."""
     base = name.split("/", 1)[0].strip()
     m = _CHORD_RE.match(base)
     if not m:
@@ -48,7 +51,8 @@ def chord_to_pitches(name: str) -> list[int]:
     letter, acc, qual = m.group(1).upper(), m.group(2), m.group(3).lower()
     root = CHORD_OCTAVE_BASE + _PC[letter] + (1 if acc == "#" else -1 if acc == "b" else 0)
     third, fifth = 4, 7
-    if "dim" in qual or qual.startswith("°") or qual.startswith("o"):
+    diminished = "dim" in qual or qual.startswith("°") or qual.startswith("o") or "m7b5" in qual or "ø" in qual
+    if diminished:
         third, fifth = 3, 6
     elif "aug" in qual or "+" in qual:
         third, fifth = 4, 8
@@ -61,8 +65,10 @@ def chord_to_pitches(name: str) -> list[int]:
     pitches = [root, root + third, root + fifth]
     if "maj7" in qual:
         pitches.append(root + 11)
+    elif "m7b5" in qual or "ø" in qual:
+        pitches.append(root + 10)                        # half-diminished: minor seventh
     elif "7" in qual:
-        pitches.append(root + 9 if "dim" in qual else root + 10)
+        pitches.append(root + 9 if diminished else root + 10)
     return pitches
 
 
@@ -123,10 +129,12 @@ def _note(tick: int, channel: int, pitch: int, dur: int, velocity: int) -> list[
 def build_midi(abc: dict[str, Any], chord_names: list[str]) -> tuple[bytes, dict[str, int]]:
     unit = abc["unit_length"] * 4 * TICKS_PER_QUARTER     # ticks per L: unit
     bpm = abc["bpm"] or 120
+    beat = ac.parse_tempo_beat(abc["headers"].get("Q", "")) or Fraction(1, 4)
+    quarter_bpm = bpm * beat * 4                          # Q:3/8=50 -> 75 quarter notes per minute
     ts = ac.parse_time_sig(abc.get("time_sig") or "") or (4, 4)
     bar_ticks_default = int(Fraction(ts[0], ts[1]) * 4 * TICKS_PER_QUARTER)
 
-    tempo = [(0, b"\xff\x51\x03" + struct.pack(">I", round(60_000_000 / bpm))[1:]),
+    tempo = [(0, b"\xff\x51\x03" + struct.pack(">I", round(60_000_000 / quarter_bpm))[1:]),
              (0, b"\xff\x58\x04" + bytes([ts[0], ts[1].bit_length() - 1, 24, 8]))]
 
     melody: list[tuple[int, bytes]] = []
@@ -209,7 +217,7 @@ def add_args(p: Any) -> None:
 def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateResult:
     mpath = gc.file_named(args.paths, "melody.abc")
     if not mpath:
-        return res.error("melody.abc not given")
+        return res.error("no argument whose basename is melody.abc")
     try:
         abc = ac.parse_abc(gc.read_text(mpath))
     except ac.AbcParseError as exc:

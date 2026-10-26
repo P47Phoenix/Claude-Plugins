@@ -21,6 +21,7 @@ song-flow (or the lyricist skill when invoked standalone) substitutes every `{pl
 | `{brief.md}` | `.song/<slug>/brief.md` |
 | `{concept.md}` | `.song/<slug>/concept.md` |
 | `{structure.md}` | `.song/<slug>/structure.md` |
+| `{critique}` | `(none)` on the first dispatch; the song-flow critique block (gate line, verbatim gate JSON, findings) when this prompt is re-used after a `structure_check` FAIL or an editor `BLOCKED` |
 | `{lessons}` | memory lessons block supplied by song-flow, <= 10 lines; `(none)` when not supplied |
 
 Swap rule: when song-flow re-dispatches `verse-writer` (rather than `lyric-editor`) with a critique naming point of view or arc, replace `t1` with `techniques/point-of-view.md` or `techniques/narrative-arc.md`. Never embed three technique files.
@@ -60,7 +61,7 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 {structure.md}
 
 ## Critique to address (if any)
-(none on the first pass)
+{critique}
 
 <!-- memory-lessons -->
 ## Lessons from memory (<=10 lines)

@@ -15,7 +15,7 @@ loops:
   lyrics: 4
   music: 3
   arrangement: 2
-  release: 2                  # number of 7b -> 4/5 returns allowed before escalation.on_blocker applies
+  release: 2                  # number of 7b -> 4/5/6 returns allowed before escalation.on_blocker applies
 
 quality:
   cliche_max_per_100_words: 2
@@ -27,7 +27,7 @@ quality:
   vocal_range: [55, 79]       # MIDI note numbers, G3..G5 default
   energy_curve: chorus_rising # chorus_rising | strict_rising | free (see stage-gates.md)
   adversarial_lyrics: false   # run challenger after Stage 4 too, not only Stage 7
-  listener_panel_size: 3
+  listener_panel_size: 3      # 1-3 persona seats at Stage 7a (clamped; the allowance manifest caps embedded personas at 3)
   genre_overrides: {}         # e.g. hip-hop: { hook_max_syllables: 16, diatonic_min_ratio: 0.4 }
 
 originality:

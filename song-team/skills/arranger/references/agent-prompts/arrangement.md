@@ -11,6 +11,9 @@ song-flow (or the arranger skill when invoked standalone) substitutes every `{pl
 | Placeholder | File |
 |-------------|------|
 | `{project_root}` | absolute path of the working directory that holds `.song/` |
+| `{title}` | `concept.md.title` once Stage 2 has passed, else `brief.md.theme` |
+| `{song_type}` | `brief.md.song_type` (FULL_SONG, LYRICS_ONLY, INSTRUMENTAL, TOPLINE, REWRITE, JINGLE, REVISE) |
+| `{slug}` | the song's directory name under `.song/` |
 | `{role}` | `instrumentation` (Stage 6 dispatch 1) or `dynamics` (Stage 6 dispatch 2, any `arrangement_check` re-dispatch, and the single dispatch of an L stage) |
 | `{genre}`, `{t1}` | the genre name and the technique file stem actually embedded (for the `SKILL_LOADED` line) |
 | `{originality clause}` | `song-team/references/shared/originality-policy.md`, the fenced block only |
@@ -22,7 +25,7 @@ song-flow (or the arranger skill when invoked standalone) substitutes every `{pl
 | `{structure.md}` | `.song/<slug>/structure.md` |
 | `{chords.md}`, `{melody.abc}` | `.song/<slug>/chords.md` and `.song/<slug>/melody.abc` for `instrumentation`; `(not embedded)` for `dynamics` |
 | `{arrangement.md}` | the current `.song/<slug>/arrangement.md` for `dynamics` (with the provisional energy); `(none yet)` for `instrumentation` or when no file exists |
-| `{critique}`, `{gate_json}` | structure-judge critique and the raw `--json` of `arrangement_check` and `structure_check --consistency` on a re-dispatch; `(none on the first pass)` otherwise |
+| `{critique}` | `(none on the first pass)`, or the song-flow critique block (gate line, verbatim `arrangement_check` and `structure_check --consistency` JSON, critique-6.md findings) |
 | `{lessons}` | memory lessons block supplied by song-flow, <= 10 lines; `(none)` when not supplied |
 
 Swap rule: when a `dynamics` re-dispatch critique names section sameness or palette rather than the curve, add `techniques/section-contrast.md` as `t2` (the allowance permits two). Never embed three technique files.
@@ -66,7 +69,6 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 
 ## Critique to address (if any)
 {critique}
-{gate_json}
 
 <!-- memory-lessons -->
 ## Lessons from memory (<=10 lines)

@@ -8,10 +8,11 @@ names a key.
 
 Cell grammar (one chord per ``|`` cell):
 
-    [b|#] <I..VII | i..vii> [dim|°|o|aug|+|maj7|m7|7|sus2|sus4|add9] [/<bass>]
+    [b|#] <I..VII | i..vii> [dim|°|o|dim7|°7|o7|m7b5|aug|+|maj7|m7|7|sus2|sus4|add9] [/<bass>]
     %                                  repeats the previous cell (counts again)
 
-Upper-case numerals are major triads, lower-case minor; ``dim``/``°``/``o`` and
+Upper-case numerals are major triads, lower-case minor; ``dim``/``°``/``o``
+(and ``dim7``/``°7``/``o7``/``m7b5``, which sit on a diminished triad) and
 ``aug``/``+`` override the triad quality; seventh/sus/add suffixes are tolerated
 and do not change the triad quality test (``sus`` chords have no third and are
 diatonic whenever their root is a scale degree). ``<bass>`` is a Roman numeral
@@ -45,6 +46,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate_common as gc  # noqa: E402
+import abc_common as ac  # noqa: E402
 
 _NUMERALS = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7}
 _MAJOR_DEGREE_SEMITONES = {1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11}
@@ -64,20 +66,16 @@ MODE_TABLES["aeolian"] = MODE_TABLES["minor"]
 _MODE_ABBREV = {"m": "minor", "min": "minor", "maj": "major", "dor": "dorian", "mix": "mixolydian",
                 "lyd": "lydian", "phr": "phrygian", "loc": "locrian", "aeo": "aeolian", "ion": "ionian"}
 
-_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
-_SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-_FLAT_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-_MAJOR_SHARPS = {"C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#": 6, "C#": 7,
-                 "F": -1, "Bb": -2, "Eb": -3, "Ab": -4, "Db": -5, "Gb": -6, "Cb": -7}
-_MODE_OFFSET = {"major": 0, "ionian": 0, "minor": -3, "aeolian": -3, "dorian": -2,
-                "mixolydian": -1, "lydian": 1, "phrygian": -4, "locrian": -5}
+_PC, _SHARP_NAMES, _FLAT_NAMES = ac.PC, ac.SHARP_NAMES, ac.FLAT_NAMES
+_MAJOR_SHARPS, _MODE_OFFSET = ac.MAJOR_SHARPS, ac.MODE_OFFSET
 
 _ROMAN = r"VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i"
 _CELL_RE = re.compile(
     r"^(?P<acc>[b#]?)(?P<num>" + _ROMAN + r")"
-    r"(?P<qual>maj7|dim7|m7b5|sus2|sus4|add9|dim|aug|m7|7|°|o|\+)?"
+    r"(?P<qual>maj7|dim7|°7|o7|m7b5|sus2|sus4|add9|dim|aug|m7|7|°|o|\+)?"
     r"(?:/(?P<bass>[b#]?(?:" + _ROMAN + r"|[1-7])))?$"
 )
+_DIM_SEVENTHS = ("dim7", "m7b5")       # quality tokens that already name the whole concert suffix
 CADENCES = ("V-I", "IV-I", "V-vi", "bVII-I")
 
 
@@ -88,9 +86,10 @@ def parse_roman(cell: str) -> tuple[int, int, bool, str, tuple[int, int] | None]
     """``'bVII7/V'`` -> (accidental, degree, is_minor, quality, bass).
 
     accidental: -1 for ``b``, +1 for ``#``, else 0. degree: 1..7. is_minor: the
-    numeral is lower-case. quality: the triad (``maj``/``min``/``dim``/``aug``)
-    followed by any tolerated suffix (``maj7``, ``min7``, ``majsus4`` ...).
-    bass: ``(accidental, degree)`` of the slash bass, or None.
+    numeral is lower-case. quality: a bare triad (``maj``/``min``/``dim``/``aug``),
+    a triad plus a tolerated suffix (``maj7`` for ``V7``, ``majmaj7``, ``min7``,
+    ``majsus4`` ...), or one of the seventh tokens ``dim7``/``m7b5`` (both on a
+    diminished triad). bass: ``(accidental, degree)`` of the slash bass, or None.
     ValueError on anything else."""
     m = _CELL_RE.match(cell.strip())
     if not m:
@@ -99,15 +98,18 @@ def parse_roman(cell: str) -> tuple[int, int, bool, str, tuple[int, int] | None]
     num = m.group("num")
     is_minor = num.islower()
     degree = _NUMERALS[num.lower()]
-    suffix = m.group("qual") or ""
-    if suffix in ("dim", "°", "o", "dim7", "m7b5"):
+    suffix = {"°": "dim", "o": "dim", "°7": "dim7", "o7": "dim7", "+": "aug"}.get(m.group("qual") or "",
+                                                                                 m.group("qual") or "")
+    if suffix in ("dim", "dim7", "m7b5"):
         triad = "dim"
-    elif suffix in ("aug", "+"):
+    elif suffix == "aug":
         triad = "aug"
     else:
         triad = "min" if is_minor else "maj"
-    if suffix in ("dim", "°", "o", "aug", "+", ""):
+    if suffix in ("dim", "aug", ""):
         quality = triad
+    elif suffix in ("dim7", "m7b5"):
+        quality = suffix
     elif suffix == "m7":
         triad, quality = "min", "min7"
     else:
@@ -122,6 +124,8 @@ def parse_roman(cell: str) -> tuple[int, int, bool, str, tuple[int, int] | None]
 
 
 def triad_of(quality: str) -> str:
+    if quality in _DIM_SEVENTHS:
+        return "dim"
     for t in ("maj", "min", "dim", "aug"):
         if quality.startswith(t):
             return t
@@ -150,7 +154,7 @@ def is_diatonic(mode: str, parsed: tuple) -> bool:
     root = root_semitone(mode, acc, degree)
     for semi, tri in MODE_TABLES[mode]:
         if semi == root:
-            return True if quality.startswith("sus") else triad_of(quality) == tri
+            return True if "sus" in quality else triad_of(quality) == tri
     return False
 
 
@@ -187,7 +191,10 @@ def concert_name(key: str, mode: str, parsed: tuple) -> str:
     flats = key_uses_flats(key, mode)
     root = _spell(tonic + root_semitone(mode, acc, degree), flats if acc == 0 else acc < 0)
     tri = triad_of(quality)
-    sym = root + {"maj": "", "min": "m", "dim": "dim", "aug": "aug"}[tri] + quality[len(tri):]
+    if quality in _DIM_SEVENTHS:                         # viidim7 -> Bdim7, viim7b5 -> Bm7b5
+        sym = root + quality
+    else:
+        sym = root + {"maj": "", "min": "m", "dim": "dim", "aug": "aug"}[tri] + quality[len(tri):]
     if bass:
         bacc, bdeg = bass
         sym += "/" + _spell(tonic + root_semitone(mode, bacc, bdeg), flats if bacc == 0 else bacc < 0)

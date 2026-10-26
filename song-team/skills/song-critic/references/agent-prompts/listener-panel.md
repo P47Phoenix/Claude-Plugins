@@ -6,7 +6,7 @@ last_reviewed: 2026-10-26
 
 # Agent prompt: listener-panel
 
-song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, `listener_panel_size` persona files (default 3, capped at 3 by the manifest); no rubric, no technique, no genre file, no gate JSON. One dispatch carries every seat; the personas are chosen from the selection table in `roles/listener-panel.md`.
+song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, `listener_panel_size` persona files (`n`, clamped to 1-3; default 3); seats 2 and 3 are omitted when `n` is smaller; no rubric, no technique, no genre file, no gate JSON. One dispatch carries every seat; the personas are chosen from the selection table in `roles/listener-panel.md`.
 
 ```text
 You are the listener-panel for song-team, hearing "{title}" ({genre}, {song_type}) once.
@@ -26,8 +26,8 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 
 ## Seats (one block per persona, in this order)
 {contents of references/personas/{persona_1}.md}
-{contents of references/personas/{persona_2}.md}
-{contents of references/personas/{persona_3}.md}
+{when n>=2: contents of references/personas/{persona_2}.md}
+{when n>=3: contents of references/personas/{persona_3}.md}
 
 ## The song as released
 {contents of .song/<slug>/concept.md}

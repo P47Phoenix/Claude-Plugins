@@ -101,6 +101,12 @@ class ChordToolsTests(unittest.TestCase):
         self.assertEqual(pr("I/III"), (0, 1, False, "maj", (0, 3)))
         self.assertEqual(pr("V7/bVII"), (0, 5, False, "maj7", (-1, 7)))
         self.assertEqual(pr("I/3"), (0, 1, False, "maj", (0, 3)))
+        self.assertEqual(pr("viidim7"), (0, 7, True, "dim7", None))
+        self.assertEqual(pr("vii°7"), (0, 7, True, "dim7", None))
+        self.assertEqual(pr("viio7"), (0, 7, True, "dim7", None))
+        self.assertEqual(pr("viim7b5"), (0, 7, True, "m7b5", None))
+        self.assertEqual(self.mod.triad_of("m7b5"), "dim")
+        self.assertEqual(self.mod.triad_of("dim7"), "dim")
         for bad in ("H", "VIII", "", "I-V", "Db", "%%"):
             with self.assertRaises(ValueError, msg=bad):
                 pr(bad)
@@ -117,6 +123,23 @@ class ChordToolsTests(unittest.TestCase):
         self.assertEqual(cn("A", "minor", pr("ii°")), "Bdim")
         self.assertEqual(cn("C", "major", pr("#iv")), "F#m")
         self.assertEqual(cn("E", "major", pr("V")), "B")
+        self.assertEqual(cn("C", "major", pr("viim7b5")), "Bm7b5")
+        self.assertEqual(cn("C", "major", pr("viidim7")), "Bdim7")
+        self.assertEqual(cn("C", "major", pr("vii°7")), "Bdim7")
+        self.assertEqual(cn("C", "major", pr("viio7")), "Bdim7")
+        self.assertEqual(cn("C", "major", pr("iim7")), "Dm7")
+        self.assertEqual(cn("C", "major", pr("Imaj7")), "Cmaj7")
+
+    def test_seventh_qualities_diatonic_and_concert_end_to_end(self):
+        code, out = self._run(self._chords("[Verse 1]\n| iim7 | V7 | Imaj7 | viim7b5 | viidim7 |\n", key="C major"))
+        self.assertEqual(out["metrics"]["diatonic"], 5)           # all sit on the diatonic triad
+        self.assertEqual(out["concert"]["Verse 1"][0], ["Dm7", "G7", "Cmaj7", "Bm7b5", "Bdim7"])
+
+    def test_sus_in_minor_key_diatonic(self):
+        # A minor: isus4, ivsus2 and Vsus4 all have a scale-degree root; bIIsus4 does not
+        code, out = self._run(self._chords("[Verse 1]\n| isus4 | ivsus2 | Vsus4 | bIIsus4 |\n", key="A minor"))
+        self.assertEqual(out["metrics"]["diatonic"], 3)
+        self.assertEqual(out["concert"]["Verse 1"][0], ["Amsus4", "Dmsus2", "Esus4", "Bbsus4"])
 
     def test_slash_bass_and_bvii_counted(self):
         # D major: I/III and V/VII diatonic; bVII is not -> 3/4 passes the 0.6 default

@@ -11,6 +11,9 @@ song-flow (or the arranger skill when invoked standalone) substitutes every `{pl
 | Placeholder | File |
 |-------------|------|
 | `{project_root}` | absolute path of the working directory that holds `.song/` |
+| `{title}` | `concept.md.title` once Stage 2 has passed, else `brief.md.theme` |
+| `{song_type}` | `brief.md.song_type` (FULL_SONG, LYRICS_ONLY, INSTRUMENTAL, TOPLINE, REWRITE, JINGLE, REVISE) |
+| `{slug}` | the song's directory name under `.song/` |
 | `{genre}`, `{t1}` | the genre name and the technique file stem actually embedded (for the `SKILL_LOADED` line) |
 | `{originality clause}` | `song-team/references/shared/originality-policy.md`, the fenced block only |
 | `{roles/production-brief.md}` | `references/roles/production-brief.md` |
@@ -22,7 +25,7 @@ song-flow (or the arranger skill when invoked standalone) substitutes every `{pl
 | `{structure.md}` | `.song/<slug>/structure.md` |
 | `{arrangement.md}` | `.song/<slug>/arrangement.md`, the finalised table after the `dynamics` dispatch |
 | `{lyrics.md}` | `.song/<slug>/lyrics.md` when it exists; `(instrumental; no lyrics)` otherwise |
-| `{critique}` | the critic's prose or the `validate_artifacts` finding on a re-dispatch; `(none on the first pass)` otherwise |
+| `{critique}` | `(none on the first pass)`, or the `validate_artifacts` finding, or the Stage 7b challenger's BLOCKER rows whose `location` names `production-brief.md` (an L re-dispatch counted against `loops.release`) |
 | `{lessons}` | memory lessons block supplied by song-flow, <= 10 lines; `(none)` when not supplied |
 
 Swap rule: when a re-dispatch critique names vocal layering or the vocal chain as the weakness, add `techniques/vocal-production.md` as `t2` (the allowance permits two). Never embed three technique files.

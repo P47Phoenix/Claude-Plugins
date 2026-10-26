@@ -11,6 +11,9 @@ song-flow (or the composer skill when invoked standalone) substitutes every `{pl
 | Placeholder | File |
 |-------------|------|
 | `{project_root}` | absolute path of the working directory that holds `.song/` |
+| `{title}` | `concept.md.title` once Stage 2 has passed, else `brief.md.theme` |
+| `{song_type}` | `brief.md.song_type` (FULL_SONG, LYRICS_ONLY, INSTRUMENTAL, TOPLINE, REWRITE, JINGLE, REVISE) |
+| `{slug}` | the song's directory name under `.song/` |
 | `{genre}`, `{t1}`, `{t2}` | the genre name and the two technique file stems actually embedded (for the `SKILL_LOADED` line) |
 | `{originality clause}` | `song-team/references/shared/originality-policy.md`, the fenced block only |
 | `{roles/groove.md}` | `references/roles/groove.md` |
@@ -77,4 +80,3 @@ SUMMARY: <=15 lines: template and why; the hook line's syllable count and stress
 - `concept.md` is mandatory for every `song_type` except `REWRITE` (no Stage 2) and `INSTRUMENTAL` when the concept carries `motif` instead of `hook_line` (the chorus meter rule then does not apply and every `meter_spec` is empty). When it is missing for any other type, do not dispatch; return `STATUS: BLOCKED` with `SUMMARY: concept.md missing; run Stage 2 first`.
 - `REWRITE` and `TOPLINE` embed the user's supplied input inside `brief.md`; the role reads the meter spec (REWRITE) or the section list and bars (TOPLINE) from it. `brief.md` must carry `user_asserts_original_input: true` for either; otherwise do not dispatch.
 - On a Stage 3 FAIL at an F stage, song-flow dispatches `song-critic:structure-judge`, then re-dispatches this same prompt with `{critique}` filled. There is no separate revision prompt for the groove role; the role rewrites `structure.md` whole.
-- `{title}` is `concept.md.title` once Stage 2 has passed, else `brief.md.theme`.

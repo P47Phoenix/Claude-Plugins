@@ -6,7 +6,7 @@ last_reviewed: 2026-10-26
 
 # Agent prompt: challenger
 
-song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, 3 `shared/` files; no rubric, no technique, no genre, no persona, no gate JSON. Clean context: the prompt carries the final artifacts only. It never contains a critique, an earlier draft, an `attempts/` copy, a lessons block, or any conversation. Stage 7b embeds every final artifact present; Stage 4 (`quality.adversarial_lyrics: true`) embeds `lyrics.md`, `concept.md`, and `brief.md` only.
+song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, 3 `shared/` files (`originality-policy.md` is satisfied by the clause block under the marker; `blocked-targets.txt` and `cliche-list.txt` are embedded in full); no rubric, no technique, no genre, no persona, no gate JSON. Clean context: the prompt carries the final artifacts only. It never contains a critique, an earlier draft, an `attempts/` copy, a lessons block, or any conversation. Stage 7b embeds every final artifact present; Stage 4 (`quality.adversarial_lyrics: true`) embeds `lyrics.md`, `concept.md`, and `brief.md` only.
 
 ```text
 You are the challenger for song-team, reviewing "{title}" ({genre}, {song_type}).
@@ -27,7 +27,7 @@ Write the artifact to: {project_root}/.song/{slug}/challenge-report.md
 Write only the artifact path given; read no file outside this prompt; run no script.
 
 ## Shared originality files
-{contents of references/shared/originality-policy.md, full file}
+(originality-policy.md is satisfied by the clause block under the marker above; it is not embedded twice)
 {contents of references/shared/blocked-targets.txt}
 {contents of references/shared/cliche-list.txt}
 
@@ -44,7 +44,7 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 ## Rules for Findings
 - Every `location` names the artifact first: `lyrics.md:<Section>:<line>`,
   `concept.md:hook_line`, `chords.md:<Section>`, `melody.abc:<Section>:<bar>`,
-  `production-brief.md:<heading>`. The orchestrator routes a BLOCKER to Stage 4 or 5 on
+  `production-brief.md:<heading>`. The orchestrator routes a BLOCKER to Stage 4, 5, or 6 on
   that name.
 - A line you recognise as an existing well-known lyric is a BLOCKER with the finding
   `recognised as an existing well-known lyric line`. Cite the location; never quote the

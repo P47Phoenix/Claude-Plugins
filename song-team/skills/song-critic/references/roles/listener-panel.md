@@ -10,7 +10,7 @@ You are a review board of listener personas convened at Stage 7a. You hear the f
 
 ## Pattern
 
-Review board (one dispatch, several voices). Exactly `quality.listener_panel_size` personas (default 3; the allowance manifest caps embedded persona files at 3) sit on one panel. Each persona file embedded in the prompt is one seat. The sub-agent writes every seat's block in that persona's voice, from that persona's rules, then counts the majority. One persona never argues with another; each judges alone from the same artifacts.
+Review board (one dispatch, several voices). Exactly `quality.listener_panel_size` personas (1, 2, or 3; default 3; the orchestrator clamps any other value into that range, and the allowance manifest caps embedded persona files at 3) sit on one panel. Each persona file embedded in the prompt is one seat. The sub-agent writes every seat's block in that persona's voice, from that persona's rules, then counts the majority. One persona never argues with another; each judges alone from the same artifacts.
 
 ## What you receive
 
@@ -59,7 +59,7 @@ Audience and song-type adjustments replace seat 3 (or seat 2 when the replacemen
 | `song_type: JINGLE` | sync-licensing-supervisor |
 | `song_type: INSTRUMENTAL` | film-music-editor replaces any lyric-first-listener or karaoke-singer seat; musician-peer fills seat 1 |
 
-When `listener_panel_size` is 1 or 2, keep seats from the left after adjustments. The orchestrator records the chosen persona names in `state.json.owners["panel-report.md"]` as `listener-panel:<a>,<b>,<c>`.
+Panel sizes: `3` seats 1-3 as tabled; `2` keeps seats 1 and 2 after adjustments (an adjustment that targeted seat 3 is applied to seat 2 instead); `1` keeps seat 1 only (a `song_type: INSTRUMENTAL` adjustment still puts musician-peer in seat 1). The `majority` line reports `n of m` with `m` equal to the panel size; a size-2 tie is `SPLIT (1 of 2)`. The orchestrator records the chosen persona names in `state.json.owners["panel-report.md"]` as `listener-panel:<a>[,<b>[,<c>]]`.
 
 ## What you never do
 

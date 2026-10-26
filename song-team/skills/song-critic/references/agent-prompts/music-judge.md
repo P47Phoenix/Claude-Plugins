@@ -41,7 +41,7 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 
 ## Gate evidence (verbatim script JSON)
 {chord_tools.py --json chords.md structure.md output}
-{abc_validate.py --json melody.abc structure.md [lyrics.md] output}
+{abc_validate.py --json melody.abc structure.md brief.md [lyrics.md] output}
 
 ## Rules for Findings
 - Every row's `location` is a `violations[].location` from the evidence above, copied exactly
@@ -49,8 +49,9 @@ Write only the artifact path given; read no file outside this prompt; run no scr
   from abc_validate, for example `Chorus:3`). On a PASS gate with a craft issue, use
   `rubric:<metrics key>` (for example `rubric:max_leap`, `rubric:diatonic_ratio`,
   `rubric:warnings`).
-- Begin every `diagnosis` with `chords.md:` or `melody.abc:` so the orchestrator can route the
-  row to the harmony or melody role.
+- Begin every `diagnosis` with `chords.md:` for a chord_tools location or `melody.abc:` for an
+  abc_validate location. The script of origin decides the route; the prefix is a shape check
+  and a mismatch rejects the critique.
 - Entries under `warnings` are advisory: at most two `rubric:warnings` rows, chorus first.
 - Never propose a change to structure.md or lyrics.md; both stages are closed. Never declare
   the gate passed. Doubts about the diatonic or leap heuristic go under

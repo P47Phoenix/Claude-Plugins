@@ -11,6 +11,9 @@ song-flow (or the composer skill when invoked standalone) substitutes every `{pl
 | Placeholder | File |
 |-------------|------|
 | `{project_root}` | absolute path of the working directory that holds `.song/` |
+| `{title}` | `concept.md.title` once Stage 2 has passed, else `brief.md.theme` |
+| `{song_type}` | `brief.md.song_type` (FULL_SONG, LYRICS_ONLY, INSTRUMENTAL, REWRITE, JINGLE, REVISE; TOPLINE never dispatches this prompt) |
+| `{slug}` | the song's directory name under `.song/` |
 | `{genre}`, `{t1}`, `{t2}` | the genre name and the two technique file stems actually embedded (for the `SKILL_LOADED` line) |
 | `{originality clause}` | `song-team/references/shared/originality-policy.md`, the fenced block only |
 | `{roles/harmony.md}` | `references/roles/harmony.md` |
@@ -75,7 +78,7 @@ Reply in exactly this shape so hooks can parse it:
 SKILL_LOADED: references/roles/harmony.md, references/contracts/chord-chart.md, references/genres/{genre}.md, references/techniques/{t1}.md, references/techniques/{t2}.md
 STATUS: DONE | BLOCKED
 ARTIFACT: {project_root}/.song/{slug}/chords.md
-SUMMARY: <=15 lines: diatonic ratio as counted; every non-diatonic cell with its location; sections that end off-cadence by design; any key or tempo concern for the melody role (the orchestrator opens a debate on disagreement). Never claim a gate passed.
+SUMMARY: <=15 lines: diatonic ratio as counted; every non-diatonic cell with its location; sections that end off-cadence by design; any key or tempo concern for the melody role. Never claim a gate passed. End with exactly one line `PROPOSE key: <key> <mode>; bpm: <n>` (the values you wrote the chart in; copy structure.md when you have no concern).
 ```
 
 ## Notes for the dispatcher
@@ -83,4 +86,4 @@ SUMMARY: <=15 lines: diatonic ratio as counted; every non-diatonic cell with its
 - `structure.md` is mandatory (it fixes the key, mode, and bar counts). When it is absent, do not dispatch; return `STATUS: BLOCKED` with `SUMMARY: structure.md missing; run Stage 3 first`.
 - `TOPLINE` never dispatches this prompt: the user's chord chart is validated input (`chord_tools.py` runs on it at Stage 5 and the melody role receives it as-is).
 - Stage 5 runs this prompt first and `agent-prompts/melody.md` second; both artifacts are gated together and the music-judge receives both scripts' JSON. On a `chord_tools` FAIL, song-flow re-dispatches this prompt with the critique; on an `abc_validate` FAIL alone, it re-dispatches only the melody prompt.
-- A `SUMMARY` that proposes a different key or tempo from `structure.md` is a debate trigger (`stage-gates.md` section 6), not an instruction to edit `structure.md`.
+- The `PROPOSE` line is parsed, never an instruction to edit `structure.md`. A harmony proposal that differs from `structure.md` is logged and carried to the melody dispatch; the debate (`stage-gates.md` section 6) fires only when the melody proposal differs.

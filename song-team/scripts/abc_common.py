@@ -14,20 +14,25 @@
                              "has_w": True}, ...]}, ...]}
 
 Subset: notes ``[\\^_=]?[A-Ga-g][,']*<dur>``; rests ``z``/``x`` with durations; bar
-lines ``|``, ``||``, ``|]``, ``|:``, ``:|``, ``[|``; ties ``-`` after a note (the
-tied-into note is one sounding head with the previous note, so it carries
-``tied_from_prev`` and is NOT counted as a note head for lyric alignment);
-broken rhythm ``>``/``<``; tuplets ``(n``; slurs ``(`` ``)``; chord symbols in
-quotes are ignored for the melody but kept per bar in ``chords``; decorations
-``!..!``/``+..+``, grace notes ``{..}``, inline fields ``[K:..]`` and repeat
-endings ``[1``/``|1`` are ignored; ``%`` comments are ignored except
-``%%section <Label>``; a ``w:`` line attaches to the preceding music line.
-Key-signature accidentals from ``K:`` (major/minor/modes) are applied; an explicit
-accidental persists for the rest of its bar. Durations are in units of ``L:``.
+lines ``|``, ``||``, ``|]``, ``|:``, ``:|``, ``[|``; ties ``-`` after a note: when
+the next note (across a bar line or a line break, with no rest between) has the
+same pitch it is one sounding head with the previous note, so it carries
+``tied_from_prev`` and is NOT counted as a note head for lyric alignment; a
+``-`` between different pitches is a slur and the next note is a new head;
+broken rhythm ``>``/``<``; tuplets ``(n`` (reset at the bar line; a nested
+``(n`` raises); slurs ``(`` ``)``; chord symbols in quotes are ignored for the
+melody but kept per bar in ``chords``; decorations ``!..!``/``+..+``, grace
+notes ``{..}``, inline fields ``[K:..]`` and repeat endings ``[1``/``|1`` are
+ignored; ``%`` comments are ignored except ``%%section <Label>``; a ``w:`` line
+attaches to the preceding music line and a trailing ``\\`` continues it on the
+next ``w:`` line. Key-signature accidentals from ``K:`` (major/minor/modes) are
+applied; an explicit accidental persists for the rest of its bar. Durations are
+in units of ``L:``. A leading UTF-8 BOM is stripped.
 
 Any character outside the subset, a non-integer ``X:``, a ``w:`` line with no
-preceding music line, or a second ``w:`` for one music line raises
-``AbcParseError`` with the 1-based line number. Stdlib only; ``python -I`` safe.
+preceding music line, a second ``w:`` for one music line, or a tie left
+dangling at a ``%%section`` or at end of file raises ``AbcParseError`` with the
+1-based line number. Stdlib only; ``python -I`` safe.
 """
 from __future__ import annotations
 
@@ -44,6 +49,11 @@ _MODE_OFFSET = {"major": 0, "ionian": 0, "minor": -3, "aeolian": -3, "dorian": -
 _MODE_ABBREV = {"m": "minor", "min": "minor", "maj": "major", "dor": "dorian", "mix": "mixolydian",
                 "lyd": "lydian", "phr": "phrygian", "loc": "locrian", "aeo": "aeolian", "ion": "ionian"}
 _BASE_MIDI = {"C": 60, "D": 62, "E": 64, "F": 65, "G": 67, "A": 69, "B": 71}
+PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}          # letter -> pitch class
+SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+FLAT_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+MAJOR_SHARPS = _MAJOR_SHARPS
+MODE_OFFSET = _MODE_OFFSET
 
 REQUIRED_HEADERS = ("X", "T", "M", "L", "Q", "K")
 SECTION_RE = re.compile(r"^%%section\s+(.+?)\s*$")
@@ -138,6 +148,14 @@ def parse_tempo_bpm(value: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def parse_tempo_beat(value: str) -> Fraction | None:
+    """Beat unit of ``Q:``: ``'3/8=50'`` -> Fraction(3, 8); ``'118'`` -> None (no unit given)."""
+    m = re.match(r'^\s*(?:"[^"]*"\s*)?(\d+)\s*/\s*(\d+)\s*=', value or "")
+    if not m or int(m.group(2)) == 0:
+        return None
+    return Fraction(int(m.group(1)), int(m.group(2)))
+
+
 # ---------------------------------------------------------------------------
 # w: lines
 # ---------------------------------------------------------------------------
@@ -196,23 +214,29 @@ def _read_duration(s: str, i: int) -> tuple[Fraction, int]:
 
 
 def _tokenize_music(s: str, line_no: int, key_acc: dict[str, int], bars: list[dict[str, Any]],
-                    open_bar: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Append the bars of one music line to ``bars``; return the still-open bar (or None)."""
+                    open_bar: dict[str, Any] | None, pending_tie: int | None = None,
+                    last_note: dict[str, Any] | None = None,
+                    ) -> tuple[dict[str, Any] | None, int | None, dict[str, Any] | None]:
+    """Append the bars of one music line to ``bars``.
+
+    Returns ``(open_bar, pending_tie, last_note)``: the still-open bar (or None),
+    the line number of a ``-`` not yet resolved by a following note (or None),
+    and the last note seen, so that a tie carries across the line break."""
     bar = open_bar if open_bar is not None else _new_bar(line_no)
     bar_acc: dict[str, int] = {}
     i, n = 0, len(s)
-    pending_tie = False
     broken: Fraction | None = None      # multiplier for the next note from '>' / '<'
     tuplet_left, tuplet_ratio = 0, Fraction(1)
-    last_note: dict[str, Any] | None = None
+    in_bar = False                      # a note has been read in the current bar
 
     def close_bar() -> None:
-        nonlocal bar, bar_acc, last_note
+        nonlocal bar, bar_acc, in_bar, tuplet_left, tuplet_ratio
         if bar["notes"] or bar["chords"]:
             bars.append(bar)
         bar = _new_bar(line_no)
         bar_acc = {}
-        last_note = None
+        in_bar = False
+        tuplet_left, tuplet_ratio = 0, Fraction(1)
 
     while i < n:
         ch = s[i]
@@ -268,6 +292,8 @@ def _tokenize_music(s: str, line_no: int, key_acc: dict[str, int], bars: list[di
             continue
         if ch == "(":
             if i + 1 < n and s[i + 1].isdigit():
+                if tuplet_left > 0:
+                    raise AbcParseError(f"nested tuplet at column {i + 1}", line_no)
                 p = int(s[i + 1])
                 tuplet_left, tuplet_ratio = p, _TUPLET_RATIO.get(p, Fraction(2, p))
                 i += 2
@@ -282,11 +308,11 @@ def _tokenize_music(s: str, line_no: int, key_acc: dict[str, int], bars: list[di
         if ch == "-":
             if last_note is None or last_note["is_rest"]:
                 raise AbcParseError(f"tie '-' without a preceding note at column {i + 1}", line_no)
-            pending_tie = True
+            pending_tie = line_no
             i += 1
             continue
         if ch in "><":
-            if last_note is None:
+            if last_note is None or not in_bar:
                 raise AbcParseError(f"broken rhythm {ch!r} without a preceding note", line_no)
             k = 1
             while i + k < n and s[i + k] == ch:
@@ -303,14 +329,17 @@ def _tokenize_music(s: str, line_no: int, key_acc: dict[str, int], bars: list[di
         if ch in "zx":
             dur, i = _read_duration(s, i + 1)
             note = {"midi": None, "dur_units": dur, "is_rest": True, "tied_from_prev": False}
+            pending_tie = None                                   # a rest breaks a tie
         else:
             m = _NOTE_RE.match(s, i)
             if not m:
                 raise AbcParseError(f"unexpected character {ch!r} at column {i + 1}", line_no)
             midi = abc_note_to_midi(m.group(0), key_acc, bar_acc)
             dur, i = _read_duration(s, m.end())
-            note = {"midi": midi, "dur_units": dur, "is_rest": False, "tied_from_prev": pending_tie}
-            pending_tie = False
+            # a tie joins two notes of the same pitch; '-' between different pitches is a slur
+            tied = pending_tie is not None and last_note is not None and last_note["midi"] == midi
+            note = {"midi": midi, "dur_units": dur, "is_rest": False, "tied_from_prev": tied}
+            pending_tie = None
         if broken is not None:
             note["dur_units"] *= broken
             broken = None
@@ -319,22 +348,28 @@ def _tokenize_music(s: str, line_no: int, key_acc: dict[str, int], bars: list[di
             tuplet_left -= 1
         bar["notes"].append(note)
         last_note = note
+        in_bar = True
     if bar["notes"] or bar["chords"]:
-        return bar
-    return None
+        return bar, pending_tie, last_note
+    return None, pending_tie, last_note
 
 
 # ---------------------------------------------------------------------------
 # Whole file
 # ---------------------------------------------------------------------------
 def parse_abc(text: str) -> dict[str, Any]:
+    if text.startswith("﻿"):
+        text = text[1:]
     headers: dict[str, str] = {}
     counts: dict[str, int] = {}
     sections: list[dict[str, Any]] = []
     key_acc: dict[str, int] = {}
     in_body = False
     open_bar: dict[str, Any] | None = None
+    pending_tie: int | None = None                        # line of a '-' awaiting its note
+    last_note: dict[str, Any] | None = None
     last_line_bars: list[dict[str, Any]] | None = None   # bars of the previous music line
+    w_buffer: str | None = None                           # w: text continued by a trailing backslash
 
     def section() -> dict[str, Any]:
         if not sections:
@@ -347,20 +382,31 @@ def parse_abc(text: str) -> dict[str, Any]:
             section()["bars"].append(open_bar)
             open_bar = None
 
+    def check_dangling() -> None:
+        if pending_tie is not None:
+            raise AbcParseError("tie '-' with no following note", pending_tie)
+        if w_buffer is not None:
+            raise AbcParseError("w: line ends with '\\' but no w: line follows", w_line)
+
+    w_line = 0
     for idx, raw in enumerate(text.splitlines(), 1):
         line = raw.rstrip()
         if not line.strip():
             continue
         sm = SECTION_RE.match(line.strip())
         if sm:
+            check_dangling()
             flush_open()
             in_body = True
             sections.append({"label": sm.group(1), "line": idx, "bars": []})
             last_line_bars = None
+            last_note = None
             continue
         if line.lstrip().startswith("%"):
             continue
         fm = _FIELD_RE.match(line.strip())
+        if w_buffer is not None and not (fm and fm.group(1) == "w"):
+            raise AbcParseError("w: line ends with '\\' but no w: line follows", w_line)
         if fm and (not in_body or fm.group(1) in "KVLMQwWTPIN"):
             field, value = fm.group(1), fm.group(2).strip()
             if field == "w":
@@ -368,6 +414,12 @@ def parse_abc(text: str) -> dict[str, Any]:
                     raise AbcParseError("w: line without a preceding music line", idx)
                 if any(b["has_w"] for b in last_line_bars):
                     raise AbcParseError("second w: line for one music line is not supported", idx)
+                if w_buffer is not None:
+                    value = w_buffer + " " + value
+                    w_buffer = None
+                if value.endswith("\\"):                      # continued on the next w: line
+                    w_buffer, w_line = value[:-1].rstrip(), idx
+                    continue
                 groups = parse_w_line(value)
                 if groups and not groups[-1]:
                     groups.pop()                              # trailing '|'
@@ -391,13 +443,15 @@ def parse_abc(text: str) -> dict[str, Any]:
         # music line
         in_body = True
         bars_here: list[dict[str, Any]] = []
-        open_bar = _tokenize_music(line, idx, key_acc, bars_here, open_bar)
+        open_bar, pending_tie, last_note = _tokenize_music(line, idx, key_acc, bars_here, open_bar,
+                                                           pending_tie, last_note)
         sec = section()
         sec["bars"].extend(bars_here)
         last_line_bars = bars_here + ([open_bar] if open_bar is not None else [])
         if open_bar is not None:                              # close unterminated bars at line end
             sec["bars"].append(open_bar)
             open_bar = None
+    check_dangling()
     flush_open()
 
     key, mode = parse_abc_key(headers["K"]) if "K" in headers else (None, None)
@@ -423,7 +477,7 @@ def all_pitches(parsed: dict[str, Any]) -> list[int]:
 
 
 __all__ = [
-    "AbcParseError", "REQUIRED_HEADERS", "SECTION_RE", "parse_abc", "parse_abc_key", "key_accidentals",
-    "abc_note_to_midi", "parse_fraction", "parse_time_sig", "parse_tempo_bpm", "parse_w_line",
-    "note_heads", "all_pitches",
+    "AbcParseError", "REQUIRED_HEADERS", "SECTION_RE", "PC", "SHARP_NAMES", "FLAT_NAMES", "MAJOR_SHARPS",
+    "MODE_OFFSET", "parse_abc", "parse_abc_key", "key_accidentals", "abc_note_to_midi", "parse_fraction",
+    "parse_time_sig", "parse_tempo_bpm", "parse_tempo_beat", "parse_w_line", "note_heads", "all_pitches",
 ]

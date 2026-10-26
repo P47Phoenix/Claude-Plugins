@@ -32,7 +32,7 @@ loops:
   lyrics: 4
   music: 3
   arrangement: 2
-  release: 2                  # number of 7b -> 4/5 returns allowed before escalation.on_blocker applies
+  release: 2                  # number of 7b -> 4/5/6 returns allowed before escalation.on_blocker applies
 
 quality:
   cliche_max_per_100_words: 2
@@ -44,7 +44,7 @@ quality:
   vocal_range: [55, 79]       # MIDI note numbers, G3..G5 default
   energy_curve: chorus_rising # chorus_rising | strict_rising | free (see stage-gates.md)
   adversarial_lyrics: false   # run challenger after Stage 4 too, not only Stage 7
-  listener_panel_size: 3
+  listener_panel_size: 3      # 1-3 persona seats at Stage 7a (clamped; the allowance manifest caps embedded personas at 3)
   genre_overrides: {}         # e.g. hip-hop: { hook_max_syllables: 16, diatonic_min_ratio: 0.4 }
 
 originality:
@@ -88,13 +88,13 @@ telemetry:
 | `quality.vocal_range` | [integer, integer] | [55, 79] | MIDI 0-127, low <= high | `abc_validate.py` (Stage 5), `structure_check.py --consistency` (Stage 6) |
 | `quality.energy_curve` | string | chorus_rising | chorus_rising, strict_rising, free | `arrangement_check.py` (Stage 6) |
 | `quality.adversarial_lyrics` | boolean | false | true, false | `song-flow` (extra challenger pass after Stage 4) |
-| `quality.listener_panel_size` | integer | 3 | 1-12 | `song-flow` Stage 7a persona count (allowance manifest caps embedded personas at 3) |
+| `quality.listener_panel_size` | integer | 3 | 1-3 (values outside are clamped into the range and a warning logged) | `song-flow` Stage 7a persona count (allowance manifest caps embedded personas at 3) |
 | `quality.genre_overrides` | map[genre, map[key, value]] | {} | any `quality.*` scalar key | every gate script via threshold precedence |
 | `originality.resemblance_corpus` | list[string] | [] | file paths | `resemblance_check.py` (Stage 7b; SKIPPED when empty) |
 | `originality.ngram_max_overlap` | number | 0.05 | 0.0-1.0 | `resemblance_check.py` |
 | `originality.block_artist_references` | boolean | true | true, false | `audit_agent_prompt.py` (blocked-targets check) |
-| `escalation.on_loop_exhaustion` | string | ask_user | ask_user, accept_best, fail | `song-flow` protocol step 5 |
-| `escalation.on_blocker` | string | ask_user | ask_user, accept_best, fail | `song-flow` release loop |
+| `escalation.on_loop_exhaustion` | string | ask_user | ask_user, accept_best, fail (any other value -> Phase 0 config validation error) | `song-flow` protocol step 5 |
+| `escalation.on_blocker` | string | ask_user | ask_user, accept_best, fail (same three policies; any other value -> Phase 0 config validation error) | `song-flow` release loop (`stage-gates.md` section 5) when `loops_used.release` reaches `loops.release` |
 | `memory.enabled` | boolean | true | true, false | `song-memory`, `song-flow` lessons block |
 | `memory.path` | string | .song/memory/ | directory path | `song-memory`, `song-flow` |
 | `telemetry.enabled` | boolean | false | true, false | `telemetry.py` (Wave 5) |

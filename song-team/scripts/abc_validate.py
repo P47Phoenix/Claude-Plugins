@@ -12,7 +12,8 @@ consecutive note heads exceeds ``max_melodic_leap`` semitones; every pitch lies
 within ``vocal_range`` inclusive; and, when lyrics.md is given and brief.md
 ``song_type`` is not INSTRUMENTAL, lyric alignment: per bar the ``w:``
 syllable tokens + ``_`` extensions + ``*`` skips must equal the non-rest note
-heads (a tied-into note is not a new head), and the de-hyphenated ``w:`` text
+heads (a tied-into note of the same pitch is not a new head; a ``-`` between
+different pitches is a slur and the next note is a head), and the de-hyphenated ``w:`` text
 of each section must equal the lyrics.md section text ignoring case and
 punctuation. One violation per failing item, ``location`` ``<Label>:<bar>``.
 """
@@ -149,9 +150,9 @@ def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateRes
     mpath = gc.file_named(args.paths, "melody.abc")
     spath = gc.file_named(args.paths, "structure.md")
     if not mpath:
-        return res.error("melody.abc not given")
+        return res.error("no argument whose basename is melody.abc")
     if not spath:
-        return res.error("structure.md not given")
+        return res.error("no argument whose basename is structure.md")
     genre = gc.resolve_genre(args.genre, args.paths)
     max_leap = gc.resolve_threshold("max_melodic_leap", config, genre, args.max_melodic_leap, kind=int)
     vr = resolve_vocal_range(config, genre, args.vocal_range)

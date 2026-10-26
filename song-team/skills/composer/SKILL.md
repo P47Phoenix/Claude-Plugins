@@ -81,7 +81,7 @@ The orchestrator normally performs these steps; a standalone invocation performs
 
 1. **Detect the role** per the table above. Record it in the declaration line.
 2. **Resolve the genre.** Read `genre:` from `.song/<slug>/brief.md`. Lower-case it and hyphenate spaces (`hip hop` becomes `hip-hop`). When `brief.md` is absent or `genre` is empty, use `pop`. When `genres/<g>.md` does not exist, use `genres/pop.md` and say so in the declaration line.
-3. **Read only the allowed files.** Exactly one role file, one contract, one genre file, and at most two technique files, as the Role Detection table lists for the detected role. This matches `defaults` in `references/shared/prompt-allowances.json` (`roles: 1, contracts: 1, genres: 1, techniques: 2`). Reading a third technique file, a second genre, or any rubric or persona is a protocol violation; `audit_agent_prompt.py` denies the dispatch when it lands.
+3. **Read only the allowed files.** Exactly one role file, one contract, one genre file, and at most two technique files, as the Role Detection table lists for the detected role. This matches `defaults` in `references/shared/prompt-allowances.json` (`roles: 1, contracts: 1, genres: 1, techniques: 2`). Reading a third technique file, a second genre, or any rubric or persona is a protocol violation; `audit_agent_prompt.py` will deny the dispatch once the hook lands in W4-2.
 4. **Build the prompt** from `references/agent-prompts/<task>.md`, where `<task>` is `groove`, `harmony`, or `melody`. Substitute every `{placeholder}` with file contents or values; `{project_root}` is the absolute path of the directory that holds `.song/`. Leave no bracket unfilled.
 5. **Embed the originality clause.** Paste the fenced block from `references/shared/originality-policy.md` verbatim directly under the `<!-- originality-policy -->` marker. This block is exempt from the allowance count and is never summarised.
 6. **Embed memory lessons** when `song-flow` supplies them: paste the lessons block (at most 10 lines) under the `<!-- memory-lessons -->` marker. When none are supplied, write `(none)` under the marker. Never read `.song/memory/` directly.
@@ -124,12 +124,14 @@ The sub-agent's hand-back goes to `song-flow`, which runs the stage protocol (`s
 | After | song-flow runs | On FAIL, critic | Re-dispatch role |
 |-------|----------------|-----------------|------------------|
 | `groove` (Stage 3) | `structure_check.py structure.md` | `song-critic:structure-judge` (F stages only; L and I stages go straight to escalation) | `groove` with the critique |
-| `harmony` (Stage 5, first) | `chord_tools.py chords.md structure.md` | `song-critic:music-judge` | `harmony` with the critique, then `melody` on the new chart |
+| `harmony` (Stage 5, first) | `chord_tools.py chords.md structure.md` | `song-critic:music-judge` | `harmony` with the critique, then a forced `melody` on the new chart; the pair counts ONE `loops_used.music` increment |
 | `melody` (Stage 5, second) | `abc_validate.py melody.abc structure.md lyrics.md brief.md` | `song-critic:music-judge` (receives both Stage 5 scripts' JSON) | `melody` with the critique |
+
+**Routing a Stage 5 critique row.** The script of origin of the violation, read from `state.json.gates.music.results` (`chord_tools` -> `harmony`, `abc_validate` -> `melody`), decides which role is re-dispatched. The `chords.md:` / `melody.abc:` prefix the judge writes on each `diagnosis` is a shape check only: a prefix that disagrees with the script of origin rejects the critique once and re-dispatches the judge; a second mismatch is `STATUS: BLOCKED`. One music loop = one gate FAIL + one critique + every re-dispatch it causes; a harmony re-dispatch followed by the forced melody re-dispatch is one loop, not two.
 
 A stage passes only when every script returns PASS or SKIPPED. `structure_check.py` and `chord_tools.py` are never SKIPPED; `abc_validate.py` skips lyric alignment (not the whole gate) for INSTRUMENTAL. Severity order when statuses are combined: `ERROR > FAIL > SKIPPED > PASS`. An ERROR from `abc_validate.py` (parse failure) is always a primer violation: the re-dispatch keeps `abc-notation-primer.md` embedded.
 
-**What a critique looks like on re-dispatch.** `song-flow` pastes two things under `## Critique to address`: the critic's prose (every item cites a `violations[].location` such as `Chorus:3` or `Bridge:1:2`) and the raw gate JSON:
+**What a critique looks like on re-dispatch.** `song-flow` fills the single `{critique}` slot under `## Critique to address` with one block: the gate line, the raw gate JSON, and the critic's findings (every item cites a `violations[].location` such as `Chorus:3` or `Bridge:1:2`). The JSON looks like:
 
 ```json
 { "script": "abc_validate", "status": "FAIL",
@@ -138,7 +140,7 @@ A stage passes only when every script returns PASS or SKIPPED. `structure_check.
   "violations": [ { "location": "Chorus:1", "reason": "pitch outside vocal_range", "observed": 81, "limit": [55, 79] } ] }
 ```
 
-**Debate trigger.** When the `harmony` hand-back and the `melody` hand-back disagree on key or tempo (either `SUMMARY` proposes a value different from `structure.md`), `song-flow` runs the debate rubric in `stage-gates.md` section 6: each role submits at most 10 lines, the orchestrator scores gate compliance, brief fidelity, singability, structural fit, and specificity, records the decision in `decisions.md`, and re-dispatches `groove` only when the winning option changes `structure.md`. Neither composer role edits `structure.md` on its own.
+**Debate trigger.** Both Stage 5 `SUMMARY` blocks end with a parseable line `PROPOSE key: <key> <mode>; bpm: <n>`. The debate fires when the `melody` proposal differs from `structure.md` (`key`, `mode`, or `bpm`); a `harmony` proposal alone that differs is logged in `decisions.md` and carried to the melody dispatch as context, since the melody reads the chart. For `TOPLINE` there is no debate: the user's chart is input and only `melody` runs. When it fires, `song-flow` runs the debate rubric in `stage-gates.md` section 6: each role submits at most 10 lines, the orchestrator scores gate compliance, brief fidelity, singability, structural fit, and specificity, records the decision in `decisions.md`, and re-dispatches `groove` only when the winning option changes `structure.md`. Neither composer role edits `structure.md` on its own.
 
 **Loop exhaustion.** When `loops_used.structure` or `loops_used.music` reaches its cap, `song-flow` applies `escalation.on_loop_exhaustion` (`ask_user`, `accept_best`, or `fail`). The composer takes no part in that decision and never argues for an override.
 

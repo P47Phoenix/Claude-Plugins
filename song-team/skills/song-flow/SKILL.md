@@ -88,9 +88,10 @@ with no `state.json` means no active run: proceed.
 **2. Config.** `.song/config.yml` is created by `song-brief` in Stage 1 when absent, so
 Phase 0 reads it only when it exists. Validate the keys this wave consumes: `quick`,
 `loops.concept`, `loops.structure`, `loops.lyrics`, `escalation.on_loop_exhaustion`,
-`routing.force_type`. A missing key takes the default from
-`references/shared/config-schema.md`; a non-numeric loop cap or an unknown policy value is
-announced and replaced by its default for this run (the file is never edited).
+`escalation.on_blocker` (same three policies: `ask_user`, `accept_best`, `fail`),
+`routing.force_type`, `quality.listener_panel_size` (clamped to 1-3). A missing key takes
+the default from `references/shared/config-schema.md`; a non-numeric loop cap or an unknown
+policy value is announced and replaced by its default for this run (the file is never edited).
 
 **3. Quick-mode detection.** Quick mode is on when `quick: true` in config **or** the
 request contains the phrase "quick song". Effects for the whole run, in memory only:
@@ -118,7 +119,7 @@ itself with the **Agent tool** (never the Skill tool, which would run the worker
 and put craft files into this context):
 
 1. Open the worker's prompt template: `song-team/skills/lyricist/references/agent-prompts/<hook|section|revision>.md`,
-   `song-team/skills/composer/references/agent-prompts/groove.md` (`harmony.md` and `melody.md` from W4-1),
+   `song-team/skills/composer/references/agent-prompts/groove.md` (`harmony.md` and `melody.md` exist and are dispatched from Stage 5 in W4-1),
    or `song-team/skills/song-critic/references/agent-prompts/<hook-judge|prosody-judge|structure-judge>.md`.
    The orchestrator builds and dispatches every sub-agent prompt itself; a worker
    SKILL.md's Dispatch Protocol is what that worker performs when invoked standalone.
@@ -284,7 +285,9 @@ Rules specific to this stage:
   `python -I -c "import sys; sys.path.insert(0, r'<PLUGIN>/scripts'); import prosody_check as p; h='<hook_line>'; print(len(p.stress_pattern(h)), p.stress_pattern(h))"`
   (`<n> <pattern>`); a mismatch is pasted into `## Critique to address` as
   `Gate hook_meter MISMATCH: structure.md Chorus line 1 <entry>, hook line <n>/<pattern>` and
-  counts one loop (L stages: escalate per Step 5). Never edit `structure.md` in the main context.
+  counts one loop (L stages: escalate per Step 5). Skip the one-liner entirely when
+  `song_type` is `INSTRUMENTAL` (no `hook_line`; every `meter_spec` is empty) or `REWRITE`
+  (no `concept.md`; the meter comes from the supplied lyric). Never edit `structure.md` in the main context.
 - `concept.md` is mandatory for every type except `REWRITE`; when it is missing, return to
   Stage 2 rather than dispatching.
 - At an L or I stage a FAIL skips the critic and goes to Step 5 at once (`stage-gates.md` section 4).

@@ -292,9 +292,26 @@ class StructureCheckTests(unittest.TestCase):
         self.assertEqual(out["thresholds"]["vocal_range"], [50, 90])
         self.assertEqual(out["status"], "PASS")
 
-    # ---- helpers --------------------------------------------------------
+    def test_consistency_abc_parse_error_is_violation(self):
+        code, out = self._run("--consistency", *self._all(melody=MELODY.replace("E8 |", "E8 ]] |")))
+        self.assertEqual((code, out["status"]), (1, "FAIL"), out)
+        v = [v for v in out["violations"] if v["location"].startswith("melody.abc")]
+        self.assertEqual(len(v), 1)
+        self.assertEqual(v[0]["location"], "melody.abc:17")
+        self.assertTrue(v[0]["reason"].startswith("ABC parse error: "))
+        self.assertEqual((v[0]["observed"], v[0]["limit"]), (None, "parseable ABC"))
+        self.assertEqual(out["metrics"]["artifacts_compared"], 4)
+
+    # ---- helpers (ABC helpers live in abc_common; structure_check only imports them) ----
+    def test_abc_helpers_come_from_abc_common(self):
+        for name in ("parse_abc_key", "key_accidentals", "abc_note_to_midi", "parse_abc_sections", "_NOTE_RE"):
+            self.assertFalse(hasattr(self.mod, name), name)
+        self.assertEqual(self.mod.ac.__name__, "abc_common")   # structure_check binds abc_common as ``ac``
+        self.assertTrue(callable(self.mod.ac.parse_abc))
+
     def test_abc_note_to_midi(self):
-        f = self.mod.abc_note_to_midi
+        ac = load_script("abc_common")
+        f = ac.abc_note_to_midi
         self.assertEqual(f("C", {}), 60)
         self.assertEqual(f("c", {}), 72)
         self.assertEqual(f("C,", {}), 48)
@@ -303,13 +320,14 @@ class StructureCheckTests(unittest.TestCase):
         self.assertEqual(f("_B", {}), 70)
         self.assertEqual(f("F", {"F": 1}), 66)
         self.assertEqual(f("=F", {"F": 1}), 65)
-        self.assertEqual(self.mod.key_accidentals("D", "major"), {"F": 1, "C": 1})
-        self.assertEqual(self.mod.key_accidentals("D", "minor"), {"B": -1})
-        self.assertEqual(self.mod.parse_abc_key("D dorian"), ("D", "dorian"))
-        self.assertEqual(self.mod.parse_abc_key("Dmin"), ("D", "minor"))
+        self.assertEqual(ac.key_accidentals("D", "major"), {"F": 1, "C": 1})
+        self.assertEqual(ac.key_accidentals("D", "minor"), {"B": -1})
+        self.assertEqual(ac.parse_abc_key("D dorian"), ("D", "dorian"))
+        self.assertEqual(ac.parse_abc_key("Dmin"), ("D", "minor"))
 
     def test_parse_abc_sections_and_templates(self):
-        self.assertEqual(self.mod.parse_abc_sections(MELODY)[:2], ["Verse 1", "Chorus"])
+        ac = load_script("abc_common")
+        self.assertEqual([s["label"] for s in ac.parse_abc(MELODY)["sections"]][:2], ["Verse 1", "Chorus"])
         tpls = self.mod.load_form_templates()
         self.assertEqual(set(tpls), {"VCVCBC", "AABA", "verse-refrain", "jingle", "edm-build-drop", "through-composed"})
         for t in tpls.values():

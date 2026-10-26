@@ -11,6 +11,9 @@ song-flow (or the composer skill when invoked standalone) substitutes every `{pl
 | Placeholder | File |
 |-------------|------|
 | `{project_root}` | absolute path of the working directory that holds `.song/` |
+| `{title}` | `concept.md.title` once Stage 2 has passed, else `brief.md.theme` |
+| `{song_type}` | `brief.md.song_type` (FULL_SONG, INSTRUMENTAL, TOPLINE, REWRITE, JINGLE, REVISE; LYRICS_ONLY never reaches Stage 5) |
+| `{slug}` | the song's directory name under `.song/` |
 | `{genre}`, `{t1}`, `{t2}` | the genre name and the two technique file stems actually embedded (for the `SKILL_LOADED` line) |
 | `{originality clause}` | `song-team/references/shared/originality-policy.md`, the fenced block only |
 | `{roles/melody.md}` | `references/roles/melody.md` |
@@ -81,7 +84,7 @@ Reply in exactly this shape so hooks can parse it:
 SKILL_LOADED: references/roles/melody.md, references/contracts/melody-abc.md, references/genres/{genre}.md, references/techniques/{t1}.md, references/techniques/{t2}.md
 STATUS: DONE | BLOCKED
 ARTIFACT: {project_root}/.song/{slug}/melody.abc
-SUMMARY: <=15 lines: lowest and highest pitch (MIDI); largest leap and its bar; chorus peak note and the syllable it carries; bars where you used _ or *; any key or tempo concern for the harmony role (the orchestrator opens a debate on disagreement). Never claim a gate passed.
+SUMMARY: <=15 lines: lowest and highest pitch (MIDI); largest leap and its bar; chorus peak note and the syllable it carries; bars where you used _ or *; any key or tempo concern for the harmony role. Never claim a gate passed. End with exactly one line `PROPOSE key: <key> <mode>; bpm: <n>` (the values the melody is written in; copy structure.md when you have no concern).
 ```
 
 ## Notes for the dispatcher
@@ -89,4 +92,5 @@ SUMMARY: <=15 lines: lowest and highest pitch (MIDI); largest leap and its bar; 
 - `structure.md` and `chords.md` are mandatory. When either is absent, do not dispatch; return `STATUS: BLOCKED` naming the missing file and the stage that owns it (Stage 3 or the harmony dispatch).
 - `lyrics.md` is mandatory for every `song_type` except `INSTRUMENTAL`. For `INSTRUMENTAL` the gate runs without alignment (`alignment_skipped: 1`) and the role writes no `w:` lines; `concept.md` then carries `motif` instead of `hook_line`.
 - `TOPLINE` runs this prompt as the only Stage 5 dispatch (L: one pass, gate, no critic loop); `{chords.md}` is the user's chart, asserted original in `brief.md`.
-- On an `abc_validate` FAIL, song-flow dispatches `song-critic:music-judge`, then re-dispatches this prompt with `{critique}` and `{melody.abc}` filled. A `chord_tools` FAIL re-dispatches the harmony prompt first and this prompt afterwards with the new chart.
+- On an `abc_validate` FAIL, song-flow dispatches `song-critic:music-judge`, then re-dispatches this prompt with `{critique}` and `{melody.abc}` filled. A `chord_tools` FAIL re-dispatches the harmony prompt first and this prompt afterwards with the new chart; the pair counts one music loop.
+- The `PROPOSE` line is parsed: when it differs from `structure.md` the orchestrator opens the debate (`stage-gates.md` section 6). `TOPLINE` never debates; the chart is input.

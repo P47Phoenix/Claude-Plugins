@@ -58,7 +58,7 @@ A bar in 4/4 holds 8 units; in 3/4, 6; in 6/8, 6. The gate does not check bar le
 ## Bar lines, ties, and the rest of the slice
 
 - Bars: `|`; end of section `||` or `|]`; `|:` and `:|` parse but write every bar out (bar counts are literal).
-- Tie: `-` after a note, to the same pitch next (`A2-A2`, or across a bar `A4- | A2`); the tied-into note is **not** a new head and takes no token.
+- Tie: `-` after a note, to the same pitch next (`A2-A2`, or across a bar or line end `A4- | A2`); the tied-into note is **not** a new head and takes no token. A tie joins two notes of the same pitch; a hyphen between different pitches (`B2- d2`) is a slur and does not merge them, so the second note is a head. A rest after the `-` breaks the tie; a `-` with no note after it before `%%section` or end of file is an ERROR.
 - Parsed and ignored for alignment: chord symbols in quotes (`"G"`), slurs `(A B)`, broken rhythm `A>B` `A<B`, tuplets `(3ABC`, grace notes `{A}B`, decorations `!fermata!`, inline fields `[K:D]`, repeat endings `[1`.
 - Comments: `%` to end of line. A line starting with `%` that is not `%%section` is ignored.
 - Everything else is an ERROR: `~` as an ornament, `.` staccato, `[CEG]` chord notes, `&` voice overlay, `>` with no note before it, `w:` before any music, two `w:` lines on one music line, non-ASCII quotes.
