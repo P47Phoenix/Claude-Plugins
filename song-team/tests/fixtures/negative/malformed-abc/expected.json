@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "abc_validate", "args": ["melody.abc", "structure.md"], "status": "ERROR"}
+  ]
+}

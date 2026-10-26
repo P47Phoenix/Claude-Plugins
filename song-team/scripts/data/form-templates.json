@@ -1,0 +1,135 @@
+{
+  "_comment": "Form templates consumed by structure_check.py (stage-gates.md section 3) and the W2-5 groove stub. Each template is an ordered list of groups; a group matches min_repeat..max_repeat consecutive sections whose label matches label_pattern, each with bars in [min_bars, max_bars]. max_total_bars caps the whole form when present.",
+  "templates": {
+    "VCVCBC": {
+      "description": "Verse, Chorus, Verse, Chorus, Bridge, Chorus; optional intro, pre-choruses, post-chorus, instrumental, final chorus repeat, outro.",
+      "sections": [
+        {"label_pattern": "^Intro$", "min_bars": 2, "max_bars": 16, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Verse 1$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Pre-Chorus 1$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Chorus$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Post-Chorus$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Verse 2$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Pre-Chorus 2$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Chorus$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Post-Chorus$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Instrumental$", "min_bars": 2, "max_bars": 16, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Bridge$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Chorus$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 2},
+        {"label_pattern": "^(Tag|Outro)$", "min_bars": 1, "max_bars": 16, "min_repeat": 0, "max_repeat": 2}
+      ],
+      "default_meter": {
+        "Intro": "",
+        "Verse": "8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS",
+        "Pre-Chorus": "6/uSuSuS; 6/uSuSuS",
+        "Chorus": "7/SuSuSuS; 7/SuSuSuS; 7/SuSuSuS; 8/SuSuSuSu",
+        "Post-Chorus": "4/SuSu; 4/SuSu",
+        "Bridge": "8/uSuSuSuS; 8/uSuSuSuS",
+        "Instrumental": "",
+        "Tag": "7/SuSuSuS",
+        "Outro": ""
+      },
+      "tempo_band": [84, 140],
+      "default_key": "C",
+      "default_time_sig": "4/4"
+    },
+    "AABA": {
+      "description": "Two A sections, a contrasting B (middle eight), a return to A; optional intro, tag, outro.",
+      "sections": [
+        {"label_pattern": "^Intro$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^A1$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^A2$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^B$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^A3$", "min_bars": 4, "max_bars": 16, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^(Tag|Outro)$", "min_bars": 1, "max_bars": 8, "min_repeat": 0, "max_repeat": 2}
+      ],
+      "default_meter": {
+        "Intro": "",
+        "A": "8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS",
+        "B": "8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS",
+        "Tag": "7/SuSuSuS",
+        "Outro": ""
+      },
+      "tempo_band": [60, 120],
+      "default_key": "C",
+      "default_time_sig": "4/4"
+    },
+    "verse-refrain": {
+      "description": "Verses that each end in the same refrain line; optional intro, one bridge or instrumental, outro.",
+      "sections": [
+        {"label_pattern": "^Intro$", "min_bars": 2, "max_bars": 16, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Verse \\d$", "min_bars": 8, "max_bars": 24, "min_repeat": 2, "max_repeat": 4},
+        {"label_pattern": "^(Bridge|Instrumental)$", "min_bars": 4, "max_bars": 16, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Verse \\d$", "min_bars": 8, "max_bars": 24, "min_repeat": 0, "max_repeat": 3},
+        {"label_pattern": "^(Tag|Outro)$", "min_bars": 1, "max_bars": 16, "min_repeat": 0, "max_repeat": 2}
+      ],
+      "default_meter": {
+        "Intro": "",
+        "Verse": "8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS; 7/SuSuSuS",
+        "Bridge": "8/uSuSuSuS; 8/uSuSuSuS",
+        "Instrumental": "",
+        "Tag": "7/SuSuSuS",
+        "Outro": ""
+      },
+      "tempo_band": [70, 130],
+      "default_key": "C",
+      "default_time_sig": "4/4"
+    },
+    "jingle": {
+      "description": "15-60 seconds: hook first, one short verse at most, hook again; whole form at most 16 bars.",
+      "max_total_bars": 16,
+      "sections": [
+        {"label_pattern": "^Intro$", "min_bars": 1, "max_bars": 2, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Chorus$", "min_bars": 2, "max_bars": 8, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Verse 1$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Chorus$", "min_bars": 2, "max_bars": 8, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Tag$", "min_bars": 1, "max_bars": 4, "min_repeat": 0, "max_repeat": 1}
+      ],
+      "default_meter": {
+        "Intro": "",
+        "Chorus": "6/SuSuSu; 6/SuSuSu",
+        "Verse": "7/SuSuSuS; 7/SuSuSuS",
+        "Tag": "4/SuSu"
+      },
+      "tempo_band": [100, 160],
+      "default_key": "C",
+      "default_time_sig": "4/4"
+    },
+    "edm-build-drop": {
+      "description": "Intro, Build, Drop, Breakdown, Build, Drop, Outro; the drop plays the chorus role.",
+      "sections": [
+        {"label_pattern": "^Intro$", "min_bars": 4, "max_bars": 32, "min_repeat": 0, "max_repeat": 1},
+        {"label_pattern": "^Build$", "min_bars": 4, "max_bars": 32, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Drop$", "min_bars": 8, "max_bars": 32, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Breakdown$", "min_bars": 4, "max_bars": 32, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Build$", "min_bars": 4, "max_bars": 32, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Drop$", "min_bars": 8, "max_bars": 32, "min_repeat": 1, "max_repeat": 1},
+        {"label_pattern": "^Outro$", "min_bars": 4, "max_bars": 32, "min_repeat": 0, "max_repeat": 1}
+      ],
+      "default_meter": {
+        "Intro": "",
+        "Build": "6/uSuSuS; 6/uSuSuS",
+        "Drop": "4/SuSu; 4/SuSu; 4/SuSu; 4/SuSu",
+        "Breakdown": "8/uSuSuSuS; 8/uSuSuSuS",
+        "Outro": ""
+      },
+      "tempo_band": [120, 150],
+      "default_key": "C",
+      "default_time_sig": "4/4"
+    },
+    "through-composed": {
+      "description": "No repeated material; any allowed labels, at least two sections.",
+      "sections": [
+        {"label_pattern": "^(Intro|Verse \\d|Pre-Chorus \\d|Chorus|Post-Chorus|Bridge|Instrumental|Breakdown|Build|Drop|Tag|Outro|A1|A2|B|A3)$", "min_bars": 2, "max_bars": 64, "min_repeat": 2, "max_repeat": 99}
+      ],
+      "default_meter": {
+        "Verse": "8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS; 8/uSuSuSuS",
+        "Chorus": "7/SuSuSuS; 7/SuSuSuS",
+        "Bridge": "8/uSuSuSuS; 8/uSuSuSuS"
+      },
+      "tempo_band": [60, 140],
+      "default_key": "C",
+      "default_time_sig": "4/4"
+    }
+  }
+}

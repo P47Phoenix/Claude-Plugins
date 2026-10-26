@@ -37,7 +37,7 @@ loops:
 quality:
   cliche_max_per_100_words: 2
   hook_max_syllables: 12
-  prosody_tolerance: 0.15     # fraction of stressed-syllable mismatches allowed per section
+  prosody_tolerance: 0.15     # max per-section mismatch ratio: missed S beats + syllable-count drift, over the meter's S count
   slant_rhyme_allowed: true
   diatonic_min_ratio: 0.6     # fraction of chords that must be diatonic
   max_melodic_leap: 12        # semitones
@@ -80,9 +80,9 @@ telemetry:
 | `loops.arrangement` | integer | 2 | 1+; 0 means no retry, escalate on first FAIL | `song-flow` Stage 6 cap |
 | `loops.release` | integer | 2 | 1+; 0 means no retry, escalate on first FAIL | `song-flow` release loop (7b returns to 4/5) |
 | `quality.cliche_max_per_100_words` | number | 2 | >= 0 | `cliche_scan.py` (Stages 2, 4, challenger) |
-| `quality.hook_max_syllables` | integer | 12 | 1+ | `prosody_check.py --hook` (Stage 2) |
-| `quality.prosody_tolerance` | number | 0.15 | 0.0-1.0 | `prosody_check.py` (Stage 4) |
-| `quality.slant_rhyme_allowed` | boolean | true | true, false | `rhyme_check.py` (Stage 4) |
+| `quality.hook_max_syllables` | integer | 12 | 1+ (equal passes; non-integer -> ERROR) | `prosody_check.py --hook` (Stage 2) |
+| `quality.prosody_tolerance` | number | 0.15 | 0.0-1.0; a section FAILs when (unstressed spec-`S` positions + abs syllable-count difference per line + extra/missing-line penalties) / count of `S` in its `meter_spec` exceeds this (equal passes). Non-numeric -> ERROR | `prosody_check.py` (Stage 4) |
+| `quality.slant_rhyme_allowed` | boolean | true | true, false (other -> ERROR) | `rhyme_check.py` (Stage 4) |
 | `quality.diatonic_min_ratio` | number | 0.6 | 0.0-1.0 | `chord_tools.py` (Stage 5) |
 | `quality.max_melodic_leap` | integer | 12 | 1+ semitones | `abc_validate.py` (Stage 5) |
 | `quality.vocal_range` | [integer, integer] | [55, 79] | MIDI 0-127, low <= high | `abc_validate.py` (Stage 5), `structure_check.py --consistency` (Stage 6) |

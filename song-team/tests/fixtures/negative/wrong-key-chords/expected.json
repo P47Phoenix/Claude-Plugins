@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "chord_tools", "args": ["chords.md", "structure.md"], "status": "FAIL"}
+  ]
+}

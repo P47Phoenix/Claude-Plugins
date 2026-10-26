@@ -1,0 +1,6 @@
+{
+  "expectations": [
+    {"script": "cliche_scan", "args": ["lyrics.md"], "status": "ERROR"},
+    {"script": "structure_check", "args": ["structure.md", "lyrics.md"], "status": "FAIL", "location_contains": "Verse 1"}
+  ]
+}

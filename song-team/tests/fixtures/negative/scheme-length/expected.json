@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "rhyme_check", "args": ["lyrics.md", "structure.md"], "status": "ERROR", "location_contains": "Verse 1"}
+  ]
+}

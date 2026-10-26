@@ -1,0 +1,6 @@
+schema_version: 1
+
+originality:
+  resemblance_corpus:
+    - corpus.txt
+  ngram_max_overlap: 0.05

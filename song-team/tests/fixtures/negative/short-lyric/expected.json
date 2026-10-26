@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "resemblance_check", "args": ["--config", "config.yml", "lyrics.md"], "status": "ERROR", "location_contains": "lyrics.md"}
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "structure_check", "args": ["structure.md"], "status": "ERROR", "location_contains": "form_template"}
+  ]
+}

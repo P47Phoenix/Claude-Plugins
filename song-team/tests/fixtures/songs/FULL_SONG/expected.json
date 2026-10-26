@@ -1,0 +1,12 @@
+{
+  "song_type": "FULL_SONG",
+  "prosody_check": "PASS",
+  "rhyme_check": "PASS",
+  "structure_check": "PASS",
+  "cliche_scan": "PASS",
+  "chord_tools": "PASS",
+  "abc_validate": "PASS",
+  "arrangement_check": "PASS",
+  "challenge_gate": "PASS",
+  "resemblance_check": "SKIPPED"
+}

@@ -1,0 +1,9 @@
+{
+  "song_type": "LYRICS_ONLY",
+  "prosody_check": "PASS",
+  "rhyme_check": "PASS",
+  "structure_check": "PASS",
+  "cliche_scan": "PASS",
+  "challenge_gate": "PASS",
+  "resemblance_check": "SKIPPED"
+}
