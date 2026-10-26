@@ -87,25 +87,20 @@
       ]
     },
     {
-      "name": "song-team",
-      "description": "Song-creation team with 8 skills: song-flow (7-stage pipeline orchestrator with song-type auto-detection, deterministic script gates, evaluator-optimizer loops, listener panel, adversarial challenger, memory), song-brief (intake wizard), lyricist, composer (chords + ABC melody), arranger, song-critic (rubric judges, personas, challenger), song-release (package + MIDI export), song-memory (retrospective). Originality guardrails refuse parody and named-artist imitation.",
+      "name": "music-team",
+      "description": "Song-creation and music-theory team with 9 skills: music-flow (7-stage pipeline orchestrator with song-type auto-detection across 11 types, deterministic script gates, evaluator-optimizer loops, listener panel, adversarial challenger, memory), music-brief (intake wizard), lyricist (incl. lyric augmentation), composer (chords + ABC melody, theory Q&A), arranger, adapter (cross-genre adaptation of your own or public-domain songs), song-critic (rubric judges, personas, challenger), music-release (package + MIDI export), music-memory (retrospective). Originality guardrails refuse parody and named-artist imitation.",
       "source": "./",
       "strict": false,
       "skills": [
-        "./song-team/skills/song-flow",
-        "./song-team/skills/song-brief",
-        "./song-team/skills/lyricist",
-        "./song-team/skills/composer",
-        "./song-team/skills/arranger",
-        "./song-team/skills/song-critic",
-        "./song-team/skills/song-release",
-        "./song-team/skills/song-memory"
-      ],
-      "agents": [
-        "./song-team/agents/lyricist.md",
-        "./song-team/agents/composer.md",
-        "./song-team/agents/arranger.md",
-        "./song-team/agents/song-critic.md"
+        "./music-team/skills/music-flow",
+        "./music-team/skills/music-brief",
+        "./music-team/skills/lyricist",
+        "./music-team/skills/composer",
+        "./music-team/skills/arranger",
+        "./music-team/skills/song-critic",
+        "./music-team/skills/music-release",
+        "./music-team/skills/music-memory",
+        "./music-team/skills/adapter"
       ]
     }
   ]

@@ -1,0 +1,36 @@
+{
+  "FULL_SONG": {
+    "song_type": "FULL_SONG"
+  },
+  "LYRICS_ONLY": {
+    "song_type": "LYRICS_ONLY"
+  },
+  "INSTRUMENTAL": {
+    "song_type": "INSTRUMENTAL"
+  },
+  "TOPLINE": {
+    "song_type": "TOPLINE"
+  },
+  "REWRITE": {
+    "song_type": "REWRITE"
+  },
+  "JINGLE": {
+    "song_type": "JINGLE"
+  },
+  "REVISE": {
+    "song_type": "REVISE"
+  },
+  "PARODY_ADAPT": {
+    "song_type": "PARODY_ADAPT",
+    "refused": true
+  },
+  "THEORY": {
+    "song_type": "THEORY"
+  },
+  "ADAPT_GENRE": {
+    "song_type": "ADAPT_GENRE"
+  },
+  "AUGMENT_LYRICS": {
+    "song_type": "AUGMENT_LYRICS"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "expectations": [
+    {"script": "arrangement_check", "args": ["--structure", "structure.md", "arrangement.md"], "status": "FAIL", "location_contains": "Bridge"}
+  ]
+}

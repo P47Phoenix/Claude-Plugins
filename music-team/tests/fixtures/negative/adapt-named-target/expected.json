@@ -1,0 +1,7 @@
+{
+  "routing": {
+    "song_type": "PARODY_ADAPT",
+    "refused": true,
+    "reason": "target is a named band, not a genre label; PARODY_ADAPT outranks ADAPT_GENRE"
+  }
+}

@@ -26,7 +26,7 @@ The delivery-team plugin coordinates an AI delivery team through structured stag
 - **Looking for a skill?** Browse the [Skills Overview](skills/index.md)
 - **Need a config key?** Check the [Configuration Reference](user-guide/config.md)
 - **Want to contribute?** Read the [Contributing Guide](contributing/index.md)
-- **Planned plugins?** See [Plans](plans/song-team-plan.md) for proposals not yet implemented
+- **Other plugins?** music-team (song writing, lyrics, theory, cross-genre adaptation; 9 skills, 5 agents) is described in `music-team/README.md`; its original [design plan](plans/music-team-plan.md) is kept for history
 
 ---
 

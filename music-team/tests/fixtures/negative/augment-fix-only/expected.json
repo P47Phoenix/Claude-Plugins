@@ -1,0 +1,7 @@
+{
+  "routing": {
+    "song_type": "REWRITE",
+    "refused": false,
+    "reason": "only fix/tighten/polish with no new material; AUGMENT_LYRICS reducer falls to REWRITE"
+  }
+}

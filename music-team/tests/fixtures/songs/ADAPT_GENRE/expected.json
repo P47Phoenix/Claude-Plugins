@@ -1,0 +1,9 @@
+{
+  "song_type": "ADAPT_GENRE",
+  "prosody_check": "PASS",
+  "rhyme_check": "PASS",
+  "structure_check": "PASS",
+  "cliche_scan": "PASS",
+  "adapt_check": "PASS",
+  "resemblance_check": "SKIPPED"
+}

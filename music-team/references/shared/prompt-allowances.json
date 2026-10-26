@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "defaults": { "roles": 1, "contracts": 1, "genres": 1, "techniques": 2, "personas": 0, "rubrics": 0, "shared": 0 },
+  "roles": {
+    "lyric-adapter":  { "genres": 2 },
+    "music-adapter":  { "genres": 2 },
+    "theorist":       { "genres": 0, "techniques": 3 },
+    "augmenter":      { "genres": 1, "techniques": 2 },
+    "listener-panel": { "personas": 3, "genres": 0, "techniques": 0 },
+    "challenger":     { "shared": 3, "genres": 0, "techniques": 0 },
+    "hook-judge":     { "rubrics": 1, "techniques": 1 },
+    "music-judge":    { "rubrics": 1, "techniques": 1 },
+    "prosody-judge":  { "rubrics": 1, "techniques": 1 },
+    "structure-judge":{ "rubrics": 1, "techniques": 1 },
+    "adaptation-fidelity": { "rubrics": 1, "genres": 2, "techniques": 0 }
+  },
+  "exempt_blocks": ["originality-policy", "memory-lessons"]
+}
