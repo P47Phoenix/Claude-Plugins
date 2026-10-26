@@ -19,6 +19,10 @@ lib64/
 # Exception: smoke-test runner's lib/ is real source, not a virtualenv lib dir
 !delivery-team/tests/smoke/lib/
 !delivery-team/tests/smoke/lib/*.py
+# Exception: delivery-team hook helpers are real source (six hooks import lib.hook_utils)
+!delivery-team/hooks/lib/
+!delivery-team/hooks/lib/*.py
+delivery-team/hooks/lib/__pycache__/
 # (but keep __pycache__/*.pyc ignored even under the exception)
 delivery-team/tests/smoke/lib/__pycache__/
 parts/
