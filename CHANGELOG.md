@@ -5,6 +5,11 @@ All notable changes to this repository are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.29.2] — 2026-10-26
+
+**Fixed**
+- `delivery-team/hooks/lib/hook_utils.py` was never committed: the repository `.gitignore` ignores every `lib/` directory, so six hooks (`audit_agent_prompt`, `check_config`, `enforce_pipeline_scope`, `flag_empirical_validation`, `validate_gdscript`, `verify_skill_load`) failed with `ModuleNotFoundError` on any fresh clone. Reconstructed the module from its call sites per the Claude Code hook protocol (exit 0 allow, exit 2 block, `systemMessage` + `hookSpecificOutput.additionalContext`), added a `.gitignore` exception, and added `delivery-team/tests/hooks/test_hook_utils.py` which runs every affected hook with a sample stdin payload.
+
 ## [Unreleased]
 
 _No unreleased changes at this time._
