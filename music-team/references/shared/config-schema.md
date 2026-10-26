@@ -20,7 +20,7 @@ Single source of truth for `.song/config.yml`. The setup wizard (`music-brief`),
 schema_version: 1
 
 routing:
-  force_type: null            # FULL_SONG | LYRICS_ONLY | INSTRUMENTAL | TOPLINE | REWRITE | JINGLE (REVISE is detected only, never forced)
+  force_type: null            # FULL_SONG | LYRICS_ONLY | INSTRUMENTAL | TOPLINE | REWRITE | JINGLE | THEORY | ADAPT_GENRE | AUGMENT_LYRICS (REVISE is detected only, never forced)
   default_genre: null         # used when brief omits genre
   default_language: en
 
@@ -56,6 +56,10 @@ escalation:
   on_loop_exhaustion: ask_user   # ask_user | accept_best | fail
   on_blocker: ask_user           # ask_user | accept_best | fail
 
+adaptation:
+  require_report: true        # ADAPT_GENRE Stage 7 needs adaptation-report.md
+  max_changed_elements: 12    # max rows in the report's ## Changed table
+
 memory:
   enabled: true
   path: .song/memory/
@@ -69,7 +73,7 @@ telemetry:
 | Key | Type | Default | Valid values | Used by |
 |-----|------|---------|--------------|---------|
 | `schema_version` | integer | 1 | 1 | `check_config.py` (staleness warning), `music-flow` |
-| `routing.force_type` | string or null | null | FULL_SONG, LYRICS_ONLY, INSTRUMENTAL, TOPLINE, REWRITE, JINGLE, null | `music-brief` Stage 1 (detection still runs and is logged; routing uses the pin; banner each run) |
+| `routing.force_type` | string or null | null | FULL_SONG, LYRICS_ONLY, INSTRUMENTAL, TOPLINE, REWRITE, JINGLE, THEORY, ADAPT_GENRE, AUGMENT_LYRICS, null | `music-brief` Stage 1 (detection still runs and is logged; routing uses the pin; banner each run) |
 | `routing.default_genre` | string or null | null | any genre file name (`pop`, `rock`, `country`, `folk`, `hip-hop`, `rnb`, `electronic`, `musical-theatre`, `childrens`, `worship`) | `music-brief` when the brief omits genre |
 | `routing.default_language` | string | en | ISO 639-1 code | `music-brief` writes `brief.md.language`; gates SKIP when not `en` |
 | `quick` | boolean | false | true, false | `music-flow` (loop caps, escalation), `music-brief` (wizard length) |
@@ -95,6 +99,8 @@ telemetry:
 | `originality.block_artist_references` | boolean | true | true, false | `audit_agent_prompt.py` (blocked-targets check) |
 | `escalation.on_loop_exhaustion` | string | ask_user | ask_user, accept_best, fail | `music-flow` protocol step 5 |
 | `escalation.on_blocker` | string | ask_user | ask_user, accept_best, fail | `music-flow` release loop |
+| `adaptation.require_report` | boolean | true | true, false | `adapt_check.py` (Stage 7, ADAPT_GENRE; Wave 7) |
+| `adaptation.max_changed_elements` | integer | 12 | 1+ | `adapt_check.py` (Wave 7) |
 | `memory.enabled` | boolean | true | true, false | `music-memory`, `music-flow` lessons block |
 | `memory.path` | string | .song/memory/ | directory path | `music-memory`, `music-flow` |
 | `telemetry.enabled` | boolean | false | true, false | `telemetry.py` (Wave 5) |
@@ -116,3 +122,4 @@ telemetry:
 ## Migration notes
 
 - **v1 (2026-10-26):** initial schema. No prior versions.
+- **v1 minor (2026-10-26):** additive: `routing.force_type` accepts THEORY, ADAPT_GENRE, AUGMENT_LYRICS; new `adaptation:` block. Missing keys take the defaults above; `schema_version` stays 1.

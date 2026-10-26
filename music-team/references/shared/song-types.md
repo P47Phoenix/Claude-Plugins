@@ -19,8 +19,8 @@ last_reviewed: 2026-10-26
 ## Detection matrix
 
 Classify every brief into exactly one type before Stage 2. When several match, the
-first matching row in this order wins: PARODY_ADAPT, REVISE, REWRITE, TOPLINE,
-INSTRUMENTAL, JINGLE, LYRICS_ONLY, FULL_SONG.
+first matching row in this order wins: PARODY_ADAPT, REVISE, THEORY, ADAPT_GENRE,
+AUGMENT_LYRICS, REWRITE, TOPLINE, INSTRUMENTAL, JINGLE, LYRICS_ONLY, FULL_SONG.
 
 ### FULL_SONG
 
@@ -46,6 +46,27 @@ INSTRUMENTAL, JINGLE, LYRICS_ONLY, FULL_SONG.
 - **Confidence boosters**: a chord chart or ABC is pasted or a file path is given
 - **Confidence reducers**: nothing supplied
 - **Requires**: `user_asserts_original_input: true` in `brief.md` (wizard asks once)
+
+### THEORY
+
+- **Signals**: "explain", "analyze this progression", "what mode is", "reharmonize", "what chords fit", "why does this cadence"; no song deliverable requested
+- **Confidence boosters**: a progression, scale, or cadence is quoted; the request is a question
+- **Confidence reducers**: a full song, lyric, or topline deliverable is requested (then fall through to the other rows)
+- **Requires**: nothing
+
+### ADAPT_GENRE
+
+- **Signals**: "turn my <x> into <genre>", "convert to <genre>", "adapt this to <genre>", "make it bossa nova / blues / ..."; a lyric and/or chords supplied AND a target genre
+- **Confidence boosters**: a lyric or chord chart is pasted; the target is a genre label
+- **Confidence reducers**: no supplied source (then `FULL_SONG` in that genre); a named artist or song as target (routes to `PARODY_ADAPT` first)
+- **Requires**: `user_asserts_original_input: true` OR `public_domain: true` (with `public_domain_source`) in `brief.md`; otherwise reply inline with the sentence under "PARODY_ADAPT refusal" and create no artifact. `target_genre` must be a genre label; `blocked-targets.txt` is checked against the target string
+
+### AUGMENT_LYRICS
+
+- **Signals**: "add a verse", "write a bridge for my song", "extend", "one more chorus", "more verses in the same voice", "pre-chorus for this"; a lyric supplied
+- **Confidence boosters**: a lyric is pasted or a file path is given; a section to add is named
+- **Confidence reducers**: only "fix", "tighten", or "polish" with no new material (then `REWRITE`)
+- **Requires**: same provenance as `ADAPT_GENRE`; `target_genre` optional and defaults to the source's
 
 ### REWRITE
 
@@ -82,6 +103,9 @@ Legend: **F** full stage with loops · **L** light (single dispatch, gate still 
 | `LYRICS_ONLY` | "just lyrics", "words only", no chords/melody mentioned | F | F | L | F | - | - | L | Stage 3 still produces the meter spec that Stage 4 gates need; Release packages lyric sheet only |
 | `INSTRUMENTAL` | "instrumental", "no vocals", "beat", "theme music" | F | L | F | - | F | F | F | Concept produces a *motif* description instead of a hook; `abc_validate.py` skips lyric alignment |
 | `TOPLINE` | user supplies chords or a track; "write over this", "topline" | F | F | I | F | L | - | L | Stage 3 derives form and meter spec from the supplied chords; Stage 5 runs melody role only, harmony is validated input |
+| `THEORY` | "explain", "analyze this progression", "what mode is", "reharmonize", "what chords fit"; no song deliverable | F | - | - | - | - | - | - | Single dispatch to `composer` role `theorist`; answer returned inline; no `.song/<slug>/` directory unless the user asks to save |
+| `ADAPT_GENRE` | "turn my <x> into <genre>", "convert to <genre>", supplied lyric/chords + target genre | F | I | I | L | I | I | F | Stage 3 infers meter from the source; Stages 4-6 run through the `adapter` skill (`lyric-adapter`, `music-adapter`) with `source_genre` and `target_genre` profiles; Stage 7 requires `adaptation-report.md` (kept vs changed) |
+| `AUGMENT_LYRICS` | "add a verse", "write a bridge for my song", "extend", "one more chorus" with a supplied lyric | F | I | I | L | - | - | L | Stage 4 runs `lyricist` role `augmenter` only; new sections match the source `meter_spec`/rhyme scheme (`prosody_check` + `rhyme_check` gate them); original lines kept verbatim unless edits are requested |
 | `REWRITE` | user supplies an original lyric; "fix", "tighten", "second draft" | F | - | L | F | - | - | L | Stage 3 infers the meter spec from the input lyric; Stage 4 runs lyric-editor only; originality check runs on the input first |
 | `JINGLE` | "jingle", "ad", "30 seconds", brand name present | F | F | F | F | F | L | F | Hard length cap; form template `jingle` |
 | `REVISE` | existing `.song/<slug>/state.json` and "make the chorus punchier", "slower bridge", "change the key" | - | per request | per request | per request | per request | per request | F | Re-enters at the earliest stage the request touches; downstream stages re-run as L unless their artifact is invalidated by `structure_check.py --consistency` |
@@ -102,7 +126,7 @@ Legend: **F** full stage with loops · **L** light (single dispatch, gate still 
 
 ## PARODY_ADAPT refusal
 
-`music-brief` replies inline with exactly one sentence of explanation and one offer, then stops:
+`music-brief` (also for `ADAPT_GENRE`/`AUGMENT_LYRICS` without a provenance flag) replies inline with exactly one sentence of explanation and one offer, then stops:
 
 > I cannot write a parody of, or a song to the tune of or in the exact style of, a named existing song or artist; I would be glad to write an original song on the same theme and in the same genre instead.
 

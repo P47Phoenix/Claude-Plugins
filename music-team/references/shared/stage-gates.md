@@ -20,6 +20,14 @@ This file is the single normative source for every gate rule. Scripts in `music-
 | 6 | Arrangement | `arranger` (instrumentation, dynamics, production-brief) | `structure-judge` | `arrangement.md`, `production-brief.md` | `arrangement_check.py`, `structure_check.py --consistency` | `energy_curve`, `vocal_range` |
 | 7 | Release | `song-critic:listener-panel`, `song-critic:challenger`, `music-release` | - | `panel-report.md`, `challenge-report.md`, `package/` | `challenge_gate.py`; `resemblance_check.py` when corpus configured | `originality.ngram_max_overlap` |
 
+Song-type overrides to the table above (routing matrix in `song-types.md`):
+
+| Type | Stage rules |
+|------|-------------|
+| `THEORY` | Stage 1 only: one `composer:theorist` dispatch, answer inline; no gate scripts, no artifacts |
+| `ADAPT_GENRE` | Stage 3 `structure_check.py` on the meter inferred from the source; Stage 4 `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py` (light); Stage 5 `chord_tools.py`, `abc_validate.py` on the adapted music; Stage 6 `arrangement_check.py`; Stage 7 adds `adapt_check.py` (Wave 7) over `adaptation-report.md` |
+| `AUGMENT_LYRICS` | Stage 4 `prosody_check.py` and `rhyme_check.py` scoped to the new sections against the source `meter_spec`/`rhyme_scheme`, plus `cliche_scan.py`; Stages 5-6 skipped; Stage 7 light, `challenge_gate.py` runs |
+
 A stage with several scripts passes only when every script returns PASS or SKIPPED. The listener panel (7a) is advisory and never gates.
 
 ## 2. Common script contract (`gate_common.py`)
@@ -55,6 +63,7 @@ Every script: accepts `--help`; is stdlib-only and `python -I` safe; normalizes 
 | `resemblance_check.py` | lyric text + `originality.resemblance_corpus` | Tokenize to lower-case words; build word 5-gram sets. `metrics.overlap_ratio` = matching 5-grams / total 5-grams in the lyric. **FAIL** if ratio > `ngram_max_overlap`. **SKIPPED** when the corpus list is empty or every listed path is absent (absence is reported in `metrics.missing_files`) | 7b |
 | `challenge_gate.py` | `challenge-report.md` | Locate the first Markdown table whose header row is `severity | location | finding | suggested fix` (case-insensitive, trimmed). `metrics.blocker`, `metrics.major`, `metrics.minor` count rows. **FAIL** if `blocker > 0`, one violation per BLOCKER row. ERROR if the table is missing, a row has a severity outside {BLOCKER, MAJOR, MINOR}, or a row has fewer than four cells. An empty table (header only) PASSES | 7b |
 | `validate_artifacts.py` | `lyrics.md`, `chords.md`, `melody.abc`, `structure.md`, `arrangement.md`, `production-brief.md` | Runs the matching lint for the file written; `production-brief.md` **FAILs** on any `blocked-targets.txt` whole-phrase hit or the strings "sounds like" / "reference track". Advisory `PostToolUse` hook: always exit 0, findings in `violations`. Lands in W4-2 | hook |
+| `adapt_check.py` (Wave 7) | `adaptation-report.md`, source and adapted artifacts | Every source section has a disposition in `## Kept` or `## Changed`; `## Changed` rows <= `adaptation.max_changed_elements`; lyric meter/rhyme re-fit matches the target-genre profile. **FAIL** on any diff; ERROR if the report is missing and `adaptation.require_report` is true | 7 |
 | `check_reference_caps.py` | `music-team/**/references/**` | Every reference file <= 150 lines; files under `genres/` <= 100; every `.md` reference begins with the 3-line frontmatter; duplicate pairs listed in `CROSS-SKILL-REFERENCES.md` (lands in W5-3) byte-identical. Exit 1 on any finding, listing path and count. CI lint, not a stage gate | CI |
 
 ## 4. Stage execution protocol

@@ -8,7 +8,7 @@ Every file under this directory is original text written for the test set on 202
 tests/fixtures/
   README.md                  this file
   prosody-gold/gold.tsv      hand-labelled syllable and stress benchmark (240 lines)
-  briefs/<TYPE>.md           one brief per routing row in song-types.md (8 files)
+  briefs/<TYPE>.md           one brief per routing row in song-types.md (11 files)
   briefs/expected.json       expected song_type per brief; PARODY_ADAPT is refused
   songs/FULL_SONG/           complete passing artifact set (pop, D major, 118 bpm, VCVCBC)
   songs/LYRICS_ONLY/         passing lyric-side set (folk, C major, 96 bpm, VCVCBC)
@@ -21,10 +21,11 @@ tests/fixtures/
 - `songs/<TYPE>/expected.json`: `{"<script>": "PASS|SKIPPED", ...}` for every gate script that applies to that song type (plus `song_type`). Each script is run from inside the song directory with its documented artifact arguments.
 - `negative/<case>/expected.json` and `resemblance/expected.json`: `{"expectations": [{"script", "args", "status", "location_contains"?}, ...]}`. `args` are file names relative to the case directory (flags such as `--hook` or `--config` appear in `args` verbatim); `status` is the expected `status` field and exit code class; `location_contains` is a substring that must appear in at least one `violations[].location`. A case may list several scripts.
 - `briefs/expected.json`: `{"<TYPE>": {"song_type": "<TYPE>", "refused"?: true}}`.
+- Routing negatives (`negative/adapt-*`, `negative/augment-fix-only`): `{"routing": {"song_type", "refused", "reason"}}` beside a `brief.md`. No gate script runs on them, so `test_fixtures.py` ignores them and `test_song_types.py` checks them.
 
 ## Brief fixtures
 
-Each `briefs/<TYPE>.md` starts with a complete `brief.md` front-matter block (so `gate_common.parse_frontmatter` reads it as a real brief), followed by `## Request` holding the one-sentence user request that should trigger that routing row, then `## Brief` and, for TOPLINE and REWRITE, `## Supplied input` with the user-owned chords or lyric and `user_asserts_original_input: true`. `REVISE.md` assumes an existing `.song/nobody-knows-my-name-here/state.json` with `status: complete`. `PARODY_ADAPT.md` has no front-matter because the refusal produces no brief.
+Each `briefs/<TYPE>.md` starts with a complete `brief.md` front-matter block (so `gate_common.parse_frontmatter` reads it as a real brief), followed by `## Request` holding the one-sentence user request that should trigger that routing row, then `## Brief` and, for TOPLINE, REWRITE, ADAPT_GENRE and AUGMENT_LYRICS, `## Supplied input` with the user-owned chords or lyric and `user_asserts_original_input: true`. `REVISE.md` assumes an existing `.song/nobody-knows-my-name-here/state.json` with `status: complete`. `THEORY.md` supplies no input. `ADAPT_GENRE.md` carries `user_asserts_original_input: true` and `AUGMENT_LYRICS.md` carries `public_domain: true` plus `public_domain_source`, so both provenance paths are covered. `PARODY_ADAPT.md` has no front-matter because the refusal produces no brief.
 
 ## Prosody gold set (`prosody-gold/gold.tsv`)
 
@@ -62,6 +63,9 @@ Labelling rules:
 | `hook-too-long` | `concept.md` | `prosody_check --hook` FAIL (16-syllable hook line) |
 | `scheme-length` | `lyrics.md`, `structure.md` | `rhyme_check` ERROR at `Verse 1` (3 lyric lines against the 4-letter scheme AABB) |
 | `unknown-template` | `structure.md` | `structure_check` ERROR at `form_template` (`waltz-xyz` is not in form-templates.json) |
+| `adapt-named-target` | `brief.md`, `expected.json` | routing: PARODY_ADAPT refused (target is a named band, not a genre) |
+| `adapt-no-provenance` | `brief.md`, `expected.json` | routing: ADAPT_GENRE refused (neither provenance flag) |
+| `augment-fix-only` | `brief.md`, `expected.json` | routing: REWRITE (only "tighten", no new material) |
 | `short-lyric` | `lyrics.md`, `config.yml`, `corpus.txt` | `resemblance_check --config config.yml` ERROR (4-word lyric has no 5-gram; corpus present so it does not SKIP) |
 
 ## Resemblance

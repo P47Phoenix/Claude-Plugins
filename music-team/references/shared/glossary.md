@@ -78,7 +78,12 @@ Terms used across music-team skills, references, scripts, and artifacts. Where a
 
 | Term | Meaning |
 |------|---------|
-| Song type | The routing class detected in Stage 1: `FULL_SONG`, `LYRICS_ONLY`, `INSTRUMENTAL`, `TOPLINE`, `REWRITE`, `JINGLE`, `REVISE`, `PARODY_ADAPT` (refused). Source: `song-types.md`. |
+| Song type | The routing class detected in Stage 1: `FULL_SONG`, `LYRICS_ONLY`, `INSTRUMENTAL`, `TOPLINE`, `REWRITE`, `JINGLE`, `REVISE`, `THEORY`, `ADAPT_GENRE`, `AUGMENT_LYRICS`, `PARODY_ADAPT` (refused). First match wins: PARODY_ADAPT, REVISE, THEORY, ADAPT_GENRE, AUGMENT_LYRICS, REWRITE, TOPLINE, INSTRUMENTAL, JINGLE, LYRICS_ONLY, FULL_SONG. Source: `song-types.md`. |
+| THEORY | Song type for music-theory questions (explain, analyze, reharmonize); one `composer:theorist` dispatch, answer inline, no deliverable. |
+| ADAPT_GENRE | Song type that re-casts the user's supplied lyric/chords in a target genre via the `adapter` skill; needs a provenance flag; ends with an adaptation report. |
+| AUGMENT_LYRICS | Song type that adds sections (verse, bridge, chorus) to a supplied lyric via `lyricist:augmenter`, matching its meter and rhyme; original lines kept verbatim. |
+| Adaptation report | `adaptation-report.md`: kept-vs-changed record for ADAPT_GENRE (`## Kept`, `## Changed`, `## Lyric re-fit`, `## Risks`); checked by `adapt_check.py` (Wave 7). |
+| Provenance flag | `user_asserts_original_input: true` or `public_domain: true` (with `public_domain_source`) in `brief.md`; required before building on supplied material. |
 | F / L / I / - | Stage depth in the routing matrix: Full (loops), Light (one dispatch, gate runs), Input (user artifact validated), skipped. |
 | Quick mode | `quick: true` or "quick song": every loop cap 1, `accept_best`, at most two wizard questions. |
 | Stage | One of the seven pipeline steps: Brief, Concept, Structure, Lyrics, Music, Arrangement, Release. |

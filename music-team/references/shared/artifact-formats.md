@@ -19,6 +19,7 @@ Every artifact lives under `.song/<slug>/`, is Markdown, plain text, ABC, JSON, 
 | Arrangement | `arrangement.md` | dynamics | `arrangement_check.py`, `structure_check.py --consistency` |
 | Production brief | `production-brief.md` | production-brief | `validate_artifacts.py` (artist-name lint) |
 | Panel report | `panel-report.md` | listener-panel | advisory, not gated |
+| Adaptation report | `adaptation-report.md` | lyric-adapter / music-adapter | `adapt_check.py` (Wave 7) |
 | Challenge report | `challenge-report.md` | challenger | `challenge_gate.py` |
 | Package | `package/` | music-release | `midi_export.py` round trip |
 | State | `state.json` | music-flow | hooks (`gate_subagent.py`, Stop) |
@@ -28,7 +29,7 @@ Every artifact lives under `.song/<slug>/`, is Markdown, plain text, ABC, JSON, 
 
 ## brief.md
 
-YAML front-matter keys: `theme` (required, non-empty), `pov`, `audience`, `genre`, `mood`, `language` (ISO 639-1), `target_length_sec` (integer), `must_include[]`, `must_avoid[]`, `song_type`, `user_asserts_original_input` (boolean; must be true for TOPLINE/REWRITE). Body: `## Brief` (one paragraph) and optional `## Supplied input` (fenced, user-owned).
+YAML front-matter keys: `theme` (required, non-empty), `pov`, `audience`, `genre`, `mood`, `language` (ISO 639-1), `target_length_sec` (integer), `must_include[]`, `must_avoid[]`, `song_type`, `user_asserts_original_input` (boolean; must be true for TOPLINE/REWRITE, and for ADAPT_GENRE/AUGMENT_LYRICS unless `public_domain` is true), `public_domain` (boolean `true|false`; second provenance flag for ADAPT_GENRE/AUGMENT_LYRICS), `public_domain_source` (free text; required when `public_domain: true`), `source_genre`, `target_genre` (genre labels, never artist or song names). Body: `## Brief` (one paragraph) and optional `## Supplied input` (fenced, user-owned).
 
 Example front-matter (one key per line between `---` fences): `theme: moving to a new city and knowing no one yet` / `pov: first person` / `audience: 20s-30s` / `genre: pop` / `mood: upbeat` / `language: en` / `target_length_sec: 180` / `must_include: []` / `must_avoid: [specific city names]` / `song_type: FULL_SONG` / `user_asserts_original_input: false`; then `## Brief` and one paragraph.
 
@@ -104,6 +105,12 @@ Example: `## casual-radio-listener` / `verdict: KEEP` / `top_note: chorus lands 
 `## Findings` followed by the severity table with exactly these columns; severity in {BLOCKER, MAJOR, MINOR}; `location` is `<artifact>:<section>:<line>` or `<artifact>:<section>`. A header-only table is a clean pass.
 
 Header: `| severity | location | finding | suggested fix |`. Example row: `| MINOR | lyrics.md:Bridge:2 | rhyme too predictable | use a slant rhyme on line 2 |`.
+
+## adaptation-report.md
+
+Written for ADAPT_GENRE at Stage 7. Front-matter: `song_type: ADAPT_GENRE`, `source_genre`, `target_genre`. Sections in order: `## Kept` (bullet list of preserved elements, e.g. hook line, section order), `## Changed` (table with header `| Element | Source | Target | Why |`, one row per change), `## Lyric re-fit` (meter and rhyme deltas per section), `## Risks` (bullets: singability, drift from the source, originality notes). Never quotes lyric text beyond the user's own supplied lines.
+
+Example: `source_genre: folk` / `target_genre: bossa nova` / `## Kept` / `- hook line, section order` / `## Changed` / `| Element | Source | Target | Why |` / `| bpm | 96 | 120 | bossa pulse |` / `## Lyric re-fit` / `- Verse 1: 8/uSuSuSuS -> 7/SuSuSuS; rhyme ABAB kept`.
 
 ## package/
 

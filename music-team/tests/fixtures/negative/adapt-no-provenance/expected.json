@@ -1,0 +1,7 @@
+{
+  "routing": {
+    "song_type": "ADAPT_GENRE",
+    "refused": true,
+    "reason": "neither user_asserts_original_input nor public_domain is true; inline one-sentence policy reply, no artifact"
+  }
+}

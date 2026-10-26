@@ -40,7 +40,9 @@ ORIGINALITY POLICY (non-negotiable)
 | 2 | `PARODY_ADAPT` requests sneaking through as `FULL_SONG` | `music-brief` detection, `song-types.md` |
 | 3 | Production briefs that leak artist names | `production-brief.md` contract, challenger |
 | 4 | Accidental reproduction of a known lyric line | challenger BLOCKER row, `challenge_gate.py` |
-| 5 | Laundering someone else's lyric through `REWRITE` or `TOPLINE` | wizard question, `brief.md` front-matter |
+| 5 | Laundering someone else's lyric through `REWRITE` or `TOPLINE` | wizard question, `brief.md` front-matter; `ADAPT_GENRE` / `AUGMENT_LYRICS` provenance check |
+
+`public_domain: true` (with `public_domain_source` in `brief.md`) is accepted as a second provenance flag for `ADAPT_GENRE` and `AUGMENT_LYRICS`. A bare assertion for a recognised well-known lyric is still caught by clause 4 and the challenger BLOCKER.
 
 "In the style of <genre>" (for example "in the style of 90s country") is allowed and
 routes to the normal song type. "In the style of <named artist>" is clause 2.
