@@ -1,0 +1,47 @@
+# .song/config.yml - song-team configuration (schema v1)
+# Source of truth: song-team/references/shared/config-schema.md
+schema_version: 1
+
+routing:
+  force_type: null            # FULL_SONG | LYRICS_ONLY | INSTRUMENTAL | TOPLINE | REWRITE | JINGLE (REVISE is detected only, never forced)
+  default_genre: null         # used when brief omits genre
+  default_language: en
+
+quick: false                  # true: every loop cap = 1, on_loop_exhaustion = accept_best, wizard asks <= 2 questions
+
+loops:
+  concept: 3
+  structure: 2
+  lyrics: 4
+  music: 3
+  arrangement: 2
+  release: 2                  # number of 7b -> 4/5 returns allowed before escalation.on_blocker applies
+
+quality:
+  cliche_max_per_100_words: 2
+  hook_max_syllables: 12
+  prosody_tolerance: 0.15     # fraction of stressed-syllable mismatches allowed per section
+  slant_rhyme_allowed: true
+  diatonic_min_ratio: 0.6     # fraction of chords that must be diatonic
+  max_melodic_leap: 12        # semitones
+  vocal_range: [55, 79]       # MIDI note numbers, G3..G5 default
+  energy_curve: chorus_rising # chorus_rising | strict_rising | free (see stage-gates.md)
+  adversarial_lyrics: false   # run challenger after Stage 4 too, not only Stage 7
+  listener_panel_size: 3
+  genre_overrides: {}         # e.g. hip-hop: { hook_max_syllables: 16, diatonic_min_ratio: 0.4 }
+
+originality:
+  resemblance_corpus: []      # OPT-IN: paths to user-supplied lyric files the song must not resemble
+  ngram_max_overlap: 0.05     # applied only when resemblance_corpus is non-empty
+  block_artist_references: true
+
+escalation:
+  on_loop_exhaustion: ask_user   # ask_user | accept_best | fail
+  on_blocker: ask_user           # ask_user | accept_best | fail
+
+memory:
+  enabled: true
+  path: .song/memory/
+
+telemetry:
+  enabled: false              # Wave 5 feature

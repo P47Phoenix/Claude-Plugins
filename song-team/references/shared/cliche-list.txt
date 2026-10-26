@@ -1,0 +1,312 @@
+# loaded_by: challenger, cliche_scan.py, lyric-editor
+# level: L1
+# last_reviewed: 2026-10-26
+#
+# Generic English lyric cliches: stock phrases that signal low specificity.
+# One phrase per line; lines starting with # are comments. cliche_scan.py
+# matches each phrase case-insensitively as a whole phrase (word-boundary,
+# punctuation-insensitive) and reports hits per 100 words of lyric text;
+# the gate fails when hits per 100 words exceed quality.cliche_max_per_100_words.
+# Contains stock idioms only; entries may coincide with song titles but no lyric lines are quoted.
+heart of gold
+heart of stone
+broken heart
+my heart is yours
+you broke my heart
+tears in the rain
+tears on my pillow
+crying in the rain
+burning desire
+burning love
+fire in my heart
+set my soul on fire
+light my fire
+dance all night
+dance the night away
+party all night
+all night long
+up all night
+against all odds
+against the wind
+hold on tight
+hold me close
+hold me tight
+never let you go
+never let me go
+never gonna let you down
+I will never leave you
+you and me forever
+forever and always
+forever and a day
+till the end of time
+until the end of time
+end of the road
+end of the line
+light at the end of the tunnel
+end of the world
+take my breath away
+you take my breath away
+breathless
+love is blind
+love is all you need
+love will find a way
+love conquers all
+love of my life
+light of my life
+the one for me
+meant to be
+written in the stars
+reach for the stars
+shooting star
+wish upon a star
+the stars in your eyes
+moon and stars
+over the moon
+fly me to the moon
+on top of the world
+the world is yours
+the whole wide world
+in a world of my own
+world keeps turning
+life goes on
+the show must go on
+the rest of my life
+time of my life
+once in a lifetime
+one in a million
+once upon a time
+happily ever after
+dreams come true
+living the dream
+follow your dreams
+in my dreams
+dream of you
+sweet dreams
+dancing in the moonlight
+walking in the rain
+singing in the rain
+dancing in the rain
+rain on my parade
+when it rains it pours
+the sun will shine again
+sunshine in my life
+you are my sunshine
+blue skies
+clear blue sky
+the sky is the limit
+sky high
+lost in your eyes
+look into my eyes
+eyes like diamonds
+heart on my sleeve
+heart and soul
+soul mate
+body and soul
+deep down inside
+deep in my heart
+from the bottom of my heart
+with all my heart
+lost without you
+I can't live without you
+can't stop loving you
+can't get you out of my head
+can't get enough of you
+I need you now
+I want you back
+baby come back
+come back to me
+back in my arms
+in my arms tonight
+tonight is the night
+tonight's the night
+just the two of us
+you and I
+me and you
+side by side
+hand in hand
+walk this road together
+the road ahead
+long and winding road
+road to nowhere
+highway to nowhere
+run away with me
+let's run away
+nowhere to run
+nowhere to hide
+no way out
+no turning back
+no regrets
+no looking back
+there's no tomorrow
+like there's no tomorrow
+live for today
+live like you're dying
+seize the day
+here and now
+right here right now
+right here waiting
+waiting for you
+waiting for tonight
+I'll be there for you
+always on my mind
+on my mind
+in my head
+over and over
+again and again
+time after time
+day after day
+night after night
+through thick and thin
+through the storm
+weather the storm
+after the storm
+eye of the storm
+calm before the storm
+ride the wave
+ride or die
+free as a bird
+spread my wings
+fly away
+fly so high
+wings to fly
+angel in disguise
+my guardian angel
+sent from heaven
+heaven on earth
+a little piece of heaven
+heaven knows
+heaven sent
+hell and back
+to hell and back
+hot as hell
+cold as ice
+heart of ice
+walls come down
+tear down the walls
+break the chains
+break free
+set me free
+born to be free
+born to run
+born to be wild
+wild and free
+young and free
+young and wild
+we were young
+forever young
+the good old days
+old flame
+first love
+true love
+real love
+undying love
+endless love
+crazy in love
+head over heels
+fall in love
+falling for you
+fell from grace
+fall from grace
+rise and shine
+rise above
+rise from the ashes
+back from the dead
+second chance
+one more chance
+one last time
+one more time
+one more night
+last night
+late at night
+in the dead of night
+in the middle of the night
+middle of nowhere
+out of the blue
+out of my mind
+losing my mind
+lose control
+out of control
+take control
+take me higher
+higher and higher
+higher ground
+over the edge
+on the edge
+living on the edge
+edge of glory
+down on my knees
+on my knees
+pray for me
+on a prayer
+wing and a prayer
+hope and pray
+a leap of faith
+keep the faith
+have faith in me
+believe in me
+believe in yourself
+be yourself
+be who you are
+find myself
+lost myself
+lost my way
+found my way
+show me the way
+lead the way
+light the way
+light up the sky
+light up my life
+the light in your eyes
+shine bright
+shine like a diamond
+diamond in the rough
+rough around the edges
+a thousand miles
+a million miles away
+miles away
+so far away
+far far away
+close to you
+closer to you
+next to you
+beside you
+inside of me
+inside my heart
+the beat of my heart
+heartbeat
+skip a beat
+my heart skips a beat
+heart on fire
+hearts collide
+two hearts
+two hearts beat as one
+one heart
+one love
+one night
+one kiss
+kiss me
+kiss goodbye
+kiss in the rain
+kiss the sky
+touch the sky
+I'm on fire
+set the night on fire
+burn it down
+burn so bright
+bright lights
+city lights
+big city
+city of dreams
+streets of gold
+pot of gold
+silver lining
+the grass is greener
+green with envy
+blood red
+red hot
+paint the town red
+black and white
+back to black
+shades of gray
+color of love
+# end of list

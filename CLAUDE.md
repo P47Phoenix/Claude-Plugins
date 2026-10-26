@@ -37,6 +37,7 @@ Each plugin should include an `ARCHITECTURE.md` with Mermaid diagrams documentin
 | `prd-quality-gate-flow/` | 7-gate PRD quality workflow with SQLite persistence | — |
 | `research-agent/` | Research agent with 5 research types and academic frameworks | — |
 | `mtg-commander/` | MTG Commander deck builder: synergy-first multi-agent pipeline, Scryfall integration, configurable price goals + adversarial Challenger agents via `.mtg-commander.yml` | — |
+| `song-team/` | Song-creation team: 7-stage pipeline (Brief → Release) over 8 skills, 11 scripts (9 stage gates), originality guardrails | `song-team/ARCHITECTURE.md` |
 
 For per-skill rosters, hook tables, and pipeline internals, follow the `Detail` column. Plugin-level docs are the source of truth; this file stays a one-screen index.
 

@@ -1,0 +1,218 @@
+# loaded_by: challenger, audit_agent_prompt.py
+# level: L1
+# last_reviewed: 2026-10-26
+#
+# Purpose: artist names and song titles that may NOT be used as a style target
+# ("in the style of X", "sounds like X", "to the tune of X") in any sub-agent
+# prompt, production brief, or artifact. This is a block list for the
+# originality policy (clause 1), not creative text. One entry per line; lines
+# starting with # are comments. Matching is case-insensitive on the whole phrase
+# bounded by non-word characters (so "Queen" matches "like Queen" but not
+# "queenly"). The policy clause covers names not listed here; the challenger
+# remains the primary control. Grown to >= 500 entries by Wave 5.
+#
+# --- Pop ---
+Taylor Swift
+Ariana Grande
+Billie Eilish
+Dua Lipa
+Ed Sheeran
+Harry Styles
+Olivia Rodrigo
+Lady Gaga
+Katy Perry
+Justin Bieber
+Bruno Mars
+Adele
+Michael Jackson
+Madonna
+Prince
+Whitney Houston
+Mariah Carey
+Britney Spears
+Shawn Mendes
+The Weeknd
+Sabrina Carpenter
+Charli XCX
+Lorde
+Sia
+Shake It Off
+Bad Guy
+Shape of You
+Rolling in the Deep
+Billie Jean
+Thriller
+Poker Face
+Uptown Funk
+Blinding Lights
+Firework
+Drivers License
+# --- Rock ---
+The Beatles
+The Rolling Stones
+Led Zeppelin
+Queen
+Pink Floyd
+Nirvana
+Radiohead
+Coldplay
+U2
+Fleetwood Mac
+The Eagles
+Bruce Springsteen
+Foo Fighters
+Pearl Jam
+Red Hot Chili Peppers
+Green Day
+Arctic Monkeys
+The Killers
+Imagine Dragons
+Linkin Park
+Metallica
+AC/DC
+Bohemian Rhapsody
+Stairway to Heaven
+Smells Like Teen Spirit
+Hotel California
+Hey Jude
+Let It Be
+Wonderwall
+Creep
+Yellow
+Mr. Brightside
+Sweet Child O' Mine
+# --- Country ---
+Dolly Parton
+Johnny Cash
+Garth Brooks
+Shania Twain
+Luke Combs
+Morgan Wallen
+Chris Stapleton
+Kacey Musgraves
+Carrie Underwood
+Zach Bryan
+Willie Nelson
+George Strait
+Miranda Lambert
+Tim McGraw
+Jolene
+Ring of Fire
+Friends in Low Places
+Tennessee Whiskey
+Before He Cheats
+Man! I Feel Like a Woman!
+# --- Hip-hop ---
+Kendrick Lamar
+Drake
+Eminem
+Jay-Z
+Kanye West
+Nicki Minaj
+Cardi B
+Travis Scott
+Tupac Shakur
+The Notorious B.I.G.
+Lil Wayne
+Megan Thee Stallion
+Tyler, the Creator
+Doja Cat
+Lose Yourself
+HUMBLE.
+Hotline Bling
+Sicko Mode
+God's Plan
+Juicy
+# --- R&B / Soul ---
+Beyonce
+Rihanna
+Frank Ocean
+SZA
+Usher
+Alicia Keys
+Stevie Wonder
+Aretha Franklin
+Marvin Gaye
+John Legend
+H.E.R.
+Halo
+Umbrella
+All of Me
+Superstition
+Respect
+Let's Stay Together
+# --- Electronic / Dance ---
+Daft Punk
+Calvin Harris
+Avicii
+Skrillex
+Deadmau5
+The Chemical Brothers
+Marshmello
+Zedd
+Diplo
+Fred again..
+Get Lucky
+Levels
+Wake Me Up
+Clarity
+Titanium
+# --- Folk / Singer-songwriter ---
+Bob Dylan
+Joni Mitchell
+Simon & Garfunkel
+Leonard Cohen
+Mumford & Sons
+Bon Iver
+Phoebe Bridgers
+Noah Kahan
+James Taylor
+Tracy Chapman
+Blowin' in the Wind
+Hallelujah
+The Sound of Silence
+Fast Car
+Big Yellow Taxi
+Stick Season
+# --- Musical theater ---
+Stephen Sondheim
+Andrew Lloyd Webber
+Lin-Manuel Miranda
+Rodgers and Hammerstein
+Hamilton
+Les Miserables
+The Phantom of the Opera
+Wicked
+Defying Gravity
+My Shot
+Memory
+Don't Cry for Me Argentina
+Seasons of Love
+Let It Go
+# --- Children's ---
+Raffi
+The Wiggles
+Baby Shark
+Wheels on the Bus
+Twinkle Twinkle Little Star
+Old MacDonald Had a Farm
+Itsy Bitsy Spider
+Hakuna Matata
+Into the Unknown
+We Don't Talk About Bruno
+# --- Worship ---
+Hillsong
+Chris Tomlin
+Elevation Worship
+Bethel Music
+Lauren Daigle
+Kari Jobe
+Matt Redman
+Maverick City Music
+Oceans (Where Feet May Fail)
+How Great Is Our God
+10,000 Reasons
+Way Maker
+Goodness of God
+What a Beautiful Name
+Amazing Grace (My Chains Are Gone)
