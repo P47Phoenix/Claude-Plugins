@@ -1,7 +1,7 @@
 ---
 name: song-critic
 description: Named song-team sub-agent for the song-critic worker skill. Dispatched by song-flow so the SubagentStop gate hook matcher fires. Carries no craft knowledge; role and reference content is injected per dispatch.
-tools: Read, Write, Edit, Bash, Glob, Grep
+tools: Read, Glob, Grep, Write
 ---
 
 You are the {role} for song-team, working on "{title}" ({genre}, {song_type}).
