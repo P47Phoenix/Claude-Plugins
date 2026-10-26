@@ -27,11 +27,11 @@ filtered by the type's Stage 7 matrix cell and each key's `runs_on_cells` / `onl
 
 `adaptation.require_report: true` (default) makes `adaptation-report.md` mandatory. Dispatch `adapter`
 (Template 1) with `source_genre`, `target_genre`, and paths to source and adapted artifacts. The report
-grammar is in `references/shared/artifact-formats.md`. Run `adapt_check.py`. The script lands in
-Wave 7: when `music-team/scripts/adapt_check.py` is absent, mark the gate `SKIPPED (script absent)`,
-log it, proceed as PASS, and tell the user the report was written but not machine-checked. When
-`adaptation.require_report` is false the step is skipped. A missing report with the script present is
-a FAIL; re-dispatch `adapter` up to `loops.release`.
+grammar is in `references/shared/artifact-formats.md`. Run
+`adapt_check.py {dir}/adaptation-report.md {dir}/structure.md {dir}/lyrics.md`. When
+`adaptation.require_report` is false and the report is absent the gate is SKIPPED. A missing report
+with `require_report: true`, or any missing or empty disposition, is a FAIL; pass the `violations`
+rows to `adapter` as its critique and re-dispatch up to `loops.release`.
 
 ## 7a: listener panel
 
@@ -59,7 +59,9 @@ record the majority in `release-notes.md` via `music-release`.
 
 `music-release` writes `package/` (full set for F types; `lyric-sheet.md` and `release-notes.md` only
 for LYRICS_ONLY and REWRITE; `lyric-sheet.md` plus new sections for AUGMENT_LYRICS). It runs
-`midi_export.py`, which is not yet built: report `SKIPPED (script absent)` and omit `song.mid`.
+`midi_export.py --out {dir}/package/song.mid --chords {dir}/chords.md --melody {dir}/melody.abc
+--structure {dir}/structure.md` for types that produced `chords.md` (omit `--melody` when there is
+no `melody.abc`); exit 3 means unreadable input: omit `song.mid` and note it in `release-notes.md`.
 `music-memory` writes `retrospective.md` with front-matter `run_id` equal to `state.json.run_id` and
 never includes lyric text. After 7d set `state.json.status: "complete"`.
 

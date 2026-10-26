@@ -19,7 +19,8 @@ Every artifact lives under `.song/<slug>/`, is Markdown, plain text, ABC, JSON, 
 | Arrangement | `arrangement.md` | dynamics | `arrangement_check.py`, `structure_check.py --consistency` |
 | Production brief | `production-brief.md` | production-brief | `validate_artifacts.py` (artist-name lint) |
 | Panel report | `panel-report.md` | listener-panel | advisory, not gated |
-| Adaptation report | `adaptation-report.md` | lyric-adapter / music-adapter | `adapt_check.py` (Wave 7) |
+| Adaptation report | `adaptation-report.md` | lyric-adapter / music-adapter | `adapt_check.py` |
+| Critique | `critiques/<stage>-<n>.md` | song-critic judges (Template 2) | none (read by the next worker dispatch) |
 | Challenge report | `challenge-report.md` | challenger | `challenge_gate.py` |
 | Package | `package/` | music-release | `midi_export.py` round trip |
 | State | `state.json` | music-flow | hooks (`gate_subagent.py`, Stop) |

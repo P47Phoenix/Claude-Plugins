@@ -14,7 +14,7 @@ critics). One role = one Agent call; never put two `ROLE:` lines in one prompt.
 again before any dispatch to an agent not yet used, confirm `<plugin-root>/agents/<agent>.md`
 exists. If it does not, stop the stage, set `state.json.status: "failed"`, and tell the user
 `MISSING_AGENT: <agent> (agents/<agent>.md not found)`. Never substitute `general-purpose`
-or run the role inline. (`adapter` lands in Wave 7; ADAPT_GENRE stops with this error until then.)
+or run the role inline.
 
 ## Prompt assembly rules
 

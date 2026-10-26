@@ -26,13 +26,14 @@ language only (tempo map, vocal treatment, mix priorities, section notes).
 ## Gates (both; PASS or SKIPPED each)
 
 ```text
-arrangement_check.py {dir}/arrangement.md
+arrangement_check.py --structure {dir}/structure.md {dir}/arrangement.md
 structure_check.py --consistency {present}
 ```
 
 `{present}` is every artifact of the run that exists: `structure.md` plus any of `lyrics.md`,
-`chords.md`, `melody.abc`, `arrangement.md`. `arrangement_check.py` is not yet built (see
-`references/shared/stage-gates.md` section 7): report `SKIPPED (script absent)`, proceed as PASS.
+`chords.md`, `melody.abc`, `arrangement.md`. `--structure` makes `arrangement_check.py` also FAIL on
+section-list mismatch; a flat energy map (range below `quality.min_energy_range`, default 3) or a
+"sounds like" / blocked-target hit is a FAIL too, and a malformed table is ERROR (exit 3).
 `production-brief.md` additionally gets `validate_artifacts.py` as an advisory hook (blocked-targets
 and "sounds like" lint); treat any reported hit as a FAIL of this stage.
 

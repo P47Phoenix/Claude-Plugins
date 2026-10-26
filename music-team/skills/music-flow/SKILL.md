@@ -58,8 +58,7 @@ Run before anything else.
 3. **Agent roster check.** Confirm each agent file `<plugin-root>/agents/<name>.md` exists for the
    agents the routed stages will use. A missing file is a clear error, not a fallback:
    `MISSING_AGENT: <name> (agents/<name>.md not found)`. Stop that stage; never substitute
-   `general-purpose` or perform the role inline. `adapter` is delivered in Wave 7; ADAPT_GENRE
-   stops with this error until then and the user is told so.
+   `general-purpose` or perform the role inline.
 4. **Resume check.** Read `.song/active`.
    - Names a slug whose `.song/<slug>/state.json` has `status: in_progress`: tell the user
      `Resuming <slug> at stage <N> (<name>)`, re-run that stage's gates first, then continue from
@@ -204,8 +203,7 @@ Parse stdout JSON (`script`, `status`, `thresholds`, `metrics`, `violations`) an
 `0` PASS, `1` FAIL, `2` SKIPPED, `3` ERROR. The stage passes only when every script is PASS or
 SKIPPED. Rules:
 - **SKIPPED** (gate not applicable, e.g. non-English lyrics): proceed as PASS; set `skipped: true`.
-- **Script file absent** (listed as not-yet-built in `stage-gates.md` section 7, e.g.
-  `adapt_check.py` in Wave 7): record `SKIPPED (script absent)`, proceed as PASS, and tell the user
+- **Script file absent** (listed as not-yet-built in `stage-gates.md` section 7): record `SKIPPED (script absent)`, proceed as PASS, and tell the user
   the gate did not run. Never FAIL on an absent script. An absent script that is *not* on that list
   is an error: stop and report.
 - **ERROR** (unparseable input): not a loop trigger. Report the first `violations[].reason`, ask the
@@ -255,9 +253,7 @@ Follow `references/stages/07-release.md`. Order: 7p (ADAPT_GENRE only) then 7a a
   (`ask_user | accept_best | fail`, same three policies as step 8). `accept_best` is not allowed
   when a BLOCKER cites a recognised existing lyric; fall back to `ask_user`.
 - **ADAPT_GENRE** requires `adaptation-report.md` when `adaptation.require_report` is true (7p). Run
-  `adapt_check.py`; the script lands in Wave 7. While `<plugin-root>/scripts/adapt_check.py` is
-  absent the gate is SKIPPED (script absent), not FAIL: state that plainly and note the report was not
-  machine-checked.
+  `adapt_check.py`; a FAIL re-dispatches `adapter` with the `violations` rows as its critique.
 - **7a panel** is advisory: never gates, never loops. Surface the majority and top notes.
 - **7d** runs `music-memory` so `retrospective.md` exists with `run_id` equal to `state.json.run_id`
   (the Stop hook compares them). Only then set `status: "complete"`.
