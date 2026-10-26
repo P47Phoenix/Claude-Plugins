@@ -23,9 +23,9 @@ Every artifact lives under `.song/<slug>/`, is Markdown, plain text, ABC, JSON, 
 | Critique | `critiques/<stage>-<n>.md` | song-critic judges (Template 2) | none (read by the next worker dispatch) |
 | Challenge report | `challenge-report.md` | challenger | `challenge_gate.py` |
 | Package | `package/` | music-release | `midi_export.py` round trip |
-| State | `state.json` | music-flow | hooks (`gate_subagent.py`, Stop) |
+| State | `state.json` | music-flow | hooks (`subagent_gate.py`) |
 | Active pointer | `.song/active` | music-flow | hooks |
-| Retrospective | `retrospective.md` | music-memory | Stop hook `run_id` match |
+| Retrospective | `retrospective.md` | music-memory | orchestrator `run_id` check |
 | Decisions | `decisions.md` | music-flow | append-only |
 
 ## brief.md
@@ -137,7 +137,7 @@ A single line containing the slug of the run in progress, nothing else (`nobody-
 
 ## retrospective.md
 
-Front-matter `run_id` equal to `state.json.run_id` (the Stop hook compares them), `slug`, `genre`, `song_type`, `date`; body per `music-memory/references/retrospective-template.md` (lands in W4-3; loops per stage, most-failed gate, recurring critique, overrides, three next-time notes). Never contains lyric text. Example front-matter: `run_id: 2026-10-26T14-02-11Z-nobody-knows` / `slug: nobody-knows-my-name-here` / `genre: pop` / `song_type: FULL_SONG` / `date: 2026-10-26`.
+Front-matter `run_id` equal to `state.json.run_id` (the orchestrator verifies this before completing), `slug`, `genre`, `song_type`, `date`; body per `music-memory/references/retrospective-template.md` (lands in W4-3; loops per stage, most-failed gate, recurring critique, overrides, three next-time notes). Never contains lyric text. Example front-matter: `run_id: 2026-10-26T14-02-11Z-nobody-knows` / `slug: nobody-knows-my-name-here` / `genre: pop` / `song_type: FULL_SONG` / `date: 2026-10-26`.
 
 ## decisions.md
 

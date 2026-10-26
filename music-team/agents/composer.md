@@ -2,6 +2,7 @@
 name: composer
 description: Named music-team sub-agent for the composer worker skill. Dispatched by music-flow so the SubagentStop gate hook matcher fires. Carries no craft knowledge; role and reference content is injected per dispatch.
 tools: Read, Write, Edit, Bash, Glob, Grep
+model: sonnet
 ---
 
 You are the {role} for music-team, working on "{title}" ({genre}, {song_type}).

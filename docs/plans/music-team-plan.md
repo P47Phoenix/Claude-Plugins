@@ -589,6 +589,25 @@ Checklist to be satisfied before the plugin is registered.
 
 Each wave is a separate PR (six PRs). Stories are sized for one session and each carries its own acceptance criteria (AC) in addition to the wave DoD in [§18](#18-definition-of-done-per-wave). Dependency order is top to bottom.
 
+### Delivery status (music-team rebuild)
+
+Waves are numbered as in the rebuild backlog (not the story groups below). Delivered on branch `worktree-net-music-plugin`:
+
+| Wave | Scope | Commit |
+|------|-------|--------|
+| R | Rename song-team to music-team, no behaviour change | e7b172a |
+| 2 | THEORY, ADAPT_GENRE, AUGMENT_LYRICS song types | 63a06f5 |
+| 3 | music-brief intake and music-flow orchestrator | 0a2e1ed |
+| 4 | 12 genre profiles with per-role sections | 78eb2ac |
+| 5 | composer skill (theorist role), chord_tools, abc_validate | 82110ed |
+| 6 | lyricist skill (hook-writer, verse-writer, lyric-editor, augmenter) | 269791a |
+| 7 | adapter skill and agent, adapt_check | b5bc454 |
+| 8 | arranger skill, arrangement_check, stdlib MIDI export | 5c5766c |
+| 9 | song-critic, music-release, music-memory, plugin hooks | ec3d105 |
+| 10 | Documentation (ARCHITECTURE, README, CHANGELOG, registry text) | this change (uncommitted at time of writing) |
+
+Not built: `validate_artifacts.py` (artist-name lint for production-brief.md).
+
 ### Wave 0 — Scaffold and governance (3 stories)
 
 - **W0-1** Create `music-team/` skeleton (every directory in [§4](#4-plugin-layout), empty SKILL.md stubs with frontmatter, `agents/*.md` stubs, LICENSE, README stub, ARCHITECTURE stub), marketplace registration, CLAUDE.md row.

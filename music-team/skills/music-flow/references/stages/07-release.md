@@ -18,7 +18,7 @@ filtered by the type's Stage 7 matrix cell and each key's `runs_on_cells` / `onl
 | 7a | `07a-panel` | agent `song-critic`, `listener-panel` (cell F only) | `panel-report.md` | none, advisory |
 | 7b | `07b-challenger` | agent `song-critic`, `challenger` (cells F and L) | `challenge-report.md` | `challenge_gate.py`, `resemblance_check.py` |
 | 7c | `07c-release` | skill `music-release`, inline via `Skill` tool | `package/` | `midi_export.py` round trip |
-| 7d | `07d-memory` | skill `music-memory`, inline | `retrospective.md` | Stop hook `run_id` match |
+| 7d | `07d-memory` | skill `music-memory`, inline | `retrospective.md` | orchestrator verifies `run_id` = `state.json.run_id` |
 
 7a and 7b are independent: dispatch them as two Agent calls in one message. 7c starts only after
 7b passes. 7d runs last, always, for every type with a Stage 7 cell other than `-`.

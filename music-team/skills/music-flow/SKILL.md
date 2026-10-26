@@ -257,7 +257,7 @@ Follow `references/stages/07-release.md`. Order: 7p (ADAPT_GENRE only) then 7a a
   `adapt_check.py`; a FAIL re-dispatches `adapter` with the `violations` rows as its critique.
 - **7a panel** is advisory: never gates, never loops. Surface the majority and top notes.
 - **7d** runs `music-memory` so `retrospective.md` exists with `run_id` equal to `state.json.run_id`
-  (the Stop hook compares them). Only then set `status: "complete"`.
+  (verify this yourself; no hook does). Only then set `status: "complete"`.
 
 ## Delegation Self-Check Summary
 

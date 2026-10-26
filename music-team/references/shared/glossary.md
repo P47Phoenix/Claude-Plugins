@@ -107,7 +107,7 @@ Terms used across music-team skills, references, scripts, and artifacts. Where a
 | Exempt block | The `<!-- originality-policy -->` and `<!-- memory-lessons -->` prompt blocks, not counted by the manifest. |
 | Hand-back | The sub-agent reply shape: `SKILL_LOADED:`, `STATUS`, `ARTIFACT`, `SUMMARY`. |
 | Slug | The kebab-case directory name for a run under `.song/`; the current one is in `.song/active`. |
-| run_id | Unique id per run (and per REVISE), matched between `state.json` and `retrospective.md` by the Stop hook. |
+| run_id | Unique id per run (and per REVISE), matched between `state.json` and `retrospective.md` by the orchestrator before it sets status complete. |
 | Retrospective | The `music-memory` post-pipeline write-up; process observations only, never lyric text. |
 | Lessons block | Up to ten lines from the last five same-genre memory files, injected into Stage 2 and 4 prompts. |
 | Resemblance corpus | Opt-in user-supplied lyric files the song must not overlap (5-gram ratio); `resemblance_check.py`. |

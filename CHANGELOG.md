@@ -12,7 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes at this time._
+**Changed**
+- `song-team` renamed to `music-team` and rebuilt on the delivery-team pattern: named agent shells (lyricist, composer, arranger, song-critic, adapter) dispatch role skills with Phase-1 detection, and only the matched role manifest and references are pasted into the sub-agent prompt. The runtime data directory stays `.song/`.
+- Everything pins `model: sonnet`; detection phases use `haiku`.
+
+**Added**
+- 9 skills including `adapter`; 11 song types including THEORY, ADAPT_GENRE and AUGMENT_LYRICS; 12 genre profiles with per-role sections.
+- Stdlib gate scripts (prosody, rhyme, structure, chords, ABC, arrangement, adaptation, challenger, resemblance, cliche) and a hand-written MIDI exporter.
+- Hooks: PreToolUse prompt audit, PostToolUse hand-back verification, SubagentStop gate summaries.
+- Adaptation and augmentation are limited to user-owned or public-domain material; named-artist and copyrighted requests are refused.
+
+**Fixed**
+- Removed stale references to a non-existent Stop hook; the orchestrator verifies the retrospective `run_id` itself.
 
 ## Initiative — Skill Token-Economy (delivery-team plugin)
 

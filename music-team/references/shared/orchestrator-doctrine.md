@@ -74,7 +74,7 @@ Every other file under `.song/<slug>/` is written by a dispatched sub-agent.
 | Re-running the gate script when the hook hash matches | Wastes a dispatch cycle and can double-count loops | Reuse the hook result on hash match |
 | Loading the whole `references/shared/` tree into the orchestrator | Context bloat; the orchestrator only needs six files | Load doctrine, `stage-gates.md`, `song-types.md`, `config-schema.md`, `artifact-formats.md`, `originality-policy.md` |
 | Embedding a style target such as "sounds like <artist>" | Originality policy violation; `audit_agent_prompt.py` denies | Describe genre, era, tempo, texture in technical language |
-| Advancing past Stage 7 without `retrospective.md` | Memory never learns; Stop hook blocks | Run `music-memory` as the post-pipeline protocol |
+| Advancing past Stage 7 without `retrospective.md` | Memory never learns; orchestrator must not set complete | Run `music-memory` as the post-pipeline protocol |
 
 ## Guardrails the orchestrator enforces
 
