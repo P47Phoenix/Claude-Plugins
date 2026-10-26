@@ -95,9 +95,15 @@ class ReferenceCapsTests(unittest.TestCase):
         self.assertEqual(self.mod.main(["--root", str(self.root), "--quiet"]), 1)
 
     def test_windows_style_root_path(self):
+        """A backslash-separated root is accepted. On POSIX a backslash is a
+        filename character, so the mixed form only exercises the separator
+        handling on Windows; elsewhere the test uses a trailing-slash variant."""
         self._write("references/shared/a.md", 5)
-        win = str(self.root).replace("/", "\\")
-        self.assertEqual(self.mod.main(["--root", win, "--quiet"]), 0)
+        if sys.platform.startswith("win"):
+            alt = str(self.root).replace("/", "\\")
+        else:
+            alt = str(self.root) + "/"
+        self.assertEqual(self.mod.main(["--root", alt, "--quiet"]), 0)
 
     def test_missing_plugin_root_is_error(self):
         self.assertEqual(self.mod.main(["--root", str(self.root / "nope"), "--quiet"]), 3)
