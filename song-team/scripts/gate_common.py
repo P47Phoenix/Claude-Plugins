@@ -55,8 +55,11 @@ DATA_DIR = SCRIPTS_DIR / "data"
 # Paths
 # ---------------------------------------------------------------------------
 def norm(path: str | Path) -> str:
-    """Normalise a path to POSIX form so Windows backslashes match."""
-    return PurePath(str(path)).as_posix()
+    """Normalise a path to POSIX form so Windows backslashes match.
+
+    ``PurePath.as_posix()`` only converts separators on Windows; backslashes are
+    translated first so a Windows-style argument is handled on every platform."""
+    return PurePath(str(path).replace("\\", "/")).as_posix()
 
 
 def read_text(path: str | Path) -> str:
