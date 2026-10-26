@@ -23,6 +23,7 @@ Then install the plugins you want:
 /plugin install prompt-engineer
 /plugin install prd-quality-gate-flow
 /plugin install research-agent
+/plugin install music-team
 ```
 
 Or browse interactively with `/plugin` inside a Claude Code session.
@@ -39,6 +40,7 @@ Each plugin includes an `ARCHITECTURE.md` with Mermaid diagrams for contributors
 | [prompt-engineer](prompt-engineer/README.md) | Expert LLM prompt optimization with model-specific techniques and full prompt transparency |
 | [prd-quality-gate-flow](prd-quality-gate-flow/README.md) | Production-grade PRD workflow with 7 quality gates, episodic memory, and evidence-based Stage-Gate process |
 | [research-agent](research-agent/README.md) | Research agent with 5 research types (Exploratory, Descriptive, Explanatory, Evaluative, Comparative) and academic frameworks (PICO, SPICE, PECO, GRADE, ReAct) |
+| [music-team](music-team/README.md) | Music theory and composition, lyrics, arrangement, and cross-genre adaptation pipeline with originality guardrails |
 
 ## What's New
 

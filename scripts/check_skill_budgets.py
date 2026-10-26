@@ -185,7 +185,7 @@ def scan_permissive_language(path: str) -> list[tuple[int, str, str]]:
 
 # Plugins whose SKILL.md files are subject to the tier budget gate.
 # Extend this list (not the glob) when a new budgeted plugin is added.
-BUDGETED_PLUGINS: list[str] = ["delivery-team", "song-team"]
+BUDGETED_PLUGINS: list[str] = ["delivery-team", "music-team"]
 
 
 def find_skill_files(base: str = ".") -> list[str]:

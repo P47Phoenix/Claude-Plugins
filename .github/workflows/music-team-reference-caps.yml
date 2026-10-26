@@ -1,0 +1,45 @@
+name: music-team reference caps
+
+on:
+  pull_request:
+    paths:
+      - 'music-team/**'
+      - '.claude-plugin/marketplace.json'
+  push:
+    branches: [main]
+    paths:
+      - 'music-team/**'
+      - '.claude-plugin/marketplace.json'
+
+permissions:
+  contents: read
+
+jobs:
+  reference-caps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Reference line caps + duplicate drift
+        run: |
+          set -uo pipefail
+          python3 -I music-team/scripts/check_reference_caps.py
+
+      - name: Marketplace registration parses
+        run: |
+          set -uo pipefail
+          python3 -I -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); assert any(p['name']=='music-team' for p in d['plugins']), 'music-team not registered'; print('marketplace ok')"
+
+      - name: Unit tests (when present)
+        run: |
+          set -uo pipefail
+          if [ -d music-team/tests/unit ] && ls music-team/tests/unit/test_*.py >/dev/null 2>&1; then
+            python3 -I -m unittest discover -s music-team/tests/unit -t music-team
+          else
+            echo "No unit tests yet."
+          fi

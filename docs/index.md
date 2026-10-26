@@ -26,7 +26,7 @@ The delivery-team plugin coordinates an AI delivery team through structured stag
 - **Looking for a skill?** Browse the [Skills Overview](skills/index.md)
 - **Need a config key?** Check the [Configuration Reference](user-guide/config.md)
 - **Want to contribute?** Read the [Contributing Guide](contributing/index.md)
-- **Planned plugins?** See [Plans](plans/song-team-plan.md) for proposals not yet implemented
+- **Planned plugins?** See [Plans](plans/music-team-plan.md) for proposals not yet implemented
 
 ---
 
