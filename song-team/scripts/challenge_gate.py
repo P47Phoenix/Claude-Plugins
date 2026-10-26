@@ -19,13 +19,19 @@ def _cells(line: str) -> list[str]:
     return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
-def find_table(text: str) -> tuple[int, list[tuple[int, list[str]]]] | None:
-    """Return (header line number, [(line number, cells)]) for the first severity table."""
+def find_table(text: str) -> tuple[int, list[tuple[int, list[str]]]] | str | None:
+    """Return (header line number, [(line number, cells)]) for the first severity
+    table, an error string for a severity-like table with the wrong column count,
+    or None when no table is found."""
     lines = text.splitlines()
+    near_miss: str | None = None
     for i, line in enumerate(lines):
         if not line.strip().startswith("|"):
             continue
-        if [c.lower() for c in _cells(line)] != HEADER:
+        cells = [c.lower() for c in _cells(line)]
+        if cells != HEADER:
+            if near_miss is None and cells and cells[0] == HEADER[0] and len(cells) != len(HEADER):
+                near_miss = f"header has {len(cells)} cells, expected {len(HEADER)} (line {i + 1})"
             continue
         rows: list[tuple[int, list[str]]] = []
         for j in range(i + 1, len(lines)):
@@ -33,11 +39,11 @@ def find_table(text: str) -> tuple[int, list[tuple[int, list[str]]]] | None:
             if not s.startswith("|"):
                 break
             cells = _cells(s)
-            if all(set(c) <= set("-: ") for c in cells):
+            if gc.is_separator_row(cells):
                 continue
             rows.append((j + 1, cells))
         return i + 1, rows
-    return None
+    return near_miss
 
 
 def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateResult:
@@ -47,6 +53,8 @@ def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateRes
     found = find_table(gc.read_text(path))
     if found is None:
         return res.error("no severity table (severity | location | finding | suggested fix)", gc.norm(path))
+    if isinstance(found, str):
+        return res.error(found, gc.norm(path))
     _, rows = found
     counts = {s: 0 for s in SEVERITIES}
     blockers: list[tuple[str, str]] = []

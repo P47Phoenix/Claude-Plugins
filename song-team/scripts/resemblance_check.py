@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """resemblance_check.py - word 5-gram overlap between the lyric and an opt-in
 resemblance corpus (stage-gates.md section 3). Stdlib only; ``python -I`` safe.
+
+5-grams never span a section boundary: the token stream is reset at every
+``[Label]`` tag (and at every file boundary), while lines inside one section
+still join so a phrase split over a line break is still caught.
+
+Relative ``originality.resemblance_corpus`` entries resolve against the
+directory of the ``--config`` file when one is given, otherwise against the
+directory of the first lyric path. The current working directory is never used.
 """
 from __future__ import annotations
 
@@ -34,15 +42,42 @@ def ngrams(tokens: list[str], n: int = N) -> list[tuple[str, ...]]:
     return [tuple(tokens[i:i + n]) for i in range(len(tokens) - n + 1)]
 
 
+def _section_of(loc: str) -> str:
+    return loc.rsplit(":", 1)[0]
+
+
 def lyric_ngrams(lines: list[tuple[str, str]]) -> list[tuple[tuple[str, ...], str]]:
-    """Every 5-gram of the lyric token stream with the location of its first word."""
+    """Every 5-gram of the lyric with the location of its first word. The token
+    stream restarts at each section boundary (location prefix change)."""
+    out: list[tuple[tuple[str, ...], str]] = []
     tokens: list[str] = []
     locs: list[str] = []
+    current: str | None = None
+
+    def flush() -> None:
+        out.extend((g, locs[i]) for i, g in enumerate(ngrams(tokens)))
+        tokens.clear()
+        locs.clear()
+
     for loc, text in lines:
+        sec = _section_of(loc)
+        if current is not None and sec != current:
+            flush()
+        current = sec
         toks = tokenize(text)
         tokens.extend(toks)
         locs.extend([loc] * len(toks))
-    return [(g, locs[i]) for i, g in enumerate(ngrams(tokens))]
+    flush()
+    return out
+
+
+def corpus_base(args: Any) -> Path | None:
+    """Directory relative corpus entries resolve against (never Path.cwd())."""
+    if args.config:
+        return Path(gc.norm(args.config)).resolve().parent
+    if args.paths:
+        return Path(gc.norm(args.paths[0])).resolve().parent
+    return None
 
 
 def resolve_corpus(args: Any, config: dict[str, Any]) -> list[str]:
@@ -52,11 +87,11 @@ def resolve_corpus(args: Any, config: dict[str, Any]) -> list[str]:
     listed = orig.get("resemblance_corpus", []) if isinstance(orig, dict) else []
     if isinstance(listed, str):
         listed = [listed]
-    base = Path(gc.norm(args.config)).resolve().parent if args.config else Path.cwd()
+    base = corpus_base(args)
     out: list[str] = []
     for item in listed or []:
         p = Path(gc.norm(str(item)))
-        if not p.is_absolute() and not p.exists() and (base / p).exists():
+        if not p.is_absolute() and base is not None:
             p = base / p
         out.append(gc.norm(p))
     return out
@@ -69,7 +104,8 @@ def add_args(p: Any) -> None:
 
 
 def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateResult:
-    limit = gc.resolve_threshold("ngram_max_overlap", config, None, args.ngram_max_overlap, section="originality")
+    limit = gc.resolve_threshold("ngram_max_overlap", config, None, args.ngram_max_overlap,
+                                 section="originality", kind=float)
     res.thresholds["ngram_max_overlap"] = limit
     corpus = resolve_corpus(args, config)
     present = [c for c in corpus if Path(c).is_file()]
@@ -83,8 +119,10 @@ def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateRes
     if not targets:
         return res.error("no lyric file given")
     lines: list[tuple[str, str]] = []
-    for t in targets:
-        lines.extend(lyric_lines(t))
+    for ti, t in enumerate(targets):
+        # prefix per file so 5-grams never join across file boundaries either
+        prefix = "" if len(targets) == 1 else f"{Path(t).name}#{ti}:"
+        lines.extend((prefix + loc, text) for loc, text in lyric_lines(t))
     total_words = sum(len(tokenize(t)) for _, t in lines)
     if total_words < N:
         return res.error(f"lyric text has fewer than {N} words", gc.norm(targets[0]))

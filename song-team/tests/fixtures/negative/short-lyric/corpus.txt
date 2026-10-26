@@ -1,0 +1,2 @@
+# Throwaway original corpus line so the gate does not SKIP before counting words.
+a lighthouse keeper counts the ships that never dock tonight and sleeps

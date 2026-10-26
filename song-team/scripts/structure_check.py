@@ -216,11 +216,19 @@ def _norm_field(name: str, value: Any) -> str:
     return s.lower() if name == "mode" else s
 
 
-def _compare(res: gc.GateResult, artifact: str, observed: dict[str, Any], expected: dict[str, Any]) -> None:
-    for field in HEADER_FIELDS:
-        if field not in expected or observed.get(field) is None:
+def _compare(res: gc.GateResult, artifact: str, observed: dict[str, Any], expected: dict[str, Any],
+             fields: tuple[str, ...] = HEADER_FIELDS) -> None:
+    """Compare ``fields`` of ``observed`` against structure.md. A field the spec
+    says must match but the artifact does not declare is a violation with
+    observed None, never a silent skip."""
+    for field in fields:
+        if field not in expected:
             continue
-        got, want = _norm_field(field, observed[field]), _norm_field(field, expected[field])
+        want = _norm_field(field, expected[field])
+        if observed.get(field) is None:
+            res.violate(f"{artifact}:{field}", f"{field} missing from {artifact}", None, want)
+            continue
+        got = _norm_field(field, observed[field])
         if got != want:
             res.violate(f"{artifact}:{field}", f"{field} differs from structure.md", got, want)
 
@@ -234,8 +242,11 @@ def check_consistency(args: Any, config: dict[str, Any], res: gc.GateResult, str
     genre = gc.resolve_genre(args.genre, args.paths)
     vr = gc.resolve_threshold("vocal_range", config, genre, args.vocal_range)
     if isinstance(vr, str):
-        vr = [int(x) for x in vr.split(",")]
-    vr = [int(vr[0]), int(vr[1])]
+        vr = [x.strip() for x in vr.split(",")]
+    if not isinstance(vr, (list, tuple)) or len(vr) != 2:
+        raise ValueError(f"threshold vocal_range must be [lo, hi], got {vr!r}")
+    vr = [gc.resolve_threshold("vocal_range", {}, None, vr[0], kind=int),
+          gc.resolve_threshold("vocal_range", {}, None, vr[1], kind=int)]
     res.thresholds["vocal_range"] = vr
     header = structure["header"]
     want_sections = [s["label"] for s in structure["sections"]]
@@ -245,13 +256,14 @@ def check_consistency(args: Any, config: dict[str, Any], res: gc.GateResult, str
     if chords:
         text = gc.read_text(chords)
         kv = gc.parse_header_keys(text)
-        parts = str(kv.get("key", "")).split()
+        parts = str(kv.get("key") or "").split()
         obs: dict[str, Any] = {}
         if parts:
             obs["key"] = parts[0]
         if len(parts) > 1:
             obs["mode"] = parts[1]
-        _compare(res, "chords.md", obs, header)
+        # chords.md declares only ``key: <tonic> <mode>``; bpm/time_sig live elsewhere
+        _compare(res, "chords.md", obs, header, ("key", "mode"))
         _compare_sections(res, "chords.md", [l for l, _ in gc.parse_sections(text)], want_sections)
         compared += 1
 

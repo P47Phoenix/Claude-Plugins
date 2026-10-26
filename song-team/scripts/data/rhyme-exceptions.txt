@@ -1,0 +1,55 @@
+# rhyme-exceptions.txt - consulted before the rhyme-key heuristic (rhyme_check.py).
+# Format: word<TAB>key   Keys use the normalised vowel classes A E I O U (see stage-gates.md).
+# '#' starts a comment. Lower-case, punctuation stripped.
+# --- /u:/ words spelled with o / ou ---
+through	U
+threw	U
+you	U
+do	U
+who	U
+two	U
+to	U
+too	U
+into	U
+shoe	U
+lose	Uz
+move	Uv
+prove	Uv
+# --- short-u words spelled with o ---
+love	uv
+of	uv
+above	uv
+glove	uv
+dove	uv
+come	um
+some	um
+become	um
+one	un
+done	un
+none	un
+son	un
+won	un
+ton	un
+month	unth
+# --- other irregular spellings ---
+gone	on
+said	ed
+says	ez
+have	av
+give	iv
+live	iv
+there	Ar
+where	Ar
+their	Ar
+air	Ar
+are	ar
+key	E
+been	in
+friend	end
+heart	art
+word	erd
+world	erld
+how	ow
+now	ow
+cow	ow
+laugh	af

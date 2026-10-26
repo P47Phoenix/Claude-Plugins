@@ -12,6 +12,7 @@ Scripts that do not exist yet (later waves) are skipped, not failed.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -93,6 +94,19 @@ class FixtureGateTests(unittest.TestCase):
                     ran += 1
         self.assertGreater(ran, 0)
 
+    def test_song_sets_pass_structure_consistency(self):
+        artifacts = ["structure.md", "lyrics.md", "chords.md", "melody.abc", "arrangement.md"]
+        ran = 0
+        for exp_file in sorted((FIXTURES / "songs").glob("*/expected.json")):
+            present = [a for a in artifacts if (exp_file.parent / a).exists()]
+            if "structure.md" not in present:
+                continue
+            with self.subTest(song=exp_file.parent.name):
+                self._check(exp_file.parent, {"script": "structure_check", "args": ["--consistency", *present],
+                                              "status": "PASS"})
+                ran += 1
+        self.assertGreater(ran, 0)
+
     def test_every_fixture_dir_has_expected_json(self):
         for group in ("negative", "songs"):
             for d in sorted((FIXTURES / group).iterdir()):
@@ -100,9 +114,10 @@ class FixtureGateTests(unittest.TestCase):
                     self.assertTrue((d / "expected.json").exists(), f"{group}/{d.name} lacks expected.json")
 
     def test_windows_style_fixture_paths(self):
-        case = FIXTURES / "negative" / "challenge-blocker"
-        win = str(case / "challenge-report.md").replace("/", "\\")
-        code, data = run_script("challenge_gate", [win], PLUGIN)
+        path = FIXTURES / "negative" / "challenge-blocker" / "challenge-report.md"
+        # Windows: a genuinely mixed separator path; POSIX: the plain path (backslash is a filename char there)
+        arg = path.as_posix().replace("/", "\\", 1) if os.name == "nt" else str(path)
+        code, data = run_script("challenge_gate", [arg], PLUGIN)
         if code == -1:
             self.skipTest("challenge_gate.py missing")
         self.assertEqual(code, 1)

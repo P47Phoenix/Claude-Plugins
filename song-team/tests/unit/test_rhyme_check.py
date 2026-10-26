@@ -2,26 +2,15 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
-import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
-
-
-def _load(name: str):
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    sys.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _helpers import load_script, mixed_path  # noqa: E402
 
 STRUCTURE = """key: D
 mode: major
@@ -53,7 +42,7 @@ BAD_LYRICS = GOOD_LYRICS.replace("the night", "the door")
 
 class RhymeCheckTests(unittest.TestCase):
     def setUp(self):
-        self.mod = _load("rhyme_check")
+        self.mod = load_script("rhyme_check")
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
 
@@ -75,18 +64,28 @@ class RhymeCheckTests(unittest.TestCase):
         return [self._write("lyrics.md", lyrics), self._write("structure.md", structure)]
 
     def test_rhyme_key_and_classify(self):
-        self.assertEqual(self.mod.rhyme_key("light"), "ight")
-        self.assertEqual(self.mod.rhyme_key("Night!"), "ight")
-        self.assertEqual(self.mod.rhyme_key("sky"), "y")
-        self.assertEqual(self.mod.rhyme_key("day"), "ay")
-        self.assertEqual(self.mod.rhyme_key("lime"), "ime")   # trailing silent e is not a vowel group
-        self.assertEqual(self.mod.rhyme_key("be"), "e")
+        self.assertEqual(self.mod.rhyme_key("light"), "It")
+        self.assertEqual(self.mod.rhyme_key("Night!"), "It")
+        self.assertEqual(self.mod.rhyme_key("sky"), "I")
+        self.assertEqual(self.mod.rhyme_key("day"), "A")
+        self.assertEqual(self.mod.rhyme_key("lime"), "Ime")   # trailing silent e stays in the tail
+        self.assertEqual(self.mod.rhyme_key("be"), "E")
+        self.assertEqual(self.mod.rhyme_key("bought"), "out")  # silent gh dropped
+        self.assertEqual(self.mod.rhyme_key("through"), "U")   # exception table
+        self.assertEqual(self.mod.rhyme_key("lonely"), "E")    # final y after another vowel group
         self.assertEqual(self.mod.classify("time", "lime"), "full")
         self.assertEqual(self.mod.classify("light", "night"), "full")
         self.assertEqual(self.mod.classify("light", "lime"), "slant")   # same vowel group
         self.assertEqual(self.mod.classify("night", "bought"), "slant")  # same consonant cluster
         self.assertEqual(self.mod.classify("light", "door"), "none")
         self.assertEqual(self.mod.classify("go", "see"), "none")
+
+    def test_vowel_digraph_normalisation(self):
+        for a, b in [("see", "be"), ("day", "weigh"), ("blue", "through"), ("blue", "you"),
+                     ("high", "sky"), ("love", "of"), ("come", "some"), ("one", "done")]:
+            self.assertEqual(self.mod.classify(a, b), "full", (a, b))
+        self.assertEqual(self.mod.classify("go", "see"), "none")
+        self.assertEqual(self.mod.classify("name", "day"), "slant")  # same vowel class, extra tail
         self.assertEqual(self.mod.last_word("held it like a song,"), "song")
 
     def test_pass_fixture(self):
@@ -134,11 +133,44 @@ class RhymeCheckTests(unittest.TestCase):
         self.assertEqual((code, d["status"]), (3, "ERROR"))
 
     def test_windows_style_path(self):
-        lyr, st = self._pair(GOOD_LYRICS)
-        if os.name == "nt":
-            lyr, st = lyr.replace("/", "\\"), st.replace("/", "\\")
+        lyr, st = (mixed_path(x) for x in self._pair(GOOD_LYRICS))
         code, d = self._run([lyr, st])
         self.assertEqual((code, d["status"]), (0, "PASS"))
+        empty = mixed_path(self._write("lyrics.md", "# empty\n"))
+        code, d = self._run([empty, st])
+        self.assertEqual((code, d["status"]), (3, "ERROR"))
+        loc = d["violations"][0]["location"]
+        self.assertTrue(loc.endswith("/lyrics.md"), loc)
+        self.assertNotIn("\\", loc)
+
+    def test_bad_config_value_is_error(self):
+        cfg = self._write("config.yml", "quality:\n  slant_rhyme_allowed: maybe\n")
+        code, d = self._run(["--config", cfg] + self._pair(GOOD_LYRICS))
+        self.assertEqual((code, d["status"]), (3, "ERROR"))
+        self.assertIn("slant_rhyme_allowed", d["violations"][0]["reason"])
+
+    # --- boundaries ----------------------------------------------------------
+    def test_empty_scheme_is_unconstrained(self):
+        structure = STRUCTURE.replace("| AxAx |", "|  |")
+        code, d = self._run(self._pair(BAD_LYRICS.replace("by my name", "by my door"), structure))
+        self.assertEqual(d["status"], "FAIL")  # Verse 1 still checked
+        self.assertEqual(len(d["violations"]), 1)
+        code, d = self._run(self._pair(GOOD_LYRICS.replace("by my name", "by my door"), structure))
+        self.assertEqual((code, d["status"]), (0, "PASS"), d)
+        self.assertEqual(d["metrics"]["pairs_checked"], 2)
+
+    def test_upper_case_x_is_unconstrained(self):
+        structure = STRUCTURE.replace("| AxAx |", "| AXAX |")
+        code, d = self._run(self._pair(GOOD_LYRICS.replace("by my name", "by my door"), structure))
+        self.assertEqual((code, d["status"]), (0, "PASS"), d)
+        self.assertEqual(d["metrics"]["pairs_checked"], 3)
+
+    def test_line_count_mismatch_is_error(self):
+        longer = GOOD_LYRICS.replace("by my name\n", "by my name\nOne line too many here\n")
+        code, d = self._run(self._pair(longer))
+        self.assertEqual((code, d["status"]), (3, "ERROR"))
+        self.assertEqual(d["violations"][0]["location"], "Chorus")
+        self.assertIn("5 differs from rhyme_scheme length 4", d["violations"][0]["reason"])
 
     def test_threshold_precedence(self):
         paths = self._pair(SLANT_LYRICS)

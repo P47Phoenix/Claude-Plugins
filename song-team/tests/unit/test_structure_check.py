@@ -2,24 +2,16 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
 import os
-import sys
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
-
-
-def _load(name: str):
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
-    return mod
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # noqa: E402
+from _helpers import load_script
 
 
 STRUCTURE = """key: D
@@ -124,7 +116,7 @@ time_sig: 4/4
 
 class StructureCheckTests(unittest.TestCase):
     def setUp(self):
-        self.mod = _load("structure_check")
+        self.mod = load_script("structure_check")
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
 
@@ -221,11 +213,17 @@ class StructureCheckTests(unittest.TestCase):
             self.assertEqual(out["status"], "PASS", (tpl, out))
 
     def test_windows_style_path(self):
-        p = self._write("structure.md", STRUCTURE)
-        if os.name == "nt":
-            p = p.replace("/", "\\")
-        code, out = self._run(p)
+        p = Path(self._write("structure.md", STRUCTURE))
+        arg = p.as_posix().replace("/", "\\", 1) if os.name == "nt" else str(p)
+        code, out = self._run(arg)
         self.assertEqual(out["status"], "PASS", out)
+
+    def test_help_exits_zero(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), self.assertRaises(SystemExit) as cm:
+            self.mod.main(["--help"])
+        self.assertEqual(cm.exception.code, 0)
+        self.assertIn("--consistency", buf.getvalue())
 
     # ---- consistency ----------------------------------------------------
     def _all(self, melody: str = MELODY, chords: str = CHORDS, arrangement: str = ARRANGEMENT) -> list[str]:
@@ -260,6 +258,29 @@ class StructureCheckTests(unittest.TestCase):
             arrangement=ARRANGEMENT.replace("bpm: 118", "bpm: 120").replace("| Bridge |", "| Breakdown |")))
         locs = {v["location"] for v in out["violations"]}
         self.assertEqual(locs, {"chords.md:key", "arrangement.md:bpm", "arrangement.md:sections"})
+
+    def test_consistency_missing_fields_are_violations(self):
+        melody = MELODY.replace("M:4/4\n", "").replace("Q:1/4=118\n", "")
+        chords = CHORDS.replace("key: D major\n", "")
+        arrangement = ARRANGEMENT.replace("key: D\nmode: major\nbpm: 118\ntime_sig: 4/4\n", "")
+        code, out = self._run("--consistency", *self._all(melody=melody, chords=chords, arrangement=arrangement))
+        self.assertEqual((code, out["status"]), (1, "FAIL"))
+        missing = {v["location"]: v for v in out["violations"] if v["observed"] is None}
+        self.assertEqual(set(missing), {"melody.abc:bpm", "melody.abc:time_sig", "chords.md:key", "chords.md:mode",
+                                        "arrangement.md:key", "arrangement.md:mode", "arrangement.md:bpm",
+                                        "arrangement.md:time_sig"})
+        self.assertEqual(missing["melody.abc:bpm"]["limit"], "118")
+        self.assertIn("missing from", missing["chords.md:key"]["reason"])
+        # ABC without K: declares no key either
+        code, out = self._run("--consistency", *self._all(melody=MELODY.replace("K:D\n", "")))
+        locs = {v["location"] for v in out["violations"] if v["observed"] is None}
+        self.assertEqual(locs, {"melody.abc:key", "melody.abc:mode"})
+
+    def test_error_bad_vocal_range(self):
+        cfg = self._write("config.yml", "quality:\n  vocal_range: [low, high]\n")
+        code, out = self._run("--consistency", "--config", cfg, *self._all())
+        self.assertEqual((code, out["status"]), (3, "ERROR"))
+        self.assertIn("vocal_range", out["violations"][0]["reason"])
 
     def test_threshold_precedence_genre_override(self):
         cfg = self._write("config.yml", "quality:\n  vocal_range: [55, 79]\n  genre_overrides:\n"

@@ -76,6 +76,8 @@ def file_named(paths: list[str], name: str) -> str | None:
 # ---------------------------------------------------------------------------
 _INLINE_LIST = re.compile(r"^\[(.*)\]$")
 _INLINE_MAP = re.compile(r"^\{(.*)\}$")
+_INT = re.compile(r"^-?\d+$")
+_FLOAT = re.compile(r"^-?\d+\.\d+$")
 
 
 def _split_top_level(inner: str) -> list[str]:
@@ -119,14 +121,10 @@ def _scalar(raw: str) -> Any:
         return out
     if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
         return s[1:-1]
-    try:
+    if _INT.match(s):
         return int(s)
-    except ValueError:
-        pass
-    try:
+    if _FLOAT.match(s):
         return float(s)
-    except ValueError:
-        pass
     return s
 
 
@@ -149,10 +147,12 @@ def load_yaml(text: str) -> dict[str, Any]:
     root: dict[str, Any] = {}
     stack: list[tuple[int, Any]] = [(-1, root)]
     lines = text.splitlines()
-    for raw in lines:
+    for idx, raw in enumerate(lines):
         line = _strip_comment(raw)
         if not line.strip():
             continue
+        if line.lstrip(" ").startswith("\t"):
+            raise ValueError(f"tabs are not allowed in YAML indentation (line {idx + 1})")
         indent = len(line) - len(line.lstrip(" "))
         content = line.strip()
         while stack and indent <= stack[-1][0]:
@@ -169,8 +169,12 @@ def load_yaml(text: str) -> dict[str, Any]:
         if not isinstance(parent, dict):
             continue
         if val == "":
-            # container: decide list vs map by peeking at the next non-blank line
-            nxt = next((l for l in lines[lines.index(raw) + 1:] if l.strip() and not l.strip().startswith("#")), "")
+            # container or null: peek at the next non-blank, non-comment line
+            nxt = next((l for l in lines[idx + 1:] if l.strip() and not l.strip().startswith("#")), "")
+            nxt_indent = len(nxt) - len(nxt.lstrip(" "))
+            if not nxt.strip() or nxt_indent <= indent:
+                parent[key] = None
+                continue
             child: Any = [] if nxt.strip().startswith("- ") else {}
             parent[key] = child
             stack.append((indent, child))
@@ -180,42 +184,66 @@ def load_yaml(text: str) -> dict[str, Any]:
 
 
 def load_config(path: str | None) -> dict[str, Any]:
-    """Load .song/config.yml; a missing or unreadable file yields {}."""
+    """Load .song/config.yml. No path yields {}; an explicit path that cannot be
+    read raises FileNotFoundError so the gate reports ERROR instead of silently
+    running with built-in thresholds. Tabs or malformed lines raise ValueError."""
     if not path:
         return {}
-    try:
-        return load_yaml(read_text(path))
-    except OSError:
-        return {}
+    data = load_yaml(read_text(path))
+    return data if isinstance(data, dict) else {}
 
 
 # ---------------------------------------------------------------------------
 # Thresholds
 # ---------------------------------------------------------------------------
+_NO_DEFAULT = object()
+
+
 def resolve_threshold(
     key: str,
     config: dict[str, Any],
     genre: str | None,
     flag_value: Any = None,
     section: str = "quality",
-    default: Any = None,
+    default: Any = _NO_DEFAULT,
+    kind: type | None = None,
 ) -> Any:
+    """Resolve a threshold by precedence. ``kind`` (int, float, bool) validates
+    and coerces the value, raising ValueError (-> ERROR) on a bad config value."""
+    value: Any = _NO_DEFAULT
     if flag_value is not None:
-        return flag_value
-    sect = config.get(section, {}) if isinstance(config, dict) else {}
-    if not isinstance(sect, dict):
-        sect = {}
-    if genre and section == "quality":
-        overrides = sect.get("genre_overrides", {}) or {}
-        g = overrides.get(genre) if isinstance(overrides, dict) else None
-        if isinstance(g, dict) and key in g:
-            return g[key]
-    if key in sect:
-        return sect[key]
-    if default is not None:
-        return default
-    table = DEFAULT_QUALITY if section == "quality" else DEFAULT_ORIGINALITY
-    return table.get(key)
+        value = flag_value
+    else:
+        sect = config.get(section, {}) if isinstance(config, dict) else {}
+        if not isinstance(sect, dict):
+            sect = {}
+        if genre and section == "quality":
+            overrides = sect.get("genre_overrides", {}) or {}
+            g = overrides.get(genre) if isinstance(overrides, dict) else None
+            if isinstance(g, dict) and key in g:
+                value = g[key]
+        if value is _NO_DEFAULT and key in sect:
+            value = sect[key]
+        if value is _NO_DEFAULT:
+            if default is not _NO_DEFAULT:
+                value = default
+            else:
+                table = DEFAULT_QUALITY if section == "quality" else DEFAULT_ORIGINALITY
+                value = table.get(key)
+    if kind is not None and value is not None:
+        if kind is bool:
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str) and value.lower() in ("true", "false"):
+                return value.lower() == "true"
+            raise ValueError(f"threshold {key} must be a boolean, got {value!r}")
+        if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+            raise ValueError(f"threshold {key} must be a {kind.__name__}, got {value!r}")
+        try:
+            return kind(value)
+        except (TypeError, ValueError):
+            raise ValueError(f"threshold {key} must be a {kind.__name__}, got {value!r}") from None
+    return value
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +278,11 @@ def parse_header_keys(text: str) -> dict[str, Any]:
     return out
 
 
+def is_separator_row(cells: list[str]) -> bool:
+    """True for a Markdown table alignment row such as ``|---|:--:|``."""
+    return all(set(c) <= set("-: ") for c in cells)
+
+
 def parse_table(text: str) -> list[dict[str, str]]:
     """Parse the first Markdown pipe table into a list of row dicts keyed by header."""
     rows: list[dict[str, str]] = []
@@ -264,7 +297,7 @@ def parse_table(text: str) -> list[dict[str, str]]:
         if header is None:
             header = [c.lower() for c in cells]
             continue
-        if all(set(c) <= set("-: ") for c in cells):
+        if is_separator_row(cells):
             continue
         rows.append({header[i]: cells[i] if i < len(cells) else "" for i in range(len(header))})
     return rows
@@ -382,6 +415,7 @@ class GateResult:
 
     def warn(self, location: str, reason: str, observed: Any = None, limit: Any = None) -> None:
         self.warnings.append({"location": location, "reason": reason, "observed": observed, "limit": limit})
+        self.metrics["warnings"] = len(self.warnings)
 
     def error(self, reason: str, location: str = "") -> "GateResult":
         self.status = ERROR
@@ -404,7 +438,6 @@ class GateResult:
         }
         if self.warnings:
             d["warnings"] = self.warnings
-            self.metrics.setdefault("warnings", len(self.warnings))
         return d
 
     def emit(self, as_json: bool) -> int:
@@ -431,6 +464,7 @@ def build_parser(script: str, description: str) -> argparse.ArgumentParser:
     p.add_argument("--config", metavar="PATH", help=".song/config.yml (optional)")
     p.add_argument("--json", action="store_true", help="emit the JSON result on stdout")
     p.add_argument("--genre", metavar="GENRE", help="genre for quality.genre_overrides (else brief.md)")
+    p.add_argument("--language", metavar="CODE", help="lyric language (else brief.md language, else en)")
     p.add_argument("paths", nargs="*", metavar="ARTIFACT", help="artifact paths")
     return p
 
@@ -444,13 +478,13 @@ def run(script: str, description: str, add_args: Callable[[argparse.ArgumentPars
         add_args(parser)
     args = parser.parse_args(argv)
     args.paths = [norm(p) for p in args.paths]
-    config = load_config(args.config)
     result = GateResult(script)
     try:
+        config = load_config(args.config)
         result = main_fn(args, config, result)
     except FileNotFoundError as exc:
-        result.error(f"file not found: {exc.filename}")
-    except (ValueError, KeyError, IndexError) as exc:
+        result.error(f"file not found: {exc.filename or args.config}")
+    except (OSError, ValueError, TypeError, KeyError, IndexError, AttributeError) as exc:
         if result.status != ERROR:
             result.error(f"{type(exc).__name__}: {exc}")
     return result.emit(args.json)
@@ -461,6 +495,6 @@ __all__ = [
     "SCRIPTS_DIR", "PLUGIN_ROOT", "SHARED_DIR", "DATA_DIR",
     "norm", "read_text", "file_named", "load_yaml", "load_config", "resolve_threshold",
     "parse_frontmatter", "parse_header_keys", "parse_table", "parse_sections", "parse_meter_spec",
-    "parse_structure", "resolve_language", "resolve_genre", "load_list_file",
+    "parse_structure", "resolve_language", "resolve_genre", "load_list_file", "is_separator_row",
     "GateResult", "build_parser", "run",
 ]

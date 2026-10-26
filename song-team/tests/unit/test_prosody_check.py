@@ -2,27 +2,17 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
-import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
-GOLD = Path(__file__).resolve().parents[1] / "fixtures" / "prosody-gold" / "gold.tsv"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _helpers import FIXTURES, load_script, mixed_path  # noqa: E402
 
-
-def _load(name: str):
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    sys.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
+GOLD = FIXTURES / "prosody-gold" / "gold.tsv"
 
 STRUCTURE = """key: D
 mode: major
@@ -56,7 +46,7 @@ Someone holds the fading light
 
 class ProsodyCheckTests(unittest.TestCase):
     def setUp(self):
-        self.mod = _load("prosody_check")
+        self.mod = load_script("prosody_check")
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
 
@@ -137,12 +127,65 @@ class ProsodyCheckTests(unittest.TestCase):
         self.assertGreater(d["metrics"]["chorus_mismatch_ratio"], 0.15)
 
     def test_windows_style_path(self):
-        lyr = self._write("lyrics.md", GOOD_LYRICS)
-        st = self._write("structure.md", STRUCTURE)
-        if os.name == "nt":
-            lyr, st = lyr.replace("/", "\\"), st.replace("/", "\\")
+        lyr = mixed_path(self._write("lyrics.md", GOOD_LYRICS))
+        st = mixed_path(self._write("structure.md", STRUCTURE))
         code, d = self._run([lyr, st])
         self.assertEqual((code, d["status"]), (0, "PASS"))
+        empty = mixed_path(self._write("lyrics.md", "# nothing here\n"))
+        code, d = self._run([empty, st])
+        self.assertEqual((code, d["status"]), (3, "ERROR"))
+        loc = d["violations"][0]["location"]
+        self.assertTrue(loc.endswith("/lyrics.md"), loc)
+        self.assertNotIn("\\", loc)
+
+    def test_bad_config_values_are_error(self):
+        lyr, st = self._write("lyrics.md", GOOD_LYRICS), self._write("structure.md", STRUCTURE)
+        cfg = self._write("config.yml", "quality:\n  prosody_tolerance: loose\n")
+        code, d = self._run(["--config", cfg, lyr, st])
+        self.assertEqual((code, d["status"]), (3, "ERROR"))
+        self.assertIn("prosody_tolerance", d["violations"][0]["reason"])
+        concept = self._write("concept.md", "---\nhook_line: Nobody knows my name\n---\n")
+        cfg = self._write("config.yml", "quality:\n  hook_max_syllables: twelve\n")
+        code, d = self._run(["--hook", "--config", cfg, concept])
+        self.assertEqual((code, d["status"]), (3, "ERROR"))
+        self.assertIn("hook_max_syllables", d["violations"][0]["reason"])
+
+    # --- boundaries ----------------------------------------------------------
+    def test_ratio_exactly_at_tolerance_passes(self):
+        structure = STRUCTURE.replace("8/uSuSuSuS; 8/uSuSuSuS", "; ".join(["10/uSuSuSuSuS"] * 4))
+        lyrics = """[Verse 1]
+I walked away before the morning light
+I found the road and held it like a song
+I kept the window open through the night
+I knew the road would carry me along
+
+[Chorus]
+Someone knows my name tonight
+Someone holds the fading light
+"""
+        code, d = self._run([self._write("lyrics.md", lyrics), self._write("structure.md", structure)])
+        self.assertEqual(d["metrics"]["verse_1_mismatch_ratio"], 0.15, d)
+        self.assertEqual((code, d["status"]), (0, "PASS"))
+        code, d = self._run(["--prosody-tolerance", "0.1499", self._write("lyrics.md", lyrics),
+                             self._write("structure.md", structure)])
+        self.assertEqual((code, d["status"]), (1, "FAIL"))
+
+    def test_hook_exactly_at_limit_passes(self):
+        hook = "I walked away before the morning light and then"  # 12 syllables
+        self.assertEqual(self.mod.syllables_in_line(hook), 12)
+        concept = self._write("concept.md", f"---\nhook_line: {hook}\n---\n")
+        code, d = self._run(["--hook", concept])
+        self.assertEqual((code, d["status"]), (0, "PASS"))
+        self.assertEqual(d["metrics"]["hook_syllables"], 12)
+        code, d = self._run(["--hook", "--hook-max-syllables", "11", concept])
+        self.assertEqual((code, d["status"]), (1, "FAIL"))
+
+    def test_empty_meter_section_is_unconstrained(self):
+        structure = STRUCTURE.replace("| 8 | 7/SuSuSuS; 7/SuSuSuS | AA |", "| 8 |  |  |")
+        lyrics = GOOD_LYRICS.replace("Someone knows my name tonight", "Morning sunlight falling golden river")
+        code, d = self._run([self._write("lyrics.md", lyrics), self._write("structure.md", structure)])
+        self.assertEqual((code, d["status"]), (0, "PASS"), d)
+        self.assertEqual(d["metrics"]["chorus_mismatch_ratio"], 0.0)
 
     def test_threshold_precedence(self):
         lyr, st = self._write("lyrics.md", GOOD_LYRICS), self._write("structure.md", STRUCTURE)

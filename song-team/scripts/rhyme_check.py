@@ -7,14 +7,22 @@ usage: rhyme_check.py [--config P] [--json] [--genre G] [--language L]
 Rhyme key of a line = its last word, lower-cased, punctuation stripped, from the
 final vowel group to the end (``y`` counts as a vowel when final or after a
 consonant; a trailing silent ``e`` after a consonant is part of the consonant
-tail, so ``time``/``lime`` key as ``ime``). Full rhyme: identical keys. Slant rhyme: identical final vowel group
-only, or an identical non-empty final consonant cluster with a different vowel
-group (an empty cluster is not a rhyme, so ``go``/``see`` do not slant-rhyme).
+tail, so ``time``/``lime`` key as ``Ime``). ``data/rhyme-exceptions.txt``
+(``word<TAB>key``) is consulted first for irregular spellings (through, you,
+love, one ...). The final vowel group is then normalised to a vowel class:
+ee/ea/ie/ei-after-c/final-e -> E; ay/ai/ei/ey/eigh -> A; oo/ue/ew/final-ou/
+final-u -> U; igh/final-y-in-a-monosyllable/final-ie/final-i -> I; oa/ow/oe/
+final-o -> O; a lone vowel before consonant+silent-e takes its long class
+(name -> Ame); silent ``gh`` is dropped from the tail (bought -> out). Full
+rhyme: identical keys. Slant rhyme: identical vowel class only, or an
+identical non-empty final consonant cluster with a different vowel class (an
+empty cluster is not a rhyme, so ``go``/``see`` do not slant-rhyme).
 
 ``rhyme_scheme`` letters are scoped per section; ``x`` is unconstrained. Every
 pair of lines sharing a letter must full-rhyme, or slant-rhyme when
 ``slant_rhyme_allowed`` is true (counted in ``metrics.slant_pairs``). A section
-whose lyric line count differs from its scheme length is an ERROR. The gate is
+whose lyric line count differs from its scheme length is an ERROR; an empty
+scheme leaves the section unconstrained. The gate is
 SKIPPED when the resolved language is not ``en``.
 """
 from __future__ import annotations
@@ -52,20 +60,74 @@ def _vowel_mask(w: str) -> str:
     return "".join(out)
 
 
+_exceptions: dict[str, str] | None = None
+_LONG = {"a": "A", "e": "E", "i": "I", "o": "O", "u": "U"}
+
+
+def _load_exceptions() -> dict[str, str]:
+    global _exceptions
+    if _exceptions is None:
+        _exceptions = {}
+        for line in gc.load_list_file(gc.DATA_DIR / "rhyme-exceptions.txt"):
+            parts = [x.strip() for x in re.split(r"	+| {2,}", line) if x.strip()]
+            if len(parts) >= 2:
+                _exceptions[parts[0].lower()] = parts[1]
+    return _exceptions
+
+
+def _vowel_class(vg: str, tail: str, prev: str, silent_e: bool, only_group: bool) -> str:
+    """Map a final vowel group (digraph) to one of A E I O U, else leave it as spelled."""
+    final = tail == ""
+    if vg == "igh":
+        return "I"
+    if vg == "eigh":
+        return "A"
+    vg = vg[:-2] if vg.endswith("gh") else vg  # ough/augh: silent gh, vowel letters kept
+    if vg == "ei":
+        return "E" if prev == "c" else "A"
+    if vg in ("ee", "ea"):
+        return "E"
+    if vg == "ie":
+        return "I" if tail in ("", "s", "d") else "E"
+    if vg in ("ay", "ai", "ey"):
+        return "A"
+    if vg in ("oo", "ue", "ew") or (vg in ("ou", "u") and final):
+        return "U"
+    if vg in ("oa", "oe", "ow") or (vg == "o" and final):
+        return "O"
+    if vg == "y":
+        return "I" if only_group else "E"
+    if final and vg in ("e", "i"):
+        return _LONG[vg]
+    if silent_e and len(vg) == 1 and vg in _LONG:
+        return _LONG[vg]  # magic e: name -> A, time -> I, home -> O
+    return vg
+
+
 def rhyme_key(word: str) -> str:
-    """Final vowel group plus everything after it; '' when the word has no vowel."""
+    """Normalised final vowel class plus the consonant tail; '' when the word has no vowel."""
     w = re.sub(r"[^a-z]", "", word.lower())
+    if w in _load_exceptions():
+        return _load_exceptions()[w]
     mask = _vowel_mask(w)
-    if len(w) > 2 and w.endswith("e") and mask[-2] == "C" and "V" in mask[:-1]:
+    silent_e = len(w) > 2 and w.endswith("e") and mask[-2] == "C" and "V" in mask[:-1]
+    if silent_e:
         mask = mask[:-1] + "C"  # trailing silent e (time, lime) belongs to the tail, not a vowel group
     groups = list(re.finditer("V+", mask))
     if not groups:
         return ""
-    return w[groups[-1].start():]
+    g = groups[-1]
+    vg, tail = w[g.start():g.end()], w[g.end():]
+    if tail.startswith("gh"):  # igh, eigh, ough, augh
+        vg, tail = vg + "gh", tail[2:]
+    elif tail == "w" and vg in ("e", "o"):  # new, snow
+        vg, tail = vg + "w", ""
+    prev = w[g.start() - 1] if g.start() else ""
+    return _vowel_class(vg, tail, prev, silent_e, len(groups) == 1) + tail
 
 
 def _split_key(key: str) -> tuple[str, str]:
-    m = re.match(r"^([aeiouy]+)(.*)$", key)
+    m = re.match(r"^([aeiouyAEIOU]+)(.*)$", key)
     return (m.group(1), m.group(2)) if m else (key, "")
 
 
@@ -94,8 +156,7 @@ def main_fn(args: argparse.Namespace, config: dict[str, Any], res: gc.GateResult
     if not lyrics_p or not struct_p:
         return res.error("lyrics.md and structure.md are both required")
     slant_ok = gc.resolve_threshold("slant_rhyme_allowed", config, gc.resolve_genre(args.genre, args.paths),
-                                    args.slant_rhyme_allowed)
-    slant_ok = bool(slant_ok)
+                                    args.slant_rhyme_allowed, kind=bool)
     res.thresholds["slant_rhyme_allowed"] = slant_ok
     _, body = gc.parse_frontmatter(gc.read_text(lyrics_p))
     sections = gc.parse_sections(body)
@@ -110,6 +171,8 @@ def main_fn(args: argparse.Namespace, config: dict[str, Any], res: gc.GateResult
         if label not in schemes:
             return res.error(f"section [{label}] not found in structure.md", label)
         scheme = re.sub(r"\s+", "", schemes[label])
+        if not scheme:
+            continue  # no scheme declared: section is unconstrained
         if len(scheme) != len(lines):
             return res.error(f"line count {len(lines)} differs from rhyme_scheme length {len(scheme)}", label)
         groups: dict[str, list[int]] = {}
@@ -133,7 +196,6 @@ def main_fn(args: argparse.Namespace, config: dict[str, Any], res: gc.GateResult
 
 
 def add_args(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--language", metavar="CODE", help="ISO 639-1 language (else brief.md, else en)")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--slant-rhyme-allowed", dest="slant_rhyme_allowed", action="store_true", default=None,
                    help="tolerate slant rhymes")

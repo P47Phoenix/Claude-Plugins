@@ -129,12 +129,9 @@ class GateCommonTests(unittest.TestCase):
                     return result.skip("language " + lang)
                 return result
 
-            def add(p):
-                p.add_argument("--language")
-
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                code = gc.run("demo.py", "demo", add, main, ["--json", str(brief)])
+                code = gc.run("demo.py", "demo", None, main, ["--json", str(brief)])
             data = json.loads(out.getvalue())
             self.assertEqual(code, 2)
             self.assertEqual(data["status"], "SKIPPED")
@@ -156,10 +153,39 @@ class GateCommonTests(unittest.TestCase):
                 code = gc.run("demo.py", "demo", None, lambda a, c, r: r.error("bad"), ["--json"])
             self.assertEqual(code, 3)
 
+            # explicit --config that does not exist -> ERROR, never silent defaults
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                code = gc.run("demo.py", "demo", None, lambda a, c, r: r, ["--json", str(Path(d) / "missing.md")])
-            self.assertEqual(code, 0)  # paths are not opened by run() itself
+                code = gc.run("demo.py", "demo", None, lambda a, c, r: r, ["--json", "--config", str(Path(d) / "nope.yml")])
+            self.assertEqual(code, 3)
+            self.assertIn("nope.yml", json.loads(out.getvalue())["violations"][0]["reason"])
+
+            # any unexpected exception class in main_fn -> ERROR with JSON, not a traceback
+            for exc in (TypeError("t"), AttributeError("a"), PermissionError("p")):
+                def boom(a, c, r, exc=exc):
+                    raise exc
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    code = gc.run("demo.py", "demo", None, boom, ["--json"])
+                self.assertEqual(code, 3)
+                self.assertEqual(json.loads(out.getvalue())["status"], "ERROR")
+
+    def test_yaml_edge_cases(self):
+        gc = self.gc
+        self.assertEqual(gc.load_yaml("a:\nb: 1\n"), {"a": None, "b": 1})            # empty scalar is null
+        self.assertEqual(gc.load_yaml("x:\n  k:\n    - 1\ny:\n  k:\n    - 2\n"),
+                         {"x": {"k": [1]}, "y": {"k": [2]}})                           # repeated container lines
+        with self.assertRaises(ValueError):
+            gc.load_yaml("a:\n\tb: 1\n")                                                # tabs
+        self.assertEqual(gc.load_yaml("n: nan\ni: 1_000\nf: 1.5\n"), {"n": "nan", "i": "1_000", "f": 1.5})
+
+    def test_threshold_kind_validation(self):
+        gc = self.gc
+        with self.assertRaises(ValueError):
+            gc.resolve_threshold("prosody_tolerance", {"quality": {"prosody_tolerance": "fast"}}, None, kind=float)
+        self.assertEqual(gc.resolve_threshold("hook_max_syllables", {"quality": {"hook_max_syllables": "9"}}, None, kind=int), 9)
+        self.assertIs(gc.resolve_threshold("slant_rhyme_allowed", {}, None, kind=bool), True)
+        self.assertEqual(gc.resolve_threshold("zz", {}, None, default=0), 0)           # default=0 is honoured
 
 
 if __name__ == "__main__":

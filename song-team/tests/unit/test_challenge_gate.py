@@ -2,31 +2,23 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
 import os
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
-
-
-def _load(name: str):
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
-    return mod
-
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # noqa: E402
+from _helpers import load_script
 
 HEAD = "## Findings\n\n| severity | location | finding | suggested fix |\n|---|---|---|---|\n"
 
 
 class ChallengeGateTests(unittest.TestCase):
     def setUp(self):
-        self.mod = _load("challenge_gate")
+        self.mod = load_script("challenge_gate")
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
 
@@ -43,6 +35,13 @@ class ChallengeGateTests(unittest.TestCase):
         with contextlib.redirect_stdout(buf):
             code = self.mod.main(["--json", *argv])
         return code, json.loads(buf.getvalue())
+
+    def test_help_exits_zero(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), self.assertRaises(SystemExit) as cm:
+            self.mod.main(["--help"])
+        self.assertEqual(cm.exception.code, 0)
+        self.assertIn("usage:", buf.getvalue())
 
     def test_pass_no_blockers(self):
         code, out = self._run(self._write(HEAD + "| MINOR | lyrics.md:Bridge:2 | rhyme predictable | slant it |\n"
@@ -73,9 +72,18 @@ class ChallengeGateTests(unittest.TestCase):
         self.assertEqual(out["metrics"]["minor"], 1)
 
     def test_error_missing_table(self):
-        code, out = self._run(self._write("## Findings\n\n| severity | finding |\n|---|---|\n| MINOR | x |\n"))
+        code, out = self._run(self._write("## Findings\n\nNo table here, just prose.\n\n| a | b |\n|---|---|\n"))
         self.assertEqual((code, out["status"]), (3, "ERROR"))
         self.assertIn("no severity table", out["violations"][0]["reason"])
+
+    def test_error_wrong_column_count(self):
+        code, out = self._run(self._write("## Findings\n\n| severity | finding |\n|---|---|\n| MINOR | x |\n"))
+        self.assertEqual((code, out["status"]), (3, "ERROR"))
+        self.assertIn("header has 2 cells, expected 4", out["violations"][0]["reason"])
+        code, out = self._run(self._write(HEAD.replace("| suggested fix |", "| suggested fix | owner |")
+                                          + "| MINOR | x | y | z | me |\n"))
+        self.assertEqual((code, out["status"]), (3, "ERROR"))
+        self.assertIn("header has 5 cells, expected 4", out["violations"][0]["reason"])
 
     def test_error_bad_severity(self):
         code, out = self._run(self._write(HEAD + "| CRITICAL | x | y | z |\n"))
@@ -89,11 +97,10 @@ class ChallengeGateTests(unittest.TestCase):
         self.assertIn("3 cells", out["violations"][0]["reason"])
 
     def test_windows_style_path(self):
-        p = self._write(HEAD + "| MINOR | x | y | z |\n")
-        if os.name == "nt":
-            p = p.replace("/", "\\")
-        code, out = self._run(p)
-        self.assertEqual(out["status"], "PASS")
+        p = Path(self._write(HEAD + "| MINOR | x | y | z |\n"))
+        arg = p.as_posix().replace("/", "\\", 1) if os.name == "nt" else str(p)
+        code, out = self._run(arg)
+        self.assertEqual(out["status"], "PASS", out)
 
     def test_config_and_genre_do_not_change_result(self):
         cfg = self._write("quality:\n  genre_overrides:\n    pop: { hook_max_syllables: 16 }\n", "config.yml")

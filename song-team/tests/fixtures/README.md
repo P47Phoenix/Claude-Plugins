@@ -55,12 +55,15 @@ Labelling rules:
 | `w-mismatch` | `melody.abc`, `lyrics.md`, `structure.md` | `abc_validate` FAIL at `Verse 1:1` (bar 1 has 4 notes but 3 `w:` tokens) |
 | `prosody-fail` | `lyrics.md`, `structure.md` | `prosody_check` FAIL (Verse 1 spec is trochaic, lyric is iambic; Chorus is clean) |
 | `rhyme-fail` | `lyrics.md`, `structure.md` | `rhyme_check` FAIL (AABB with `street`/`rain`) |
-| `cliche-heavy` | `lyrics.md` | `cliche_scan` FAIL (17 whole-phrase list hits in 64 words, about 27 per 100) |
+| `cliche-heavy` | `lyrics.md` | `cliche_scan` FAIL (16 non-overlapping list hits in 66 words, 24.24 per 100; nested phrases count once) |
 | `flat-energy` | `arrangement.md` | `arrangement_check` FAIL (every energy 5, so no verse is below its following chorus) |
 | `challenge-blocker` | `challenge-report.md` | `challenge_gate` FAIL (one BLOCKER row) |
 | `challenge-malformed` | `challenge-report.md` | `challenge_gate` ERROR (prose, no table) |
 | `hook-too-long` | `concept.md` | `prosody_check --hook` FAIL (16-syllable hook line) |
+| `scheme-length` | `lyrics.md`, `structure.md` | `rhyme_check` ERROR at `Verse 1` (3 lyric lines against the 4-letter scheme AABB) |
+| `unknown-template` | `structure.md` | `structure_check` ERROR at `form_template` (`waltz-xyz` is not in form-templates.json) |
+| `short-lyric` | `lyrics.md`, `config.yml`, `corpus.txt` | `resemblance_check --config config.yml` ERROR (4-word lyric has no 5-gram; corpus present so it does not SKIP) |
 
 ## Resemblance
 
-`resemblance/corpus-a.txt` is 40 lines of throwaway original lyric text standing in for a user-supplied do-not-resemble corpus. `overlapping-lyrics.md` copies three consecutive corpus lines verbatim into Verse 1 (word 5-gram overlap well above the 0.05 default). `config.yml` lists the corpus; with it `resemblance_check.py` must FAIL, and without any config it must return SKIPPED.
+`resemblance/corpus-a.txt` is 40 lines of throwaway original lyric text standing in for a user-supplied do-not-resemble corpus. `overlapping-lyrics.md` copies three consecutive corpus lines verbatim into Verse 1 (word 5-gram overlap well above the 0.05 default). `config.yml` lists the corpus by a path relative to the config file's directory (relative corpus entries resolve against the `--config` directory, else against the first lyric's directory, never the working directory); with it `resemblance_check.py` must FAIL, and without any config it must return SKIPPED. 5-grams never cross a `[Section]` boundary, so the three copied lines must sit inside one section to count.

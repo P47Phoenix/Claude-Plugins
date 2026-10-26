@@ -22,7 +22,8 @@ Mismatch ratio (per section): for lyric line i against meter line i, a position
 counts as mismatched when the spec marks it ``S`` and the lyric does not; a
 difference in syllable count adds ``abs(spec - observed)``; a lyric line with no
 meter line counts all of its syllables; a meter line with no lyric line counts
-its ``S`` positions. The denominator is the number of ``S`` positions in the
+its ``S`` positions; a section with an empty meter_spec is unconstrained
+(ratio 0). The denominator is the number of ``S`` positions in the
 section's meter spec (minimum 1): the stage-gates phrase "mismatched stressed
 positions / positions in the meter spec" is read with stressed positions as the
 denominator so that 1.0 means every beat is missed.
@@ -249,7 +250,7 @@ def check_lyrics(args: argparse.Namespace, config: dict[str, Any], res: gc.GateR
     if not lyrics_p or not struct_p:
         return res.error("lyrics.md and structure.md are both required")
     tol = gc.resolve_threshold("prosody_tolerance", config, gc.resolve_genre(args.genre, args.paths),
-                              args.prosody_tolerance)
+                              args.prosody_tolerance, kind=float)
     res.thresholds["prosody_tolerance"] = tol
     _, body = gc.parse_frontmatter(gc.read_text(lyrics_p))
     sections = gc.parse_sections(body)
@@ -263,6 +264,9 @@ def check_lyrics(args: argparse.Namespace, config: dict[str, Any], res: gc.GateR
         if label not in meters:
             return res.error(f"section [{label}] not found in structure.md", label)
         spec_lines = meters[label]
+        if not spec_lines:
+            res.metrics[f"{label.lower().replace(' ', '_')}_mismatch_ratio"] = 0.0
+            continue  # no meter declared: section is unconstrained
         denom = max(1, sum(st.count("S") for _, st in spec_lines))
         bad_total, worst = 0, (-1, 1)
         for i in range(max(len(lines), len(spec_lines))):
@@ -290,7 +294,7 @@ def check_hook(args: argparse.Namespace, config: dict[str, Any], res: gc.GateRes
     if not concept_p:
         return res.error("concept.md is required in --hook mode")
     limit = gc.resolve_threshold("hook_max_syllables", config, gc.resolve_genre(args.genre, args.paths),
-                                 args.hook_max_syllables)
+                                 args.hook_max_syllables, kind=int)
     res.thresholds["hook_max_syllables"] = limit
     fm, _ = gc.parse_frontmatter(gc.read_text(concept_p))
     hook = fm.get("hook_line")
@@ -300,7 +304,7 @@ def check_hook(args: argparse.Namespace, config: dict[str, Any], res: gc.GateRes
         return res.error("concept.md has no hook_line or motif", "hook_line")
     n = syllables_in_line(hook)
     res.metrics["hook_syllables"] = n
-    if n > int(limit):
+    if n > limit:
         res.violate("hook_line", "hook exceeds max syllables", n, limit)
     return res
 
@@ -314,7 +318,6 @@ def main_fn(args: argparse.Namespace, config: dict[str, Any], res: gc.GateResult
 
 def add_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--hook", action="store_true", help="check concept.md hook_line syllables")
-    p.add_argument("--language", metavar="CODE", help="ISO 639-1 language (else brief.md, else en)")
     p.add_argument("--prosody-tolerance", type=float, metavar="F", help="max section mismatch ratio")
     p.add_argument("--hook-max-syllables", type=int, metavar="N", help="max hook_line syllables")
 

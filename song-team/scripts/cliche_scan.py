@@ -55,15 +55,26 @@ def collect_lines(path: str) -> list[tuple[str, str]]:
 
 
 def scan(lines: list[tuple[str, str]], phrases: list[str]) -> tuple[int, int, list[tuple[str, str]]]:
-    """Return (hits, words, [(location, phrase)])."""
-    patterns = [(p, re.compile(r"(?<![a-z0-9])" + re.escape(p) + r"(?![a-z0-9])")) for p in phrases]
+    """Return (hits, words, [(location, phrase)]).
+
+    Phrases are matched longest-first and every matched word span is masked, so
+    a nested list entry ("take my breath away" inside "you take my breath away")
+    yields exactly one hit per span. Two distinct phrases on one line still
+    count as two hits."""
+    ordered = sorted(phrases, key=lambda p: (-len(p.split()), -len(p), p))
+    patterns = [(p, re.compile(r"(?<![a-z0-9])" + re.escape(p) + r"(?![a-z0-9])")) for p in ordered]
     hits: list[tuple[str, str]] = []
     words = 0
     for loc, text in lines:
         norm = normalise(text)
         words += len(norm.split())
+        consumed = [False] * len(norm)
         for phrase, pat in patterns:
-            for _ in pat.finditer(norm):
+            for m in pat.finditer(norm):
+                if any(consumed[m.start():m.end()]):
+                    continue
+                for i in range(m.start(), m.end()):
+                    consumed[i] = True
                 hits.append((loc, phrase))
     return len(hits), words, hits
 
@@ -76,7 +87,8 @@ def add_args(p: Any) -> None:
 
 def main_fn(args: Any, config: dict[str, Any], res: gc.GateResult) -> gc.GateResult:
     genre = gc.resolve_genre(args.genre, args.paths)
-    limit = gc.resolve_threshold("cliche_max_per_100_words", config, genre, args.cliche_max_per_100_words)
+    limit = gc.resolve_threshold("cliche_max_per_100_words", config, genre, args.cliche_max_per_100_words,
+                                 kind=float)
     res.thresholds["cliche_max_per_100_words"] = limit
     list_path = Path(gc.norm(args.cliche_list)) if args.cliche_list else DEFAULT_LIST
     phrases = load_phrases(list_path)
