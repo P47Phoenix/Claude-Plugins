@@ -30,9 +30,8 @@ chord_tools.py {dir}/chords.md {dir}/structure.md
 abc_validate.py {dir}/melody.abc {dir}/structure.md {dir}/lyrics.md
 ```
 
-Both scripts are not yet built (see `references/shared/stage-gates.md` section 7). Until they land
-the orchestrator reports each as `SKIPPED (script absent)`, proceeds as PASS, and sets
-`gates.music.skipped: true` with the reason in `state.json.notes`. Absent script is never FAIL.
+A FAIL from either returns to the owning role (`harmony` for `chords.md`, `melody` for
+`melody.abc`) with the `violations` rows as its critique; ERROR (unparseable) is reported, not looped.
 INSTRUMENTAL runs `abc_validate.py` without `lyrics.md` (lyric alignment skipped).
 
 ## Loop

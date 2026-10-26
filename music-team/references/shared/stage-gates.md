@@ -99,4 +99,4 @@ Highest total wins; on a tie, the option with the higher gate-compliance score; 
 
 Scripts named in the stage table that do not exist yet. `music-flow` reports an absent script as `SKIPPED (script absent)`, never `FAIL`. Remove a name here when its script lands (`tests/unit/test_stages.py` reads this list).
 
-Not-yet-built: `chord_tools.py`, `abc_validate.py`, `validate_artifacts.py`.
+Not-yet-built: `validate_artifacts.py`.
