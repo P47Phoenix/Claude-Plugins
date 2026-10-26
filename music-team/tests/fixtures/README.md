@@ -12,6 +12,8 @@ tests/fixtures/
   briefs/expected.json       expected song_type per brief; PARODY_ADAPT is refused
   songs/FULL_SONG/           complete passing artifact set (pop, D major, 118 bpm, VCVCBC)
   songs/LYRICS_ONLY/         passing lyric-side set (folk, C major, 96 bpm, VCVCBC)
+  songs/ADAPT_GENRE/         passing adapted set (folk -> bossa nova, G minor, 120 bpm) plus adaptation-report.md
+  songs/AUGMENT_LYRICS/      passing augmented set (folk, G major, 88 bpm, two source verses plus one new bridge)
   negative/<case>/           one artifact set per failure mode, each with expected.json
   resemblance/               do-not-resemble corpus plus a lyric that copies three of its lines
 ```
@@ -44,6 +46,8 @@ Labelling rules:
 
 `songs/LYRICS_ONLY/` is a second original song ("Half the Island Looks Away", folk, C major) with only the lyric-side artifacts and a header-only challenge table.
 
+`songs/AUGMENT_LYRICS/` is the `lyricist` `augmenter` output for the `briefs/AUGMENT_LYRICS.md` request: the two public-domain source verses verbatim, one new `[Bridge]` that repeats the source's modal `9/uSuSuuSuS` line and AABB couplets, a `# <!-- new -->` marker line under the new tag, and a trailing `## Augmentation` block whose lines all start with `#` so the gates ignore them. `prosody_check`, `rhyme_check`, `cliche_scan` and `structure_check` all PASS.
+
 ## Negative cases
 
 | case | files | expectation |
@@ -66,6 +70,7 @@ Labelling rules:
 | `adapt-named-target` | `brief.md`, `expected.json` | routing: PARODY_ADAPT refused (target is a named band, not a genre) |
 | `adapt-no-provenance` | `brief.md`, `expected.json` | routing: ADAPT_GENRE refused (neither provenance flag) |
 | `augment-fix-only` | `brief.md`, `expected.json` | routing: REWRITE (only "tighten", no new material) |
+| `adapt-report-missing-disposition` | `adaptation-report.md`, `expected.json` | `adapt_check` FAIL at `## Changed:row 2` (empty `Why` cell) |
 | `short-lyric` | `lyrics.md`, `config.yml`, `corpus.txt` | `resemblance_check --config config.yml` ERROR (4-word lyric has no 5-gram; corpus present so it does not SKIP) |
 
 ## Resemblance
