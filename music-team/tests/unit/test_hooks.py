@@ -201,14 +201,12 @@ class VerifySkillLoadedTests(unittest.TestCase):
 
 
 class SubagentGateTests(unittest.TestCase):
-    def test_no_active_run_is_skipped(self):
+    def test_no_active_run_is_silent(self):
         with tempfile.TemporaryDirectory() as tmp:
             r = run_hook("subagent_gate.py", {"hook_event_name": "SubagentStop", "cwd": tmp},
                          args=["--agent", "lyricist"], cwd=tmp)
         self.assertEqual(r.returncode, 0)
-        msg = json.loads(r.stdout)["systemMessage"]
-        self.assertIn("SKIPPED", msg)
-        self.assertIn("lyricist", msg)
+        self.assertEqual(r.stdout, "")
 
     def test_active_run_reports_gate_status(self):
         with tempfile.TemporaryDirectory() as tmp:

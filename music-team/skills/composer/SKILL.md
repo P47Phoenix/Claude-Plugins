@@ -1,6 +1,6 @@
 ---
 name: composer
-description: Composer agent for chord progressions (Roman numerals plus concert pitch), single-voice melodies in ABC notation, song structure (key, mode, tempo, time signature, form), and music-theory questions. Auto-detects the role (harmony, melody, groove, theorist) and spawns a role-scoped sub-agent with only the relevant references. Triggers on phrases like "write chords", "chord progression", "melody for", "what key", "explain this progression", "what mode is", "reharmonize", "what chords fit", "theory question", "groove", "song structure", "time signature", "tempo for".
+description: Composer agent for chord progressions (Roman numerals plus concert pitch), single-voice melodies in ABC notation, song structure (key, mode, tempo, time signature, form), and music-theory questions. Auto-detects the role (harmony, melody, groove, theorist) and spawns a role-scoped sub-agent with only the relevant references. Triggers on phrases like "write chords", "chord progression", "melody for", "what key", "explain this progression", "what mode is", "reharmonize this section", "suggest chord substitutions", "what chords fit", "theory question", "set the groove", "song structure", "time signature", "tempo for".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-10-26
@@ -33,7 +33,7 @@ Four roles share this skill: `harmony` writes `chords.md`, `melody` writes `melo
 1. **Explicit role mention** -- "as the harmony writer", "theory question", "just the melody"
 2. **Deliverable signals** -- see the role manifests below
 3. **Domain signals** -- chord and numeral words route to harmony; ABC, topline, motif, singable words to melody; key, tempo, meter, form, section-length words to groove; "explain", "analyze", "why", "what mode", "what fits" to theorist
-4. **Artifact signals** -- a supplied progression to explain or reharmonize routes to theorist; a request to write `chords.md` routes to harmony
+4. **Artifact signals** -- a supplied progression to explain, or a request for reharmonization options (answer only, written inline), routes to theorist; a request to write or revise `chords.md` (reharmonize a section in the artifact) routes to harmony
 
 **If ambiguous, ask before proceeding.** Do not assume.
 
@@ -49,10 +49,10 @@ Load only the matched role manifest. Each manifest holds the task-type routing t
 
 | Role | Manifest | Detection Cue | Writes |
 |------|----------|---------------|--------|
-| Harmony | `references/roles/harmony.md` | chords / progression / Roman numerals / reharmonize a section / key-fit | `chords.md` |
+| Harmony | `references/roles/harmony.md` | chords / progression / Roman numerals / reharmonize a section in chords.md / key-fit | `chords.md` |
 | Melody | `references/roles/melody.md` | melody / topline / ABC / motif / hook line tune / singable | `melody.abc` |
 | Groove | `references/roles/groove.md` | structure / key / mode / bpm / time signature / form / bars / meter spec | `structure.md` |
-| Theorist | `references/roles/theorist.md` | explain / analyze / what mode / why / what fits / transpose / theory | inline answer |
+| Theorist | `references/roles/theorist.md` | explain / analyze / what mode / why / what fits / transpose / theory / reharmonization options (inline) | inline answer |
 
 For cross-role tasks see `references/contracts/cross-role-tasks.md`.
 
@@ -97,6 +97,12 @@ Write the artifact to: [DIR]/[ARTIFACT]
 
 --- INPUT ARTIFACTS (read these files) ---
 - [paths only; the sub-agent reads them]
+
+--- CRITIQUE TO ADDRESS (loop 2+ only) ---
+[critique path and gate JSON]
+
+<!-- memory-lessons -->
+[<=10 lines, or "No lessons recorded."]
 
 --- OUTPUT ---
 SKILL_LOADED: [paths]

@@ -1,6 +1,6 @@
 ---
 name: song-critic
-description: Song critic agent with rubric-driven judges (hook, prosody, music, structure), an adaptation-fidelity judge, a listener-persona panel, and an adversarial clean-context challenger. Auto-detects the role and spawns a role-scoped sub-agent with only the manifest, contract and rubric or personas it needs. Critiques cite gate-script output; scripts decide the gate. Triggers on phrases like "critique this song", "review my lyrics", "judge the chorus", "judge the hook", "prosody check", "listener panel", "listener feedback", "challenge this song", "is this original", "how faithful is this adaptation", "song review".
+description: Song critic agent with rubric-driven judges (hook, prosody, music, structure), an adaptation-fidelity judge, a listener-persona panel, and an adversarial clean-context challenger. Auto-detects the role and spawns a role-scoped sub-agent with only the manifest, contract and rubric or personas it needs. Critiques cite gate-script output; scripts decide the gate. Triggers on phrases like "critique this song", "review my lyrics", "judge the chorus", "judge the hook", "judge the prosody", "listener panel", "listener feedback", "challenge this song", "is this original", "how faithful is this adaptation", "song review".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-10-26

@@ -47,7 +47,7 @@ class SkillTests(unittest.TestCase):
 
     def test_description_triggers(self):
         desc = self.fm["description"]
-        for phrase in ("adapt my song to", "turn my ballad into", "convert this to", "make it bossa nova",
+        for phrase in ("just adapt the chords to", "turn my ballad into", "convert this to", "make it bossa nova",
                        "cross-genre", "reharmonize for", "re-fit these lyrics to", "genre adaptation",
                        "what would change if this were"):
             self.assertIn(phrase, desc)

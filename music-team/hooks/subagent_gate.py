@@ -6,7 +6,7 @@ Usage: subagent_gate.py --agent lyricist|composer|arranger|song-critic|adapter
 Locates the run through ``.song/active`` (slug) and ``.song/<slug>/``, runs the gate scripts
 that belong to the agent against the artifacts present, and reports their statuses in a
 ``systemMessage``. Advisory only: always exit 0. The orchestrator makes the gate decision
-(stage-gates.md section 4). With no active run the message says SKIPPED.
+(stage-gates.md section 4). With no active run it exits silently.
 """
 from __future__ import annotations
 
@@ -110,7 +110,6 @@ def main() -> None:
     start = Path(cwd) if isinstance(cwd, str) and cwd else Path.cwd()
     root = find_root(start)
     if root is None:
-        hc.emit_message(f"music-team gates ({agent}): SKIPPED (no active run: .song/active not found)")
         return
     slug = (root / ".song" / "active").read_text(encoding="utf-8").strip()
     d = root / ".song" / slug

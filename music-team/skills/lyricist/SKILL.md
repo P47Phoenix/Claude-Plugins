@@ -1,6 +1,6 @@
 ---
 name: lyricist
-description: Lyricist agent for hooks, verses, pre-choruses, bridges, lyric editing, and extending a supplied lyric. Auto-detects the role (hook-writer, verse-writer, lyric-editor, augmenter) and spawns a role-scoped sub-agent carrying one genre section and at most the allowed technique files. Triggers on phrases like "write lyrics", "chorus lyrics", "verse", "hook line", "rhyme this", "rewrite this lyric", "tighten these lyrics", "add a verse", "write a bridge for my song", "extend my lyrics", "more verses in the same voice", "pre-chorus".
+description: Lyricist agent for hooks, verses, pre-choruses, bridges, lyric editing, and extending a supplied lyric. Auto-detects the role (hook-writer, verse-writer, lyric-editor, augmenter) and spawns a role-scoped sub-agent carrying one genre section and at most the allowed technique files. Triggers on phrases like "write lyrics", "chorus lyrics", "write a verse", "hook line", "rhyme this", "rewrite this lyric", "tighten these lyrics", "add a verse", "write a bridge for my song", "extend my lyrics", "more verses in the same voice", "pre-chorus".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-10-26
@@ -40,7 +40,7 @@ These two roles build on text the user supplied, so they REQUIRE provenance in `
 - In a pipeline, `music-brief` already checked it. Re-read the brief front-matter; if neither flag is set, return `STATUS: BLOCKED`.
 - Standalone, ask once: "Is this lyric your own original work, or public domain (name the source)?" Proceed only on a yes.
 - On a no, or any refusal to say, reply with exactly this sentence and write no artifact: *I cannot write a parody of, or a song to the tune of or in the exact style of, a named existing song or artist; I would be glad to write an original song on the same theme and in the same genre instead.*
-- If you recognise the supplied text as a well-known existing lyric, stop and report it (originality clause 4). Never edit or extend it.
+- A supplied text recognised as a well-known existing lyric: stop and report it (originality clause 4). Never edit or extend it.
 
 **Declare before every task:**
 

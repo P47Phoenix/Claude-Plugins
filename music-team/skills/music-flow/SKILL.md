@@ -1,6 +1,6 @@
 ---
 name: music-flow
-description: Song-creation pipeline orchestrator. Coordinates the music team through 7 stages (Brief, Concept, Structure, Lyrics, Music, Arrangement, Release) with song-type auto-detection across 11 types, deterministic script gates, evaluator-optimizer loops, a listener panel, an adversarial challenger, genre adaptation, lyric augmentation, music-theory answers, and self-learning memory. Triggers on phrases like "write me a song", "song pipeline", "music pipeline", "start a song", "run the song flow", "adapt my song to", "add a verse to my song", "explain this progression", "revise the song".
+description: Song-creation pipeline orchestrator. Coordinates the music team through 7 stages (Brief, Concept, Structure, Lyrics, Music, Arrangement, Release) with song-type auto-detection across 11 types, deterministic script gates, evaluator-optimizer loops, a listener panel, an adversarial challenger, genre adaptation, lyric augmentation, music-theory answers, and self-learning memory. Triggers on phrases like "write me a song", "song pipeline", "music pipeline", "start a song", "run the song flow", "adapt my song to", "revise the song".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-10-26

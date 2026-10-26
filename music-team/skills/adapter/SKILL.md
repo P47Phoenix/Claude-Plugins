@@ -1,6 +1,6 @@
 ---
 name: adapter
-description: Cross-genre adaptation worker for a song the user owns or that is in the public domain. Detects whether the lyric, the music, or both need adapting, resolves the source and target genres, checks provenance, loads both genre profiles, and spawns a role-scoped sub-agent (lyric-adapter or music-adapter) that keeps the identity of the song, remaps its style, and records kept versus changed in an adaptation report. Triggers on phrases like "adapt my song to", "turn my ballad into", "convert this to <genre>", "make it bossa nova", "cross-genre", "reharmonize for <genre>", "re-fit these lyrics to", "genre adaptation", "what would change if this were <genre>".
+description: Cross-genre adaptation worker for a song the user owns or that is in the public domain. Detects whether the lyric, the music, or both need adapting, resolves the source and target genres, checks provenance, loads both genre profiles, and spawns a role-scoped sub-agent (lyric-adapter or music-adapter) that keeps the identity of the song, remaps its style, and records kept versus changed in an adaptation report. Triggers on phrases like "just adapt the chords to", "turn my ballad into", "convert this to <genre>", "make it bossa nova", "cross-genre", "reharmonize for <genre>", "re-fit these lyrics to", "genre adaptation", "what would change if this were <genre>".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-10-26
@@ -62,7 +62,7 @@ One role is one `Agent` call; never put two `ROLE:` lines in one prompt. When am
 
 Proceed only when `brief.md` (or the user's message in standalone use) records
 `user_asserts_original_input: true`, or `public_domain: true` with a `public_domain_source`. Otherwise reply
-with the refusal sentence above and stop. A supplied lyric you recognise as an existing well-known song is
+with the refusal sentence above and stop. A supplied lyric recognised as an existing well-known song is
 refused under clause 4 even when the flag is set.
 
 ### 4. Announce
@@ -104,6 +104,12 @@ Two genre files is the allowance for both roles (`prompt-allowances.json`); neve
 ### Sub-Agent Prompt Template
 
 ```
+SKILL: adapter
+TASK_TYPE: [TASK_TYPE]
+ROLE: [ROLE]
+
+Begin your response with "SKILL_LOADED: [comma-separated list of every references/ path pasted below]".
+
 You are the [ROLE] for music-team, working on "[TITLE]" ([SOURCE_GENRE] -> [TARGET_GENRE], ADAPT_GENRE).
 
 <!-- originality-policy -->
@@ -129,6 +135,9 @@ Write the artifact to: [ARTIFACT PATH]
 - [PATH]/structure.md: meter, rhyme scheme, form already set for the target
 - [upstream artifacts adapted earlier in this run]
 
+--- CRITIQUE TO ADDRESS (loop 2+ only) ---
+[critique path and gate JSON]
+
 <!-- memory-lessons -->
 [AT MOST 10 LINES, OR "No lessons recorded."]
 
@@ -151,10 +160,10 @@ the type, checked provenance and set the genres:
 - Run steps 2-4 of Phase 2 for that one role. Do not chain roles yourself; the orchestrator dispatches each.
 - Begin the reply with `SKILL_LOADED: <comma-separated list of every references/ path you embedded>`,
   then the hand-back block above.
-- Do not run gates and do not self-certify against them. The orchestrator runs the gate scripts.
-  Exception: before handing back `adaptation-report.md`, run
-  `python -I music-team/scripts/adapt_check.py <dir>/adaptation-report.md <dir>/structure.md` once and fix
-  any FAIL it reports. Report the status in `SUMMARY`; it does not replace the orchestrator's gate.
+- Run the self-check below (advisory); the SubagentStop hook and orchestrator decide the gate.
+  Before handing back `adaptation-report.md`, run
+  `python3 -I music-team/scripts/adapt_check.py <dir>/adaptation-report.md <dir>/structure.md <dir>/lyrics.md`
+  once and fix any FAIL it reports. Report the status in `SUMMARY`; it does not replace the gate.
 
 ### Standalone Invocation
 

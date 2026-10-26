@@ -15,6 +15,8 @@ allowed-tools: [Read, Write, Edit, Bash, Agent, Skill]
 
 # Music memory
 
+Runs inline via the Skill tool (`dispatch: skill`), not as an Agent dispatch.
+
 Stage 7d. Inline skill (no sub-agent). It turns one finished run into a process record and a few reusable lessons.
 It writes **process observations only, never lyric text** (originality policy, "How it is enforced" item 5): no
 line, no phrase of more than three words from any lyric, no artist or song name. Grammar and examples are in

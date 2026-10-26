@@ -211,7 +211,6 @@ stages:
     output_artifacts:
       - adaptation-report.md
     sub_flow: stages/07-release.md
-    notes: adapt_check.py is Wave 7; while absent the gate is SKIPPED, never FAIL.
 
   07a-panel:
     number: 7
@@ -284,6 +283,10 @@ stages:
       - melody.abc
       - panel-report.md
       - challenge-report.md
+      - brief.md
+      - state.json
+      - structure.md
+      - adaptation-report.md
     output_artifacts:
       - package/
     sub_flow: stages/07-release.md
@@ -305,6 +308,8 @@ stages:
     input_artifacts:
       - state.json
       - decisions.md
+      - brief.md
+      - critiques/
     output_artifacts:
       - retrospective.md
     sub_flow: stages/07-release.md

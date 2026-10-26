@@ -15,6 +15,8 @@ allowed-tools: [Read, Write, Edit, Bash, Agent, Skill]
 
 # Music Release
 
+Runs inline via the Skill tool (`dispatch: skill`), not as an Agent dispatch.
+
 Stage 7c. Inline skill (no sub-agent): it copies, formats and summarises artifacts that already passed their gates. It
 writes no new lyric, chord or note, and edits no source artifact. Layout and grammar live in
 `references/contracts/package-output.md`; the type matrix and loop rules are in `music-flow/references/stages/07-release.md`.

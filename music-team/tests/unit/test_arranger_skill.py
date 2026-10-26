@@ -48,9 +48,8 @@ class ArrangerSkillTests(unittest.TestCase):
         for key, value in EXPECTED_FM.items():
             self.assertEqual(fm.get(key), value, key)
         desc = fm["description"]
-        for trigger in ("arrange this", "arrangement", "instrumentation", "what instruments", "dynamics",
-                        "build and drop", "production brief", "production notes", "energy map", "stems",
-                        "export MIDI"):
+        for trigger in ("arrange this song", "instrumentation", "what instruments", "dynamics",
+                        "build and drop", "production brief", "production notes", "energy map", "stems"):
             self.assertIn(trigger, desc)
         self.assertNotIn("phase_1_detector_model", fm)
 

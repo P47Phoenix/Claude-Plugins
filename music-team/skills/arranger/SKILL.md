@@ -1,6 +1,6 @@
 ---
 name: arranger
-description: Arranger agent for instrumentation, section dynamics and energy maps, artist-free production briefs, and MIDI export for the release package. Auto-detects the task type (instrumentation, dynamics, production-brief) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "arrange this", "arrangement", "instrumentation", "what instruments", "dynamics", "build and drop", "production brief", "production notes", "energy map", "stems", "export MIDI".
+description: Arranger agent for instrumentation, section dynamics and energy maps, artist-free production briefs, and MIDI export for the release package. Auto-detects the task type (instrumentation, dynamics, production-brief) and spawns a role-scoped sub-agent with only the relevant reference files. Triggers on phrases like "arrange this song", "instrumentation", "what instruments", "dynamics", "build and drop", "production brief", "production notes", "energy map", "stems".
 license: Apache License 2.0 - See repository LICENSE file
 model_awareness: opus-4-7
 last_audited: 2026-10-26
