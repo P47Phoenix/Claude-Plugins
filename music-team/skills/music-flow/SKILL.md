@@ -188,7 +188,8 @@ dispatch or stop with `MISSING_AGENT`. Constructing such a justification is itse
 
 **Step 5: Verify the hand-back.** Reply must begin `SKILL_LOADED:` then `STATUS: DONE | BLOCKED`,
 `ARTIFACT:`, `SUMMARY:` (<= 200 characters). Confirm the artifact exists on disk. `BLOCKED` or a
-missing artifact is a failed attempt: skip to step 8 without a gate run.
+missing artifact is a failed attempt: skip to step 8 without a gate run. THEORY is the exception:
+`ARTIFACT: none`, and the `ANSWER:` block that follows `SUMMARY:` is relayed to the user unchanged.
 
 **Step 6: Run the gate (single runner).** Read `state.gates.<stage>`. If a `SubagentStop` hook
 populated it in this dispatch and its `artifact_sha256` equals the sha256 of the artifact on disk,

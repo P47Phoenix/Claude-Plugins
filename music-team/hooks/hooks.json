@@ -1,0 +1,81 @@
+{
+  "description": "music-team hooks: prompt audit before Agent dispatches (originality block, blocked targets, per-role reference allowances), hand-back verification after Agent dispatches, and advisory gate summaries when a music-team sub-agent stops. Every hook acts only on music-team dispatches and fails open.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/audit_agent_prompt.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/verify_skill_loaded.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "lyricist",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/subagent_gate.py --agent lyricist",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "composer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/subagent_gate.py --agent composer",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "arranger",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/subagent_gate.py --agent arranger",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "song-critic",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/subagent_gate.py --agent song-critic",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "adapter",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/subagent_gate.py --agent adapter",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

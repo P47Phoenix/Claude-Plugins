@@ -11,7 +11,8 @@
     "hook-judge":     { "rubrics": 1, "techniques": 1 },
     "music-judge":    { "rubrics": 1, "techniques": 1 },
     "prosody-judge":  { "rubrics": 1, "techniques": 1 },
-    "structure-judge":{ "rubrics": 1, "techniques": 1 }
+    "structure-judge":{ "rubrics": 1, "techniques": 1 },
+    "adaptation-fidelity": { "rubrics": 1, "genres": 2, "techniques": 0 }
   },
   "exempt_blocks": ["originality-policy", "memory-lessons"]
 }

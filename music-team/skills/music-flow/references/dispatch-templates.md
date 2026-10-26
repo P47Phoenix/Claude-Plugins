@@ -143,8 +143,8 @@ SUMMARY: {one sentence, max 200 characters}
 
 ## Signal handling
 
-- Reject a reply with no `STATUS:` line: log `malformed hand-back`, re-dispatch once, then
-  treat as `BLOCKED`.
+- Reject a reply with no `STATUS:` line: log `malformed hand-back`, re-dispatch once, then `BLOCKED`.
 - A missing `SKILL_LOADED:` line is a warning logged in `state.json.notes`, not a failure.
 - `BLOCKED` counts as a failed attempt: apply the loop and escalation rules without a gate run.
 - Relay signals at 200 characters or fewer; longer content lives in a file, pass the path.
+  Exception: a `theorist` (THEORY) reply adds an `ANSWER:` block after `SUMMARY:`; relay it to the user unchanged.

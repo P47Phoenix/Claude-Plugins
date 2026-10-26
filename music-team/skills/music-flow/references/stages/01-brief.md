@@ -48,7 +48,7 @@ None. `loops.*` does not apply. The only retry is the single re-ask in step 5.
 | TOPLINE, REWRITE | F | Provenance `user_asserts_original_input: true` required; supplied chords or lyric stored under `## Supplied input` |
 | ADAPT_GENRE | F | Also `source_genre`, `target_genre`; provenance `user_asserts_original_input` or `public_domain` + `public_domain_source` |
 | AUGMENT_LYRICS | F | Provenance as ADAPT_GENRE; `target_genre` optional |
-| THEORY | F | No `brief.md`, no directory, no `.song/active` unless the user asks to save. Dispatch `composer` role `theorist` (Template 1, no genre, up to 3 technique files) and relay the answer; stop. A THEORY answer longer than 200 characters is shown as the sub-agent's text, written to a file only on request |
+| THEORY | F | No `brief.md`, no directory, no `.song/active` unless the user asks to save. Dispatch `composer` role `theorist` (Template 1, no genre, up to 3 technique files) and relay the answer; stop. The hand-back is the 4-line block then an `ANSWER:` block (`composer/references/contracts/theory-output.md`): show everything under `ANSWER:` to the user unchanged, written to a file only on request |
 | REVISE | - | `music-brief` is skipped. Read `state.json`, apply the re-entry rules in `references/shared/song-types.md`, new `run_id`, continue at the re-entry stage |
 | PARODY_ADAPT | refused | Never reaches this stage's file writes |
 
