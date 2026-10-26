@@ -27,30 +27,29 @@ rationale and an anti-pattern catalog in `song-team/references/shared/orchestrat
 
 The orchestrator's only write paths are `.song/active`, `.song/<slug>/state.json`,
 `.song/<slug>/decisions.md`, `.song/<slug>/attempts/` (copies, for accept_best), and, in
-this wave only, the three stand-ins named in the banner below (`structure.md` via the
-groove stub, `package/`, `retrospective.md`).
+this wave only, the two stand-ins named in the banner below (`package/`, `retrospective.md`).
 
-> **Thin slice (Wave 2).** This revision runs **`LYRICS_ONLY` end to end**: Stages 1, 2,
-> 3-light (a documented groove stub), 4, and 7-light (lyric sheet plus release notes).
+> **Thin slice (Wave 3).** This revision runs **`LYRICS_ONLY` end to end**: Stages 1, 2,
+> 3-light (`composer:groove`, one dispatch), 4, and 7-light (lyric sheet plus release notes).
 > **Every other song type** (`FULL_SONG`, `INSTRUMENTAL`, `TOPLINE`, `REWRITE`, `JINGLE`,
 > `REVISE`) runs Stage 1, writes `state.json` with `status: "blocked_wave"`, prints
-> `> This song type (<TYPE>) lands in Wave 3/4 (composer, arranger, full orchestrator). Stage 1 brief is saved at .song/<slug>/brief.md; nothing else runs.`
+> `> This song type (<TYPE>) lands in Wave 4 (Stages 5-6 in W4-1, full orchestrator). Stage 1 brief is saved at .song/<slug>/brief.md; nothing else runs.`
 > and stops. `PARODY_ADAPT` is refused inside `song-brief` and never reaches this file.
+> **Stages 5 (Music) and 6 (Arrangement) land in W4-1**; the composer's `harmony` and
+> `melody` roles and the arranger exist but this file does not yet dispatch them.
 > Not in this wave: hooks (`hooks/` is empty; every gate runs from step 4), `song-memory`
 > lessons (the block is `(none)`), the listener panel, the challenger, `song-release`.
-> Three stand-ins are therefore performed by the orchestrator and are flagged inline:
-> the **groove stub** (Stage 3, replaced by `composer:groove` in W3-2), the **package**
-> (Stage 7, replaced by `song-release` in W4-3), and a **minimal retrospective**
-> (post-pipeline, replaced by `song-memory` in W4-3).
+> Two stand-ins are therefore performed by the orchestrator and are flagged inline:
+> the **package** (Stage 7, replaced by `song-release` in W4-3) and a **minimal
+> retrospective** (post-pipeline, replaced by `song-memory` in W4-3).
 
 The orchestrator **reasons from six shared files** loaded when triggered:
 `orchestrator-doctrine.md`, `stage-gates.md`, `song-types.md`, `config-schema.md`,
 `artifact-formats.md`, `originality-policy.md`, all under `song-team/references/shared/`,
-plus this skill's `references/stage-protocol.md`, `references/groove-stub.md`, and
-`references/package-thin-slice.md` at the stage that needs them. It opens any other
-reference file (role, contract, genre, technique, rubric, prompt template) and
-`scripts/data/form-templates.json` **only to paste them into a prompt or to run the groove
-stub**, and keeps nothing else in its working context.
+plus this skill's `references/stage-protocol.md` and `references/package-thin-slice.md`
+at the stage that needs them. It opens any other reference file (role, contract, genre,
+technique, rubric, prompt template) **only to paste it into a prompt**, and keeps nothing
+else in its working context.
 
 ---
 
@@ -71,7 +70,7 @@ from the **project root** (the absolute directory that holds `.song/`; it also f
 | `status` | Action |
 |----------|--------|
 | `in_progress` | Announce `> Existing run found: <run_id>, <song_type>, at Stage <stage>, updated <updated>.` Verify every artifact named in `owners` exists on disk; name any that is missing. Offer **Resume** / **Restart** / **Abandon**. |
-| `blocked_wave` | Announce the Wave 3/4 message again and offer **Restart** (a fresh brief) / **Abandon**. |
+| `blocked_wave` | Announce the Wave 4 message again and offer **Restart** (a fresh brief) / **Abandon**. |
 | `failed` | Announce `> Failed run found at Stage <stage> (<policy> policy).` Offer **Resume** (re-enter that stage with the counter reset to 0) / **Restart** / **Abandon**. |
 | `complete` | Not a blocker for a new song. When the new request is a **change request** (the `REVISE` signals in `song-types.md`: "make the chorus punchier", "slower bridge", "swap verse two"), print the blocked-type banner with `<TYPE>` = `REVISE` and **stop here, before `song-brief` is invoked**, so the finished run is never overwritten (`state.json` and `.song/active` untouched). Otherwise proceed to a new run. |
 
@@ -89,9 +88,10 @@ with no `state.json` means no active run: proceed.
 **2. Config.** `.song/config.yml` is created by `song-brief` in Stage 1 when absent, so
 Phase 0 reads it only when it exists. Validate the keys this wave consumes: `quick`,
 `loops.concept`, `loops.structure`, `loops.lyrics`, `escalation.on_loop_exhaustion`,
-`routing.force_type`. A missing key takes the default from
-`references/shared/config-schema.md`; a non-numeric loop cap or an unknown policy value is
-announced and replaced by its default for this run (the file is never edited).
+`escalation.on_blocker` (same three policies: `ask_user`, `accept_best`, `fail`),
+`routing.force_type`, `quality.listener_panel_size` (clamped to 1-3). A missing key takes
+the default from `references/shared/config-schema.md`; a non-numeric loop cap or an unknown
+policy value is announced and replaced by its default for this run (the file is never edited).
 
 **3. Quick-mode detection.** Quick mode is on when `quick: true` in config **or** the
 request contains the phrase "quick song". Effects for the whole run, in memory only:
@@ -108,7 +108,7 @@ Print the quick-mode banner from `## Declarations` when it is on.
 ## Stage execution protocol
 
 The thin slice runs this protocol at Stages 2 and 4 in full and at Stage 3 as a light
-stage. `references/stage-protocol.md` carries the exact commands, JSON snippets, and the
+stage (F for the types W4-1 unblocks). `references/stage-protocol.md` carries the exact commands, JSON snippets, and the
 `ask_user` dialogue text; `stage-gates.md` section 4 is the normative source.
 
 **Step 1: Read state.** Load `.song/config.yml` and `.song/<slug>/state.json`. Resolve
@@ -118,13 +118,14 @@ the cap for this stage (`loops.<stage>`, or 1 in quick mode) and the escalation 
 itself with the **Agent tool** (never the Skill tool, which would run the worker inline
 and put craft files into this context):
 
-1. Open the worker's prompt template: `song-team/skills/lyricist/references/agent-prompts/<hook|section|revision>.md`
+1. Open the worker's prompt template: `song-team/skills/lyricist/references/agent-prompts/<hook|section|revision>.md`,
+   `song-team/skills/composer/references/agent-prompts/groove.md` (`harmony.md` and `melody.md` exist and are dispatched from Stage 5 in W4-1),
    or `song-team/skills/song-critic/references/agent-prompts/<hook-judge|prosody-judge|structure-judge>.md`.
    The orchestrator builds and dispatches every sub-agent prompt itself; a worker
    SKILL.md's Dispatch Protocol is what that worker performs when invoked standalone.
 2. Fill every `{placeholder}` with the file contents the template's table names and
    nothing else. Count embedded `references/` files against `prompt-allowances.json`:
-   lyricist roles use its `defaults` entry (1 role, 1 contract, 1 genre, 2 techniques);
+   lyricist and composer roles use its `defaults` entry (1 role, 1 contract, 1 genre, 2 techniques);
    judges use their named entries (`hook-judge`, `prosody-judge`, `structure-judge`: 1
    rubric, 1 technique). Over-allowance is a prompt bug; fix the prompt, never trim the policy.
    Scalar placeholders: `{project_root}` = the absolute project root; `{genre}` and
@@ -135,7 +136,7 @@ and put craft files into this context):
 4. Write `(none)` under `<!-- memory-lessons -->` (lessons arrive with W4-3).
 5. Resolve the genre: `brief.md.genre` lower-cased with spaces as `-`; `pop` when no
    `genres/<g>.md` exists for the worker (say so in the declaration).
-6. Call `Agent` with `subagent_type: "lyricist"` or `"song-critic"` and the built prompt.
+6. Call `Agent` with `subagent_type: "lyricist"`, `"composer"`, or `"song-critic"` and the built prompt.
    One role per dispatch; never two roles in one prompt; never two workers on one artifact in parallel.
 
 **Step 3: Receive the hand-back.** Parse `SKILL_LOADED:`, `STATUS:`, `ARTIFACT:`,
@@ -236,7 +237,7 @@ Then, and only then, the orchestrator:
    (map of stage to a list of `{n, sha256, violations, worst_ratio}`) used by `accept_best`.
 4. Prints the type banner and, when `routing.force_type` is set, the override banner.
 5. Routes: `LYRICS_ONLY` continues to Stage 2. Any other type: set `status: "blocked_wave"`,
-   `updated` now, write `state.json`, print the Wave 3/4 message from the thin-slice banner,
+   `updated` now, write `state.json`, print the Wave 4 message from the thin-slice banner,
    and stop. (`song-brief` already refused `PARODY_ADAPT` before any directory existed.)
 
 `force_type` pins routing only; detection still runs inside `song-brief` and both values
@@ -261,33 +262,37 @@ On the first dispatch `{title or brief theme}` is `brief.md.theme` and `{critiqu
 
 ---
 
-## Stage 3: Structure (light)
+## Stage 3: Structure
 
-**Groove stub.** `composer:groove` does not exist until W3-2, so in this wave the
-orchestrator fills `structure.md` deterministically from
-`song-team/scripts/data/form-templates.json` and `concept.md.hook_line`. This is the documented, temporary exception
-to principle 1: the output is a meter spec and bar counts, not a lyric or a note, and it is
-still gated. W3-2 replaces this section with a real `composer:groove` dispatch and deletes
-`references/groove-stub.md`. Full algorithm and per-template tables live in that file; the summary:
+| Item | Value |
+|------|-------|
+| Worker | `composer:groove`, template `song-team/skills/composer/references/agent-prompts/groove.md`, `subagent_type: composer` |
+| Depth | **F** for `FULL_SONG`, `INSTRUMENTAL`, `JINGLE`; **L** for `LYRICS_ONLY`, `REWRITE`; **I** for `TOPLINE` (one dispatch derives the section list and bars from the user's chord chart in `brief.md`; the gate validates that derived structure, no critic) |
+| Inputs | `brief.md`; `concept.md` (absent for `REWRITE`; carries `motif` for `INSTRUMENTAL`) |
+| Artifact | `.song/<slug>/structure.md`: five header lines (`key`, `mode`, `bpm`, `time_sig`, `form_template`), blank line, the section table |
+| Gate | `structure_check.py structure.md` |
+| Critic | `song-critic:structure-judge`, template `agent-prompts/structure-judge.md`, writes `critique-3.md` (F stages only) |
+| Re-dispatch | `groove` again (`groove.md`) with the critique block; the role rewrites the file whole |
+| Cap | `loops.structure` (default 2; quick 1) |
+| Owner | `owners["structure.md"] = "groove"` |
 
-1. Template: `JINGLE` -> `jingle`; everything else -> `VCVCBC`.
-2. Expansion (`VCVCBC`): `Verse 1, Chorus, Verse 2, Chorus, Bridge, Chorus`. (`jingle`: `Chorus, Verse 1, Chorus`.)
-3. `bars` = the template group's `min_bars` (VCVCBC: 4 each; jingle: 2 each).
-4. `meter_spec` = `default_meter[<kind>]`, kind = label minus its trailing number (`Verse 1` -> `Verse`),
-   **except Chorus line 1**, which is derived from `concept.md.hook_line` (the hook IS chorus line 1):
-   `python -I -c "import sys; sys.path.insert(0, r'<PLUGIN>/scripts'); import prosody_check as p; h='<hook_line>'; print(len(p.stress_pattern(h)), p.stress_pattern(h))"`
-   gives `<n> <pattern>`; write `<n>/<pattern>` as the first `;`-item of every Chorus row
-   (remaining chorus lines keep the template default).
-5. `rhyme_scheme` = kind pattern cycled to the meter line count: Verse `ABAB`, Pre-Chorus `AABB`, Chorus `AABB`, Bridge `AABB` (two lines -> `AA`), Post-Chorus/Tag `AA`; empty meter -> empty scheme.
-6. Header: `key: C`, `mode: major`, `bpm` = integer midpoint of `tempo_band` (VCVCBC 112, jingle 130), `time_sig: 4/4`, `form_template: <name>`.
-7. Write `.song/<slug>/structure.md` in the exact `artifact-formats.md` grammar: five header
-   lines, blank line, the table. **No comment lines**: the header parser reads the file top verbatim.
-8. Gate: `structure_check.py structure.md`. Light stage: single pass, no critic. A FAIL here
-   is a stub bug and goes straight to Step 5.
-9. Record `owners["structure.md"] = "groove-stub"`. That owner string is the only marker
-   that the artifact was stubbed; a later reader (or W3-2's REVISE path) keys on it.
+Rules specific to this stage:
 
-The resulting `VCVCBC` file (verified PASS) is reproduced in `references/groove-stub.md`.
+- **Hook line.** The groove role writes Chorus line 1's `meter_spec` entry as the syllable
+  count and stress pattern of `concept.md.hook_line`, counted by hand per
+  `composer/references/techniques/rhythmic-feel.md` (the rules `prosody_check.py` applies).
+  The orchestrator verifies the entry before recording the gate, with the one-liner
+  `python -I -c "import sys; sys.path.insert(0, r'<PLUGIN>/scripts'); import prosody_check as p; h='<hook_line>'; print(len(p.stress_pattern(h)), p.stress_pattern(h))"`
+  (`<n> <pattern>`); a mismatch is pasted into `## Critique to address` as
+  `Gate hook_meter MISMATCH: structure.md Chorus line 1 <entry>, hook line <n>/<pattern>` and
+  counts one loop (L stages: escalate per Step 5). Skip the one-liner entirely when
+  `song_type` is `INSTRUMENTAL` (no `hook_line`; every `meter_spec` is empty) or `REWRITE`
+  (no `concept.md`; the meter comes from the supplied lyric). Never edit `structure.md` in the main context.
+- `concept.md` is mandatory for every type except `REWRITE`; when it is missing, return to
+  Stage 2 rather than dispatching.
+- At an L or I stage a FAIL skips the critic and goes to Step 5 at once (`stage-gates.md` section 4).
+- `brief.md.user_asserts_original_input` must be `true` for `REWRITE` and `TOPLINE`;
+  otherwise stop and relay the `song-brief` policy sentence.
 
 ---
 
@@ -310,7 +315,7 @@ Rules specific to this stage:
 - The stage passes only when all four scripts return PASS or SKIPPED. `structure_check.py`
   is never SKIPPED; `prosody_check.py` and `rhyme_check.py` SKIP for non-English lyrics.
 - **Hook line.** `verse-writer` must use `concept.md.hook_line` verbatim as Chorus line 1
-  (the stub's Chorus meter line 1 was derived from it). If `lyric-editor` changes that line,
+  (the groove role derived the Chorus meter line 1 from it). If `lyric-editor` changes that line,
   song-flow updates `concept.md.hook_line` to the new text, re-runs both Stage 2 gates
   (recorded under `gates.concept`), and appends a `## <now> hook_line` entry to `decisions.md`.
 - A `structure_check.py` **FAIL or ERROR** (tag or line-count problem) skips the critic:
@@ -377,9 +382,9 @@ Print these lines verbatim (placeholders filled) so a transcript reads like a lo
 | After Stage 1 | `> Song type: <TYPE> \| Matched row: <signal> \| Pin: <none \| force_type> \| Quick: <true \| false> \| Slug: <slug> \| Run: <run_id>` |
 | `force_type` set | `> ROUTING OVERRIDE: routing.force_type: <TYPE> is set in .song/config.yml; detected <DETECTED>, routing as <TYPE>.` |
 | Quick mode on | `> QUICK MODE: every loop cap = 1, on_loop_exhaustion = accept_best, wizard <= 2 questions (source: <config \| phrase>).` |
-| Blocked type | `> This song type (<TYPE>) lands in Wave 3/4 (composer, arranger, full orchestrator). Stage 1 brief is saved at .song/<slug>/brief.md; nothing else runs.` |
-| Stage start | `## Stage <n>: <name> (<F \| L>) — worker <role> — cap <cap>` |
-| Each dispatch | `> Dispatch: <role> \| subagent_type <lyricist \| song-critic> \| genre <g> \| refs <n> files \| artifact <path>` |
+| Blocked type | `> This song type (<TYPE>) lands in Wave 4 (Stages 5-6 in W4-1, full orchestrator). Stage 1 brief is saved at .song/<slug>/brief.md; nothing else runs.` |
+| Stage start | `## Stage <n>: <name> (<F \| L \| I>) — worker <role> — cap <cap>` |
+| Each dispatch | `> Dispatch: <role> \| subagent_type <lyricist \| composer \| song-critic> \| genre <g> \| refs <n> files \| artifact <path>` |
 | Each gate | `Gate <script>: PASS \| FAIL \| SKIPPED \| ERROR (<metric>=<value>, ...; violations <count>)` |
 | Each loop | `> Loop <n>/<cap> at Stage <n>: critic <role> -> worker <role>` |
 | Escalation | `> ESCALATION at Stage <n>: policy <ask_user \| accept_best \| fail>` then the policy's text |
@@ -395,19 +400,19 @@ Metrics in the gate line: `cliche_scan` -> `per_100_words`; `prosody_check --hoo
 
 ## Guardrails
 
-- **Never write lyrics, hook, title, chords, or notes inline.** "It is only one line" is the
-  most common violation. The groove stub, the package copy, and the retrospective are the
-  three documented exceptions in this wave; each is flagged where it occurs and each is
-  scheduled for removal.
+- **Never write lyrics, hook, title, structure, chords, or notes inline.** "It is only one
+  line" is the most common violation. The package copy and the retrospective are the two
+  documented exceptions in this wave; each is flagged where it occurs and each is scheduled
+  for removal. Verifying the hook meter one-liner at Stage 3 is a check, not a write.
 - **One gate runner.** Step 4 is the only place a script result decides a loop. No hook
   runs in this wave; when W4-2 adds `gate_subagent.py`, Step 4 reuses its result on hash
   match and re-runs the script otherwise.
 - **No hooks in this wave.** `hooks/` stays empty. `audit_agent_prompt.py` is not present,
   so the allowance count and the originality clause are the orchestrator's responsibility
   at Step 2.
-- **Agent tool for workers, Skill tool for song-brief only.** Invoking `lyricist` or
-  `song-critic` through the Skill tool loads craft files into the main context and runs the
-  worker inline: a principle 2 violation.
+- **Agent tool for workers, Skill tool for song-brief only.** Invoking `lyricist`,
+  `composer`, or `song-critic` through the Skill tool loads craft files into the main
+  context and runs the worker inline: a principle 2 violation.
 - **Standalone worker invocation warns, never denies.** A worker triggered outside this
   pipeline prints its own warning and proceeds; its output is not gated.
 - **Routing is single-sourced** in `references/shared/song-types.md`. This file names no
@@ -423,7 +428,6 @@ Metrics in the gate line: `cliche_scan` -> `per_100_words`; `prosody_check --hoo
 ## References
 
 - `references/stage-protocol.md` — commands, `state.json` snippets, sha256 one-liner, `ask_user` dialogue (L2)
-- `references/groove-stub.md` — Stage 3 stub algorithm and per-template tables; deleted in W3-2 (L2)
 - `references/package-thin-slice.md` — `lyric-sheet.md` and `release-notes.md` formats; superseded in W4-3 (L2)
 - `song-team/references/shared/` — doctrine, stage gates, song types, config schema, artifact formats, originality policy (L1)
-- `song-team/skills/lyricist/references/agent-prompts/`, `song-team/skills/song-critic/references/agent-prompts/` — prompt templates filled at Step 2
+- `song-team/skills/lyricist/references/agent-prompts/`, `song-team/skills/composer/references/agent-prompts/`, `song-team/skills/song-critic/references/agent-prompts/` — prompt templates filled at Step 2

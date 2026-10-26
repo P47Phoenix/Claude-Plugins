@@ -68,9 +68,11 @@ Every script: accepts `--help`; is stdlib-only and `python -I` safe; normalizes 
 
 Light (L) stages run steps 1-4 once with no critic loop: on FAIL they apply step 5 immediately. Input (I) stages run only the gate on the user-supplied artifact.
 
+Stage 5 loop accounting: one music loop is one gate FAIL, one `music-judge` critique, and every worker re-dispatch that critique causes. A `harmony` re-dispatch followed by the forced `melody` re-dispatch counts ONE increment of `loops_used.music`.
+
 ## 5. Release loop semantics
 
-A Stage 7b BLOCKER returns to Stage 4, or to Stage 5 when the BLOCKER row's `location` names `chords.md` or `melody.abc`. Each return increments `loops_used.release` and resets `loops_used.lyrics` (or `.music`) to zero; downstream stages re-run as L unless `structure_check.py --consistency` invalidates their artifact. When `loops_used.release` reaches `loops.release`, `escalation.on_blocker` applies with the same three policies as step 5. `resemblance_check.py` FAIL is treated as a BLOCKER on `lyrics.md`.
+A Stage 7b BLOCKER returns to Stage 4, or to Stage 5 when the BLOCKER row's `location` names `chords.md` or `melody.abc`, or to Stage 6 when it names `production-brief.md` (an L re-dispatch of `arranger:production-brief` only; `arrangement.md` is not re-run). Each return increments `loops_used.release` (never `.arrangement`) and resets `loops_used.lyrics` (or `.music`) to zero; downstream stages re-run as L unless `structure_check.py --consistency` invalidates their artifact. When `loops_used.release` reaches `loops.release`, `escalation.on_blocker` applies with the same three policies as step 5. `resemblance_check.py` FAIL is treated as a BLOCKER on `lyrics.md`.
 
 ## 6. Debate rubric (orchestrator as judge)
 

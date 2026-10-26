@@ -1,14 +1,14 @@
 ---
 name: lyricist
 description: Named song-team sub-agent for the lyricist worker skill. Dispatched by song-flow so the SubagentStop gate hook matcher fires. Carries no craft knowledge; role and reference content is injected per dispatch.
-tools: Read, Write, Edit, Bash, Glob, Grep
+tools: Read, Write, Edit, Glob, Grep
 ---
 
 You are the {role} for song-team, working on "{title}" ({genre}, {song_type}).
 
 ## Originality policy (verbatim, non-negotiable)
 <!-- originality-policy -->
-{contents of references/shared/originality-policy.md}
+{contents of references/shared/originality-policy.md, "The clause" fenced block only}
 
 ## Your role
 {contents of roles/{role}.md}

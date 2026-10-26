@@ -6,7 +6,7 @@ last_reviewed: 2026-10-26
 
 # Structure Rubric (Stage 3)
 
-Five criteria, each scored 1-5. Anchors are given for 1, 3, and 5; score 2 and 4 when the form sits between anchors. The rubric informs the critique and sets revision priority. `structure_check.py` decides the gate; scores never alter `gate_status`. The Stage 6 arrangement rubric is a separate file (`arrangement-rubric.md`, lands in W3-4).
+Five criteria, each scored 1-5. Anchors are given for 1, 3, and 5; score 2 and 4 when the form sits between anchors. The rubric informs the critique and sets revision priority. `structure_check.py` decides the gate; scores never alter `gate_status`. The Stage 6 arrangement rubric is a separate file (`arrangement-rubric.md`).
 
 ## 1. Template compliance
 

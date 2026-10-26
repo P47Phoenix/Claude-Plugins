@@ -13,20 +13,10 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate_common as gc  # noqa: E402
+import abc_common as ac  # noqa: E402
 
 TEMPLATES_PATH = gc.DATA_DIR / "form-templates.json"
 HEADER_FIELDS = ("key", "mode", "bpm", "time_sig")
-
-_SHARPS = "FCGDAEB"
-_FLATS = "BEADGCF"
-_MAJOR_SHARPS = {"C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#": 6, "C#": 7,
-                 "F": -1, "Bb": -2, "Eb": -3, "Ab": -4, "Db": -5, "Gb": -6, "Cb": -7}
-_MODE_OFFSET = {"major": 0, "ionian": 0, "minor": -3, "aeolian": -3, "dorian": -2,
-                "mixolydian": -1, "lydian": 1, "phrygian": -4, "locrian": -5}
-_MODE_ABBREV = {"m": "minor", "min": "minor", "maj": "major", "dor": "dorian", "mix": "mixolydian",
-                "lyd": "lydian", "phr": "phrygian", "loc": "locrian", "aeo": "aeolian", "ion": "ionian"}
-_BASE_MIDI = {"C": 60, "D": 62, "E": 64, "F": 65, "G": 67, "A": 69, "B": 71}
-_NOTE_RE = re.compile(r"(\^+|_+|=)?([A-Ga-g])([,']*)")
 
 
 # ---------------------------------------------------------------------------
@@ -107,101 +97,6 @@ def check_form(structure: dict[str, Any], templates: dict[str, Any], res: gc.Gat
 
 
 # ---------------------------------------------------------------------------
-# ABC helpers
-# ---------------------------------------------------------------------------
-def parse_abc_key(value: str) -> tuple[str, str]:
-    """``'D'`` -> ('D', 'major'); ``'Dm'``/``'D minor'``/``'Dmin'`` -> ('D', 'minor'); ``'D dorian'`` -> ('D', 'dorian')."""
-    m = re.match(r"^\s*([A-Ga-g][#b]?)\s*([A-Za-z]*)", value)
-    if not m:
-        return value.strip(), ""
-    tonic = m.group(1)[0].upper() + m.group(1)[1:]
-    word = m.group(2).lower()
-    if not word:
-        return tonic, "major"
-    if word in _MODE_OFFSET:
-        return tonic, word
-    return tonic, _MODE_ABBREV.get(word[:3], word)
-
-
-def key_accidentals(tonic: str, mode: str) -> dict[str, int]:
-    """Letter -> semitone offset implied by the key signature."""
-    n = _MAJOR_SHARPS.get(tonic, 0) + _MODE_OFFSET.get(mode, 0)
-    acc: dict[str, int] = {}
-    if n > 0:
-        for letter in _SHARPS[:n]:
-            acc[letter] = 1
-    elif n < 0:
-        for letter in _FLATS[:-n]:
-            acc[letter] = -1
-    return acc
-
-
-def abc_note_to_midi(token: str, key_acc: dict[str, int], bar_acc: dict[str, int] | None = None) -> int:
-    """``'^F,'`` -> 66 etc. Explicit accidental > bar accidental > key signature."""
-    m = _NOTE_RE.fullmatch(token.strip())
-    if not m:
-        raise ValueError(f"not an ABC note: {token!r}")
-    acc_s, letter, octs = m.groups()
-    upper = letter.upper()
-    midi = _BASE_MIDI[upper] + (12 if letter.islower() else 0)
-    midi += 12 * octs.count("'") - 12 * octs.count(",")
-    if acc_s:
-        offset = 0 if acc_s == "=" else (len(acc_s) if acc_s[0] == "^" else -len(acc_s))
-        if bar_acc is not None:
-            bar_acc[letter] = offset
-    elif bar_acc is not None and letter in bar_acc:
-        offset = bar_acc[letter]
-    else:
-        offset = key_acc.get(upper, 0)
-    return midi + offset
-
-
-def parse_abc_sections(text: str) -> list[str]:
-    return [m.group(1).strip() for m in re.finditer(r"^%%section\s+(.+?)\s*$", text, re.M)]
-
-
-def _strip_music_line(line: str) -> str:
-    line = re.sub(r'"[^"]*"', " ", line)          # chord symbols / annotations
-    line = re.sub(r"![^!]*!|\+[^+]*\+", " ", line)  # decorations
-    line = re.sub(r"\{[^}]*\}", " ", line)         # grace notes
-    line = re.sub(r"\[[A-Za-z]:[^\]]*\]", " ", line)  # inline fields
-    return line
-
-
-def parse_abc(text: str) -> dict[str, Any]:
-    """Return headers (key, mode, bpm, time_sig), sections, and midi pitch list."""
-    out: dict[str, Any] = {"key": None, "mode": None, "bpm": None, "time_sig": None,
-                           "sections": parse_abc_sections(text), "pitches": []}
-    key_acc: dict[str, int] = {}
-    in_body = False
-    for raw in text.splitlines():
-        line = raw.strip()
-        if not line or line.startswith("%"):
-            continue
-        hm = re.match(r"^([A-Za-z]):\s*(.*)$", line)
-        if hm:
-            field, value = hm.group(1), hm.group(2).strip()
-            if field == "K":
-                out["key"], out["mode"] = parse_abc_key(value)
-                key_acc = key_accidentals(out["key"], out["mode"])
-                in_body = True
-            elif field == "M":
-                out["time_sig"] = value
-            elif field == "Q":
-                qm = re.search(r"=\s*(\d+)", value)
-                out["bpm"] = int(qm.group(1)) if qm else value
-            continue
-        if not in_body:
-            continue
-        bar_acc: dict[str, int] = {}
-        for bar in re.split(r"\|", _strip_music_line(line)):
-            bar_acc = {}
-            for m in _NOTE_RE.finditer(bar):
-                out["pitches"].append(abc_note_to_midi(m.group(0), key_acc, bar_acc))
-    return out
-
-
-# ---------------------------------------------------------------------------
 # Consistency
 # ---------------------------------------------------------------------------
 def _norm_field(name: str, value: Any) -> str:
@@ -274,17 +169,25 @@ def check_consistency(args: Any, config: dict[str, Any], res: gc.GateResult, str
 
     melody = gc.file_named(args.paths, "melody.abc")
     if melody:
-        abc = parse_abc(gc.read_text(melody))
-        _compare(res, "melody.abc", abc, header)
-        _compare_sections(res, "melody.abc", abc["sections"], want_sections)
-        if abc["pitches"]:
-            lo, hi = min(abc["pitches"]), max(abc["pitches"])
-            res.metrics["melody_min_pitch"], res.metrics["melody_max_pitch"] = lo, hi
-            if lo < vr[0]:
-                res.violate("melody.abc:range", "lowest pitch below vocal_range", lo, vr[0])
-            if hi > vr[1]:
-                res.violate("melody.abc:range", "highest pitch above vocal_range", hi, vr[1])
         compared += 1
+        try:
+            abc = ac.parse_abc(gc.read_text(melody))
+        except ac.AbcParseError as exc:
+            where = f"melody.abc:{exc.line}" if exc.line else "melody.abc"
+            res.violate(where, f"ABC parse error: {exc}", None, "parseable ABC")
+            abc = None
+        if abc is not None:
+            observed = {"key": abc["key"], "mode": abc["mode"], "bpm": abc["bpm"], "time_sig": abc["time_sig"]}
+            _compare(res, "melody.abc", observed, header)
+            _compare_sections(res, "melody.abc", [s["label"] for s in abc["sections"]], want_sections)
+            pitches = ac.all_pitches(abc)
+            if pitches:
+                lo, hi = min(pitches), max(pitches)
+                res.metrics["melody_min_pitch"], res.metrics["melody_max_pitch"] = lo, hi
+                if lo < vr[0]:
+                    res.violate("melody.abc:range", "lowest pitch below vocal_range", lo, vr[0])
+                if hi > vr[1]:
+                    res.violate("melody.abc:range", "highest pitch above vocal_range", hi, vr[1])
 
     arrangement = gc.file_named(args.paths, "arrangement.md")
     if arrangement:

@@ -18,14 +18,14 @@ dispatches workers, runs or reuses gate results, applies loop and escalation pol
 and advances the routing matrix. Its only write paths are `.song/active`,
 `.song/<slug>/state.json`, `.song/<slug>/decisions.md`, `.song/<slug>/attempts/` (gate-time
 copies for `accept_best`), and `.song/memory/**`. **Transitional (Wave 2 thin slice):**
-three stand-ins are also written by the orchestrator until their roles land:
-`structure.md` via the groove stub (W3-2), `package/` (W4-3), and `retrospective.md`
+two stand-ins are also written by the orchestrator until their roles land:
+`package/` (W4-3) and `retrospective.md`
 (W4-3). Every other file under `.song/<slug>/` is written by a dispatched sub-agent.
 
 The orchestrator reasons from six shared files (doctrine, `stage-gates.md`,
 `song-types.md`, `config-schema.md`, `artifact-formats.md`, `originality-policy.md`). It
 opens other reference files and `form-templates.json` only to paste them into a prompt or
-to run the groove stub, and keeps nothing else in its working context.
+to verify a hook meter line, and keeps nothing else in its working context.
 
 ## The eight principles
 
@@ -80,7 +80,7 @@ to run the groove stub, and keeps nothing else in its working context.
 | Treating a `SKIPPED` gate as `FAIL` | Non-English lyrics would never pass Stage 4 | Proceed as PASS and log the skip in `state.json` |
 | Letting a judge "approve" a failed gate | Violates principle 5 | Only the user overrides; record it |
 | Re-running the gate script when the hook hash matches | Wastes a dispatch cycle and can double-count loops | Reuse the hook result on hash match |
-| Loading the whole `references/shared/` tree into the orchestrator | Context bloat; the orchestrator reasons from six files | Open any other reference only to paste it into a prompt or run the groove stub; keep nothing else in context |
+| Loading the whole `references/shared/` tree into the orchestrator | Context bloat; the orchestrator reasons from six files | Open any other reference only to paste it into a prompt; keep nothing else in context |
 | Embedding a style target such as "sounds like <artist>" | Originality policy violation; `audit_agent_prompt.py` denies | Describe genre, era, tempo, texture in technical language |
 | Advancing past Stage 7 without `retrospective.md` | Memory never learns; Stop hook blocks | Run `song-memory` as the post-pipeline protocol |
 

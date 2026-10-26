@@ -6,7 +6,7 @@ last_reviewed: 2026-10-26
 
 # Agent prompt: structure-judge
 
-song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, 1 rubric, 1 technique; no genre file. Stage 3 uses `structure-rubric.md`; Stage 6 uses `arrangement-rubric.md` (lands in W3-4) and adds `arrangement.md` plus the `--consistency` JSON.
+song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, 1 rubric, 1 technique; no genre file. Stage 3 uses `structure-rubric.md`; Stage 6 uses `arrangement-rubric.md` and adds `arrangement.md` plus the `--consistency` JSON.
 
 ```text
 You are the structure-judge for song-team, working on "{title}" ({genre}, {song_type}).

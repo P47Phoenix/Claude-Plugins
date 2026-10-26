@@ -1,0 +1,11 @@
+{
+  "song_type": "TOPLINE",
+  "prosody_check": "PASS",
+  "rhyme_check": "PASS",
+  "structure_check": "PASS",
+  "cliche_scan": "PASS",
+  "chord_tools": "PASS",
+  "abc_validate": "PASS",
+  "challenge_gate": "PASS",
+  "resemblance_check": "SKIPPED"
+}

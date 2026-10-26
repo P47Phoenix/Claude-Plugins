@@ -22,8 +22,7 @@ song-flow (or the lyricist skill when invoked standalone) substitutes every `{pl
 | `{concept.md}` | `.song/<slug>/concept.md` |
 | `{structure.md}` | `.song/<slug>/structure.md` |
 | `{lyrics.md}` | `.song/<slug>/lyrics.md`, the attempt that failed |
-| `{critique}` | prosody-judge critique text (every item cites `violations[].location`) |
-| `{gate_json}` | the raw `--json` output of every Stage 4 script that ran: `prosody_check`, `rhyme_check`, `cliche_scan`, `structure_check` |
+| `{critique}` | the song-flow critique block as one paste: the gate line, the raw `--json` of every Stage 4 script that ran (`prosody_check`, `rhyme_check`, `cliche_scan`, `structure_check`) unedited, then the critique-4.md findings (every item cites `violations[].location`); never `(none)` here, since this prompt only runs after a FAIL |
 | `{lessons}` | memory lessons block supplied by song-flow, <= 10 lines; `(none)` when not supplied |
 
 Swap rule: when every violation is a rhyme violation, replace `t2` with `techniques/rhyme-schemes.md`. When the critique names point of view or arc, replace `t2` with `techniques/point-of-view.md` or `techniques/narrative-arc.md`. `prosody.md` stays. Never embed three technique files.
@@ -66,8 +65,6 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 
 ## Critique to address (if any)
 {critique}
-Gate JSON:
-{gate_json}
 
 <!-- memory-lessons -->
 ## Lessons from memory (<=10 lines)
@@ -83,6 +80,6 @@ SUMMARY: <=15 lines: the before/after table (| location | before | after | reaso
 
 ## Notes for the dispatcher
 
-- Embed the gate JSON unedited. The editor derives its edit list from `violations[].location`; a summarised report loses the line numbers.
+- Embed the gate JSON unedited inside `{critique}`. The editor derives its edit list from `violations[].location`; a summarised report loses the line numbers.
 - When `structure_check`, `rhyme_check`, or `prosody_check` returned `ERROR` (tag mismatch, scheme length mismatch), dispatch this prompt anyway with the ERROR JSON; the editor returns `STATUS: BLOCKED` naming the structural defect and song-flow routes to `verse-writer` or back to Stage 3.
 - The loop counter text in the `### lyrics.md` heading is informational; the editor never argues for an override.

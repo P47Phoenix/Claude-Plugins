@@ -19,8 +19,7 @@ song-flow (or the lyricist skill when invoked standalone) substitutes every `{pl
 | `{techniques/hook-craft.md}` | `references/techniques/hook-craft.md` |
 | `{techniques/prosody.md}` | `references/techniques/prosody.md` |
 | `{brief.md}` | `.song/<slug>/brief.md` |
-| `{critique}` | hook-judge critique text; `(none)` on the first dispatch |
-| `{gate_json}` | the raw `--json` output of `cliche_scan concept.md brief.md` and `prosody_check --hook concept.md brief.md`, unedited; `(none)` on the first dispatch |
+| `{critique}` | `(none)` on the first dispatch; on re-dispatch the song-flow critique block as one paste: the gate line, the raw `--json` of `cliche_scan concept.md brief.md` and `prosody_check --hook concept.md brief.md` unedited, then the critique-2.md findings |
 | `{lessons}` | memory lessons block supplied by song-flow, <= 10 lines; `(none)` when not supplied |
 
 Artifact path: `{project_root}/.song/{slug}/concept.md`.
@@ -55,8 +54,6 @@ Write only the artifact path given; read no file outside this prompt; run no scr
 
 ## Critique to address (if any)
 {critique}
-Gate JSON:
-{gate_json}
 
 <!-- memory-lessons -->
 ## Lessons from memory (<=10 lines)
@@ -73,7 +70,7 @@ SUMMARY: <=15 lines: hook syllable count as you counted it; two runner-up hook l
 ## Notes for the dispatcher
 
 - `{title or brief theme}`: on the first dispatch no title exists; use the `theme` from `brief.md`. On re-dispatch use the previous `concept.md` `title`.
-- `{critique}` and `{gate_json}` both read `(none)` on the first dispatch. On re-dispatch embed the gate JSON unedited, as `revision.md` does; the writer reads `thresholds.hook_max_syllables` and `violations[]` from it.
+- `{critique}` reads `(none)` on the first dispatch. On re-dispatch the single block carries the gate JSON unedited, as `revision.md` does; the writer reads `thresholds.hook_max_syllables` and `violations[]` from it.
 - Do not embed `structure.md` or `lyrics.md`; the hook-writer runs before either exists.
 - When `song_type` is `INSTRUMENTAL`, do not dispatch this prompt; the concept's `motif` is the composer's job.
 - When the critique names point of view or arc, this role keeps its default pair (`hook-craft`, `prosody`); the arc is inside `hook-craft.md`.
