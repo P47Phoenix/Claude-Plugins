@@ -1,0 +1,31 @@
+X:1
+T:Signal Lanterns
+M:4/4
+L:1/8
+Q:1/4=124
+K:Am
+%%section Intro
+A,4 C4 | E4 D4 | A,4 C4 | E4 D4 |
+A,4 C4 | E4 D4 | C2 B,2 A,4 | A,4 A,4 |
+%%section Build
+A,2 C2 E2 D2 | A,2 C2 E2 D2 | B,2 D2 E2 D2 | C2 B,2 A,2 B,2 |
+A,2 C2 E2 D2 | E2 G2 A2 G2 | E2 D2 C2 B,2 | A,2 C2 E2 A2 |
+%%section Drop
+AA cc ee dd | AA cc ed cB | AA cc ee dd | cB AG EE EE |
+AA cc ee dd | AA cc ed cB | GG BB dd cB | AA AA AA AA |
+ee dd cc BB | cc dd ee ee | ee dd cc BB | AA GG EE EE |
+AA cc ee dd | AA cc ed cB | GG BB dd BB | AA AA AA AA |
+%%section Breakdown
+E2 C2 D2 C2 | A,2 C2 E2 D2 | A,2 C2 E2 D2 | C2 B,2 A,2 A,2 |
+F2 E2 D2 C2 | D2 C2 B,2 A,2 | E2 E2 D2 C2 | B,2 B,2 A,2 A,2 |
+%%section Build
+A,2 C2 E2 D2 | A,2 C2 E2 D2 | B,2 D2 E2 D2 | C2 B,2 A,2 B,2 |
+A,2 C2 E2 D2 | E2 G2 A2 G2 | E2 D2 C2 B,2 | A,2 C2 E2 A2 |
+%%section Drop
+AA cc ee dd | AA cc ed cB | AA cc ee dd | cB AG EE EE |
+AA cc ee dd | AA cc ed cB | GG BB dd cB | AA AA AA AA |
+ee dd cc BB | cc dd ee ee | ee dd cc BB | AA GG EE EE |
+AA cc ee dd | AA cc ed cB | GG BB dd BB | AA AA AA AA |
+%%section Outro
+E4 D4 | A,4 C4 | E4 D4 | A,4 C4 |
+A,2 C2 E2 D2 | C2 B,2 A,2 B,2 | A,4 A,4 | A,8 |

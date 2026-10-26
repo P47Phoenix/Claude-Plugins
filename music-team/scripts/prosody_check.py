@@ -282,9 +282,14 @@ def check_lyrics(args: argparse.Namespace, config: dict[str, Any], res: gc.GateR
             if bad > worst[0]:
                 worst = (bad, i + 1)
         ratio = round(bad_total / denom, 4)
-        res.metrics[f"{label.lower().replace(' ', '_')}_mismatch_ratio"] = ratio
-        if ratio > tol:
-            res.violate(f"{label}:{worst[1]}", "stress mismatch", ratio, tol)
+        key = f"{label.lower().replace(' ', '_')}_mismatch_ratio"
+        # A repeated section (three choruses) is one section: keep the worst ratio
+        # and report at most one violation per distinct label.
+        if ratio >= res.metrics.get(key, -1.0):
+            res.metrics[key] = ratio
+            if ratio > tol:
+                res.violations = [v for v in res.violations if not v["location"].startswith(f"{label}:")]
+                res.violate(f"{label}:{worst[1]}", "stress mismatch", ratio, tol)
     res.metrics["syllable_mismatch_lines"] = syll_mismatch
     return res
 

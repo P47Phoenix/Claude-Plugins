@@ -112,14 +112,15 @@ class AuditAgentPromptTests(unittest.TestCase):
         self.assertIn("blocked", json.loads(r.stdout)["hookSpecificOutput"]["permissionDecisionReason"])
 
     def test_single_word_entries_are_case_sensitive(self):
-        self.assertEqual(self.audit(build_prompt(extra="Keep the queen of hearts image.")).returncode, 0)
-        self.assertEqual(self.audit(build_prompt(extra="A bit like Queen here.")).returncode, 2)
+        self.assertEqual(self.audit(build_prompt(extra="The chorus should feel like nirvana.")).returncode, 0)
+        self.assertEqual(self.audit(build_prompt(extra="A bit like Nirvana here.")).returncode, 2)
 
     def test_memory_marker_is_not_a_blocked_hit(self):
         prompt = build_prompt()
         self.assertIn("<!-- memory-lessons -->", prompt)
         self.assertEqual(self.audit(prompt).returncode, 0)
-        self.assertEqual(self.audit(build_prompt(extra="Write it as a Memory.")).returncode, 2)
+        # Ordinary single words (e.g. "Memory") are excluded from blocked-targets.txt.
+        self.assertEqual(self.audit(build_prompt(extra="Write it as a Memory.")).returncode, 0)
 
     def test_over_allowance_denied(self):
         loaded = ("skills/lyricist/references/roles/verse-writer.md, references/shared/genres/folk.md, "
