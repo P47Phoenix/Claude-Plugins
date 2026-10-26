@@ -47,8 +47,8 @@ Declare before every dispatch:
 | Role | Detect when | Gate script read as evidence | Loads (L2) | Loads (L3) |
 |------|-------------|------------------------------|-----------|-----------|
 | `hook-judge` | after Stage 2 (Concept); `concept.md` under review; words "hook", "title line", "chorus line" | `cliche_scan.py` on `concept.md`; `prosody_check.py --hook` | `roles/hook-judge.md`, `contracts/critique.md` | `rubrics/hook-rubric.md`, `techniques/hook-craft.md` |
-| `prosody-judge` | after Stage 4 (Lyrics); `lyrics.md` under review; words "prosody", "stress", "rhyme", "singable" | `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py` on `lyrics.md` | `roles/prosody-judge.md`, `contracts/critique.md` | `rubrics/lyric-rubric.md`, `techniques/prosody.md` |
-| `structure-judge` | after Stage 3 (Structure) or Stage 6 (Arrangement); `structure.md` or `arrangement.md` under review; words "form", "section order", "bars", "energy curve" | Stage 3: `structure_check.py`; Stage 6: `arrangement_check.py`, `structure_check.py --consistency` | `roles/structure-judge.md`, `contracts/critique.md` | Stage 3: `rubrics/structure-rubric.md`, `techniques/form-templates.md`; Stage 6: `rubrics/arrangement-rubric.md` (lands in W3-4), `techniques/form-templates.md` |
+| `prosody-judge` | after Stage 4 (Lyrics); `lyrics.md` under review; words "prosody", "stress", "rhyme", "singable" | every Stage 4 script: `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py`, `structure_check.py` on `lyrics.md` | `roles/prosody-judge.md`, `contracts/critique.md` | `rubrics/lyric-rubric.md`, `techniques/prosody.md` |
+| `structure-judge` | after Stage 3 (Structure; no critic in Wave 2, deterministic stub, dispatched from W3-2) or Stage 6 (Arrangement); `structure.md` or `arrangement.md` under review; words "form", "section order", "bars", "energy curve" | Stage 3: `structure_check.py`; Stage 6: `arrangement_check.py`, `structure_check.py --consistency` | `roles/structure-judge.md`, `contracts/critique.md` | Stage 3: `rubrics/structure-rubric.md`, `techniques/form-templates.md`; Stage 6: `rubrics/arrangement-rubric.md` (lands in W3-4), `techniques/form-templates.md` |
 | `music-judge` (lands in W3-4) | after Stage 5 (Music); `chords.md` or `melody.abc` under review | `chord_tools.py`, `abc_validate.py` | `roles/music-judge.md`, `contracts/critique.md` | `rubrics/melody-rubric.md`, `techniques/melodic-contour.md` |
 | `listener-panel` (lands in W3-4) | Stage 7a; review-board pattern; words "listener feedback", "would people skip" | none (advisory, never gates) | `roles/listener-panel.md`, `contracts/panel-report.md` | three `personas/*.md` selected by genre and audience |
 | `challenger` (lands in W3-4) | Stage 7b always; Stage 4 when `quality.adversarial_lyrics: true`; words "challenge", "adversarial", "does this copy anything" | `challenge_gate.py` reads its output | `roles/challenger.md`, `contracts/challenge-report.md` | `shared/originality-policy.md`, `shared/blocked-targets.txt`, `shared/cliche-list.txt` |
@@ -66,7 +66,7 @@ The orchestrator (`song-flow`) normally performs these steps; a standalone invoc
 1. **Resolve the role** from the table. Record the declaration line.
 2. **Collect evidence.** Read `state.json.gates[<stage>]` when present; otherwise run the gate script(s) with `--json` and keep the full output. The evidence is the JSON, never a paraphrase of it.
 3. **Check the allowance** against `song-team/references/shared/prompt-allowances.json`. Judges embed exactly: 1 role file, 1 contract, 1 rubric, 1 technique, 0 genres, 0 personas. `listener-panel` embeds 3 personas and no rubric or technique. `challenger` embeds the three `shared/` files and nothing from `rubrics/` or `techniques/`. The originality clause and the memory block are exempt.
-4. **Build the prompt** from `references/agent-prompts/<role>.md`. Substitute the bracketed parts; embed the originality clause verbatim under the `<!-- originality-policy -->` marker; paste the gate JSON into the evidence block; name the artifact path to write (`.song/<slug>/critique-<stage>.md`; the orchestrator overwrites it on each loop).
+4. **Build the prompt** from `references/agent-prompts/<role>.md`. Substitute the bracketed parts including `{project_root}`; embed the originality clause verbatim under the `<!-- originality-policy -->` marker; paste the gate JSON into the evidence block; name the artifact path to write (`{project_root}/.song/<slug>/critique-<stage>.md`; the orchestrator overwrites it on each loop).
 5. **Dispatch** with the Agent tool, `subagent_type: song-critic`. The sub-agent has `Read, Glob, Grep, Write`: it reads the artifacts and writes one critique file. It never edits the artifact under review.
 6. **Receive the hand-back** (`SKILL_LOADED`, `STATUS`, `ARTIFACT`, `SUMMARY`). Reject the critique and re-dispatch once when any `## Findings` row lacks a location present in the gate JSON (or a `rubric:` prefix on a PASSED gate). A second failure returns `STATUS: BLOCKED` to the orchestrator.
 7. **Return** the critique path and `SUMMARY` to the caller. Do not summarise the artifact under review; the orchestrator already holds it.
@@ -83,7 +83,7 @@ Sub-agent prompts contain no draft history and no other judge's output. One disp
 | `listener-panel` | `references/contracts/panel-report.md` (W3-4) | `.song/<slug>/panel-report.md` |
 | `challenger` | `references/contracts/challenge-report.md` (W3-4) | `.song/<slug>/challenge-report.md` |
 
-`critique.md` fixes the shape: front-matter (`stage`, `gate_script`, `gate_status`), `## Findings` table with columns `location | violation | diagnosis | suggested revision`, `## Rubric scores` (5 criteria, 1-5), optional `## Suspected false positives`, 60 lines maximum. Rubric files under `references/rubrics/` each carry exactly five criteria with anchors at 1, 3, and 5.
+`critique.md` fixes the shape: front-matter (`stage`, `gate_script`, `gate_status` only; worst status in the order `ERROR > FAIL > SKIPPED > PASS`), `## Findings` table with columns `location | violation | diagnosis | suggested revision`, `## Rubric scores` (5 criteria, 1-5), optional `## Suspected false positives`, 60 lines maximum. Rubric files under `references/rubrics/` each carry exactly five criteria with anchors at 1, 3, and 5.
 
 ---
 
@@ -104,7 +104,7 @@ Routing of the re-dispatch by stage:
 | Critique from | Re-dispatch to | Worker role |
 |---------------|----------------|-------------|
 | Stage 2 `hook-judge` | `lyricist` | `hook-writer` |
-| Stage 3 `structure-judge` | `composer` | `groove` (W2-5 stub until W3-2) |
+| Stage 3 | no critic in Wave 2 (deterministic stub); `structure-judge` for Stage 3 from W3-2 | `composer` `groove` from W3-2 |
 | Stage 4 `prosody-judge` | `lyricist` | `lyric-editor` |
 | Stage 5 `music-judge` | `composer` | `harmony` or `melody`, by the artifact named in `violations[].location` |
 | Stage 6 `structure-judge` | `arranger` | `dynamics` for `arrangement_check.py` rows; `instrumentation` for `--consistency` rows |

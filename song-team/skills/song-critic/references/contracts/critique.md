@@ -18,7 +18,7 @@ gate_status: FAIL
 ---
 ```
 
-`stage` is the integer stage number. `gate_script` lists every script whose JSON was supplied, names without `.py`, comma-separated. `gate_status` is the worst status across them (FAIL > ERROR > PASS; SKIPPED is reported as PASS).
+`stage` is the integer stage number. `gate_script` lists every script whose JSON was supplied, names without `.py`, comma-separated. `gate_status` is the worst status across them in the order `ERROR > FAIL > SKIPPED > PASS` (SKIPPED proceeds as PASS but is reported as SKIPPED).
 
 ## `## Findings` (required)
 

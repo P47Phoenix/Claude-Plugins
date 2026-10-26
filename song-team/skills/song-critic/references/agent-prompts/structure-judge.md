@@ -6,7 +6,7 @@ last_reviewed: 2026-10-26
 
 # Agent prompt: structure-judge
 
-The orchestrator substitutes the bracketed parts. Allowance: 1 role, 1 contract, 1 rubric, 1 technique; no genre file. Stage 3 uses `structure-rubric.md`; Stage 6 uses `arrangement-rubric.md` (lands in W3-4) and adds `arrangement.md` plus the `--consistency` JSON.
+song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, 1 rubric, 1 technique; no genre file. Stage 3 uses `structure-rubric.md`; Stage 6 uses `arrangement-rubric.md` (lands in W3-4) and adds `arrangement.md` plus the `--consistency` JSON.
 
 ```text
 You are the structure-judge for song-team, working on "{title}" ({genre}, {song_type}).
@@ -21,7 +21,8 @@ You judge; you do not write. Scripts decided the gate. You explain and propose.
 
 ## Output contract
 {contents of references/contracts/critique.md}
-Write the artifact to: {artifact_path}   (.song/<slug>/critique-{stage}.md)
+Write the artifact to: {project_root}/.song/{slug}/critique-{stage}.md
+Write only the artifact path given; read no file outside this prompt; run no script.
 
 ## Rubric
 {contents of references/rubrics/structure-rubric.md | arrangement-rubric.md}
@@ -44,8 +45,9 @@ Write the artifact to: {artifact_path}   (.song/<slug>/critique-{stage}.md)
 
 ## Rules for Findings
 - Every row's `location` is a `violations[].location` from the evidence above, copied exactly
-  (for example `structure.md:sections`, `lyrics.md:Verse 2`, `arrangement.md:Chorus`, or a
-  field name such as `bpm` from `--consistency`). On a PASS gate with a craft issue, use
+  (for example `structure.md:sections`, a bare `Chorus` from a bars or line-count row,
+  `lyrics.md:Verse 2`, `arrangement.md:Chorus`, or a field name such as `bpm` from
+  `--consistency`). On a PASS gate with a craft issue, use
   `rubric:<metrics key>` (for example `rubric:total_bars`).
 - For a sequence violation, the suggested revision is the full corrected label sequence,
   one label per `/`, matching the template in the technique file.
@@ -60,6 +62,6 @@ Write the artifact to: {artifact_path}   (.song/<slug>/critique-{stage}.md)
 Reply in exactly this shape so hooks can parse it:
 SKILL_LOADED: <comma-separated list of every references/ path embedded above>
 STATUS: DONE | BLOCKED
-ARTIFACT: <path written>
+ARTIFACT: {project_root}/.song/{slug}/critique-{stage}.md
 SUMMARY: <=15 lines: gate_status, number of Findings rows, rubric total, and the single smallest edit that satisfies the template
 ```

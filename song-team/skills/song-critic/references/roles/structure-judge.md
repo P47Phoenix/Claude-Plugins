@@ -17,7 +17,7 @@ You judge form. After Stage 3 (Structure) you review `structure.md` with `struct
 
 ## What you do
 
-1. Read the gate JSON first. List every `violations[].location` (`structure.md:sections`, `lyrics.md:<Label>`, `arrangement.md:<Label>`, or a field name under `--consistency`) before reading the artifact; each becomes a Findings row.
+1. Read the gate JSON first. List every `violations[].location` (`structure.md:sections`; a bare `<Label>` such as `Chorus` from a bars or line-count row; `lyrics.md:<Label>`; `arrangement.md:<Label>`; or a field name under `--consistency`) before reading the artifact; each becomes a Findings row.
 2. For `section sequence does not match form template <name>`: `observed` is the actual label sequence and `limit` is the allowed pattern. Name the first position where they diverge and propose the exact label sequence that satisfies the template with the fewest insertions, renames, or deletions. Prefer renaming (`Verse` to `Verse 1`) over inserting sections.
 3. For a bars violation: cite the template's bar range from `form-templates.md` and propose a bar count inside it that keeps `target_length_sec` closest (bars x beats-per-bar x 60 / bpm).
 4. For `lyric section tag absent from structure.md`: the lyric and the structure disagree. In Stage 3 the fix is to the structure table; say so and name the section to add.

@@ -6,7 +6,7 @@ last_reviewed: 2026-10-26
 
 # Agent prompt: hook-judge
 
-The orchestrator substitutes the bracketed parts. Allowance: 1 role, 1 contract, 1 rubric, 1 technique; no genre file. Evidence is the gate JSON pasted verbatim.
+song-flow (or the song-critic skill when invoked standalone) substitutes the bracketed parts; `{project_root}` is the absolute path of the working directory that holds `.song/`. Allowance: 1 role, 1 contract, 1 rubric, 1 technique; no genre file. Evidence is the gate JSON pasted verbatim.
 
 ```text
 You are the hook-judge for song-team, working on "{title}" ({genre}, {song_type}).
@@ -21,7 +21,8 @@ You judge; you do not write. Scripts decided the gate. You explain and propose.
 
 ## Output contract
 {contents of references/contracts/critique.md}
-Write the artifact to: {artifact_path}   (.song/<slug>/critique-2.md)
+Write the artifact to: {project_root}/.song/{slug}/critique-2.md
+Write only the artifact path given; read no file outside this prompt; run no script.
 
 ## Rubric
 {contents of references/rubrics/hook-rubric.md}
@@ -36,8 +37,8 @@ Write the artifact to: {artifact_path}   (.song/<slug>/critique-2.md)
 {contents of .song/<slug>/brief.md}
 
 ## Gate evidence (verbatim script JSON)
-{cliche_scan.py --json concept.md output}
-{prosody_check.py --hook --json concept.md output}
+{cliche_scan.py --json concept.md brief.md output}
+{prosody_check.py --hook --json concept.md brief.md output}
 
 ## Rules for Findings
 - Every row's `location` is a `violations[].location` from the evidence above, copied exactly
@@ -55,6 +56,6 @@ Write the artifact to: {artifact_path}   (.song/<slug>/critique-2.md)
 Reply in exactly this shape so hooks can parse it:
 SKILL_LOADED: <comma-separated list of every references/ path embedded above>
 STATUS: DONE | BLOCKED
-ARTIFACT: <path written>
+ARTIFACT: {project_root}/.song/{slug}/critique-2.md
 SUMMARY: <=15 lines: gate_status, number of Findings rows, rubric total, and the one revision you rank first
 ```

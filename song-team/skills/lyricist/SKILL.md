@@ -23,7 +23,7 @@ Three rules hold across every dispatch:
 
 1. **Role and genre isolation.** One role, one genre, per sub-agent. Mixed-genre briefs resolve to the first genre listed in `brief.md`.
 2. **The lyricist never judges itself.** The sub-agent writes the artifact and returns. It never claims a gate passed. `song-critic` judges; `song-flow` decides.
-3. **Gates are scripts.** `prosody_check.py`, `rhyme_check.py`, and `cliche_scan.py` decide pass/fail on measurable properties. The technique files teach what the scripts measure so the first attempt passes; they never replace the scripts.
+3. **Gates are scripts.** `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py`, and `structure_check.py` decide pass/fail on measurable properties. The technique files teach what the scripts measure so the first attempt passes; they never replace the scripts.
 
 The main context receives only the hand-back block and the artifact path.
 
@@ -70,7 +70,7 @@ Declare before every dispatch:
 
 ## Dispatch Protocol
 
-Follow these steps in order for every task. Skip none.
+The orchestrator normally performs these steps; a standalone invocation performs them inline. `song-flow` builds and dispatches every sub-agent prompt in the pipeline; this protocol is what the skill performs when invoked on its own. Follow the steps in order for every task. Skip none.
 
 1. **Detect the role** per the table above. Record it in the declaration line.
 2. **Resolve the genre.** Read `genre:` from `.song/<slug>/brief.md`. Lower-case it and hyphenate spaces (`hip hop` becomes `hip-hop`). When `brief.md` is absent or `genre` is empty, use `pop`. When `genres/<g>.md` does not exist, use `genres/pop.md` and say so in the declaration line.
@@ -100,9 +100,9 @@ Each role has exactly one contract. The contract is the only description of the 
 
 | Role | Contract | Artifact spec it restates | Gate scripts named in it |
 |------|----------|---------------------------|--------------------------|
-| `hook-writer` | `references/contracts/hook.md` | `concept.md` front-matter: `title`, `hook_line`, `central_image`, `arc`, `title_rationale` | `cliche_scan.py`, `prosody_check.py --hook` |
-| `verse-writer` | `references/contracts/section-lyric.md` | `lyrics.md`: `[Label]` tags identical to `structure.md`, one lyric line per `meter_spec` line, rhyme scheme honoured | `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py` |
-| `lyric-editor` | `references/contracts/revision.md` | `lyrics.md` revised in place; before/after table in `SUMMARY` | `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py` |
+| `hook-writer` | `references/contracts/hook.md` | `concept.md` front-matter: `title`, `hook_line` (sung as-is as Chorus line 1), `central_image`, `arc`, `title_rationale` | `cliche_scan.py`, `prosody_check.py --hook` |
+| `verse-writer` | `references/contracts/section-lyric.md` | `lyrics.md`: `[Label]` tags identical to `structure.md`, one lyric line per `meter_spec` line, rhyme scheme honoured, Chorus line 1 = `hook_line` | `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py`, `structure_check.py` |
+| `lyric-editor` | `references/contracts/revision.md` | `lyrics.md` revised in place; before/after table in `SUMMARY` | `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py`, `structure_check.py` |
 
 The normative artifact grammar is `references/shared/artifact-formats.md`; the normative gate rules are `references/shared/stage-gates.md`. A contract restates them for one role and never contradicts them. When a contract and `stage-gates.md` disagree, `stage-gates.md` wins and the contract is a defect.
 
@@ -116,11 +116,11 @@ The sub-agent's hand-back goes to `song-flow`, which runs the stage protocol (`s
 
 | After | song-flow runs | On FAIL, critic | Re-dispatch role |
 |-------|----------------|-----------------|------------------|
-| `hook-writer` (Stage 2) | `cliche_scan.py concept.md`; `prosody_check.py --hook concept.md brief.md` | `song-critic:hook-judge` | `hook-writer` with the critique |
-| `verse-writer` (Stage 4) | `prosody_check.py lyrics.md structure.md brief.md`; `rhyme_check.py lyrics.md structure.md`; `cliche_scan.py lyrics.md` | `song-critic:prosody-judge` | `lyric-editor` with the critique |
-| `lyric-editor` (Stage 4 loop) | the same three scripts | `song-critic:prosody-judge` | `lyric-editor` again until `loops.lyrics` is exhausted |
+| `hook-writer` (Stage 2) | `cliche_scan.py concept.md brief.md`; `prosody_check.py --hook concept.md brief.md` | `song-critic:hook-judge` | `hook-writer` with the critique |
+| `verse-writer` (Stage 4) | `prosody_check.py lyrics.md structure.md brief.md`; `rhyme_check.py lyrics.md structure.md brief.md`; `cliche_scan.py lyrics.md brief.md`; `structure_check.py structure.md lyrics.md` | `song-critic:prosody-judge` | `lyric-editor` with the critique |
+| `lyric-editor` (Stage 4 loop) | the same four scripts | `song-critic:prosody-judge` | `lyric-editor` again until `loops.lyrics` is exhausted |
 
-A stage passes only when every script returns PASS or SKIPPED. SKIPPED (non-English `language`) proceeds as PASS and is logged.
+A stage passes only when every script returns PASS or SKIPPED. SKIPPED (non-English `language`) proceeds as PASS and is logged. Severity order when statuses are combined: `ERROR > FAIL > SKIPPED > PASS`.
 
 **What a critique looks like on re-dispatch.** `song-flow` pastes two things under `## Critique to address`: the critic's prose (every item cites a `violations[].location` such as `Verse 2:3`) and the raw gate JSON:
 

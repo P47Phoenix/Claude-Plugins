@@ -19,7 +19,7 @@ A YAML block between two `---` fences, one key per line, in this order:
 | Key | Type | Rule |
 |-----|------|------|
 | `title` | string | 1 to 8 words. Derived from the hook line. No colon. |
-| `hook_line` | string | The chorus landing line. Syllable count <= `hook_max_syllables` (default 12; genre file states any override). Plain text, no quotes around it, no trailing punctuation other than `?` or `!`. |
+| `hook_line` | string | **Chorus line 1, sung as-is.** `song-flow` derives the chorus meter line from it, so write it to be sung verbatim: syllable count <= `hook_max_syllables` (default 12; genre file states any override), a clear stress pattern, and never ending on an unstressed pronoun (the heuristic marks pronouns unstressed, so the chorus meter would open with a penalty). Plain text, no quotes around it, no trailing punctuation other than `?` or `!`. |
 | `central_image` | string | One physical, concrete thing. 3 to 12 words. No abstraction as the head noun. |
 | `arc` | list of 3 strings | `[start, turn, end]`, each 2 to 6 words, each a state. Beat two contradicts or complicates beat one. |
 | `title_rationale` | string | One sentence stating why this title and how it relates to the hook. |
@@ -60,7 +60,7 @@ Verses collect small proofs of being new. The pre-chorus makes staying a choice.
 
 | Script | Invocation | PASS when |
 |--------|------------|-----------|
-| `cliche_scan.py` | `cliche_scan.py --json concept.md` | hits * 100 / words over `title` + `hook_line` + `central_image` <= `cliche_max_per_100_words` (default 2). With ~20 words scanned, any hit fails; target zero. |
+| `cliche_scan.py` | `cliche_scan.py --json concept.md brief.md` | hits * 100 / words over `title` + `hook_line` + `central_image` <= `cliche_max_per_100_words` (default 2). With ~20 words scanned, any hit fails; target zero. |
 | `prosody_check.py --hook` | `prosody_check.py --hook --json concept.md brief.md` | syllables of `hook_line` <= `hook_max_syllables` (equal passes); SKIPPED when `brief.md.language` is not `en`. |
 
 Syllables are counted by the heuristic in `techniques/prosody.md`: vowel groups, silent trailing `e` dropped, `-ed` silent after most consonants, performance counts from the exception table (`every` = 3, `fire` = 1, `hour` = 1, `poem` = 2, `flower` = 2). Count the hook line yourself with those rules and write the count in `SUMMARY`.

@@ -27,7 +27,7 @@ When several rows match, the first matching row in this order wins:
 | 4 | `TOPLINE` | user supplies chords or a track; "write over this", "topline", "melody and words for these chords", "I have the progression" | nothing supplied | `user_asserts_original_input: true` |
 | 5 | `INSTRUMENTAL` | "instrumental", "no vocals", "beat", "theme music", "background music", "score cue" | "lyrics", "chorus lyrics", "sing" | - |
 | 6 | `JINGLE` | "jingle", "ad", "advert", "commercial", "30 seconds", "15 seconds", a brand or product name | "album", "three minutes", "verse two" | `target_length_sec <= 60` |
-| 7 | `LYRICS_ONLY` | "just lyrics", "words only", "lyrics for", "write the words"; no chords, melody, or production mentioned | "chords", "melody", "beat", "arrangement", "production" | - |
+| 7 | `LYRICS_ONLY` | "just lyrics", "words only", "lyrics for", "write the words", "I have the melody"; no chords, melody, beat, or production requested | asks for chords, melody, beat, or production (mentioning what the user already has is not a reducer) | - |
 | 8 | `FULL_SONG` | default; "write a song", "full song", "song from scratch", "compose a song"; asks for melody, chords, or production | any signal from rows 1-7 | - |
 
 ## Stage routing (what song-flow does with the result)

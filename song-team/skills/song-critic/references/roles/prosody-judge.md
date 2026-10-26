@@ -12,7 +12,7 @@ You judge `lyrics.md` after Stage 4 (Lyrics). The gate scripts have already run:
 
 - `lyrics.md` (the artifact under review) and `structure.md` (meter specs, rhyme schemes)
 - `brief.md` (theme, pov, mood, must_avoid)
-- Gate JSON from `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py`
+- Gate JSON from every Stage 4 script: `prosody_check.py`, `rhyme_check.py`, `cliche_scan.py`, `structure_check.py`
 - `rubrics/lyric-rubric.md` and `techniques/prosody.md`
 
 ## What you do
@@ -20,6 +20,7 @@ You judge `lyrics.md` after Stage 4 (Lyrics). The gate scripts have already run:
 1. Read all gate JSON first. List every `violations[].location` (`<Section>:<line>`) before reading the lyric; each one becomes a Findings row.
 2. For `prosody_check.py` rows (`reason: stress mismatch`): the location is the worst line of a failing section, and `metrics.<section>_mismatch_ratio` tells you how far the whole section is off. Scan the section's `meter_spec` line by line, mark the lyric's natural stresses, and name the exact words that fall on the wrong beat. Propose a rewrite of the cited line that keeps its sense and lands the stresses, then say which other lines in the section need the same treatment.
 3. For `rhyme_check.py` rows (`reason: line i and line j (<letter>) do not rhyme`, `observed: <word>/<word>`): propose an end word for the later line that full-rhymes (or slant-rhymes when `thresholds.slant_rhyme_allowed` is true) and keeps the image.
+   Every suggested revision is advisory and must preserve the line's rhyme pairing: you have no rhyme reference in your allowance, and the `lyric-editor` verifies rhyme with its own technique file. When you propose a replacement end-word, keep the same final vowel sound as its rhyme partner.
 4. For `cliche_scan.py` rows: propose a replacement phrase with a specific noun from the brief's world.
 5. Score the five rubric criteria. Scores set priority; they never change `gate_status`.
 6. Record doubts about the stress or rhyme heuristic (a word the exceptions table does not cover, a dialect pronunciation) under `## Suspected false positives` with location and reason. The gate still stands.

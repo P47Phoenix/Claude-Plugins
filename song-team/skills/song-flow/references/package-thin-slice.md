@@ -40,18 +40,25 @@ quick: <true|false>
 | 4 | prosody_check | PASS | false | worst ratio 0.125 |
 | 4 | rhyme_check | PASS | false | pairs_checked 12 |
 | 4 | cliche_scan | PASS | false | per_100_words 0.0 |
-| 4 | structure_check (line counts) | PASS | false | sections 6 |
+| 4 | structure_check | PASS | false | sections 6 |
 | 7 | challenge_gate | not run (W3-4) | - | - |
 
 ## Loops used
 | stage | used | cap |
 |-------|------|-----|
 | concept | 0 | 3 |
+| structure | 0 | 2 |
 | lyrics | 1 | 4 |
 
 ## Overrides and accept_best
 (none)   <- or one line per `gate_overrides[]` entry and per `accepted_best` key
 ```
 
-`key metric` is the one `metrics` value that best explains the result; the full JSON stays
-in `state.json.gates`. Every row comes from `state.json`; nothing is recomputed.
+Gate rows: one per key of `state.json.gates[<stage>].results`, the `script` cell being the
+invocation string from `scripts` (`prosody_check --hook` at Stage 2); `status` and
+`skipped` come from that script's own result. The `challenge_gate` row is fixed text in
+Wave 2: no `gates.release` entry exists, so nothing is read for it. Loop rows: one per key
+of `loops_used` in file order; `cap` is the effective cap (`loops.<stage>` from config, or
+1 in quick mode), never a hard-coded number. `key metric` is the one `metrics` value that
+best explains the result; the full JSON stays in `state.json.gates`. Every row comes from
+`state.json`; nothing is recomputed.

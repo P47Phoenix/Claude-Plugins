@@ -27,10 +27,16 @@ a lyric, chord, or melody, and because `structure_check.py` still gates it.
 3. **Bars** = the group's `min_bars`.
 4. **meter_spec** = `default_meter[<kind>]`, where `<kind>` is the label with any trailing
    space-digit removed (`Verse 1` -> `Verse`, `Pre-Chorus 2` -> `Pre-Chorus`, `Chorus` -> `Chorus`).
+   **Chorus line 1 is derived from the hook**: the `concept.md.hook_line` IS chorus line 1, so run
+   `python -I -c "import sys; sys.path.insert(0, r'<PLUGIN>/scripts'); import prosody_check as p; h='<hook_line>'; print(len(p.stress_pattern(h)), p.stress_pattern(h))"`
+   (output `<n> <pattern>`) and write `<n>/<pattern>` as the first `;`-item of every
+   Chorus row; the remaining chorus lines keep the template default. The lyric gate then
+   measures the chorus against the hook's own stress, and `verse-writer` places the hook
+   verbatim on that line. If `lyric-editor` later changes the hook, song-flow updates
+   `concept.md.hook_line`, re-runs the Stage 2 gates, and appends a `decisions.md` entry.
 5. **rhyme_scheme** = the kind's pattern from the table below, cycled to the number of
-   `;`-separated lines in `meter_spec` (so a 2-line section gets the first two letters, a
-   5-line section gets five). An empty `meter_spec` gets an empty scheme. The length must
-   equal the line count or `rhyme_check.py` returns ERROR.
+   `;`-separated lines in `meter_spec` (2 lines -> first two letters). An empty
+   `meter_spec` gets an empty scheme. Length must equal the line count or `rhyme_check.py` errors.
 6. **Header**: `key` = `default_key` (`C`), `mode: major`, `bpm` = integer midpoint of
    `tempo_band` (`(lo + hi) // 2`), `time_sig` = `default_time_sig` (`4/4`),
    `form_template` = the template name.
@@ -64,6 +70,9 @@ lines, and a two-line `AB` constrains nothing.
 Total bars: VCVCBC 24; jingle 6 (cap 16). Both pass `structure_check.py` as written.
 
 ## Worked output (`VCVCBC`, verified PASS on 2026-10-26)
+
+Shown with the template default on Chorus line 1; with hook `Nobody knows my name here yet`
+step 4 prints `8 SuuSuSSS` and every Chorus row begins `8/SuuSuSSS;` instead of `7/SuSuSuS;`.
 
 ```markdown
 key: C

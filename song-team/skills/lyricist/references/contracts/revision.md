@@ -48,7 +48,7 @@ Rows list lyric lines only, never comments. "before" and "after" are the full li
 
 ## Gates run against this file
 
-The same scripts as `contracts/section-lyric.md`, on the whole file: `prosody_check.py --json lyrics.md structure.md brief.md`, `rhyme_check.py --json lyrics.md structure.md brief.md`, `cliche_scan.py --json lyrics.md`. `song-flow` compares the new gate JSON with the previous one; a revision that lowers the cited section's ratio but raises another section's is a regression and is re-dispatched with both violations.
+The same four scripts as `contracts/section-lyric.md`, on the whole file: `prosody_check.py --json lyrics.md structure.md brief.md`, `rhyme_check.py --json lyrics.md structure.md brief.md`, `cliche_scan.py --json lyrics.md brief.md`, `structure_check.py --json structure.md lyrics.md`. `song-flow` compares the new gate JSON with the previous one; a revision that lowers the cited section's ratio but raises another section's is a regression and is re-dispatched with both violations.
 
 ## Max length
 

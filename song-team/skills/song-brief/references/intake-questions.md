@@ -8,8 +8,10 @@ last_reviewed: 2026-10-26
 
 The wizard asks at most six questions, in this order, and only for fields the request
 leaves empty after inference. Quick mode (`quick: true`, or "quick song" in the request)
-caps the count at two: the first two unanswered items in order; everything else is
-inferred or defaulted. Ask every pending question in a single numbered message.
+asks at most the first two unanswered questions in the order genre, mood, theme,
+audience, length, avoid, and defaults every later one. `theme` is never defaulted: when
+it is missing it is always question 1. Ask every pending question in a single numbered
+message.
 
 Three fields are never asked: `language` (request language, else
 `routing.default_language`), `pov` (inferred per song type), and
@@ -48,8 +50,8 @@ defiant, dreamy, calm, cheerful...)"
 - **Infer from:** the "about ..." clause, the scene described, the supplied lyric's subject
   (REWRITE), or the tagline and product (JINGLE: the product and what it does).
 - **Default:** none. `theme` is the only required key; the wizard asks until it is
-  non-empty, even in quick mode (a quick-mode request with no theme spends one of its
-  two questions here).
+  non-empty. In quick mode a missing theme is always question 1, ahead of genre and
+  mood, and spends one of the two questions.
 - **Record as:** a single lower-case phrase, no trailing period, no named artist or song.
 
 ## Q4 audience
@@ -60,7 +62,8 @@ defiant, dreamy, calm, cheerful...)"
   `wedding guests`; "for radio" -> `local radio listeners`; a brand -> that brand's
   customers; a film scene -> `film and documentary producers`.
 - **Default:** `general listeners` when unstated and nothing in the request narrows it.
-  Prefer asking in full mode; default in quick mode.
+  Prefer asking in full mode; in quick mode default it unless it is one of the first two
+  unanswered questions.
 - **Record as:** a short noun phrase.
 
 ## Q5 length

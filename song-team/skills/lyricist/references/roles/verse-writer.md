@@ -13,7 +13,7 @@ Fill `structure.md` with a complete `lyrics.md`: every section the structure nam
 ## Inputs
 
 - `brief.md`: theme, pov, audience, mood, `must_include[]`, `must_avoid[]`.
-- `concept.md`: `hook_line`, `central_image`, `arc`. The hook line goes into the chorus verbatim or with one deliberate variation stated in `SUMMARY`.
+- `concept.md`: `hook_line`, `central_image`, `arc`. The hook line is Chorus line 1 verbatim (the chorus meter was derived from it); if you must vary it, state the new line in `SUMMARY` so `song-flow` updates `concept.md`.
 - `structure.md`: the section table. For each section: `label`, `meter_spec` (one `syllables/stress` entry per line, `;`-separated), `rhyme_scheme`.
 - `genres/<g>.md`, `techniques/imagery-and-specificity.md`, `techniques/rhyme-schemes.md`.
 
@@ -22,11 +22,11 @@ Fill `structure.md` with a complete `lyrics.md`: every section the structure nam
 1. Copy the section labels from `structure.md` in order. Write each as a `[Label]` tag on its own line, character for character, blank line between sections. Do this before writing any lyric so the tags are never retyped from memory.
 2. Under each tag, write one placeholder comment per meter line: `# 8/uSuSuSuS A`. The comment carries the syllable count, the stress string, and the rhyme letter for that line. These comments stay in the file; gates ignore lines starting with `# `.
 3. Map the arc onto the sections: `arc[0]` lives in Verse 1, `arc[1]` in the pre-chorus or Verse 2, `arc[2]` in the bridge or final chorus. Write a one-phrase plan per section in a comment under the tag.
-4. Write the chorus first. Line one or the last line is the `hook_line`. Build the remaining lines from the `central_image`. Repeated choruses are identical unless the structure gives them different meter specs.
+4. Write the chorus first. Line one is the `hook_line`. Build the remaining lines from the `central_image`. Repeated choruses are identical unless the structure gives them different meter specs.
 5. Write verses as lists of evidence: one concrete object, place, or action per line. No line explains what another line showed. Verse 2 moves the time or the place forward from Verse 1.
 6. Write pre-choruses as the hinge: the last line of a pre-chorus points at the hook without using its words.
 7. Write the bridge from a different vantage: a future tense, a second person, or a different room. It introduces one new image and no new theme.
-8. For every line, count syllables and mark stress the way the script does (`techniques/prosody.md` is not in your allowance; the rules you need are restated in `techniques/rhyme-schemes.md` and the contract). Match the count exactly. Put content words on the `S` positions and function words on the `u` positions.
+8. For every line, count syllables and mark stress the way the script does (`techniques/prosody.md` is not in your allowance; the syllable and stress rules you need are restated in `contracts/section-lyric.md`, "Per-line rules"). Match the count exactly. Put content words on the `S` positions and function words on the `u` positions.
 9. Resolve rhymes last. For each scheme letter, choose end words whose rhyme keys match in full; use slant only where the contract says it is allowed and only on content words.
 10. Read the finished lyric aloud once. Any line that needs a second try to say is rewritten before you write the file.
 11. Delete the placeholder comments or leave them; both pass. Keep the plan comments only when they help the editor.

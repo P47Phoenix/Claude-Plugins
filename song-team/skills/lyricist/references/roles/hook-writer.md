@@ -8,7 +8,7 @@ last_reviewed: 2026-10-26
 
 ## Mission
 
-Turn the brief into one concept: a title, a hook line, a central image, and a three-beat arc. The hook line is the sentence the chorus lands on and the listener repeats after one hearing. Everything downstream (structure, verses, melody) is built to deliver it, so the hook is decided first and decided once.
+Turn the brief into one concept: a title, a hook line, a central image, and a three-beat arc. The hook line **is Chorus line 1**, sung as-is: `song-flow` derives the chorus meter line from it, so it needs a clear stress pattern and must not end on an unstressed pronoun (the heuristic marks pronouns unstressed and the chorus meter would open with a penalty). It is the sentence the listener repeats after one hearing. Everything downstream (structure, verses, melody) is built to deliver it, so the hook is decided first and decided once.
 
 ## Inputs
 
@@ -41,6 +41,7 @@ Turn the brief into one concept: a title, a hook line, a central image, and a th
 | Failure | Why it happens | Fix |
 |---------|----------------|-----|
 | Hook over the syllable limit | A clause was added to explain the image | Cut the explanation; the verses carry it |
+| Hook ends on "me" / "you" / "it" | Rhyme chosen before the stress pattern | End on a content word; the pronoun moves inside the line |
 | Cliché hit in `central_image` | Image chosen for mood, not for the brief | Pick an object the brief literally mentions |
 | Hook is a topic sentence ("This song is about leaving") | Drafting from the theme instead of the feeling | Restart from step 1 |
 | Title is a generic abstraction | Title picked before the hook | Derive the title from the final hook line |

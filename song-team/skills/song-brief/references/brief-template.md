@@ -52,8 +52,10 @@ Rules that the template does not show:
 ## Example: Appendix A walkthrough
 
 Request: "Write me an upbeat indie-pop song about moving to a new city and not knowing
-anyone yet." Wizard inferred genre `pop` (sub-tag `indie`), mood `upbeat`, and theme;
-asked audience, length, and anything-to-avoid. Detected `FULL_SONG`. Slug derived from
+anyone yet." Default (full) mode, not quick mode: the wizard inferred genre `pop` (sub-tag
+`indie`), mood `upbeat`, and theme, then asked the three remaining questions (audience,
+length, anything-to-avoid). In quick mode it would have asked audience and length only
+and defaulted the rest. Detected `FULL_SONG`. Slug derived from
 theme: `moving-to-a-new-city-and-knowing-no-one` (40-character cut at a word boundary).
 
 ```markdown

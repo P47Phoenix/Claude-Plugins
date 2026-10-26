@@ -19,6 +19,7 @@ Path: `.song/<slug>/lyrics.md` (the prompt states the exact path). UTF-8, LF lin
 3. One blank line between sections.
 4. Lines beginning with `# ` are comments; gates ignore them and they do not count as lyric lines. Use them for plans or stress marks.
 5. No section headings, no bold, no quotes, no trailing spaces, no numbering.
+6. **Chorus line 1 is the `concept.md` `hook_line` verbatim** in every chorus; `structure.md` derived the chorus meter from it. If the line must vary (meter or rhyme forces it), say so in `SUMMARY` with the new line so `song-flow` updates `concept.md`.
 
 ## Per-line rules (what `meter_spec` means)
 
@@ -61,9 +62,9 @@ A borrowed coat that fits me wrong
 | `structure_check.py` | `structure_check.py --json structure.md lyrics.md` | tags match and are ordered; lyric lines per section = meter entries |
 | `prosody_check.py` | `prosody_check.py --json lyrics.md structure.md brief.md` | every section's mismatch ratio <= `prosody_tolerance` |
 | `rhyme_check.py` | `rhyme_check.py --json lyrics.md structure.md brief.md` | every lettered pair full-rhymes, or slant-rhymes when allowed |
-| `cliche_scan.py` | `cliche_scan.py --json lyrics.md` | hits per 100 words <= `cliche_max_per_100_words` |
+| `cliche_scan.py` | `cliche_scan.py --json lyrics.md brief.md` | hits per 100 words <= `cliche_max_per_100_words` |
 
-`prosody_check.py` and `rhyme_check.py` report SKIPPED (treated as PASS) when `brief.md.language` is not `en`; the structure and cliché checks always run.
+`prosody_check.py` and `rhyme_check.py` report SKIPPED (treated as PASS) when `brief.md.language` is not `en`; the structure and cliché checks always run. Severity order: `ERROR > FAIL > SKIPPED > PASS`.
 
 ## Max length
 

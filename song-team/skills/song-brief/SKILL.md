@@ -27,10 +27,10 @@ the row that matched. Every other decision is a wizard answer recorded in front-
 ## Phase 0: Config
 
 1. Check for `.song/config.yml` in the current working directory.
-2. If absent: copy `song-team/.song.config.yml.example` to `.song/config.yml` byte-for-byte
-   (create `.song/` first), then announce before anything else:
+2. If absent: copy `$CLAUDE_PLUGIN_ROOT/.song.config.yml.example` to `.song/config.yml`
+   byte-for-byte (create `.song/` first), then announce before anything else:
 
-   > Created `.song/config.yml` from `song-team/.song.config.yml.example` (schema v1). Edit it to change loop caps, thresholds, or `routing.force_type`.
+   > Created `.song/config.yml` from `$CLAUDE_PLUGIN_ROOT/.song.config.yml.example` (schema v1). Edit it to change loop caps, thresholds, or `routing.force_type`.
 
 3. If present: never overwrite, never edit, never "upgrade". Read it and continue.
    A stale `schema_version` is `check_config.py`'s warning to give, not this skill's.
@@ -100,10 +100,13 @@ live in `references/intake-questions.md`. Ask in this fixed order, skipping answ
 5. **length** (`target_length_sec`; `JINGLE` defaults to 30, others to 180)
 6. **anything-to-avoid** (`must_avoid[]`; also harvest `must_include[]` from the request)
 
-Hard limits: at most 6 questions per run; in quick mode (`quick: true` in config, or the
-phrase "quick song" in the request) at most **2**, chosen as the first unanswered items in
-the order above, with the rest inferred or defaulted. Ask all questions in one message,
-numbered, never one at a time. Accept "whatever" or "you pick" as permission to default.
+Hard limits: at most 6 questions per run. In quick mode (`quick: true` in config, or the
+phrase "quick song" in the request) ask at most the first **two unanswered** questions in
+the order genre, mood, theme, audience, length, avoid, and **default every later one**
+(audience `general listeners`, length per type, lists `[]`, mood from the theme, genre
+from `routing.default_genre`). `theme` is never defaulted: when it is missing it is always
+question 1. Ask all questions in one message, numbered, never one at a time. Accept
+"whatever" or "you pick" as permission to default.
 
 **Originality assertion (TOPLINE and REWRITE only).** Ask once, outside the 6-question
 count, before writing the brief:
@@ -127,6 +130,8 @@ the same theme instead. Every other song type records `user_asserts_original_inp
    `-`, truncated to **40 characters** at a word boundary. Example: theme
    `moving to a new city and knowing no one yet` -> `moving-to-a-new-city-and-knowing-no-one`.
    If `.song/<slug>/` already exists and the type is not `REVISE`, append `-2`, `-3`, ... .
+   **Exception:** when `song-flow` invokes this skill with `reuse_slug: <slug>` (Restart),
+   write into that existing slug and append nothing; `song-flow` owns the old artifacts.
 2. **Path.** `.song/<slug>/brief.md`. Create the directory. Write nothing else in it.
 3. **Front-matter.** Exactly the keys in `references/shared/artifact-formats.md`, one per
    line: `theme`, `pov`, `audience`, `genre`, `mood`, `language`, `target_length_sec`,
