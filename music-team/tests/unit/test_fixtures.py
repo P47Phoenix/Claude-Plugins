@@ -33,6 +33,7 @@ SONG_ARGS = {
     "arrangement_check": ["arrangement.md"],
     "challenge_gate": ["challenge-report.md"],
     "resemblance_check": ["lyrics.md"],
+    "adapt_check": ["adaptation-report.md", "structure.md", "lyrics.md"],
 }
 EXIT = {"PASS": 0, "FAIL": 1, "SKIPPED": 2, "ERROR": 3}
 

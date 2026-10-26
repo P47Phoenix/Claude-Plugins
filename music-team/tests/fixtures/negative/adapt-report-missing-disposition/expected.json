@@ -1,0 +1,10 @@
+{
+  "expectations": [
+    {
+      "script": "adapt_check",
+      "args": ["adaptation-report.md"],
+      "status": "FAIL",
+      "location_contains": "## Changed:row 2"
+    }
+  ]
+}

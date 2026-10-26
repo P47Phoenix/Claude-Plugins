@@ -19,8 +19,8 @@ AGENTS = PLUGIN / "agents"
 sys.path.insert(0, str(SCRIPTS))
 import gate_common as gc  # noqa: E402
 
-# Agents allowed to be absent until their wave lands. Wave 7 removes "adapter".
-ALLOWED_MISSING_AGENTS = {"adapter"}
+# Agents allowed to be absent until their wave lands. Wave 7 removed "adapter".
+ALLOWED_MISSING_AGENTS: set[str] = set()
 
 
 def run_validator(*args: str) -> subprocess.CompletedProcess:
