@@ -39,4 +39,4 @@ Reply in exactly this shape so hooks can parse it:
 SKILL_LOADED: <comma-separated list of every references/ path embedded above>
 STATUS: DONE | BLOCKED
 ARTIFACT: <path written>
-SUMMARY: <=15 lines: what you produced and any decision you want the orchestrator to record
+SUMMARY: one sentence, max 200 characters; put any decision for the orchestrator to record in the artifact notes

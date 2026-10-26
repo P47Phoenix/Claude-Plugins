@@ -53,6 +53,13 @@ class ReferenceCapsTests(unittest.TestCase):
         big.unlink()
         self.assertEqual(self.mod.main(["--root", str(self.root), "--quiet"]), 0)
 
+    def test_yml_and_json_not_capped(self):
+        for name in ("skills/x/references/stages.yml", "skills/x/references/schema.json"):
+            p = self.plugin / name
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("\n".join(f"k{i}: {i}" for i in range(400)) + "\n", encoding="utf-8")
+        self.assertEqual(self.mod.main(["--root", str(self.root), "--quiet"]), 0)
+
     def test_genre_cap_is_100(self):
         self._write("skills/x/references/genres/rock.md", 120)
         self.assertEqual(self.mod.main(["--root", str(self.root), "--quiet"]), 1)

@@ -67,8 +67,8 @@ def check_caps(plugin_root: Path) -> list[str]:
             violations.append(
                 f"FRONTMATTER: {rel} missing loaded_by/level/last_reviewed block"
             )
-        if path.suffix in (".json", ".txt"):
-            continue  # manifests and data lists (blocked targets, cliches) are not prose; no line cap
+        if path.suffix != ".md":
+            continue  # manifests, data lists and routing data (.json/.txt/.yml) are not prose; no line cap
         cap = GENRE_CAP if "/genres/" in f"/{rel}" else GENERAL_CAP
         n = _count_lines(path)
         if n > cap:

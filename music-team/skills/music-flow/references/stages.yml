@@ -1,0 +1,324 @@
+# stages.yml - machine-readable routing for music-flow. Validated by stages-schema.json
+# via scripts/validate_stages.py (stdlib only). Sub-flow prose lives in references/stages/*.md.
+# Placeholders: {dir} = .song/<slug> ; {present} = every artifact of the run that exists on disk.
+# Gate entries are "<script> [flags] <artifact paths>"; the orchestrator appends
+# "--config .song/config.yml --json --genre <genre>" to every invocation.
+# The matrix block mirrors the routing matrix in references/shared/song-types.md exactly.
+
+schema_version: 1
+
+stages:
+  01-brief:
+    number: 1
+    name: Brief
+    matrix_column: 1
+    primary_skill: music-brief
+    dispatch: skill
+    agent: null
+    role: intake
+    task_type: intake
+    gates: []
+    critic_role: null
+    critic_agent: null
+    max_loops_key: null
+    input_artifacts: []
+    output_artifacts:
+      - brief.md
+    sub_flow: stages/01-brief.md
+    notes: Brief validation is inline (theme non-empty, song_type set, language set); no gate script.
+    type_variants:
+      THEORY:
+        dispatch: agent
+        primary_skill: composer
+        agent: composer
+        role: theorist
+        task_type: theory-answer
+        output_artifacts: []
+
+  02-concept:
+    number: 2
+    name: Concept
+    matrix_column: 2
+    primary_skill: lyricist
+    dispatch: agent
+    agent: lyricist
+    role: hook-writer
+    task_type: hook-concept
+    gates:
+      - cliche_scan.py {dir}/concept.md
+      - prosody_check.py --hook {dir}/concept.md
+    critic_role: hook-judge
+    critic_agent: song-critic
+    max_loops_key: concept
+    input_artifacts:
+      - brief.md
+    output_artifacts:
+      - concept.md
+    sub_flow: stages/02-concept.md
+
+  03-structure:
+    number: 3
+    name: Structure
+    matrix_column: 3
+    primary_skill: composer
+    dispatch: agent
+    agent: composer
+    role: groove
+    task_type: structure
+    gates:
+      - structure_check.py {dir}/structure.md
+    critic_role: structure-judge
+    critic_agent: song-critic
+    max_loops_key: structure
+    input_artifacts:
+      - brief.md
+      - concept.md
+    output_artifacts:
+      - structure.md
+    sub_flow: stages/03-structure.md
+
+  04-lyrics:
+    number: 4
+    name: Lyrics
+    matrix_column: 4
+    primary_skill: lyricist
+    dispatch: agent
+    agent: lyricist
+    role: verse-writer
+    then_roles: [lyric-editor]
+    task_type: section-lyrics
+    gates:
+      - prosody_check.py {dir}/lyrics.md {dir}/structure.md {dir}/brief.md
+      - rhyme_check.py {dir}/lyrics.md {dir}/structure.md
+      - cliche_scan.py {dir}/lyrics.md
+    critic_role: prosody-judge
+    critic_agent: song-critic
+    max_loops_key: lyrics
+    input_artifacts:
+      - brief.md
+      - concept.md
+      - structure.md
+    output_artifacts:
+      - lyrics.md
+    sub_flow: stages/04-lyrics.md
+    type_variants:
+      REWRITE:
+        role: lyric-editor
+        then_roles: []
+        task_type: lyric-revision
+      ADAPT_GENRE:
+        primary_skill: adapter
+        agent: adapter
+        role: lyric-adapter
+        then_roles: []
+        task_type: lyric-adapt
+      AUGMENT_LYRICS:
+        role: augmenter
+        then_roles: []
+        task_type: lyric-augment
+
+  05-music:
+    number: 5
+    name: Music
+    matrix_column: 5
+    primary_skill: composer
+    dispatch: agent
+    agent: composer
+    role: harmony
+    then_roles: [melody]
+    task_type: chords-melody
+    gates:
+      - chord_tools.py {dir}/chords.md {dir}/structure.md
+      - abc_validate.py {dir}/melody.abc {dir}/structure.md {dir}/lyrics.md
+    critic_role: music-judge
+    critic_agent: song-critic
+    max_loops_key: music
+    input_artifacts:
+      - brief.md
+      - structure.md
+      - lyrics.md
+    output_artifacts:
+      - chords.md
+      - melody.abc
+    sub_flow: stages/05-music.md
+    type_variants:
+      TOPLINE:
+        role: melody
+        then_roles: []
+        task_type: melody
+      ADAPT_GENRE:
+        primary_skill: adapter
+        agent: adapter
+        role: music-adapter
+        then_roles: []
+        task_type: music-adapt
+
+  06-arrangement:
+    number: 6
+    name: Arrangement
+    matrix_column: 6
+    primary_skill: arranger
+    dispatch: agent
+    agent: arranger
+    role: instrumentation
+    then_roles: [dynamics, production-brief]
+    task_type: arrangement
+    gates:
+      - arrangement_check.py {dir}/arrangement.md
+      - structure_check.py --consistency {present}
+    critic_role: structure-judge
+    critic_agent: song-critic
+    max_loops_key: arrangement
+    input_artifacts:
+      - brief.md
+      - structure.md
+      - chords.md
+      - melody.abc
+    output_artifacts:
+      - arrangement.md
+      - production-brief.md
+    sub_flow: stages/06-arrangement.md
+    type_variants:
+      ADAPT_GENRE:
+        primary_skill: adapter
+        agent: adapter
+        role: music-adapter
+        then_roles: []
+        task_type: arrangement-adapt
+
+  07p-adaptation-report:
+    number: 7
+    name: Adaptation report
+    matrix_column: 7
+    only_types: [ADAPT_GENRE]
+    primary_skill: adapter
+    dispatch: agent
+    agent: adapter
+    role: music-adapter
+    task_type: adaptation-report
+    gates:
+      - adapt_check.py {dir}/adaptation-report.md {dir}/structure.md {dir}/lyrics.md
+    critic_role: adaptation-fidelity
+    critic_agent: song-critic
+    max_loops_key: release
+    input_artifacts:
+      - brief.md
+      - structure.md
+      - lyrics.md
+      - chords.md
+      - melody.abc
+      - arrangement.md
+    output_artifacts:
+      - adaptation-report.md
+    sub_flow: stages/07-release.md
+    notes: adapt_check.py is Wave 7; while absent the gate is SKIPPED, never FAIL.
+
+  07a-panel:
+    number: 7
+    name: Listener panel
+    matrix_column: 7
+    runs_on_cells: [F]
+    primary_skill: song-critic
+    dispatch: agent
+    agent: song-critic
+    role: listener-panel
+    task_type: panel
+    gates: []
+    critic_role: null
+    critic_agent: null
+    max_loops_key: null
+    input_artifacts:
+      - concept.md
+      - lyrics.md
+      - arrangement.md
+    output_artifacts:
+      - panel-report.md
+    sub_flow: stages/07-release.md
+    notes: Advisory only; never gates and never loops.
+
+  07b-challenger:
+    number: 7
+    name: Adversarial challenger
+    matrix_column: 7
+    runs_on_cells: [F, L]
+    primary_skill: song-critic
+    dispatch: agent
+    agent: song-critic
+    role: challenger
+    task_type: challenge
+    gates:
+      - challenge_gate.py {dir}/challenge-report.md
+      - resemblance_check.py {dir}/lyrics.md
+    critic_role: null
+    critic_agent: null
+    max_loops_key: release
+    blocker_return: [4, 5]
+    input_artifacts:
+      - lyrics.md
+      - chords.md
+      - melody.abc
+      - production-brief.md
+    output_artifacts:
+      - challenge-report.md
+    sub_flow: stages/07-release.md
+    notes: Clean context. Receives final artifacts and shared policy files only, never drafts or critiques.
+
+  07c-release:
+    number: 7
+    name: Release package
+    matrix_column: 7
+    runs_on_cells: [F, L]
+    primary_skill: music-release
+    dispatch: skill
+    agent: null
+    role: release
+    task_type: package
+    gates:
+      - midi_export.py {dir}/melody.abc {dir}/chords.md
+    critic_role: null
+    critic_agent: null
+    max_loops_key: null
+    input_artifacts:
+      - lyrics.md
+      - chords.md
+      - melody.abc
+      - panel-report.md
+      - challenge-report.md
+    output_artifacts:
+      - package/
+    sub_flow: stages/07-release.md
+
+  07d-memory:
+    number: 7
+    name: Retrospective
+    matrix_column: 7
+    runs_on_cells: [F, L]
+    primary_skill: music-memory
+    dispatch: skill
+    agent: null
+    role: retrospective
+    task_type: retrospective
+    gates: []
+    critic_role: null
+    critic_agent: null
+    max_loops_key: null
+    input_artifacts:
+      - state.json
+      - decisions.md
+    output_artifacts:
+      - retrospective.md
+    sub_flow: stages/07-release.md
+
+# Columns: Brief, Concept, Structure, Lyrics, Music, Arrangement, Release.
+matrix:
+  FULL_SONG: [F, F, F, F, F, F, F]
+  LYRICS_ONLY: [F, F, L, F, -, -, L]
+  INSTRUMENTAL: [F, L, F, -, F, F, F]
+  TOPLINE: [F, F, I, F, L, -, L]
+  THEORY: [F, -, -, -, -, -, -]
+  ADAPT_GENRE: [F, I, I, L, I, I, F]
+  AUGMENT_LYRICS: [F, I, I, L, -, -, L]
+  REWRITE: [F, -, L, F, -, -, L]
+  JINGLE: [F, F, F, F, F, L, F]
+  REVISE: [-, per request, per request, per request, per request, per request, F]
+  PARODY_ADAPT: [refused, "", "", "", "", "", ""]

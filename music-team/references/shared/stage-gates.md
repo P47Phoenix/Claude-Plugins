@@ -94,3 +94,9 @@ Used when `harmony` and `melody` disagree on key or tempo, or when two hook cand
 | Specificity | The argument cites concrete bars, lines, or metrics rather than taste |
 
 Highest total wins; on a tie, the option with the higher gate-compliance score; on a further tie, the owning role's option (`state.json.owners`). The decision is final for the run unless the user overrides.
+
+## 7. Not-yet-built gate scripts
+
+Scripts named in the stage table that do not exist yet. `music-flow` reports an absent script as `SKIPPED (script absent)`, never `FAIL`. Remove a name here when its script lands (`tests/unit/test_stages.py` reads this list).
+
+Not-yet-built: `chord_tools.py`, `abc_validate.py`, `arrangement_check.py`, `midi_export.py`, `adapt_check.py`, `validate_artifacts.py`.
