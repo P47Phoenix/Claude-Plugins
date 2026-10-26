@@ -37,9 +37,9 @@ def _count_lines(path: Path) -> int:
 
 def _has_frontmatter(path: Path) -> bool:
     """Markdown: a ``---`` fence, the three keys, and a closing ``---`` within
-    the first six lines. Text data lists: ``# <key>:`` comment lines at top."""
+    the first eight lines. Text data lists: ``# <key>:`` comment lines at top."""
     try:
-        head = path.read_text(encoding="utf-8", errors="replace").splitlines()[:6]
+        head = path.read_text(encoding="utf-8", errors="replace").splitlines()[:8]
     except OSError:
         return False
     if path.suffix == ".txt":
