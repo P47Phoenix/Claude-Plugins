@@ -50,5 +50,6 @@ For each claim marked partially supported, not supported or contested:
 - Each correction names a real source. If none could be found, the verdict is unverifiable and the correction says so (guardrail 5)
 - Jewish sources are cited by tractate and folio or by named Midrash (guardrail 3)
 - Original-language claims give transliteration, sense and the named lexicon (guardrail 2)
+- Artifact details (title, songwriter or author, date) are filled only from what the user supplied or a source you opened; otherwise write "not given" (guardrail 1)
 - The closing summary is plain language with short sentences (guardrail 6) and separates "fine", "careful" and "tradition"
 - "Not checked" is never omitted. If everything was checked, write "Nothing outstanding."

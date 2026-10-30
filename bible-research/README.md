@@ -47,7 +47,7 @@ No invented citations; original-language terms with a named lexicon; Jewish sour
 ## Notes
 
 - **Songs:** you supply the lyrics. The plugin does not fetch lyrics sites, and reports cite title, songwriter and line position, never the words
-- **Gate:** the gate runs in `sermon-builder`'s Phase 2, with hooks as a backstop. A hook can block but cannot rewrite output; see [DESIGN_NOTES.md](DESIGN_NOTES.md)
+- **Gate:** the gate runs in `sermon-builder`'s Phase 3, with hooks as a backstop. A hook can block but cannot rewrite output; see [DESIGN_NOTES.md](DESIGN_NOTES.md)
 - **Open items:** see "Open items" in DESIGN_NOTES.md (unsourced claims, unverified hook behavior)
 
 ## Layout

@@ -41,7 +41,7 @@ Detect the task type from the request, in priority order:
 **Workflow rules (enforced literally):**
 
 - `shortlist` produces 3-5 candidates and **stops**. It never continues into a breakdown in the same turn.
-- `breakdown` and `draft` are **refused** unless a candidate has been chosen: the user names one (number, title or reference) from a shortlist in this conversation, or passes the passage on the command line. If the user says "write a sermon" with no choice made, run `shortlist` (if none exists) or ask which candidate they want. **Never pre-select. Never default to the first option.**
+- `breakdown` and `draft` are **refused** unless a candidate has been chosen. A candidate is chosen when the user (a) names one (number, title or reference) from a shortlist in this conversation, or (b) names a specific passage in the request or on the command line (the user chose it, so no shortlist is needed). A topic ("a sermon on love") is not a passage. If the user says "write a sermon" with no choice made, run `shortlist` (if none exists) or ask which candidate they want. **Never pre-select. Never default to the first option.**
 - `revise` needs a draft the user supplies.
 - If the task type is ambiguous, ask before proceeding. Do not assume.
 
@@ -73,7 +73,7 @@ You are a master orator with deep knowledge of Protestant theology and the histo
 ---
 
 ## Guardrails (non-negotiable)
-[PASTE GUARDRAILS 1-11 FROM THIS SKILL.MD]
+[PASTE GUARDRAILS 1-12 FROM THIS SKILL.MD]
 
 ## Task
 [TASK TYPE]: [WHAT THE USER WANTS]
@@ -97,7 +97,7 @@ Fill every bracketed placeholder. Do not add a "Verification notes" section; the
 
 Every `sermon-builder` output -- including a shortlist -- passes through `sermon-verification` `gate` before the user sees it. This is not user-invoked.
 
-1. Spawn the `sermon-verifier` agent (or a general sub-agent) with: the internal draft, the contents of the four verification references plus `pre-delivery-gate.md` from `skills/sermon-verification/references/`, and `contracts/corrected-draft.md`
+1. Spawn the verifier with the `Agent` tool using `subagent_type: bible-research:sermon-verifier` (required, not a general sub-agent, so the `SubagentStop` backstop applies). Paste into its prompt: the internal draft; the four verification references plus `pre-delivery-gate.md` from `../sermon-verification/references/`; `../sermon-verification/references/contracts/corrected-draft.md`; and **the `sermon-verification` guardrails 1-12 and gate prompt from `../sermon-verification/SKILL.md`** (not this file's list, whose guardrail 12 means something different)
 2. The verifier corrects in place, removes claims it cannot source, and returns the `corrected-draft` contract ending in "Verification notes"
 3. Return **only** that corrected version. Never show, quote or summarize the internal draft or its flags
 4. If the verifier's output lacks a "Verification notes" section, re-run it once; if it is still missing, tell the user the gate did not complete and show nothing else
@@ -112,10 +112,10 @@ A `Stop` hook in `hooks/hooks.json` backs this up, but the gate itself lives her
 |---|---|---|---|
 | **shortlist** | "sermon on", "sermon about", "find passages", "candidates", "ideas for a sermon" | `references/exegesis-method.md` + `references/plain-language-style.md` | `contracts/shortlist.md` |
 | **breakdown** | "break down", "go deeper on #N", user picked a candidate, "exegesis" | `references/exegesis-method.md` + `references/original-language.md` + `references/jewish-sources.md` + `references/homiletical-structure.md` + `references/plain-language-style.md` | `contracts/breakdown.md` |
-| **draft** | "write the sermon", "manuscript", "full sermon" (after a candidate is chosen) | `references/homiletical-structure.md` + `references/original-language.md` + `references/plain-language-style.md` | `contracts/breakdown.md` (+ section 8, Manuscript) |
+| **draft** | "write the sermon", "manuscript", "full sermon" (after a candidate is chosen) | With a breakdown already in the conversation: `references/homiletical-structure.md` + `references/original-language.md` + `references/plain-language-style.md`. With none: the full `breakdown` reference set | `contracts/breakdown.md` (+ section 8, Manuscript) |
 | **revise** | "revise", "tighten", "rework this draft", user supplies a draft | `references/homiletical-structure.md` + `references/plain-language-style.md` | `contracts/breakdown.md` (changed sections only) |
 
-`draft` re-uses an existing breakdown if one is in the conversation; otherwise it produces the breakdown sections first.
+`draft` re-uses an existing breakdown if one is in the conversation; otherwise it produces the breakdown sections first, using the full `breakdown` reference set.
 
 ---
 

@@ -55,7 +55,7 @@ Detect the task type from the request, in priority order:
 Flow for every task type:
 
 1. **Extract claims.** Spawn an extractor sub-agent with `references/claim-extraction.md` and the type reference(s). It returns a numbered list of claims, **paraphrased**, each tagged with its kind (scripture citation, historical assertion, original-language or etymology claim, doctrinal assertion, quoted authority). It never reproduces the artifact's text beyond a short identifying phrase. For songs it cites title, songwriter and line **position** ("verse 2, line 3"), never the words
-2. **Route each claim** to the matching `sermon-verification` check, spawned in parallel from here (one sub-agent per check that has claims): citation (`../sermon-verification/references/scripture-citation.md`), history (`historical-translation.md`), doctrine (`doctrinal-alignment.md`), red team (`red-team.md`). Each gets only its own reference file and the claims routed to it. For a `post`, add `viral-claims.md` to the history check
+2. **Route each claim** to the matching `sermon-verification` check, spawned in parallel from here (one sub-agent per check that has claims): citation (`../sermon-verification/references/scripture-citation.md`, contract `../sermon-verification/references/contracts/citation-checklist.md`), history (`../sermon-verification/references/historical-translation.md`, contract `.../contracts/claims-checked.md`), doctrine (`../sermon-verification/references/doctrinal-alignment.md`, contract `.../contracts/doctrinal-concerns.md`), red team (`../sermon-verification/references/red-team.md`, contract `.../contracts/flagged-claims.md`). Each gets only its own reference, its contract, and the claims routed to it. For a `song`, also paste `references/song-theology.md` into the doctrine check so contested lines are labeled contested, not incorrect. For a `post`, add `references/viral-claims.md` to the history check
 3. **Grade the source** per `references/source-grading.md` (primary / scholarly / popular / anonymous; date; whether it cites anything)
 4. **Assemble** with an assembler sub-agent that carries the routed type references, the check results, and `contracts/topic-report.md`. It emits the report
 
@@ -80,7 +80,7 @@ You are a careful reviewer of religious claims in external material (songs, arti
 [EXTRACTOR: THE ARTIFACT TEXT. VERIFIERS: ONLY THE NUMBERED CLAIMS ROUTED TO THIS CHECK, AS PARAPHRASES WITH POSITION REFERENCES]
 
 ## Output
-[EXTRACTOR: numbered claim list as above. VERIFIERS: the contract for the check, filled in per claim number]
+[EXTRACTOR: numbered claim list as above. VERIFIERS: the check's contract (path above), filled in per claim number]
 
 ## Requirements
 - Never reproduce song lyrics, article paragraphs or post text; paraphrase and give positions

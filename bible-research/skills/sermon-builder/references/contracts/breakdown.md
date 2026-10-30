@@ -1,6 +1,6 @@
 # Contract: Breakdown
 
-Emitted by `sermon-builder` task types `breakdown`, `draft` and `revise`. The five required parts come from the project's sermon-building workflow (context, original language, theology, homiletical structure, references). Sections 1-7 follow the layout of the project's finished breakdowns, using `source/sample-breakdown-loving-your-wife.md` as the structural sample; sections 4 and 6-7 add the Jewish-sources, index and bibliography parts that the better chats included. The gate adds the closing "Verification notes".
+Emitted by `sermon-builder` task types `breakdown`, `draft` and `revise`. The five required parts come from the project's sermon-building workflow (context, original language, theology, homiletical structure, references). Sections 1-7 follow the layout of the project's finished breakdowns, using a sample breakdown from the project (kept in the repository's `source/` folder, not shipped with the plugin) as the structural example; sections 4 and 6-7 add the Jewish-sources, index and bibliography parts that the better chats included. The gate adds the closing "Verification notes".
 
 ## Template
 

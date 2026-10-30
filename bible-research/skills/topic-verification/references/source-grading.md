@@ -26,7 +26,7 @@ A rubric for weighting a website, article, video or transcript as evidence. The 
 Move the grade up or down one step for:
 
 - **Up:** cites primary sources precisely; engages the strongest counterview; has an identifiable expert author; has a correction record
-- **Down:** repeats a known folk claim (see `viral-claims.md`); cites nothing for strong claims; quotes an authority with no source; has a clear sales or partisan motive; was written by someone outside their field on a technical point
+- **Down:** repeats a known folk claim (for example "Abba means Daddy"); cites nothing for strong claims; quotes an authority with no source; has a clear sales or partisan motive; was written by someone outside their field on a technical point
 
 ## For Transcripts and Video
 

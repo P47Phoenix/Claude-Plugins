@@ -13,6 +13,7 @@ Turn the artifact into a numbered list of checkable claims. A claim is something
 - **Songs:** give title, songwriter, and line **position** ("verse 2, line 3", "chorus, line 1"). Do not give the words
 - Articles, posts, transcripts: give a section, paragraph number or timestamp, not the paragraph
 - Never reproduce a block of the artifact, even to "show" the claim
+- **Attribution:** if the songwriter, author, speaker or date is not given in what the user supplied, write "not given". Do not guess or fill it in from memory (guardrail 1)
 
 ## Claim Kinds
 

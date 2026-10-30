@@ -14,7 +14,7 @@ From `delivery-team/skills/quality/SKILL.md` and `architect/SKILL.md`:
 
 | Deviation | Why |
 |---|---|
-| **The gate lives in `sermon-builder` Phase 3, not in a hook.** Hooks (`SubagentStop`, `Stop`) are a backstop | Per the hooks docs, `Stop` and `SubagentStop` can only block or continue (`decision: "block"`, `continue: false`); no hook can rewrite or suppress a final message. A hook alone could not stop the user seeing a pre-correction draft. The skill spawns the verifier and returns only its output, which meets "the user must never see the pre-correction draft". The `SubagentStop` hook (matcher `sermon-verifier`) keeps the verifier working until its output ends in "Verification notes" and has no draft marker. The `Stop` hook flags a main-thread reply that delivers builder output without notes |
+| **The gate lives in `sermon-builder` Phase 3, not in a hook.** Hooks (`SubagentStop`, `Stop`) are a backstop | Per the hooks docs, `Stop` and `SubagentStop` can only block or continue (`decision: "block"`, `continue: false`); no hook can rewrite or suppress a final message. A hook alone could not stop the user seeing a pre-correction draft. The skill spawns the verifier and returns only its output, which meets "the user must never see the pre-correction draft". Both hooks are deterministic **command** hooks (`hooks/gate_check.py`), not model-judged prompt hooks: no model call, no cost on non-sermon turns, and they fire only when builder-output markers are present, so a refusal or "which candidate?" reply is never blocked. They also stand down when `stop_hook_active` is set, so a block cannot loop. The `SubagentStop` hook (matcher `.*sermon-verifier`) keeps the verifier working until its output ends in "Verification notes", has no draft marker and no per-check report. The `Stop` hook blocks a main-thread reply that delivers builder output without notes. The router must spawn the verifier with `subagent_type: bible-research:sermon-verifier` so the backstop applies |
 | **`topic-verification` spawns every sub-agent from the router (flat fan-out)** | The docs say subagents can spawn subagents (default depth limit 3, `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`), so the brief's nested-spawning check passes on paper. Nesting was **not tested** in this build, and the docs do not describe how skill `allowed-tools` interacts with spawning. A flat design works with the depth limit at 1, so the pasted-references fallback was not needed |
 | **`commands/` kept alongside `skills/`** | The brief asks for `commands/`. The docs say custom commands "have been merged into skills" and prefer `skills/` for new plugins, but nothing is deprecated. Each command is a thin wrapper that invokes its skill |
 | **A `plugin.json` is present, unlike other plugins in this repo** | Other plugins here have no `.claude-plugin/plugin.json` and are registered through `marketplace.json` with `"strict": false` and a skills list. The brief asks for a manifest. The marketplace entry therefore carries only `name`, `source` and `description`: with `strict: false`, declaring components in the entry while a `plugin.json` exists gives a "conflicting manifests" error |
@@ -47,8 +47,11 @@ Plugin agents ignore `hooks`, `mcpServers` and `permissionMode`; none are used. 
 
 ## 5. Verification of the plugin
 
-- `claude plugin validate ./bible-research` passes. One suggestion remains: no listing icon (`ICON_MISSING`)
-- Not run: the hooks, the sub-agent flows, nested spawning, and the slash commands. None has been exercised end to end
+- `claude plugin validate ./bible-research` and `claude plugin validate .` (the marketplace) pass. One suggestion remains: no listing icon (`ICON_MISSING`)
+- `tests/test_gate_check.py` (14 tests) passes: the hook logic is covered for clean output, missing notes, leaked draft marker, per-check report leak, refusal turns, ordinary replies, malformed input and the repeat-block guard
+- An independent review (Opus) found nine issues and a wrong lectionary rule; these fixes were applied: verifier gets the `sermon-verification` guardrails 1-12 and must be the `sermon-verifier` agent type; builder gets guardrails 1-12; the Stop hook became a deterministic command hook; `draft` without a breakdown loads the full breakdown references; one rule for naming a passage directly; dangling cross-skill references inlined or given full paths; `song-theology.md` goes to the doctrine check for songs; "not given" for missing attribution; the lectionary-year rule (remainder 0 is A, 1 is B, 2 is C); a Julian/Gregorian caveat for Protestant German states; Athanasian vs Nicene wording on modalism
+- The Hebrew sample in `hebrew-calendar.md` (13 September 2026 is 2 Tishrei 5787, Rosh Hashanah II) was checked against the Hebcal converter
+- Not run: the sub-agent flows end to end, nested spawning, and the slash commands
 
 ## 6. Open items
 
@@ -63,12 +66,13 @@ Plugin agents ignore `hooks`, `mcpServers` and `permissionMode`; none are used. 
 
 ### Unverified behavior
 
-- The exact response schema for `prompt`-type `Stop` and `SubagentStop` hooks (`{"ok": true|false, "reason": ...}`) was taken from the docs summary, and the hooks page was only partly read. **Test the hooks before relying on them**
+- The hook protocol itself: that Stop and SubagentStop input includes `last_assistant_message` and `stop_hook_active`, that `{"decision": "block", "reason": ...}` on stdout blocks the stop, and that the matcher `.*sermon-verifier` matches the plugin-namespaced agent type. These came from a partly read docs page and are unconfirmed. The hook script's own logic is tested; its wiring into a live session is not. If `last_assistant_message` is absent, the script allows the stop rather than blocking
+- **Transcript visibility:** the internal draft passes through the main thread as an Agent tool result and as the verifier's input, so it appears in the session transcript view. Only the final reply is clean. The gate guarantees the user is never *shown* the draft in the reply, not that it is absent from tool traces
 - `song-theology.md`: confession-by-confession citations and secondary-work page numbers are marked as items to source
-- `church-history-dates.md` and `hebrew-calendar.md` give leads and worked examples marked to re-verify at use; the Hebrew sample date was not checked against a converter in this build
+- `church-history-dates.md` gives leads, marked to re-verify at use; none was opened in this build (a reviewer judged all five consistent with their recollection)
 
 ### Risks
 
 - The gate depends on the router following Phase 3. Hooks catch a missing notes section but cannot repair a leak
-- A prompt-hook check is model-judged, so it can mis-fire in either direction. Consider a command hook with a simple pattern test if it proves noisy
+- The hook's marker patterns (`Why it fits`, `Original Context` plus `Original-Language Notes`) must stay in step with the shortlist and breakdown contracts; change them together
 - The `commands/` wrappers duplicate routing that the skills already do

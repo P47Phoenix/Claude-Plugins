@@ -33,6 +33,6 @@ If the request is ambiguous, ask. Use the `Skill` tool to invoke the matching sk
 
 ## Workflow Rules
 
-- A sermon request is a `shortlist` first. Present 3-5 candidates and **stop**. Never pre-select. Build a breakdown only after the user chooses
+- A sermon request on a topic is a `shortlist` first. Present 3-5 candidates and **stop**. Never pre-select. Build a breakdown only after the user chooses a candidate, or names a specific passage themselves
 - Every sermon output, including a shortlist, passes the `sermon-verification` gate before the user sees it, and ends with a "Verification notes" section. The user never sees a pre-correction draft
 - `On This Day` runs only on an explicit date-based request. Do not pull date-based content into a sermon unless that skill is invoked

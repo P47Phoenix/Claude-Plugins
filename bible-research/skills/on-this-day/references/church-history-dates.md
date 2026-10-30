@@ -20,7 +20,7 @@ Include an event only if there is a **dated, citable historical source**. Do not
 1. **Find the event** and the date claimed
 2. **Find the source for the date**: a primary document (the letter, the bull, the council acts), a scholarly history, or a standard reference (Oxford Dictionary of the Christian Church, a university press history, a denominational archive)
 3. **Check for disputes.** Many famous dates are traditional and debated. If scholars dispute the date or the details, include the event with the dispute stated, and label it **contested**
-4. **Check the calendar.** A date before 1582 in the West, or before 1752 in Britain and its colonies, is in the **Julian calendar**. Say which calendar the source uses, and give the Gregorian equivalent only if you can cite a conversion. Many sources use "Old Style" (OS) and "New Style" (NS)
+4. **Check the calendar.** A date before 1582 in the West is in the **Julian calendar**. The switch to the Gregorian calendar came later in many places: Catholic states mostly from 1582, Protestant German states around 1700, Britain and its colonies in 1752, and Orthodox countries much later. Check the place and the year. Say which calendar the source uses, and give the Gregorian equivalent only if you can cite a conversion. Many sources use "Old Style" (OS) and "New Style" (NS)
 5. **Check the year.** Some sources start the year on 25 March. Confirm before stating a January to March date
 6. **Name the source** with author, title and year, or the primary document by name
 7. **Mark the confidence:** documented / traditional / contested

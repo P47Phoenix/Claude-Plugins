@@ -48,7 +48,7 @@ Sefaria (sefaria.org) publishes these texts with English translation and is a go
 
 ## Folk Claims to Avoid
 
-Do not repeat popular claims about Jewish custom unless a primary source supports them. A prominent example is the "groom prepares a room and returns for the bride" reading of John 14:2-3. See `viral-claims.md` in `topic-verification`; it is currently unsourced and should be left out.
+Do not repeat popular claims about Jewish custom unless a primary source supports them. A prominent example is the "groom prepares a room and returns for the bride" reading of John 14:2-3. Searches found no primary Jewish source for it, so it is unsourced and should be left out.
 
 ## When You Cannot Cite It
 

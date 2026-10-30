@@ -75,10 +75,10 @@ stateDiagram-v2
 
 | Event | Matcher | Effect |
 |---|---|---|
-| SubagentStop | `sermon-verifier` | Blocks the verifier from finishing unless its output ends in Verification notes, has no `INTERNAL DRAFT` marker and no per-check report |
-| Stop | `*` | Blocks a main-thread reply that delivers sermon-builder output without Verification notes |
+| SubagentStop | `.*sermon-verifier` | `gate_check.py verifier`: blocks the verifier from finishing unless its output ends in Verification notes, has no `INTERNAL DRAFT` marker and no per-check report |
+| Stop | all | `gate_check.py stop`: blocks a main-thread reply that delivers sermon-builder output (shortlist or breakdown markers) without Verification notes; allows everything else |
 
-Hooks can block or continue only; they cannot rewrite output.
+Hooks are deterministic command hooks and can block or continue only; they cannot rewrite output. Tests: `tests/test_gate_check.py`.
 
 ## Layout
 
@@ -87,7 +87,8 @@ bible-research/
   .claude-plugin/plugin.json
   agents/        bible-scholar.md, sermon-verifier.md
   commands/      sermon.md, verify.md, check.md, on-this-day.md
-  hooks/         hooks.json
+  hooks/         hooks.json, gate_check.py
+  tests/         test_gate_check.py
   skills/
     sermon-builder/        SKILL.md, references/ (5), references/contracts/ (3)
     sermon-verification/   SKILL.md, references/ (6), references/contracts/ (6)

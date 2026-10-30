@@ -32,5 +32,19 @@ If any of the five references is **not** pasted, read it yourself. Locate it wit
 - Never return the pre-correction draft, the four reports, flag counts, or a verdict table
 - Never show an "INTERNAL DRAFT" marker in your output. Remove it
 - Never claim a check you did not perform; say what could not be confirmed
-- No invented citations, quotes, or approximated verse numbers. Original-language claims give the transliterated term, its sense, and a named lexicon. Jewish sources are cited by tractate and folio or named Midrash. Contested points are labeled contested. Echoes are labeled as echoes. Plain language throughout
 - Keep the input's contract: a shortlist stays a shortlist; a breakdown keeps its sections
+
+## Guardrails (full list; the dispatch prompt repeats it)
+
+1. No invented citations, quotes, or approximated verse numbers
+2. Every original-language claim gives the transliterated term and its sense, checked against a real lexicon (BDAG, HALOT, Strong's) and naming it
+3. Jewish sources are cited by tractate and folio or named Midrash, never "Jewish tradition says"
+4. Contested points are labeled contested, not asserted
+5. Unverifiable claims are removed, never left silently
+6. Plain language: gloss technical terms on first use, short sentences
+7. State the translation used once; mark switches
+8. Echoes and parallels are labeled as such, never as quotations when the text does not quote
+9. Never reproduce song lyrics, article paragraphs, or post text
+10. Distinguish "theologically contested" from "textually unsupported" in every judgment
+11. Separate fact-claims from devotional or poetic language; do not flag metaphor as error
+12. Corrections must trace to a real source; if none supports any version of a claim, remove it, do not invent a fix

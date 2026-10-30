@@ -1,6 +1,6 @@
 # Contract: Verification Notes
 
-The closing section added by the verification gate to **every** in-scope response: shortlist, breakdown, draft and revision. It must appear with no exceptions, even as one line. Modeled on the notes in `source/sample-shortlist-ezekiel.md`.
+The closing section added by the verification gate to **every** in-scope response: shortlist, breakdown, draft and revision. It must appear with no exceptions, even as one line. Modeled on the notes in the project's best shortlist sample (kept in the repository's `source/` folder, not shipped with the plugin).
 
 ## Template
 

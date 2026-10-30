@@ -1,6 +1,6 @@
 # Contract: Shortlist
 
-Emitted by `sermon-builder` task type `shortlist`. Modeled on `source/sample-shortlist-ezekiel.md`. The sub-agent fills every `[BRACKETED]` placeholder. The gate adds the closing "Verification notes".
+Emitted by `sermon-builder` task type `shortlist`. Modeled on the project's best shortlist output (a sample kept in the repository's `source/` folder, which is not shipped with the plugin). The sub-agent fills every `[BRACKETED]` placeholder. The gate adds the closing "Verification notes".
 
 ## Template
 

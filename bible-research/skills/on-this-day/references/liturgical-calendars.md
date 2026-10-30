@@ -46,7 +46,7 @@ Worked check: Y = 2026 gives month 4, day 5 (5 April 2026). Always confirm a com
 
 ### Lectionary Year
 
-The RCL year runs from the First Sunday of Advent. If the calendar year in which Advent begins is divisible by 3, the church year is **Year C**; if it leaves remainder 1, **Year A**; remainder 2, **Year B**. Check the year against a published RCL table (the Vanderbilt Divinity Library hosts the Revised Common Lectionary readings at lectionary.library.vanderbilt.edu).
+The RCL year runs from the First Sunday of Advent. Take the calendar year in which Advent begins and divide by 3: remainder 0 is **Year A**, remainder 1 is **Year B**, remainder 2 is **Year C**. (Advent 2022 began Year A, Advent 2024 began Year C, and Advent 2026 begins Year B.) Check the year against a published RCL table (the Vanderbilt Divinity Library hosts the Revised Common Lectionary readings at lectionary.library.vanderbilt.edu).
 
 ## How to Verify
 

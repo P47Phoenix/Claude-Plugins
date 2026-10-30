@@ -31,7 +31,7 @@ State the **specific year** being referenced. The Gregorian date is not fixed re
 
 ## Citing Jewish Sources
 
-When a Jewish source describes an observance (the Mishnah on Sukkot, for example), cite by tractate and folio or by named Midrash. Examples: Mishnah Sukkah 4:9 (the water ceremony), Mishnah Sukkah 5:1-3 (the Temple celebration). Do not write "Jewish tradition says." These texts were written after the New Testament; say so when using them to describe first-century practice (see `jewish-sources.md`).
+When a Jewish source describes an observance (the Mishnah on Sukkot, for example), cite by tractate and folio or by named Midrash. Examples: Mishnah Sukkah 4:9 (the water ceremony), Mishnah Sukkah 5:1-3 (the Temple celebration). Do not write "Jewish tradition says." These texts were written after the New Testament (the Mishnah about AD 200, the Talmuds and most Midrash later); say so when using them to describe first-century practice.
 
 ## Entry Format
 

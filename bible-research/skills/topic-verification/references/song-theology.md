@@ -36,7 +36,7 @@ Never reproduce the lyric. Cite title, songwriter and line position.
 
 ### 4. Trinity-collapsing pronouns (modalism)
 
-- **What it is:** Lines that blur the Persons, for example addressing the Father as the one who died, or ending a prayer to the Father by naming the Spirit as if one Person were another. **Modalism** (one God who appears in three modes, not three Persons) is rejected in the Nicene and Athanasian creeds
+- **What it is:** Lines that blur the Persons, for example addressing the Father as the one who died, or ending a prayer to the Father by naming the Spirit as if one Person were another. **Modalism** (one God who appears in three modes, not three Persons) is rejected explicitly in the Athanasian Creed, and implicitly in the Nicene Creed's distinction between Father, Son and Spirit
 - **Scripture:** Matthew 3:16-17; John 14:16-17; 2 Corinthians 13:14
 - **Label:** Ordinary poetic shorthand ("God" for any Person) is **not error**. Flag only when the line affirms that the Father or Spirit suffered or died, or denies the distinction of Persons. Where it is ambiguous, mark it **ambiguous** and suggest a clarifying edit
 

@@ -40,7 +40,7 @@ Never state a sense you have not checked in a real lexicon. If you cannot check 
 
 ## Word Studies: Common Traps
 
-Check each of these before using a word study. See the `topic-verification` skill's `viral-claims.md` for specific cases.
+Check each of these before using a word study. Well-known examples are "Abba means Daddy" and "agape is God-love, phileo is brotherly love"; confirm any such claim in a primary lexicon before using it.
 
 - **Etymological fallacy:** a word's history does not fix its meaning in a given verse. Meaning comes from use in context
 - **Root fallacy:** a shared root does not mean shared sense

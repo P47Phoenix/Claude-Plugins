@@ -26,7 +26,7 @@ A list of claims checked. The fields and verdict labels are defined in `contract
 2. For a date, figure or event: find a citable source (a primary text such as Josephus, or a recognized scholarly work). Where scholars disagree on a date, give the range and call the point disputed (for example the fall of Jerusalem is dated 587 or 586 BC)
 3. For a word study: look the term up in a primary lexicon and name it. A general website alone is not enough for a nuance
 4. For a translation choice: compare the English to the Greek or Hebrew and say whether the sense shifts
-5. For a custom (a wedding practice, a Temple ritual, a Roman custom): require a source that dates to the right period. A later rabbinic text does not prove a first-century custom (see `jewish-sources.md` for dating)
+5. For a custom (a wedding practice, a Temple ritual, a Roman custom): require a source that dates to the right period. A later rabbinic text does not prove a first-century custom: the Mishnah is dated to about AD 200, and the Talmuds and most Midrash are later still, so all postdate the New Testament
 6. Compare against known folk claims (the "Abba means Daddy" and "eye of the needle gate" type). Where a claim matches a folk claim and you cannot find a real source for it, mark it unverifiable
 7. Name the specific lexicon or scholarly work in "Source checked against"; "reference sites" is not a source
 
