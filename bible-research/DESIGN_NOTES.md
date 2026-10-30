@@ -43,7 +43,7 @@ Plugin agents ignore `hooks`, `mcpServers` and `permissionMode`; none are used. 
 
 - `source/` holds the project instructions (the newer version, with the plain-language rule and the gate), the six agent specs and the On This Day skill, copied from the claude.ai project
 - **Chosen examples.** The project's 32 chats were scored two ways: by the project itself and by an independent reviewer. `source/sample-breakdown-loving-your-wife.md` (the only run showing shortlist, then a user pick, then a five-part breakdown) and `source/sample-shortlist-ezekiel.md` (best shortlist) were chosen. The John 14 / Ezekiel file was **not** used because the user judged it not a good example
-- **Breakdown sections 1-7 are inferred, not copied.** The brief says to model the contract on `John-14-through-Ezekiel.md` sections 1-7, but that file was not read. The seven sections come from the project instructions (five required parts) plus the scripture index and bibliography seen in the best chats. **Confirm or correct against the John 14 file**
+- **Breakdown sections 1-7 are inferred, not copied.** The brief says to model the contract on `John-14-through-Ezekiel.md` sections 1-7, but that file was not read. The seven sections come from the project instructions (five required parts) plus the scripture index and bibliography seen in the best chats. **Accepted as is by Michael (2026-10-30)**, who judged the John 14 file not a good example; revisit only if a better gold-standard breakdown turns up
 
 ## 5. Verification of the plugin
 
