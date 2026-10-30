@@ -41,6 +41,7 @@ Each plugin includes an `ARCHITECTURE.md` with Mermaid diagrams for contributors
 | [prd-quality-gate-flow](prd-quality-gate-flow/README.md) | Production-grade PRD workflow with 7 quality gates, episodic memory, and evidence-based Stage-Gate process |
 | [research-agent](research-agent/README.md) | Research agent with 5 research types (Exploratory, Descriptive, Explanatory, Evaluative, Comparative) and academic frameworks (PICO, SPICE, PECO, GRADE, ReAct) |
 | [music-team](music-team/README.md) | Song writing, lyrics, music theory, lyric augmentation, and cross-genre adaptation: 7-stage pipeline over 9 skills and 5 agents, 11 song types, 12 genre profiles, script gates and originality guardrails |
+| [bible-research](bible-research/README.md) | Sermon builder (shortlist, your pick, full breakdown), a pre-delivery verification gate, a checker for songs, posts and talks, and church-calendar lookups by date: 4 skills, 2 agents, 4 commands |
 
 ## What's New
 

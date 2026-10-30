@@ -1,0 +1,20 @@
+{
+  "name": "bible-research",
+  "version": "0.1.0",
+  "description": "Sermon development and religious-claim verification: a shortlist-then-breakdown sermon builder, a pre-delivery verification gate, a checker for songs, posts and talks, and a date-based church-calendar lookup. Agent to skill router to progressive disclosure of reference docs.",
+  "author": {
+    "name": "Michael Connelly",
+    "email": "michaelconne@gmail.com"
+  },
+  "homepage": "https://github.com/P47Phoenix/Claude-Plugins",
+  "repository": "https://github.com/P47Phoenix/Claude-Plugins",
+  "license": "Apache-2.0",
+  "keywords": [
+    "bible",
+    "sermon",
+    "exegesis",
+    "verification",
+    "theology",
+    "church-calendar"
+  ]
+}

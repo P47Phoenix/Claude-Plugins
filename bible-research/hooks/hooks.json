@@ -1,0 +1,29 @@
+{
+  "description": "Bible-research hooks: enforce the pre-delivery verification gate. A hook can only block or continue (it cannot rewrite output), so the gate itself lives in the sermon-builder skill; these hooks make a missing or leaking gate fail loudly. See DESIGN_NOTES.md.",
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "sermon-verifier",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are checking the final message of the sermon-verifier subagent. Hook input: $ARGUMENTS. Read last_assistant_message. It must (1) END with a section that begins with 'Verification notes' (bold or plain), containing at least one line; (2) NOT contain the text 'INTERNAL DRAFT'; (3) NOT contain a per-agent findings report, such as a verse-by-verse checklist, a 'Claims Checked' table, a 'Flagged Claims' list, or a 'Doctrinal Concerns' list. If all three hold, respond {\"ok\": true}. Otherwise respond {\"ok\": false, \"reason\": \"<one sentence naming what is missing or leaking>. Return only the corrected draft in the corrected-draft contract, ending in Verification notes (minimum one line).\"}",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Hook input: $ARGUMENTS. Read last_assistant_message. Decide whether this turn delivered sermon-builder output to the user: a passage shortlist, a passage breakdown, a sermon draft, or a sermon revision (look for a 'Task Type:' declaration naming a sermon-builder task, a list of 3-5 candidate passages ending in a question, or numbered breakdown sections such as 'Original Context' and 'Original-Language Notes'). If the turn did NOT deliver sermon-builder output (a single verification report, a topic check, an On This Day list, ordinary conversation), respond {\"ok\": true}. If it did, it must END with a 'Verification notes' section of at least one line and must NOT contain the text 'INTERNAL DRAFT'. If both hold, respond {\"ok\": true}. Otherwise respond {\"ok\": false, \"reason\": \"The verification gate did not complete: sermon-builder output must pass the sermon-verification gate and end with Verification notes. Run the gate, then return only the corrected version.\"}",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
