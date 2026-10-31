@@ -26,4 +26,5 @@ Emitted by `sermon-verification` task type `gate`. The only thing the user sees 
 - Notes are a short plain-language summary of changes, not a re-run of the full report (guardrail 6)
 - Never name the internal draft, an agent, a verdict table or a flag count
 - Never claim a check that was not performed; say what was not confirmed
-- Keep the input's contract: a shortlist stays a shortlist of 3-5 candidates ending in the question; a breakdown keeps sections 1-7 (and 8 for a manuscript)
+- Keep the input's contract: a shortlist stays a shortlist of 3-5 candidates ending in the question; a breakdown keeps sections 1-7 (and 8 for a manuscript); a `research` timeline, song-ideas list or findings and an `idea-team` report keep their sections and closing question
+- **Contract labels are not flags.** `[INFERENCE]`, `[CONTESTED]`, `[TRADITIONAL]` and `[Single-source]` stay in place wherever the input's contract requires them (song ideas, timelines, findings, review reports), and `[UNVERIFIED]` stays in research findings and review reports, where the contract keeps unverified items tagged rather than removed. "No flags left in the text" means the draft's internal review flags, not these

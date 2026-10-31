@@ -105,7 +105,7 @@
     },
     {
       "name": "bible-research",
-      "description": "Sermon development and religious-claim verification on the agent-to-skill-router pattern: sermon-builder (shortlist, wait for your choice, then full breakdown), sermon-verification (citation, history, doctrine, red-team, pacing checks and an automatic pre-delivery gate), topic-verification (checks songs, articles, posts and transcripts), and on-this-day (church-calendar lookups by date). Original-language fidelity, specific Talmud/Midrash citations, and no invented sources are enforced in every skill.",
+      "description": "Sermon development and religious-claim verification on the agent-to-skill-router pattern: sermon-builder (shortlist, wait for your choice, then full breakdown), sermon-verification (citation, history, doctrine, red-team, pacing checks and an automatic pre-delivery gate), topic-verification (checks songs, articles, posts and transcripts), on-this-day (church-calendar lookups by date), research (sourced timelines by era, song-idea lists, word studies, people, themes, passages, church history), and idea-team (isolated simulated personas, facilitated multi-round review to an honest consensus, talk mode). Original-language fidelity, specific Talmud/Midrash citations, and no invented sources are enforced in every skill.",
       "source": "./bible-research"
     }
   ]
