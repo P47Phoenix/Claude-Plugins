@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Added**
+- `bible-research` plugin (0.1.0): sermon-builder, sermon-verification, topic-verification and on-this-day skills on the agent → skill router → references pattern; agents `bible-scholar` and `sermon-verifier`; `/sermon`, `/verify`, `/check` and `/on-this-day` commands; Stop and SubagentStop hooks that back up the pre-delivery verification gate. Source specs and sample outputs are in `source/`; decisions and open items are in `bible-research/DESIGN_NOTES.md`.
+
 **Changed**
 - `song-team` renamed to `music-team` and rebuilt on the delivery-team pattern: named agent shells (lyricist, composer, arranger, song-critic, adapter) dispatch role skills with Phase-1 detection, and only the matched role manifest and references are pasted into the sub-agent prompt. The runtime data directory stays `.song/`.
 - Everything pins `model: sonnet`; detection phases use `haiku`.
