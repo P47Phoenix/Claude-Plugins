@@ -50,3 +50,4 @@ S2 ...
 - Plain language, short sentences, technical terms glossed once (guardrail 6)
 - Never reproduce long text from a source (guardrail 9)
 - The internal draft carries "INTERNAL DRAFT - NOT FOR THE USER" as its first line; the gate removes it
+- The hook pattern for this contract is the `# Research Findings:` heading **plus** the `**Question shape:**` header line; keep both verbatim

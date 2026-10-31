@@ -9,12 +9,15 @@ HOOK = Path(__file__).resolve().parent.parent / "hooks" / "gate_check.py"
 
 
 def run(mode: str, payload) -> dict | None:
-    stdin = payload if isinstance(payload, str) else json.dumps(payload)
+    # Send real UTF-8 bytes, as Claude Code does. text=True would encode with the
+    # console code page on Windows and hide decoding bugs in the hook.
+    stdin = payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False)
     proc = subprocess.run(
-        [sys.executable, str(HOOK), mode], input=stdin, capture_output=True, text=True
+        [sys.executable, str(HOOK), mode], input=stdin.encode("utf-8"), capture_output=True
     )
-    assert proc.returncode == 0, proc.stderr
-    return json.loads(proc.stdout) if proc.stdout.strip() else None
+    assert proc.returncode == 0, proc.stderr.decode("utf-8", "replace")
+    out = proc.stdout.decode("utf-8", "replace")
+    return json.loads(out) if out.strip() else None
 
 
 def msg(text: str, **extra) -> dict:
@@ -94,6 +97,40 @@ class StopHook(unittest.TestCase):
         for head in ("# Song ideas - Exodus", "# Biblical Timeline: Exile", "# TIMELINE – Judges"):
             text = head + "\n\n**Eras covered:** 3.\n\n| # |"
             self.assertEqual(run("stop", msg(text))["decision"], "block", head)
+
+    def test_em_dash_heading_and_reformatted_marker_are_gated(self):
+        text = "# Timeline \u2014 Judges\n\n**Eras covered**: 4.\n\n| # |"
+        self.assertEqual(run("stop", msg(text))["decision"], "block")
+
+    def test_fenced_example_is_not_gated(self):
+        text = "The contract looks like this:\n```markdown\n# Timeline: [ERA]\n**Eras covered:** [N]\n```\nWhich era?"
+        self.assertIsNone(run("stop", msg(text)))
+
+    def test_marker_without_heading_or_heading_without_marker_pass(self):
+        self.assertIsNone(run("stop", msg("**Eras covered:** 3. Nothing else here.")))
+        self.assertIsNone(run("stop", msg("# Timeline: Exile\n\nno header line")))
+
+    def test_notes_far_from_the_end_still_block(self):
+        text = self.TIMELINE + NOTES + "\n" + ("filler line\n" * 400)
+        self.assertEqual(run("stop", msg(text))["decision"], "block")
+
+    def test_utf8_payload_with_hebrew_and_en_dash_is_gated(self):
+        text = "# Timeline – Judah alone\n\n**Eras covered:** 7. חסד glossed.\n\n| # |"
+        self.assertEqual(run("stop", msg(text))["decision"], "block")
+
+    def test_idea_review_and_findings_without_marker_pass(self):
+        self.assertIsNone(run("stop", msg("# Idea Review: Ruth\n\n## Consensus\n- x")))
+        self.assertIsNone(run("stop", msg("# Research Findings: hesed\n\n## Summary\nx")))
+
+    def test_long_output_with_notes_then_next_line_passes(self):
+        text = self.SONGS + ("\n1. **Event:** x" * 300) + NOTES + "\n\n`next` for eras 4-6"
+        self.assertIsNone(run("stop", msg(text)))
+
+    def test_repeat_block_guard_on_new_contract(self):
+        self.assertIsNone(run("stop", msg(self.REVIEW, stop_hook_active=True)))
+
+    def test_heading_does_not_match_across_lines(self):
+        self.assertIsNone(run("stop", msg("# Notes\n\nTimeline: next week\n**Eras covered:** none")))
 
     def test_project_plan_timeline_is_not_gated(self):
         # Another plugin's output with the same heading but no contract header line.

@@ -53,4 +53,4 @@ The Skeptic's surviving objection: [THE OBJECTION, OR "none survived"].
 - The revised version is a proposal in the user's terms; it never grows past the original plus a third
 - Plain language (guardrail 6); never reproduce song lyrics, article paragraphs or post text (guardrail 9)
 - The internal draft carries "INTERNAL DRAFT - NOT FOR THE USER" as its first line when it goes to the gate; the gate removes it
-- The hook pattern for this contract is the `# Idea Review` heading; keep the heading
+- The hook pattern for this contract is the `# Idea Review:` heading **plus** the `**Personas:**` header line; keep both verbatim

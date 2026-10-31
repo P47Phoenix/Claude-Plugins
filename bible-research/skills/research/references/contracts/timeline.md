@@ -5,7 +5,7 @@ Emitted by `research` task type `timeline`, and as the first part of `song-ideas
 ## Template
 
 ```markdown
-# Timeline: [ERA NAME(S) OR "The whole Bible"]
+# Timeline: [ERA NAME(S)] [(batch N of M, when more than three eras were asked for)]
 
 **Eras covered:** [NUMBERS AND NAMES FROM THE PICK LIST]. **Translation:** [NAME, stated once]. **Chronologies used:** [WORKS, WITH S[N] IDs].
 
@@ -40,4 +40,4 @@ S2 ...
 - Jewish or patristic traditions about an event are tagged `[TRADITIONAL]` with tractate and folio or the work named (guardrail 3)
 - Plain language in "Why it matters" (guardrail 6); never reproduce long text from a source (guardrail 9)
 - The internal draft carries "INTERNAL DRAFT - NOT FOR THE USER" as its first line; the gate removes it
-- The hook pattern for this contract is the `# Timeline` heading; keep the heading
+- The hook pattern for this contract is the `# Timeline:` heading **plus** the `**Eras covered:**` header line; keep both verbatim

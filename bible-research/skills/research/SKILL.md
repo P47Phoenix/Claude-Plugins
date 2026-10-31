@@ -44,13 +44,18 @@ If the request names no era, **stop after the declaration line** and return the 
 
 ```
 Which era would you like? (Pick one or more by number, or say "all".)
-1. Primeval history (Genesis 1-11)   2. The patriarchs (Genesis 12-50)   3. Exodus and wilderness (Exodus - Deuteronomy)
-4. Conquest and judges (Joshua - Ruth)   5. The united monarchy (1 Samuel - 1 Kings 11)   6. The divided kingdom (1 Kings 12 - 2 Kings 17)
-7. Judah alone and the exile (2 Kings 18-25; Jeremiah, Ezekiel, Daniel)   8. Return and Second Temple (Ezra - Esther)
-9. Between the Testaments   10. The life of Jesus (the Gospels)   11. The early church (Acts - Revelation)
-```
-
-Print it one era per line. Never pre-select, never recommend, never run the whole Bible by default. A request that names a book, a person or a date range maps to its era(s) per the same reference (including its book table); say which era(s) you mapped it to, and show the pick list if nothing maps.
+1. Primeval history (Genesis 1-11)
+2. The patriarchs (Genesis 12-50)
+3. Exodus and wilderness (Exodus - Deuteronomy)
+4. Conquest and judges (Joshua - Ruth)
+5. The united monarchy (1 Samuel - 1 Kings 11; 1 Chronicles - 2 Chronicles 9)
+6. The divided kingdom (1 Kings 12 - 2 Kings 17; 2 Chronicles 10-28)
+7. Judah alone and the exile (2 Kings 18-25; 2 Chronicles 29-36; Jeremiah, Ezekiel, Daniel, Lamentations)
+8. Return and Second Temple (Ezra, Nehemiah, Haggai, Zechariah, Malachi, Esther)
+9. Between the Testaments
+10. The life of Jesus (the four Gospels)
+11. The early church (Acts, the letters, Revelation)
+``` Never pre-select, never recommend, never run the whole Bible by default. A request that names a book, a person or a date range maps to its era(s) per the same reference (including its book table); say which era(s) you mapped it to, and show the pick list if nothing maps.
 
 **Batch cap.** One run covers **at most three eras**, so the gate can check every event in one context. "All eras" or more than three is valid: say the run goes in batches of three in canonical order, run the first batch, and end with "`next` for eras N-M". Each batch is its own gated output.
 
