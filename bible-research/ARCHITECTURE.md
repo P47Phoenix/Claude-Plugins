@@ -50,7 +50,7 @@ sequenceDiagram
     IT->>IT: attributed round digest
     IT->>P: round 2: card + frame + digest (fresh agents)
     P-->>IT: agree / rebut / refine / changed mind (reason)
-    Note over IT: stop when no movement, or cap (default 2, max 4)
+    Note over IT: at least 2 rounds; continue while positions move, up to the cap (default 3, max 4)
     IT->>F: all digests + report contract
     F-->>IT: INTERNAL DRAFT report
     IT->>V: report + gate refs
@@ -102,17 +102,17 @@ stateDiagram-v2
 | sermon-verification | gate | the four checks + pre-delivery-gate (never oral-delivery) |
 | topic-verification | song / web / post / transcript / full | claim-extraction + the type reference(s); each check reuses one sermon-verification reference |
 | on-this-day | liturgical / history / hebrew / all | its own reference(s); Hebrew only on request |
-| research | timeline / song-ideas | research-method, source-tiers, timeline-eras (chosen era sections only; one researcher per slice), song-ideas for ideas; then the gate |
+| research | timeline / song-ideas | research-method, source-tiers, timeline-eras (chosen era sections only; one researcher per slice; at most three eras per batch), song-ideas for ideas (researcher for one slice, assembler for several); then the gate |
 | research | word-study / person / theme-trace / passages / church-history | research-method, source-tiers, plus one reused sermon-builder or on-this-day reference; then the gate |
 | idea-team | review | selected persona cards (one per agent), facilitation; round digests; then the gate for the report |
-| idea-team | talk | selected persona cards, facilitation (frame and running summary); talk turns are not gated, `summary` is |
+| idea-team | talk | selected persona cards, facilitation (frame; the router keeps the running summary); talk turns are not gated, `summary` is |
 
 ## Hooks
 
 | Event | Matcher | Effect |
 |---|---|---|
 | SubagentStop | `.*sermon-verifier` | `gate_check.py verifier`: blocks the verifier from finishing unless its output ends in Verification notes, has no `INTERNAL DRAFT` marker and no per-check report |
-| Stop | all | `gate_check.py stop`: blocks a main-thread reply that delivers gated output (sermon-builder shortlist or breakdown markers; the `# Timeline:`, `# Song Ideas:` or `# Idea Review:` contract headings) without Verification notes; allows everything else, including the era pick list and talk turns |
+| Stop | all | `gate_check.py stop`: blocks a main-thread reply that delivers gated output (sermon-builder shortlist or breakdown markers; a `Timeline`, `Song Ideas`, `Idea Review` or `Research Findings` top-level heading **together with** its contract header line, `**Eras covered:**`, `**Personas:**` or `**Question shape:**`) without Verification notes; allows everything else, including the era pick list, talk turns and another plugin's `# Timeline:` |
 
 Hooks are deterministic command hooks and can block or continue only; they cannot rewrite output. Tests: `tests/test_gate_check.py`.
 

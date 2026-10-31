@@ -34,7 +34,8 @@ After each round, assemble `contracts/round-digest.md`:
 
 After round 2 and each later round:
 
-- **Stop** if the Movement section records no change for every persona, or if the round cap is reached (default 2, maximum 4, user-settable)
+- Rounds 1 and 2 always run
+- **Stop** if the Movement section records no change for every persona, or if the round cap is reached (default cap 3, maximum 4, user-settable with `rounds:`)
 - **Continue** if any persona changed stance or position with a stated reason
 - A change without a stated reason does not count as movement and is noted as "unsupported change" for the facilitator (team rule 3)
 
@@ -56,7 +57,7 @@ Read every digest in order. Then write `contracts/idea-review-report.md`:
 | 2 | medium |
 | 1 | low (named, never dropped) |
 
-A concern that rests on an `[UNVERIFIED]` fact claim is listed with its severity but marked "rests on an unverified claim" and does not rise above medium until sourced. The Skeptic's surviving objection is always listed, at its earned severity
+A concern that rests on an `[UNVERIFIED]` fact claim is listed with its severity but marked "rests on an unverified claim" and does not rise above medium until sourced. The Skeptic's surviving objection is always listed, at its earned severity. The thresholds are absolute: with three personas the highest reachable severity is high, with four it is critical only when all agree; say so in the report header when the roster is under five
 5. **The strongest revised version of the idea.** Rewrite the idea to take in the consensus points and address the critical and high concerns, in the user's own terms, no longer than the original plus a third. Mark it as a proposal. Where a split would change the revision, give the two forms in a sentence each
 6. **Open questions for the user.** What only the user can decide, and what a source could settle
 7. **Honesty line.** One sentence: the personas are simulated viewpoints, not real people or official positions, and the report records disagreement as found
@@ -68,5 +69,5 @@ Never add the facilitator's own view of the idea. Never break a tie. Never drop 
 ## 5. Talk mode (frame and summary)
 
 - On the first talk turn, return the frame (section 1) and ask who the user wants to address
-- Keep a **running summary**: the frame, then one line per turn (who spoke, the point made). The router pastes it into each persona turn so the conversation has memory without sharing contexts
+- **The router keeps a running summary**: the frame, then one line per turn (who spoke, the point made). The router pastes it into each persona turn so the conversation has memory without sharing contexts; the facilitator is a one-shot agent and receives it on `summary`
 - On `summary`, write a short report (section 4), from the running summary and the turns, marking which points came from a single turn rather than a round

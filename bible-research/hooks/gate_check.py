@@ -21,12 +21,20 @@ DRAFT_MARKER = re.compile(r"INTERNAL DRAFT", re.IGNORECASE)
 SHORTLIST = re.compile(r"\*\*Why it fits:?\*\*|Why it fits:", re.IGNORECASE)
 BREAKDOWN = re.compile(r"Original Context", re.IGNORECASE)
 BREAKDOWN2 = re.compile(r"Original-Language Notes", re.IGNORECASE)
-# Markers of research and idea-team output delivered to the user. Each is the
-# contract's top-level heading; keep in step with references/contracts/.
-GATED_HEADINGS = [
-    re.compile(r"^#\s*Timeline:", re.MULTILINE),
-    re.compile(r"^#\s*Song Ideas:", re.MULTILINE),
-    re.compile(r"^#\s*Idea Review:", re.MULTILINE),
+# Markers of research and idea-team output delivered to the user: the
+# contract's top-level heading (case-insensitive, up to two leading words, a
+# colon or dash) AND a second marker from the contract's header line, so a
+# project plan titled "# Timeline: Q3" in another session is never gated.
+# Keep in step with references/contracts/.
+GATED_CONTRACTS = [
+    (re.compile(r"^#\s*(?:\w+\s+){0,2}Timeline\s*[:\-–]", re.MULTILINE | re.IGNORECASE),
+     re.compile(r"\*\*Eras covered:\*\*", re.IGNORECASE)),
+    (re.compile(r"^#\s*(?:\w+\s+){0,2}Song Ideas\s*[:\-–]", re.MULTILINE | re.IGNORECASE),
+     re.compile(r"\*\*Eras covered:\*\*", re.IGNORECASE)),
+    (re.compile(r"^#\s*(?:\w+\s+){0,2}Idea Review\s*[:\-–]", re.MULTILINE | re.IGNORECASE),
+     re.compile(r"\*\*Personas:\*\*", re.IGNORECASE)),
+    (re.compile(r"^#\s*(?:\w+\s+){0,2}Research Findings\s*[:\-–]", re.MULTILINE | re.IGNORECASE),
+     re.compile(r"\*\*Question shape:\*\*", re.IGNORECASE)),
 ]
 # Per-check reports the verifier must not return.
 REPORT_MARKERS = [
@@ -74,7 +82,8 @@ def main() -> int:
         bool(BREAKDOWN.search(text)) and bool(BREAKDOWN2.search(text))
     )
     delivers_gated_output = delivers_builder_output or any(
-        p.search(text) for p in GATED_HEADINGS
+        heading.search(text) and marker.search(text)
+        for heading, marker in GATED_CONTRACTS
     )
     if not delivers_gated_output:
         return 0

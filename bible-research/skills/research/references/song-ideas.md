@@ -24,7 +24,7 @@ Each idea has six fields:
 ## 2. Derivation rules
 
 1. Work from the timeline in order. Pick events where the text gives a human voice, a turning point, a promise, a loss, or an act of God that the narrative dwells on
-2. Aim for roughly 15-20 ideas per era slice. Fewer is fine when the era is thin; do not pad. "All eras" gives 15-20 per era, grouped by era
+2. Aim for roughly 15-20 ideas for a single era; roughly 10 per era when a batch covers two or three. Fewer is fine when the era is thin; do not pad. Ideas are grouped by era
 3. Vary the angle. A slice should not be all praise or all narrative. Include at least one lament where the text has one (most eras do)
 4. Vary the register. Include at least one congregational and one solo or testimony idea per slice
 5. Where the text itself contains a song or prayer (the Song of the Sea, Exodus 15; Hannah's prayer, 1 Samuel 2; David's lament, 2 Samuel 1; the Magnificat, Luke 1:46-55; the hymn of Philippians 2:6-11), say so under Event and give the reference; the idea is then "a setting of" that text, which is still an idea, not a lyric

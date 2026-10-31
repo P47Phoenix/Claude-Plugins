@@ -57,30 +57,48 @@ class StopHook(unittest.TestCase):
         self.assertIsNone(run("stop", {}))
 
     # research and idea-team contracts (0.2.0)
+    TIMELINE = "# Timeline: The exile\n\n**Eras covered:** 7. **Translation:** ESV.\n\n| # | Event |\n|---|---|"
+    SONGS = "# Song Ideas: Exodus and wilderness\n\n**Eras covered:** 3.\n\n1. **Event:** x"
+    REVIEW = "# Idea Review: a sermon series on Ruth\n\n**Personas:** Skeptic, Lay Listener, Pastor.\n\n## Consensus\n- x"
+    FINDINGS = "# Research Findings: hesed\n\n**Question shape:** descriptive. **Translation:** ESV.\n\n## Summary\nx"
+
     def test_timeline_without_notes_blocks(self):
-        out = run("stop", msg("# Timeline: The exile\n\n| # | Event |\n|---|---|"))
-        self.assertEqual(out["decision"], "block")
+        self.assertEqual(run("stop", msg(self.TIMELINE))["decision"], "block")
 
     def test_clean_timeline_passes(self):
-        self.assertIsNone(run("stop", msg("# Timeline: The exile\n\n| # | Event |" + NOTES)))
+        self.assertIsNone(run("stop", msg(self.TIMELINE + NOTES)))
 
     def test_song_ideas_without_notes_blocks(self):
-        out = run("stop", msg("# Song Ideas: Exodus and wilderness\n\n1. **Event:** x"))
-        self.assertEqual(out["decision"], "block")
+        self.assertEqual(run("stop", msg(self.SONGS))["decision"], "block")
 
     def test_clean_song_ideas_passes(self):
-        self.assertIsNone(run("stop", msg("# Song Ideas: Exodus\n\n1. **Event:** x\nWhich of these?" + NOTES)))
+        self.assertIsNone(run("stop", msg(self.SONGS + "\nWhich of these?" + NOTES)))
 
     def test_idea_review_without_notes_blocks(self):
-        out = run("stop", msg("# Idea Review: a sermon series on Ruth\n\n## Consensus\n- x"))
-        self.assertEqual(out["decision"], "block")
+        self.assertEqual(run("stop", msg(self.REVIEW))["decision"], "block")
 
     def test_clean_idea_review_passes(self):
-        self.assertIsNone(run("stop", msg("# Idea Review: Ruth\n\n## Consensus\n- x" + NOTES)))
+        self.assertIsNone(run("stop", msg(self.REVIEW + NOTES)))
+
+    def test_findings_without_notes_blocks(self):
+        self.assertEqual(run("stop", msg(self.FINDINGS))["decision"], "block")
+
+    def test_clean_findings_passes(self):
+        self.assertIsNone(run("stop", msg(self.FINDINGS + NOTES)))
 
     def test_leaked_marker_in_research_blocks_even_with_notes(self):
-        out = run("stop", msg("INTERNAL DRAFT - NOT FOR THE USER\n# Timeline: x" + NOTES))
+        out = run("stop", msg("INTERNAL DRAFT - NOT FOR THE USER\n" + self.TIMELINE + NOTES))
         self.assertEqual(out["decision"], "block")
+
+    def test_heading_variants_are_gated(self):
+        for head in ("# Song ideas - Exodus", "# Biblical Timeline: Exile", "# TIMELINE – Judges"):
+            text = head + "\n\n**Eras covered:** 3.\n\n| # |"
+            self.assertEqual(run("stop", msg(text))["decision"], "block", head)
+
+    def test_project_plan_timeline_is_not_gated(self):
+        # Another plugin's output with the same heading but no contract header line.
+        self.assertIsNone(run("stop", msg("# Timeline: Q3 rollout\n\n- Week 1: kickoff\n- Week 2: build")))
+        self.assertIsNone(run("stop", msg("# Song Ideas: for the album\n\n1. a ballad about rain")))
 
     def test_era_pick_list_is_not_blocked(self):
         text = "Task Type: song-ideas | References: none | Scope: era not chosen\nWhich era would you like?\n1. Primeval history\n2. The patriarchs"

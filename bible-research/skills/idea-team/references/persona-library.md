@@ -6,7 +6,7 @@ Loaded by `idea-team`. The router pastes **one card** into each persona agent. F
 
 ## Selection
 
-- Roster size 3-7; **default 5**. **Skeptic and Lay Listener are always in**
+- Roster size 3-7; **default 5**. **Skeptic and Lay Listener are always in** and cannot be dropped or replaced by the user
 - Pick the rest by topic:
 
 | The idea is mainly about | Add first | Then |

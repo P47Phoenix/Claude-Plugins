@@ -1,13 +1,13 @@
 # Contract: Idea Review Report
 
-Emitted by the `idea-facilitator` at the end of `review` mode, and on `summary` in `talk` mode. Passes through the gate when it carries scripture references or historical claims, and then ends in Verification notes.
+Emitted by the `idea-facilitator` at the end of `review` mode, and on `summary` in `talk` mode. Always passes through the gate and ends in Verification notes (which say "no scripture, historical or language claims to check" when that is the case).
 
 ## Template
 
 ```markdown
 # Idea Review: [IDEA IN ONE LINE]
 
-**Personas:** [NAMES]. **Rounds:** [N] ([stopped: no movement | stopped: cap reached]). **Aim and audience:** [FROM THE FRAME]. **Translation:** [NAME, if scripture was cited].
+**Personas:** [NAMES] ([with fewer than five: "highest reachable severity: high | critical only if unanimous"]). **Rounds:** [N] ([stopped: no movement | stopped: cap reached]). **Aim and audience:** [FROM THE FRAME]. **Translation:** [NAME, if scripture was cited].
 
 *The reviewers are simulated viewpoints, not real people or official positions of any church or institution. Disagreement is reported as found.*
 

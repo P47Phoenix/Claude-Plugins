@@ -19,7 +19,9 @@ You carry no study material yourself. You route each request to a skill, and the
 | A song, article, post, transcript or devotional checked | `bible-research:topic-verification` |
 | What the church calendar or church history marks on a specific date | `bible-research:on-this-day` |
 | A biblical timeline, song ideas from the Bible, a word study, a person, a theme traced, passages on a topic, a church-history question | `bible-research:research` |
-| An idea reviewed from several points of view, stress-tested, or talked through with a persona or the team | `bible-research:idea-team` |
+| An idea, plan or concept reviewed from several points of view, stress-tested, or talked through with a persona or the team | `bible-research:idea-team` |
+
+"Poke holes in" a pasted **draft** is `sermon-verification` `redteam`; "poke holes in" an **idea or plan** is `idea-team`.
 
 If the request is ambiguous, ask. Use the `Skill` tool to invoke the matching skill and follow its instructions exactly, including its declaration line.
 

@@ -13,7 +13,7 @@ Emitted by `research` task type `timeline`, and as the first part of `song-ideas
 
 | # | Event | Passage | Sequence | Date | Witness | Why it matters |
 |---|---|---|---|---|---|---|
-| 1 | [EVENT] | [BOOK CH:VV] | [after X, before Y; or "sequence only"] | [RANGE, e.g. 597 BC (S3)] or **contested:** [A (S3) / B (S4)] or -- | [EXTERNAL WITNESS, IF ANY, WITH S[N]] | [ONE PLAIN SENTENCE] |
+| 1 | [EVENT] | [BOOK CH:VV] | [after X, before Y; or "sequence only"] | [RANGE, e.g. c. 1010-970 BC (S3)] or [ANCHORED YEAR, e.g. 597 BC, Babylonian Chronicle (S2)] or **contested:** [A (S3) / B (S4)] or -- | [EXTERNAL WITNESS, IF ANY, WITH S[N]] | [ONE PLAIN SENTENCE] |
 
 **Era notes:** [THE DATING SPLITS THAT SHAPE THIS ERA, IN TWO OR THREE SENTENCES. WHAT WAS LEFT OUT FOR LACK OF A SOURCE.]
 
@@ -32,7 +32,7 @@ S2 ...
 
 ## Rules
 
-- **Every date is a range or marked contested, with a source ID** (guardrail 12). A cell never holds a single bare year. Eras 1-2 carry no absolute dates; their Date cell reads "--" or names the contested positions
+- **Every date is a range or marked contested, with a source ID** (guardrail 12). A single year is allowed only when the cell names the external anchor it rests on (a chronicle, an inscription) with its source ID; a bare year with no anchor is not allowed. Eras 1-2 carry no absolute dates; their Date cell reads "--" or names the contested positions
 - Events are numbered continuously across eras so song ideas can point at them
 - The Sequence column comes from the text; "sequence only" is a valid entry where no date survives
 - An event that could not be opened in the text, or whose date has no source, is **left out** and named in Era notes (guardrail 5)

@@ -40,7 +40,9 @@ Detect the task type from the request, in priority order:
 
 ### Era pick (mandatory for `timeline` and `song-ideas`)
 
-If the request names no era, **stop after the declaration line** and return the numbered era list from `references/timeline-eras.md` ("Era pick list" section) as a question. Never pre-select, never recommend, never run the whole Bible by default. "The whole Bible" or "all eras" is a valid answer; then run every era slice. A request that names a book, a person or a date range maps to its era(s) per the same reference; say which era(s) you mapped it to.
+If the request names no era, **stop after the declaration line** and return the numbered era list from `references/timeline-eras.md` ("Era pick list" section) as a question. Never pre-select, never recommend, never run the whole Bible by default. A request that names a book, a person or a date range maps to its era(s) per the same reference (including its book table); say which era(s) you mapped it to, and show the pick list if nothing maps.
+
+**Batch cap.** One run covers **at most three eras**, so the gate can check every event in one context. "All eras" or more than three is valid: say the run goes in batches of three in canonical order, run the first batch, and end with "`next` for eras N-M". Each batch is its own gated output.
 
 ---
 
@@ -48,8 +50,8 @@ If the request names no era, **stop after the declaration line** and return the 
 
 1. Classify (Phase 1) and print the declaration line. For `timeline` and `song-ideas`, confirm the era(s) are chosen
 2. Read **only** the reference file(s) in the routing table for the task type
-3. Spawn the researcher sub-agent(s) with the `Agent` tool using the template below. For `timeline` and `song-ideas`, spawn **one researcher per chosen era slice, in a single message** so they run in parallel; each gets only its era's section of `timeline-eras.md`
-4. For multi-slice runs, spawn one **assembler** with `research-method.md`, the slice results and the contract. It merges slices in canonical order, keeps every `S[N]` source ID unique, and (for `song-ideas`) applies `references/song-ideas.md` to the merged timeline
+3. Spawn the researcher sub-agent(s) with the `Agent` tool using the template below. For `timeline` and `song-ideas`, spawn **one researcher per chosen era slice, in a single message** so they run in parallel; each gets the "Era pick list" and "Dating rules" sections plus only its era's section of `timeline-eras.md`
+4. **Single slice:** the researcher produces the timeline and, for `song-ideas`, derives the ideas itself per `references/song-ideas.md` (pasted). **Multiple slices:** researchers return timelines only (do not paste `song-ideas.md` to them); spawn one **assembler** with `research-method.md`, the slice results, the contract and, for `song-ideas`, `references/song-ideas.md`. It merges slices in canonical order, keeps every `S[N]` source ID unique, and derives the ideas from the merged timeline
 5. Hold the result as an **internal draft**. Continue to Phase 3
 
 Do not inline method or era knowledge into the main context. The sub-agent is the execution boundary.
@@ -85,7 +87,7 @@ You are a careful Bible researcher with a solid grounding in Protestant theology
 
 Every `research` output passes through the `sermon-verification` `gate` before the user sees it. Song ideas pass too: the gate checks the events and references behind them, and leaves the ideas as labeled inference.
 
-1. Spawn the verifier with the `Agent` tool using `subagent_type: bible-research:sermon-verifier` (required, so the `SubagentStop` backstop applies). Paste into its prompt: the internal draft; the four verification references plus `pre-delivery-gate.md` from `../sermon-verification/references/`; `../sermon-verification/references/contracts/corrected-draft.md`; and the `sermon-verification` guardrails 1-12 and gate prompt from `../sermon-verification/SKILL.md`. Add: "Keep the input's contract (timeline, song-ideas list or research findings). Do not rewrite song ideas; check only the events, references and dates they rest on, and remove an idea whose event cannot be sourced"
+1. Spawn the verifier with the `Agent` tool using `subagent_type: bible-research:sermon-verifier` (required, so the `SubagentStop` backstop applies). Paste into its prompt: the internal draft; the four verification references plus `pre-delivery-gate.md` from `../sermon-verification/references/`; `../sermon-verification/references/contracts/corrected-draft.md`; and the `sermon-verification` guardrails 1-12 and gate prompt from `../sermon-verification/SKILL.md`. Add: "Keep the input's contract (timeline, song-ideas list or research findings). **Keep the contract's inline labels in place**: `[INFERENCE]`, `[CONTESTED]`, `[TRADITIONAL]`, `[Single-source]`, and in research findings `[UNVERIFIED]`; they are contract labels, not flags to strip. Do not rewrite song ideas; check only the events, references and dates they rest on, and remove an idea whose event cannot be sourced"
 2. Return **only** the corrected version, ending in "Verification notes". Never show, quote or summarize the internal draft or its flags
 3. If the verifier's output lacks a "Verification notes" section, re-run it once; if still missing, tell the user the gate did not complete and show nothing else
 
@@ -105,7 +107,7 @@ The `Stop` hook in `hooks/hooks.json` backs this up, but the gate lives here.
 | **passages** | "passages on", "verses about", "what does the Bible say about" | `research-method.md` + `source-tiers.md` | `contracts/research-findings.md` |
 | **church-history** | "council", "reformer", "creed", "early church", a post-biblical date or movement | `research-method.md` + `source-tiers.md` + `../on-this-day/references/church-history-dates.md` | `contracts/research-findings.md` |
 
-`song-ideas` always runs the `timeline` step first (same researchers, same slices); the assembler derives the ideas from the verified-in-progress timeline, never from memory alone.
+`song-ideas` always runs the `timeline` step first (same researchers, same slices); the ideas are derived from that timeline (by the researcher for one slice, by the assembler for several), never from memory alone.
 
 ---
 
@@ -134,7 +136,7 @@ Every contract ends in the "Verification notes" section supplied by the gate.
 9. **Never reproduce song lyrics, article paragraphs, or post text.** Paraphrase and cite.
 10. **Distinguish "theologically contested" from "textually unsupported"** in every note.
 11. **Separate fact-claims from devotional or poetic language.**
-12. **Every date is a range or is marked contested, with its source named.** No single invented year. Where scholarship splits (Exodus early or late date, the fall of Jerusalem 587 or 586 BC, the crucifixion AD 30 or 33), give both positions and name who holds each. A date with no located source is dropped.
+12. **Every date is a range or is marked contested, with its source named.** A single year is allowed only when it is tied to a named external anchor (the Babylonian Chronicle, Sennacherib's prism, the Gallio inscription) with a source ID; a single year from memory or a popular site is not. Where scholarship splits (Exodus early or late date, the fall of Jerusalem 587 or 586 BC, the crucifixion AD 30 or 33), give both positions and name who holds each. A date with no located source is dropped.
 13. **Song ideas are creative inference, never fact.** Each idea names its event and passage reference and is labeled `[INFERENCE]`. No lyrics, no lines, no titles of existing songs, no artist or songwriter names. Ideas are a list the user takes elsewhere; this skill never drafts a song or hands off to another plugin.
 14. **Every source carries an `S[N]` ID and a tier** (primary text, lexicon, scholarly, popular) per `source-tiers.md`. A key claim resting on one source is flagged `[Single-source]`. If source access limited the work, say so in the Verification notes.
 
@@ -144,8 +146,9 @@ Every contract ends in the "Verification notes" section supplied by the gate.
 
 | Command | Action |
 |---|---|
-| `timeline <era or book or "all">` | Sourced timeline for the era(s); asks for an era if none is given |
-| `song-ideas <era or book or "all">` | Timeline, then a numbered list of song ideas; asks for an era if none is given |
+| `timeline <era or book or "all">` | Sourced timeline for the era(s); asks for an era if none is given; at most three eras per batch |
+| `song-ideas <era or book or "all">` | Timeline, then a numbered list of song ideas; asks for an era if none is given; at most three eras per batch |
+| `next` | Run the next batch of eras |
 | `word-study <term>` | Lexicon-backed study of one Hebrew, Aramaic or Greek term |
 | `person <name>` | Sourced profile of a biblical person |
 | `theme-trace <theme>` | The theme across the canon, in order |
