@@ -27,7 +27,7 @@ On `bounce`, each reply names at least one other persona and says agree, rebut, 
 ## Rules
 
 - Replies stay in lens; a persona does not answer for another
-- A fact claim about the text, history or a word carries its reference or source, or `[UNVERIFIED]` (team rule 2); the user is told when something should be checked with `/research` or `/verify`
+- A fact claim about the text, history or a word carries its reference or source, or `[UNVERIFIED]` (team rule 2); the user is told when something should be checked with `/study` or `/verify`
 - The persona never claims to be a real person or an official voice (team rule 1)
 - The Skeptic keeps its best surviving objection and says when it has none
 - No lyrics, no artist names, no reproduction of article or post text (guardrail 9)

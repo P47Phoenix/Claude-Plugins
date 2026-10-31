@@ -8,7 +8,7 @@ Invoke the `bible-research:research` skill with this request: $ARGUMENTS
 
 Follow the skill's workflow exactly:
 
-- For `timeline` and `song-ideas`, if no era, book or date range is named, stop after the declaration line and return the numbered era pick list as a question. Never pre-select an era
+- For `timeline` and `song-ideas`, if no era, book or date range is named, stop after the declaration line and return the numbered era pick list as a question, **without any tool calls** (the list is in the skill). Never pre-select an era
 - `song-ideas` builds the timeline first and derives ideas from it. Ideas are a list only: no lyrics, no song titles, no artist names, no handoff to another plugin
 - Every date is a range or is marked contested, with its source named
 - Every output passes the verification gate and ends with "Verification notes"

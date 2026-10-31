@@ -30,7 +30,7 @@ Restructured from the claude.ai "Bible Scholar" project. The source specs are in
 | `/verify <file\|draft> [cite\|history\|doctrine\|redteam\|pacing\|all]` | Run one check, or the gate with `all` |
 | `/check <text\|url\|file> [song\|web\|post\|transcript\|full]` | Check an external artifact |
 | `/on-this-day [date]` | Church calendar and history for a date |
-| `/research <request>` | `timeline <era\|book\|all>`, `song-ideas <era\|book\|all>`, `word-study <term>`, `person <name>`, `theme-trace <theme>`, `passages <topic>`, `church-history <question>` |
+| `/study <request>` | `timeline <era\|book\|all>`, `song-ideas <era\|book\|all>`, `word-study <term>`, `person <name>`, `theme-trace <theme>`, `passages <topic>`, `church-history <question>` |
 | `/team <idea> [review\|talk] [rounds: N] [personas: ...]` | Multi-round persona review, or talk mode (`whole team`, `bounce`, `summary`, `switch`, `add`, `drop`, `end`) |
 
 ## Agents
@@ -42,7 +42,7 @@ Restructured from the claude.ai "Bible Scholar" project. The source specs are in
 
 ## Research and song ideas
 
-1. `/research song-ideas` with no era returns a numbered list of eleven eras (Primeval to Early church) and **stops**. Pick one or more, or say `all`. A run covers at most three eras; `all` goes in batches with `next`
+1. `/study song-ideas` with no era returns a numbered list of eleven eras (Primeval to Early church) and **stops**. Pick one or more, or say `all`. A run covers at most three eras; `all` goes in batches with `next`
 2. One researcher per era slice runs in parallel, an assembler merges them, and the gate checks every event, reference and date before you see it
 3. Every date is a range or marked **contested** with its source (Exodus early or late, Jerusalem 587 or 586 BC, crucifixion AD 30 or 33); a single year appears only when tied to a named external anchor such as the Babylonian Chronicle. A date with no located source is dropped
 4. Song ideas are **creative inference, labeled as such**: event, passage, angle, register, a neutral theme, source tag. No lyrics, no song titles, no artist names, and no handoff to another plugin. The list is yours to take elsewhere

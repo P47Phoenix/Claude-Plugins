@@ -6,7 +6,7 @@ Internal design for contributors. For decisions and deviations see [DESIGN_NOTES
 
 ```mermaid
 flowchart TD
-    U[User] --> C["/sermon, /verify, /check, /on-this-day, /research, /team"]
+    U[User] --> C["/sermon, /verify, /check, /on-this-day, /study, /team"]
     U --> A[bible-scholar agent]
     C --> S
     A --> S
@@ -122,7 +122,7 @@ Hooks are deterministic command hooks and can block or continue only; they canno
 bible-research/
   .claude-plugin/plugin.json
   agents/        bible-scholar.md, sermon-verifier.md, idea-persona.md, idea-facilitator.md
-  commands/      sermon.md, verify.md, check.md, on-this-day.md, research.md, team.md
+  commands/      sermon.md, verify.md, check.md, on-this-day.md, study.md, team.md
   hooks/         hooks.json, gate_check.py
   tests/         test_gate_check.py
   skills/
