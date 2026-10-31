@@ -1,5 +1,5 @@
 {
-  "description": "Bible-research hooks: back up the pre-delivery verification gate. A hook can only block or continue (it cannot rewrite output), so the gate itself lives in the sermon-builder skill; these deterministic command hooks make a missing or leaking gate fail loudly, with no model call and no effect on non-sermon turns. See DESIGN_NOTES.md.",
+  "description": "Bible-research hooks: back up the pre-delivery verification gate. A hook can only block or continue (it cannot rewrite output), so the gate itself lives in the sermon-builder, research and idea-team skills; these deterministic command hooks make a missing or leaking gate fail loudly, with no model call and no effect on non-sermon turns. See DESIGN_NOTES.md.",
   "hooks": {
     "SubagentStop": [
       {

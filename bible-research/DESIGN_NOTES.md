@@ -8,7 +8,7 @@ From `delivery-team/skills/quality/SKILL.md` and `architect/SKILL.md`:
 
 - SKILL.md is a thin router: a "Design Principle: <X> Isolation" section; Phase 1 task classification with a declaration line (`Task Type: [...] | References: [...] | Scope: [...]`); Phase 2 sub-agent invocation via the `Agent` tool with a literal prompt template that pastes only the routed `references/*.md` file(s); a routing table; output contracts in `references/contracts/`; numbered guardrails; user commands; a References index
 - Reference files are read only for the routed task type
-- Router line budgets are enforced by `scripts/check_skill_budgets.py` (Tier B 300, Tier C 200). The new skills are 134-173 lines. The script only walks `BUDGETED_PLUGINS` (`delivery-team`, `music-team`); adding `bible-research` is a one-line change that was left out of scope
+- Router line budgets are enforced by `scripts/check_skill_budgets.py` (Tier B 300, Tier C 200). The 0.1.0 skills are 134-173 lines. As of 0.2.0 `bible-research` is in `BUDGETED_PLUGINS`, so CI checks all six SKILL.md files
 
 ## 2. Deviations, and why
 
@@ -22,6 +22,15 @@ From `delivery-team/skills/quality/SKILL.md` and `architect/SKILL.md`:
 | **Reference files are pasted by the router, then sub-agent reads nothing else** | Matches delivery-team ("Read only the reference file(s)... paste"). The routed files pass through main context once, transiently; unrouted files are never read. A stricter option (pass paths, let the sub-agent read) is possible but departs from the pattern |
 | **`sermon-verifier` agent has no `Agent` tool** | Prevents nested spawning from the gate |
 | **On This Day output carries its own "Verification notes" line, not the full gate** | The brief scopes the gate to `sermon-builder` output. The project's own best On This Day chats carry a notes line, so the contract requires one |
+| **`research` reuses the `sermon-verifier` gate rather than its own checker** (0.2.0) | Timelines, song-idea lists and findings are fact-bearing content of the same kind the gate already checks. The dispatch adds one instruction (keep the contract, do not rewrite song ideas, remove an idea whose event cannot be sourced) instead of a second verifier |
+| **`research` fans out one researcher per era slice, then an assembler** (0.2.0) | Same flat fan-out as `topic-verification`. A whole-Bible timeline in one agent would exceed a sensible context and lose sources; per-slice researchers keep `timeline-eras.md` sections small. The assembler renumbers `S[N]` IDs so they stay unique |
+| **Era pick is mandatory; the whole Bible is never the default** (0.2.0) | Mirrors shortlist-then-pick. The user asked that the skill ask rather than guess the era; "all" is an explicit answer |
+| **Song ideas are a list, labeled inference, with no handoff to `music-team`** (0.2.0) | The user asked for a list only. The anti-lyric and anti-artist rules keep the output from becoming a song draft, and keep the gate's job to the facts behind the ideas |
+| **`idea-team` keeps persona isolation and still bounces ideas** (0.2.0) | `user-feedback` forbids personas seeing each other to avoid early convergence. The user wanted ideas to bounce and reach a better consensus. The resolution: fresh agents each round, with the previous round relayed as an attributed digest by the router. No two personas ever share a context; a position must be re-argued from the digest, not remembered |
+| **Anti-sycophancy is a rule, not a hope** (0.2.0) | A change of position without a reason that names the argument is recorded as "unsupported change" and does not count as movement for the stop rule. The Skeptic must carry its best surviving objection into the report even when outvoted. The facilitator counts agreement only from what was said; silence is not agreement |
+| **`idea-persona` and `idea-facilitator` are named agents without an `Agent` tool** (0.2.0) | Same reason as `sermon-verifier`: flat fan-out, no nesting from inside a persona. The card is injected per dispatch so one agent definition serves every persona, built-in or custom |
+| **Talk mode is not gated turn by turn** (0.2.0) | A gate on every conversational reply would make talk mode unusable. Team rules still bind each turn (fact claims need a source or `[UNVERIFIED]`), and the `summary` report goes through the gate |
+| **The Stop hook matches the new contracts by top-level heading** (0.2.0) | `# Timeline:`, `# Song Ideas:` and `# Idea Review:` are anchored at line start with `^#\s*` so prose that mentions a timeline, an era pick list, or a talk turn is never blocked. Tests cover each |
 
 ## 3. Frontmatter fields dropped or kept
 
@@ -48,7 +57,7 @@ Plugin agents ignore `hooks`, `mcpServers` and `permissionMode`; none are used. 
 ## 5. Verification of the plugin
 
 - `claude plugin validate ./bible-research` and `claude plugin validate .` (the marketplace) pass. One suggestion remains: no listing icon (`ICON_MISSING`)
-- `tests/test_gate_check.py` (14 tests) passes: the hook logic is covered for clean output, missing notes, leaked draft marker, per-check report leak, refusal turns, ordinary replies, malformed input and the repeat-block guard
+- `tests/test_gate_check.py` (24 tests as of 0.2.0; 14 in 0.1.0) passes: the hook logic is covered for clean output, missing notes, leaked draft marker, per-check report leak, refusal turns, ordinary replies, malformed input, the repeat-block guard, and (0.2.0) the timeline, song-ideas and idea-review headings, the era pick list, a talk turn, and a non-top-level heading
 - An independent review (Opus) found nine issues and a wrong lectionary rule; these fixes were applied: verifier gets the `sermon-verification` guardrails 1-12 and must be the `sermon-verifier` agent type; builder gets guardrails 1-12; the Stop hook became a deterministic command hook; `draft` without a breakdown loads the full breakdown references; one rule for naming a passage directly; dangling cross-skill references inlined or given full paths; `song-theology.md` goes to the doctrine check for songs; "not given" for missing attribution; the lectionary-year rule (remainder 0 is A, 1 is B, 2 is C); a Julian/Gregorian caveat for Protestant German states; Athanasian vs Nicene wording on modalism
 - The Hebrew sample in `hebrew-calendar.md` (13 September 2026 is 2 Tishrei 5787, Rosh Hashanah II) was checked against the Hebcal converter
 - Not run: the sub-agent flows end to end, nested spawning, and the slash commands
@@ -71,8 +80,12 @@ Plugin agents ignore `hooks`, `mcpServers` and `permissionMode`; none are used. 
 - `song-theology.md`: confession-by-confession citations and secondary-work page numbers are marked as items to source
 - `church-history-dates.md` gives leads, marked to re-verify at use; none was opened in this build (a reviewer judged all five consistent with their recollection)
 
+- `timeline-eras.md` (0.2.0) gives event leads by passage reference and names the chronologies that date them (Thiele, Kitchen, Finegan, Hoehner, the Babylonian Chronicle, the Gallio inscription). None of those works was opened in this build; the researcher must open the work, or a page that cites it by section, before a date appears in output, and the file says so. The era list and the known dating splits came from general knowledge and should be checked against a chronology on first real use
+
 ### Risks
 
-- The gate depends on the router following Phase 3. Hooks catch a missing notes section but cannot repair a leak
-- The hook's marker patterns (`Why it fits`, `Original Context` plus `Original-Language Notes`) must stay in step with the shortlist and breakdown contracts; change them together
+- The gate depends on the router following Phase 3 (sermon-builder, research) or Phase 4 (idea-team). Hooks catch a missing notes section but cannot repair a leak
+- The hook's marker patterns (`Why it fits`, `Original Context` plus `Original-Language Notes`, `# Timeline:`, `# Song Ideas:`, `# Idea Review:`) must stay in step with the contracts; change them together
+- `idea-team` review mode spawns (personas x rounds) + 2 agents: five personas for two rounds is twelve agents plus the verifier. Four rounds with seven personas is thirty. The caps exist for cost; the user can lower them with `rounds:` and `personas:`
+- Isolation with bounce is only as good as the digest. If the router summarizes instead of copying entries unedited, personas converge on the router's framing; the contract forbids editing entries for that reason
 - The `commands/` wrappers duplicate routing that the skills already do

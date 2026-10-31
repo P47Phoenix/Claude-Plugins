@@ -56,6 +56,43 @@ class StopHook(unittest.TestCase):
         self.assertIsNone(run("stop", "not json"))
         self.assertIsNone(run("stop", {}))
 
+    # research and idea-team contracts (0.2.0)
+    def test_timeline_without_notes_blocks(self):
+        out = run("stop", msg("# Timeline: The exile\n\n| # | Event |\n|---|---|"))
+        self.assertEqual(out["decision"], "block")
+
+    def test_clean_timeline_passes(self):
+        self.assertIsNone(run("stop", msg("# Timeline: The exile\n\n| # | Event |" + NOTES)))
+
+    def test_song_ideas_without_notes_blocks(self):
+        out = run("stop", msg("# Song Ideas: Exodus and wilderness\n\n1. **Event:** x"))
+        self.assertEqual(out["decision"], "block")
+
+    def test_clean_song_ideas_passes(self):
+        self.assertIsNone(run("stop", msg("# Song Ideas: Exodus\n\n1. **Event:** x\nWhich of these?" + NOTES)))
+
+    def test_idea_review_without_notes_blocks(self):
+        out = run("stop", msg("# Idea Review: a sermon series on Ruth\n\n## Consensus\n- x"))
+        self.assertEqual(out["decision"], "block")
+
+    def test_clean_idea_review_passes(self):
+        self.assertIsNone(run("stop", msg("# Idea Review: Ruth\n\n## Consensus\n- x" + NOTES)))
+
+    def test_leaked_marker_in_research_blocks_even_with_notes(self):
+        out = run("stop", msg("INTERNAL DRAFT - NOT FOR THE USER\n# Timeline: x" + NOTES))
+        self.assertEqual(out["decision"], "block")
+
+    def test_era_pick_list_is_not_blocked(self):
+        text = "Task Type: song-ideas | References: none | Scope: era not chosen\nWhich era would you like?\n1. Primeval history\n2. The patriarchs"
+        self.assertIsNone(run("stop", msg(text)))
+
+    def test_talk_turn_is_not_blocked(self):
+        self.assertIsNone(run("stop", msg("**Skeptic:** Where is the source for that? (my view)\n\n*Ask a follow-up or say `summary`.*")))
+
+    def test_heading_must_be_top_level(self):
+        # A mention of a timeline in prose, or a lower-level heading, is not gated output.
+        self.assertIsNone(run("stop", msg("I can build a timeline: say which era.\n## Timeline: not a contract")))
+
 
 class VerifierHook(unittest.TestCase):
     def test_clean_output_passes(self):
